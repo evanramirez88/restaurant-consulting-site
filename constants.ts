@@ -2,8 +2,8 @@ import { StationType, StationConfig } from './types';
 
 export const COMPANY_NAME = "Cape Cod Restaurant Consulting";
 export const OWNER_NAME = "Evan Ramirez";
-export const PHONE_NUMBER = "(508) 555-0199";
-export const EMAIL_ADDRESS = "evan@capecodrc.com";
+export const PHONE_NUMBER = "(508) 247-4936";
+export const EMAIL_ADDRESS = "evanramirez@ccrestaurantconsulting.com";
 
 export const PRICING_CONSTANTS = {
   HOURLY_RATE: 110,

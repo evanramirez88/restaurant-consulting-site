@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Phone, UtensilsCrossed } from 'lucide-react';
-import { NAVIGATION, COMPANY_NAME, PHONE_NUMBER } from '../constants';
+import { NAVIGATION, COMPANY_NAME, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -156,7 +156,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <div className="space-y-3 text-sm">
               <a href={`tel:${PHONE_NUMBER}`} className="block hover:text-white transition-colors">{PHONE_NUMBER}</a>
-              <a href="mailto:evan@capecodrc.com" className="block hover:text-white transition-colors">evan@capecodrc.com</a>
+              <a href={`mailto:${EMAIL_ADDRESS}`} className="block hover:text-white transition-colors">{EMAIL_ADDRESS}</a>
               <p className="text-slate-500 text-xs mt-4">
                 &copy; {new Date().getFullYear()} R&G Consulting LLC.<br/>All rights reserved.
               </p>
