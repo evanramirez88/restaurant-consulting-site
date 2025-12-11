@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quote Builder — POS + Networking (Canvas Test v4)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#0b0b0d;--coal:#111114;--slate:#1b1b20;--line:#2a2a31;--mint:#34d399;--warn:#ef4444;--rail:#0ea5e9}
+    html,body{height:100%;}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; background:#0b0b0d; color:#e7e7ea; overflow:hidden}
+    .panel{background:rgba(15,15,18,.92); border:1px solid var(--line); border-radius:12px}
+    .btn{border:1px solid var(--line); padding:.42rem .7rem; border-radius:.6rem; background:rgba(28,28,32,.65)}
+    .btn:hover{background:#1b1b20}
+    .tag{border:1px solid var(--line); padding:.1rem .5rem; border-radius:999px; font-size:.72rem; color:#bbb}
+    .input{background:#111114; border:1px solid var(--line); border-radius:.5rem; padding:.35rem .5rem}
+    .scroll-slim{scrollbar-width:thin}
+    .shadow-soft{box-shadow:0 10px 35px rgba(0,0,0,.45)}
+    .handle{cursor:grab}
+    .handle:active{cursor:grabbing}
+    .rot{-webkit-transform:rotate(var(--rot,0deg)); transform:rotate(var(--rot,0deg))}
+    .resizer{position:absolute; width:10px; height:10px; right:-5px; bottom:-5px; border-radius:2px; background:#34d399; border:1px solid var(--line); cursor:nwse-resize}
+    .action-rail{position:absolute; left:-16px; top:6px; display:flex; flex-direction:column; gap:6px}
+    .action-rail .a{width:26px; height:26px; border-radius:999px; border:1px solid var(--line); background:#121217; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 6px 16px rgba(0,0,0,.45)}
+    .action-rail .a:first-child{margin-bottom:6px}
+    .action-rail .a.color{border-color:#4b5563}
+    .action-rail .a:hover{background:#1d1d22}
+    .hardware-rail{position:absolute; right:6px; top:-14px; display:flex; gap:6px}
+    .hardware-rail .a{width:22px; height:22px; border-radius:999px; border:1px solid var(--line); background:#121217; display:flex; align-items:center; justify-content:center; font-size:11px; box-shadow:0 6px 16px rgba(0,0,0,.45)}
+    .fade-hide{transition:transform .25s ease, opacity .25s ease}
+    .toolbar-hidden{transform:translateY(-100%); opacity:.0}
+    .collapse-tab{position:absolute; top:50%; transform:translateY(-50%); width:18px; height:48px; background:#0f0f13; border:1px solid var(--line); border-radius:0 8px 8px 0; display:flex; align-items:center; justify-content:center; opacity:.85}
+    .collapse-tab.right{right:0; border-radius:8px 0 0 8px}
+    .collapse-tab:hover{opacity:1}
+    .grid-overlay{position:absolute; inset:0; background-image:linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px); background-size:var(--grid) var(--grid)}
+    .zoom-pad{position:absolute; right:10px; bottom:10px; display:flex; align-items:center; gap:6px}
+    .scale-chip{position:absolute; right:10px; bottom:54px; font-size:11px; background:#0d0d12; border:1px solid var(--line); padding:.25rem .5rem; border-radius:999px}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- React + Babel -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const {useState, useEffect, useMemo, useRef} = React;
+
+    // ---------- Utils
+    const uid = () => Math.random().toString(36).slice(2,9);
+    const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+    const deepClone = (x) => JSON.parse(JSON.stringify(x));
+    const minutesToHm = (min)=>{ const h=Math.floor(min/60); const m=Math.round(min%60); return `${h}h ${m}m`; };
+
+    function usePersistentState(key, initial){
+      const [state,setState] = useState(()=>{ try{const r=localStorage.getItem(key); return r?JSON.parse(r):initial;}catch(e){return initial} });
+      useEffect(()=>{ try{localStorage.setItem(key, JSON.stringify(state))}catch(e){} },[key,state]);
+      return [state,setState];
+    }
+
+    // ---------- Catalogs / Defaults (services-only; no hardware MSRP)
+    const DEFAULT_RATES = { hourly:110 }; // aligns with template examples
+
+    const DEFAULT_TRAVEL = {
+      capeCod: 0,
+      southShore: 100,       // ≤60 mi over the bridge
+      southernNE: 250,       // 60–100 mi
+      newEngland100Plus: 400,// >100 mi
+      islandBase: 300,
+      islandVehicle: 200,
+      islandLodging: 250,
+      outOfRegionBase: 800
+    };
+
+    // Per-item Time-to-Install minutes (aligned to Evan's template)
+    const DEFAULT_HARDWARE = [
+      {id:"toast-flex", name:"Toast Flex Terminal", category:"POS", ttiMin:45},
+      {id:"toast-flex-guest", name:"Guest Display (Flex)", category:"POS", ttiMin:30},
+      {id:"toast-go2", name:"Toast Go 2 (Handheld)", category:"POS", ttiMin:25},
+      {id:"toast-kds", name:"Kitchen Display (KDS)", category:"KDS", ttiMin:30},
+      {id:"receipt-printer", name:"Thermal Receipt Printer", category:"Printers", ttiMin:20},
+      {id:"impact-printer", name:"Kitchen Impact Printer", category:"Printers", ttiMin:20},
+      {id:"label-printer", name:"Label Printer", category:"Printers", ttiMin:40},
+      {id:"poe-switch", name:"Ethernet Switch (PoE)", category:"Network", ttiMin:10},
+      {id:"ap", name:"Wi‑Fi Access Point", category:"Network", ttiMin:25},
+      {id:"router", name:"Toast Router / Hub", category:"Network", ttiMin:25},
+      {id:"card-reader-direct", name:"Card Reader (Toast Direct Attach)", category:"Card", ttiMin:20},
+      {id:"card-reader-guest", name:"Card Reader (Toast Guest Pay)", category:"Card", ttiMin:20},
+      {id:"card-reader-employee", name:"Card Reader (Swipe to Pay — Employee)", category:"Card", ttiMin:20},
+      {id:"ups", name:"UPS Battery Backup", category:"Power", ttiMin:15},
+      {id:"cash-drawer", name:"Cash Drawer", category:"Accessories", ttiMin:15},
+      {id:"barcode", name:"Barcode Scanner", category:"Retail", ttiMin:15},
+      {id:"scale", name:"By-Weight Scale", category:"Retail", ttiMin:45}
+    ];
+
+    const DEFAULT_INTEGRATIONS = [
+      {id:"toast-payroll", name:"Toast Payroll & Team Mgmt", ttiMin:90},
+      {id:"xtrachef", name:"xtraCHEF by Toast", ttiMin:90},
+      {id:"loyalty", name:"Toast Loyalty", ttiMin:60},
+      {id:"gift-cards", name:"Gift Cards", ttiMin:45},
+      {id:"online-ordering", name:"Online Ordering", ttiMin:60},
+      {id:"delivery-services", name:"Toast Delivery Services", ttiMin:30},
+      {id:"3p-delivery", name:"3rd‑Party Delivery (Uber/DoorDash/Grubhub)", ttiMin:60},
+      {id:"opentable", name:"OpenTable", ttiMin:60},
+      {id:"tables", name:"Toast Tables (Reservations)", ttiMin:90},
+      {id:"email-mktg", name:"Email Marketing", ttiMin:45},
+      {id:"7shifts", name:"7shifts Scheduling", ttiMin:75}
+    ];
+
+    // FOH/BOH/Structure/Other map objects (top-view)
+    const FOH_OBJECTS = [
+      {type:"Table", w:80, h:80, color:"#6b7280"},
+      {type:"Bar Counter", w:220, h:44, color:"#4b5563"},
+      {type:"Host Stand", w:60, h:40, color:"#6b7280"},
+      {type:"Phone", w:24, h:24, color:"#94a3b8"},
+      {type:"Service Window", w:120, h:12, color:"#eab308"}
+    ];
+    const BOH_OBJECTS = [
+      {type:"Prep Table", w:120, h:50, color:"#7c3aed"},
+      {type:"Walk‑in", w:160, h:120, color:"#0ea5e9"},
+      {type:"Sink", w:60, h:40, color:"#06b6d4"},
+      {type:"Oven", w:60, h:60, color:"#f97316"},
+      {type:"Fryer", w:50, h:50, color:"#f59e0b"},
+      {type:"Grill", w:120, h:60, color:"#ef4444"},
+      {type:"Fridge", w:60, h:60, color:"#22c55e"}
+    ];
+    const STRUCTURE_OBJECTS = [
+      {type:"Wall", w:220, h:10, color:"#1f2937"},
+      {type:"Door (Entry)", w:36, h:4, color:"#94a3b8"},
+      {type:"Door (Exit)", w:36, h:4, color:"#94a3b8"}
+    ];
+
+    // Prebuilt templates per requirements
+    const PREBUILT_TEMPLATES = [
+      { id:"tmpl-server", label:"Server Station", ttiMin:85, items:["toast-flex","receipt-printer","card-reader-direct"], color:"#38bdf8" },
+      { id:"tmpl-bar-plus", label:"Bar Station Plus Service", ttiMin:120, items:["toast-flex","receipt-printer","card-reader-direct","cash-drawer","impact-printer"], color:"#22d3ee" },
+      { id:"tmpl-bar", label:"Bar Station", ttiMin:100, items:["toast-flex","receipt-printer","card-reader-direct","cash-drawer"], color:"#0ea5e9" },
+      { id:"tmpl-host", label:"Host Stand", ttiMin:100, items:["toast-flex","receipt-printer","card-reader-direct","cash-drawer"], color:"#a3e635" },
+      { id:"tmpl-full-kitchen", label:"Full Kitchen", ttiMin:50, items:["toast-kds","impact-printer"], color:"#fbbf24" },
+      { id:"tmpl-takeout", label:"Takeout Station", ttiMin:150, items:["toast-flex","receipt-printer","card-reader-guest","card-reader-employee","cash-drawer","toast-flex-guest"], color:"#f472b6" },
+      { id:"tmpl-retail", label:"Retail Terminal", ttiMin:120, items:["receipt-printer","card-reader-guest","card-reader-employee","cash-drawer","toast-flex-guest"], color:"#34d399" },
+      { id:"tmpl-retail-weighed", label:"Weighed Retail Terminal", ttiMin:150, items:["receipt-printer","card-reader-guest","card-reader-employee","cash-drawer","toast-flex-guest","scale"], color:"#10b981" },
+      { id:"tmpl-retail-full", label:"Full Retail Terminal", ttiMin:165, items:["receipt-printer","card-reader-guest","card-reader-employee","cash-drawer","toast-flex-guest","barcode","scale"], color:"#059669" },
+      { id:"tmpl-kds", label:"Kitchen KDS", ttiMin:30, items:["toast-kds"], color:"#f59e0b" },
+      { id:"tmpl-bar-service", label:"Bar Service Station", ttiMin:20, items:["impact-printer"], color:"#22c55e" },
+      { id:"tmpl-barista", label:"Barista Station", ttiMin:190, items:["toast-flex","receipt-printer","card-reader-guest","card-reader-employee","cash-drawer","toast-flex-guest","label-printer"], color:"#8b5cf6" },
+      { id:"tmpl-expo", label:"Expo Station", ttiMin:50, items:["toast-kds","impact-printer"], color:"#f59e0b" },
+      { id:"tmpl-network", label:"Networking Area", ttiMin:35, items:["router","poe-switch"], color:"#14b8a6" },
+      { id:"tmpl-ap", label:"Access Point", ttiMin:25, items:["ap"], color:"#06b6d4" },
+      { id:"tmpl-switch", label:"Ethernet Switch", ttiMin:10, items:["poe-switch"], color:"#22c55e" }
+    ];
+
+    // ---------- Data Keys
+    const LS_KEY = "ccrc_quote_builder_v4";
+
+    function App(){
+      // persistent state
+      const [rates,setRates] = usePersistentState(LS_KEY+":rates", DEFAULT_RATES);
+      const [travel,setTravel] = usePersistentState(LS_KEY+":travel", DEFAULT_TRAVEL);
+      const [hardwareCatalog,setHardwareCatalog] = usePersistentState(LS_KEY+":hardware", DEFAULT_HARDWARE);
+      const [integrations,setIntegrations] = usePersistentState(LS_KEY+":integrations", DEFAULT_INTEGRATIONS);
+
+      // Subscription
+      const [supportTier,setSupportTier] = usePersistentState(LS_KEY+":supportTier", 0); // 0,10,20,30 (% of install cost)
+      const [supportPeriod,setSupportPeriod] = usePersistentState(LS_KEY+":supportPeriod", "monthly"); // monthly|annual
+
+      // initial location with networking area
+      const defaultFloor = ()=>({id:uid(), name:"Main Floor", stations:[], objects:[], labels:[], layers:[
+        {id:uid(), name:"Base Layout", type:"base", visible:true, cableRuns:[]},
+        {id:uid(), name:"Networking & Cabling", type:"network", visible:true, cableRuns:[]}
+      ], scalePxPerFt:16}); // default ~16px == 1ft grid
+
+      const mkNetworkingStation = (x=60,y=60)=>({
+        id:uid(), name:"Networking Area", type:"Networking Area", color:"#14b8a6",
+        x, y, w:260, h:170, nickname:"", notes:"Network closet / Toast Hub",
+        dept:"BOH", flags:{existing:false, replace:false},
+        hardware:[{hid:"router", nickname:"", notes:"", flags:{existing:false, replace:false}}, {hid:"poe-switch", nickname:"", notes:"", flags:{existing:false, replace:false}}]
+      });
+
+      const defaultLocation = ()=>{
+        const flo = defaultFloor();
+        flo.stations.push(mkNetworkingStation());
+        return {id:uid(), name:"My Restaurant", address:"", travel:{zone:"cape", islandVehicle:false, lodging:false, remote:false}, subscriptionPct:0, integrationIds:[], floors:[flo]};
+      };
+
+      const [locations,setLocations] = usePersistentState(LS_KEY+":locations", [defaultLocation()]);
+      const [locId,setLocId] = usePersistentState(LS_KEY+":locId", locations[0]?.id);
+      const currentLocation = useMemo(()=> locations.find(l=>l.id===locId) || locations[0], [locations,locId]);
+      const [floorId,setFloorId] = usePersistentState(LS_KEY+":floorId", currentLocation?.floors[0]?.id);
+      const currentFloor = useMemo(()=> currentLocation?.floors.find(f=>f.id===floorId) || currentLocation?.floors[0], [currentLocation,floorId]);
+
+      const [activeLayerId, setActiveLayerId] = usePersistentState(LS_KEY+":layerId", currentFloor?.layers[0]?.id);
+      const activeLayer = useMemo(()=> currentFloor?.layers.find(l=>l.id===activeLayerId) || currentFloor?.layers[0], [currentFloor,activeLayerId]);
+
+      const [selected, setSelected] = useState({kind:null, id:null});
+      const [zoom,setZoom] = useState(1);
+      const [mode,setMode] = useState("idle"); // 'idle' | 'addCable'
+      const canvasRef = useRef(null);
+
+      // Header auto-hide
+      const [toolbarHidden,setToolbarHidden] = useState(false);
+      useEffect(()=>{
+        let t=null;
+        const onMove=(e)=>{ if(e.clientY<10) setToolbarHidden(false); };
+        const onAny=()=>{ clearTimeout(t); t=setTimeout(()=> setToolbarHidden(true), 2000); };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('scroll', onAny, true); // capture sidebar scrolls
+        window.addEventListener('wheel', onAny, {passive:true});
+        window.addEventListener('keydown', onAny);
+        return ()=>{ window.removeEventListener('mousemove', onMove); window.removeEventListener('scroll', onAny, true); window.removeEventListener('wheel', onAny); window.removeEventListener('keydown', onAny); };
+      },[]);
+
+      useEffect(()=>{ // keep floor/layer valid on switches
+        if(!currentLocation) return;
+        if(!currentLocation.floors.find(f=>f.id===floorId)) setFloorId(currentLocation.floors[0]?.id);
+        if(currentFloor && !currentFloor.layers.find(l=>l.id===activeLayerId)) setActiveLayerId(currentFloor.layers[0]?.id);
+        // Ensure networking exists
+        if(currentFloor && !currentFloor.stations.some(s=> (s.type||s.name)==="Networking Area")){
+          updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations.unshift(mkNetworkingStation(60,60)); return loc; });
+        }
+      },[currentLocation,floorId,currentFloor,activeLayerId]);
+
+      // ---------- State helpers
+      const updateCurrentLocation = (patchFn)=>{ setLocations(prev=> prev.map(l=> l.id!==currentLocation.id ? l : patchFn(deepClone(l)) )); };
+      const addLocation = ()=>{ const n = defaultLocation(); n.name = `Location ${locations.length+1}`; setLocations(prev=>[...prev,n]); setLocId(n.id); setFloorId(n.floors[0].id); setActiveLayerId(n.floors[0].layers[0].id); };
+      const addFloor = ()=>{ updateCurrentLocation(loc=>{ const f=defaultFloor(); f.name = `Floor ${loc.floors.length+1}`; loc.floors.push(f); return loc; }); };
+      const addLayer = ()=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.layers.push({id:uid(), name:`Layer ${f.layers.length+1}` , type:"generic", visible:true, cableRuns:[]}); return loc; }); };
+      const toggleLayerVisibility = (layerId)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.layers = f.layers.map(l=> l.id===layerId? {...l, visible:!l.visible}: l); return loc; }); };
+
+      // Stations
+      const addStation = (type)=>{ const s={id:uid(), name:type, type, color:"#2dd4bf", x:120, y:120, w:240, h:160, hardware:[], nickname:"", notes:"", dept:"", flags:{existing:false, replace:false}}; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations.push(s); return loc; }); setSelected({kind:"station", id:s.id}); };
+      const addTemplateStation = (tmpl)=>{ const s={id:uid(), name:tmpl.label, type:tmpl.label, color:tmpl.color, x:140, y:140, w:240, h:160, nickname:"", notes:"", dept:"", flags:{existing:false, replace:false}, hardware: tmpl.items.map(hid=>({hid, nickname:"", notes:"", flags:{existing:false, replace:false}}))}; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations.push(s); return loc; }); setSelected({kind:"station", id:s.id}); };
+      const updateStation = (id, patch)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations=f.stations.map(s=>s.id===id?{...s,...patch}:s); return loc; }); };
+      const removeStation = (id)=>{ const isNetworking = (currentFloor.stations.find(s=>s.id===id)?.type||"").toLowerCase().includes("network"); updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations=f.stations.filter(s=>s.id!==id); // ensure at least one networking area exists
+        if(!f.stations.some(s=> (s.type||s.name)==="Networking Area")){ f.stations.unshift(mkNetworkingStation(60,60)); }
+        return loc; }); if(selected.kind==="station"&&selected.id===id) setSelected({kind:null,id:null}); };
+
+      // Objects / Labels
+      const addObject = (objDef)=>{ const o={id:uid(), kind:"object", type:objDef.type, x:100, y:100, w:objDef.w, h:objDef.h, color:objDef.color, rot:0}; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.objects.push(o); return loc; }); setSelected({kind:"object", id:o.id}); };
+      const updateObject = (id, patch)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.objects=f.objects.map(o=>o.id===id?{...o,...patch}:o); return loc; }); };
+      const removeObject = (id)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.objects=f.objects.filter(o=>o.id!==id); return loc; }); if(selected.kind==="object"&&selected.id===id) setSelected({kind:null,id:null}); };
+      const addLabel = ()=>{ const l={id:uid(), kind:"label", text:"Label", x:150, y:150, rot:0}; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.labels.push(l); return loc; }); setSelected({kind:"label", id:l.id}); };
+      const updateLabel = (id, patch)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.labels=f.labels.map(o=>o.id===id?{...o,...patch}:o); return loc; }); };
+      const removeLabel = (id)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.labels=f.labels.filter(o=>o.id!==id); return loc; }); if(selected.kind==="label"&&selected.id===id) setSelected({kind:null,id:null}); };
+
+      // Hardware assignment per station
+      const addHardwareToStation = (stationId, hid)=>{ updateStation(stationId, { hardware: (currentFloor.stations.find(s=>s.id===stationId)?.hardware||[]).concat({hid, nickname:"", notes:"", flags:{existing:false, replace:false}}) }); };
+      const removeHardwareFromStation = (stationId, idx)=>{ const st = currentFloor.stations.find(s=>s.id===stationId); if(!st) return; const arr = st.hardware.slice(); arr.splice(idx,1); updateStation(stationId,{hardware:arr}); };
+      const updateHardwareAssoc = (stationId, idx, patch)=>{ const st = currentFloor.stations.find(s=>s.id===stationId); if(!st) return; const arr=st.hardware.slice(); arr[idx] = {...arr[idx], ...patch}; updateStation(stationId,{hardware:arr}); };
+
+      // Integrations per location
+      const toggleIntegration = (id)=>{ updateCurrentLocation(loc=>{ const set = new Set(loc.integrationIds); set.has(id)?set.delete(id):set.add(id); loc.integrationIds=[...set]; return loc; }); };
+
+      // Address & Travel
+      const setAddress = (addr)=>{ updateCurrentLocation(loc=>{ loc.address = addr; // heuristic auto-classification
+        if(!loc.travel.remote) loc.travel = {...loc.travel, ...classifyAddress(addr)}; return loc; }); };
+
+      function classifyAddress(addr){
+        const a = (addr||"").toLowerCase();
+        const isNantucket = a.includes("nantucket");
+        const isMV = a.includes("martha") || a.includes("oak bluffs") || a.includes("edgartown") || a.includes("vineyard");
+        const isCape = a.includes("cape cod") || ["barnstable","falmouth","provincetown","hyannis","sandwich","dennis","yarmouth","brewster","chatham","wellfleet","eastham","harwich"].some(t=>a.includes(t));
+        if(isNantucket||isMV) return {zone:"island"};
+        if(isCape) return {zone:"cape"};
+        const south = ["plymouth","kingston","duxbury","marshfield","scituate","hingham","quincy","weymouth","braintree","norwell","hanover","cohasset"]; if(south.some(t=>a.includes(t))) return {zone:"southShore"};
+        const ne = ["connecticut","rhode","new hampshire","vermont","maine","massachusetts"]; if(ne.some(t=>a.includes(t))) return {zone:"southernNE"};
+        return {zone:"outOfRegion"};
+      }
+
+      function computeTravelCost(loc){
+        if(loc.travel?.remote) return 0; // Remote removes all travel
+        const z = loc.travel?.zone || 'cape';
+        if(z==='cape') return travel.capeCod;
+        if(z==='southShore') return travel.southShore;
+        if(z==='southernNE') return travel.southernNE;
+        if(z==='ne100+') return travel.newEngland100Plus;
+        if(z==='island'){
+          let c = travel.islandBase;
+          if(loc.travel?.islandVehicle) c += travel.islandVehicle;
+          if(loc.travel?.lodging) c += travel.islandLodging;
+          return c;
+        }
+        if(z==='outOfRegion') return travel.outOfRegionBase;
+        return 0;
+      }
+
+      // Canvas interactions (dragging & resizing) — account for zoom
+      const dragStart = (e, kind, id)=>{
+        e.stopPropagation(); setSelected({kind,id});
+        const startX = e.clientX; const startY = e.clientY; const scale = zoom; let item;
+        if(kind==='station') item = currentFloor.stations.find(s=>s.id===id);
+        if(kind==='object') item = currentFloor.objects.find(o=>o.id===id);
+        if(kind==='label') item = currentFloor.labels.find(o=>o.id===id);
+        if(!item) return; const startPos = {x:item.x, y:item.y};
+        const onMove = (ev)=>{ const dx=(ev.clientX-startX)/scale; const dy=(ev.clientY-startY)/scale; const nx=Math.round((startPos.x+dx)/2)*2; const ny=Math.round((startPos.y+dy)/2)*2; if(kind==='station') updateStation(id,{x:clamp(nx,0,4000), y:clamp(ny,0,3000)}); if(kind==='object') updateObject(id,{x:clamp(nx,0,4000), y:clamp(ny,0,3000)}); if(kind==='label') updateLabel(id,{x:clamp(nx,0,4000), y:clamp(ny,0,3000)}); };
+        const onUp = ()=>{ window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+        window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+      };
+
+      const resizeStart = (e, id)=>{
+        e.stopPropagation(); const startX=e.clientX, startY=e.clientY; const scale=zoom; const st=currentFloor.stations.find(s=>s.id===id); if(!st) return; const start={w:st.w||240, h:st.h||160};
+        const onMove = (ev)=>{ const dx=(ev.clientX-startX)/scale; const dy=(ev.clientY-startY)/scale; const nw=Math.max(160, Math.round((start.w+dx)/2)*2); const nh=Math.max(120, Math.round((start.h+dy)/2)*2); updateStation(id,{w:nw,h:nh}); };
+        const onUp=()=>{ window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+        window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+      };
+
+      // Cable runs (active on 'network' layers)
+      const [pendingCableStart, setPendingCableStart] = useState(null); // {x,y}
+      const canvasClick = (e)=>{
+        if(mode!=="addCable" || activeLayer?.type!=="network") return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = (e.clientX - rect.left)/zoom; const y=(e.clientY - rect.top)/zoom;
+        if(!pendingCableStart){ setPendingCableStart({x,y}); }
+        else {
+          const start = pendingCableStart; const end = {x,y};
+          const dx=end.x-start.x, dy=end.y-start.y; const pxDist = Math.sqrt(dx*dx + dy*dy);
+          const ft = Math.max(1, +(pxDist / (currentFloor.scalePxPerFt||16)).toFixed(1));
+          const tti = Math.round(20 + (ft/25)*10); // base 20 min + 10 per 25ft
+          updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); const layer=f.layers.find(l=>l.id===activeLayer.id); layer.cableRuns.push({id:uid(), from:start, to:end, lengthFt:ft, ttiMin:tti}); return loc; });
+          setPendingCableStart(null); setMode("idle");
+        }
+      };
+      const removeCable = (layerId, runId)=>{ updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); const layer=f.layers.find(l=>l.id===layerId); layer.cableRuns=layer.cableRuns.filter(r=>r.id!==runId); return loc; }); };
+
+      const resetFloor = ()=>{ if(!confirm('Clear all stations/objects/labels/cables on this floor?')) return; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations=[mkNetworkingStation(60,60)]; f.objects=[]; f.labels=[]; f.layers=f.layers.map(l=>({...l, cableRuns:[]})); return loc; }); setSelected({kind:null,id:null}); };
+
+      // ---------- Estimation Engine (services only)
+      const hwById = useMemo(()=> Object.fromEntries(hardwareCatalog.map(h=>[h.id,h])), [hardwareCatalog]);
+      const stationOverheadPerStationMin = 15;
+
+      const estimate = useMemo(()=>{
+        if(!currentFloor) return {items:[], totals:{}};
+        const items = [];
+        let mins = {hardware:0, overhead:0, integrations:0, cabling:0};
+
+        // Stations & hardware
+        currentFloor.stations.forEach(st=>{
+          const stationExisting = !!st.flags?.existing && !st.flags?.replace;
+          if(!stationExisting){ mins.overhead += stationOverheadPerStationMin; items.push({type:'overhead', label:`Station overhead — ${st.name}`, minutes: stationOverheadPerStationMin, dollars:(stationOverheadPerStationMin/60)*rates.hourly}); }
+          st.hardware.forEach((assoc)=>{
+            const hw = hwById[assoc.hid]; if(!hw) return;
+            const assocExisting = !!assoc.flags?.existing && !assoc.flags?.replace;
+            if(stationExisting || assocExisting) return; // skip if existing
+            mins.hardware += hw.ttiMin; items.push({type:'hardware', label:`${hw.name} — ${st.name}`, minutes: hw.ttiMin, dollars: (hw.ttiMin/60)*rates.hourly});
+          });
+        });
+
+        // Integrations (per-location)
+        currentLocation.integrationIds.forEach(id=>{ const integ = integrations.find(i=>i.id===id); if(!integ) return; mins.integrations += integ.ttiMin; items.push({type:'integration', label:`Integration — ${integ.name}`, minutes: integ.ttiMin, dollars:(integ.ttiMin/60)*rates.hourly}); });
+
+        // Cable runs
+        currentFloor.layers.filter(l=>l.type==='network').forEach(layer=>{ layer.cableRuns.forEach(run=>{ mins.cabling += run.ttiMin; items.push({type:'cabling', label:`Cable run ${run.lengthFt} ft`, minutes: run.ttiMin, dollars:(run.ttiMin/60)*rates.hourly}); }); });
+
+        const totalMin = Math.round(Object.values(mins).reduce((a,b)=>a+b,0));
+        const installCost = (totalMin/60)*rates.hourly;
+        const travelCost = computeTravelCost(currentLocation);
+
+        const tierPct = supportTier/100; // 0..0.3
+        let supportMonthly = tierPct * installCost;
+        let supportAnnual = supportMonthly * 12 * 0.95; // 5% annual discount
+        const supportNow = supportPeriod==='monthly' ? supportMonthly : supportAnnual;
+
+        const combinedFirst = installCost + travelCost + supportNow;
+
+        return { items, mins, totalMin, installCost, travelCost, supportMonthly, supportAnnual, combinedFirst };
+      },[currentFloor, currentLocation, integrations, hardwareCatalog, rates, travel, supportTier, supportPeriod]);
+
+      const exportJSON = ()=>{
+        const payload={ generatedAt: new Date().toISOString(), locations, locId, floorId, hardwareCatalog, integrations, rates, travel, supportTier, supportPeriod, estimate };
+        const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`ccrc-quote-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+      };
+
+      // Sidebar open/close
+      const [leftOpen,setLeftOpen] = usePersistentState(LS_KEY+":leftOpen", true);
+      const [rightOpen,setRightOpen] = usePersistentState(LS_KEY+":rightOpen", true);
+
+      // ---------- Render
+      const gridSize = (currentFloor?.scalePxPerFt||16) * zoom; // px per 1ft square
+
+      return (
+        <div className="h-screen w-screen relative" onMouseDown={()=> setSelected({kind:null,id:null})}>
+
+          {/* MAP LAYER (full screen) */}
+          <div ref={canvasRef} className="absolute inset-0" onMouseDown={canvasClick}>
+            <div className="grid-overlay" style={{'--grid': `${gridSize}px`}}></div>
+            <div className="absolute inset-0 origin-top-left" style={{transform:`scale(${zoom})`}}>
+              {/* Objects */}
+              {currentFloor?.objects.map(o=> (
+                <div key={o.id}
+                     className={`absolute rounded-md shadow-soft ${selected.kind==='object'&&selected.id===o.id? 'ring-2 ring-emerald-400':''}`}
+                     onMouseDown={(e)=>dragStart(e,'object',o.id)}
+                     style={{left:o.x, top:o.y, width:o.w, height:o.h, background:o.color, '--rot':`${o.rot}deg`}}>
+                  <div className="absolute -top-6 left-0 flex gap-1">
+                    <button className="tag" title="Wider" onClick={(e)=>{e.stopPropagation(); updateObject(o.id,{w:Math.max(10,o.w+10)})}}>W+</button>
+                    <button className="tag" title="Narrower" onClick={(e)=>{e.stopPropagation(); updateObject(o.id,{w:Math.max(10,o.w-10)})}}>W-</button>
+                    <button className="tag" title="Taller" onClick={(e)=>{e.stopPropagation(); updateObject(o.id,{h:Math.max(10,o.h+10)})}}>H+</button>
+                    <button className="tag" title="Shorter" onClick={(e)=>{e.stopPropagation(); updateObject(o.id,{h:Math.max(10,o.h-10)})}}>H-</button>
+                    <button className="tag" title="Rotate" onClick={(e)=>{e.stopPropagation(); updateObject(o.id,{rot: (o.rot+15)%360})}}>⟳</button>
+                    <button className="tag text-red-300" title="Delete" onClick={(e)=>{e.stopPropagation(); removeObject(o.id)}}>✕</button>
+                  </div>
+                  <div className="text-[10px] text-white/80 px-1">{o.type}</div>
+                </div>
+              ))}
+
+              {/* Stations */}
+              {currentFloor?.stations.map(st=> (
+                <div key={st.id}
+                     className={`absolute select-none rounded-xl border ${selected.kind==='station'&&selected.id===st.id? 'border-emerald-400':'border-[var(--line)]'} bg-[rgba(20,20,24,.86)] shadow-soft`}
+                     style={{left:st.x, top:st.y, width:st.w||240, height:st.h||160}}
+                     onMouseDown={(e)=>dragStart(e,'station',st.id)}>
+
+                  {/* Half-on delete button */}
+                  <div className="action-rail" onMouseDown={(e)=>e.stopPropagation()}>
+                    <button className="a" title="Delete station" style={{marginLeft:'-6px'}} onClick={()=>removeStation(st.id)}>✕</button>
+
+                    {/* Color (first) */}
+                    <button className="a color" title="Choose color" onClick={()=>{
+                      const colors=['#14b8a6','#0ea5e9','#f59e0b','#fbbf24','#34d399','#a78bfa','#ef4444','#eab308','#22c55e','#06b6d4'];
+                      const idx = prompt('Pick color index (0-'+(colors.length-1)+'):\n'+colors.map((c,i)=>`${i}: ${c}`).join('\n'));
+                      const c = colors[Number(idx)||0]; if(c) updateStation(st.id,{color:c});
+                    }}><div style={{width:10,height:10,borderRadius:999,background:st.color}}></div></button>
+
+                    {/* Alphabetical: c d e n r t */}
+                    <button className="a" title="Copy station" onClick={()=>{
+                      const dupe = deepClone(st); dupe.id=uid(); dupe.x+=24; dupe.y+=24; updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.stations.push(dupe); return loc; });
+                    }}>c</button>
+                    <button className="a" title="Set department" onClick={()=>{
+                      const d = prompt('Department (e.g., FOH, BOH, Bar, Kitchen, Retail):', st.dept||''); if(d!=null) updateStation(st.id,{dept:d});
+                    }}>d</button>
+                    <button className={`a ${st.flags?.existing?'ring-1 ring-yellow-400':''}`} title="Mark as Existing (exclude from totals)" onClick={()=>{ updateStation(st.id,{flags:{...st.flags, existing:!st.flags?.existing}}); }}>e</button>
+                    <button className="a" title="Add notes" onClick={()=>{ const n = prompt('Notes:', st.notes||''); if(n!=null) updateStation(st.id,{notes:n}); }}>n</button>
+                    <button className={`a ${st.flags?.replace?'ring-1 ring-emerald-400':''}`} title="Mark as Replace (include in totals)" onClick={()=>{ updateStation(st.id,{flags:{...st.flags, replace:!st.flags?.replace}}); }}>r</button>
+                    <button className="a" title="Set nickname / title" onClick={()=>{ const n = prompt('Nickname / Title:', st.nickname||st.name||''); if(n!=null) updateStation(st.id,{nickname:n, name:n||st.name}); }}>t</button>
+                  </div>
+
+                  {/* Header */}
+                  <div className="px-3 py-1.5 border-b border-[var(--line)] flex items-center gap-2" style={{background:`linear-gradient(0deg, ${st.color}22, transparent)`}}>
+                    <div className="h-2.5 w-2.5 rounded-full" style={{background:st.color}}></div>
+                    <input className="bg-transparent text-sm font-medium outline-none w-40" value={st.name} onChange={e=>updateStation(st.id,{name:e.target.value})} />
+                    {st.dept && <span className="ml-auto text-[10px] text-zinc-300 px-2 py-0.5 rounded-full border border-[var(--line)]">{st.dept}</span>}
+                    {st.flags?.existing && !st.flags?.replace && <span className="text-[10px] text-yellow-300 ml-1">Existing</span>}
+                    {st.flags?.replace && <span className="text-[10px] text-emerald-300 ml-1">Replace</span>}
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-2 space-y-2 h-[calc(100%-40px)] overflow-auto">
+                    {/* Hardware list condensed */}
+                    {st.hardware.length>0 && (
+                      <div className="space-y-2">
+                        {st.hardware.map((assoc, idx)=>{
+                          const hw = hardwareCatalog.find(h=>h.id===assoc.hid); if(!hw) return null;
+                          return (
+                            <div key={idx} className="relative border border-[var(--line)] rounded-md p-1.5">
+                              <div className="text-[12px] flex items-center gap-2">
+                                <span className="text-zinc-200">{hw.name}</span>
+                                <span className="text-zinc-400">• {hw.ttiMin} min</span>
+                                {assoc.flags?.existing && !assoc.flags?.replace && <span className="ml-auto text-[10px] text-yellow-300">Existing</span>}
+                                {assoc.flags?.replace && <span className="ml-auto text-[10px] text-emerald-300">Replace</span>}
+                              </div>
+
+                              {/* Hardware mini action rail (top-right, leftward) */}
+                              <div className="hardware-rail" onMouseDown={(e)=>e.stopPropagation()}>
+                                <button className="a" title="Copy hardware" onClick={()=> updateHardwareAssoc(st.id, idx+1, st.hardware[idx])}>c</button>
+                                <button className="a" title="Set nickname" onClick={()=>{ const n=prompt('Nickname:', assoc.nickname||''); if(n!=null) updateHardwareAssoc(st.id, idx, {nickname:n}); }}>t</button>
+                                <button className={`a ${assoc.flags?.existing?'ring-1 ring-yellow-400':''}`} title="Mark as Existing (exclude)" onClick={()=> updateHardwareAssoc(st.id, idx, {flags:{...assoc.flags, existing:!assoc.flags?.existing}})}>e</button>
+                                <button className={`a ${assoc.flags?.replace?'ring-1 ring-emerald-400':''}`} title="Mark as Replace (include)" onClick={()=> updateHardwareAssoc(st.id, idx, {flags:{...assoc.flags, replace:!assoc.flags?.replace}})}>r</button>
+                                <button className="a" title="Remove" onClick={()=>removeHardwareFromStation(st.id, idx)}>✕</button>
+                              </div>
+
+                              {/* Optional notes (inline, very small) */}
+                              {(assoc.nickname||assoc.notes) && (
+                                <div className="mt-1 text-[11px] text-zinc-300"><span className="text-zinc-400">Nick:</span> {assoc.nickname||'-'}{assoc.notes? <span className="ml-2 text-zinc-400">Notes:</span>:null} {assoc.notes}</div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add hardware quick-add if selected station */}
+                    {selected.kind==='station' && selected.id===st.id && (
+                      <div className="flex flex-wrap gap-1">
+                        {hardwareCatalog.slice(0,8).map(hw=> (
+                          <button key={hw.id} className="text-[10px] btn" title={`Add ${hw.name}`} onClick={()=>addHardwareToStation(st.id, hw.id)}>{hw.name.split(' ')[0]}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="resizer" onMouseDown={(e)=>resizeStart(e, st.id)} title="Drag to resize"></div>
+                </div>
+              ))}
+
+              {/* Labels */}
+              {currentFloor?.labels.map(l=> (
+                <div key={l.id}
+                     className={`absolute rot select-none px-2 py-1 rounded border ${selected.kind==='label'&&selected.id===l.id?'border-emerald-400':'border-[var(--line)]'} bg-[rgba(25,25,30,.8)] text-xs`}
+                     style={{left:l.x, top:l.y, '--rot':`${l.rot}deg`}}
+                     onMouseDown={(e)=>dragStart(e,'label',l.id)}>
+                  <div className="flex items-center gap-2">
+                    <input className="bg-transparent outline-none text-[12px]" value={l.text} onChange={e=>updateLabel(l.id,{text:e.target.value})} />
+                    <button className="tag" title="Rotate" onClick={(e)=>{e.stopPropagation(); updateLabel(l.id,{rot:(l.rot+15)%360})}}>⟳</button>
+                    <button className="tag text-red-300" title="Delete" onClick={(e)=>{e.stopPropagation(); removeLabel(l.id)}}>✕</button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Cable runs (visible network layers) */}
+              {currentFloor?.layers.filter(l=>l.type==='network' && l.visible).flatMap(layer=> layer.cableRuns.map(run=>{
+                const dx=run.to.x-run.from.x, dy=run.to.y-run.from.y; const len=Math.sqrt(dx*dx+dy*dy); const angle = Math.atan2(dy,dx)*180/Math.PI;
+                return (
+                  <div key={run.id} className="absolute" style={{left:run.from.x, top:run.from.y, width:len, transform:`rotate(${angle}deg)`, transformOrigin:'0 0'}}>
+                    <div className="border-t-2 border-dotted border-white/80"></div>
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[11px] bg-black/60 px-2 py-0.5 rounded border border-[var(--line)]">{run.lengthFt} ft • {run.ttiMin} min</div>
+                    <button className="absolute -bottom-6 right-0 tag text-red-300" title="Remove cable" onClick={(e)=>{e.stopPropagation(); removeCable(currentFloor.layers.find(l=>l.type==='network' && l.visible)?.id, run.id)}}>remove</button>
+                  </div>
+                );
+              }))}
+            </div>
+
+            {/* Map overlays: scale + zoom */}
+            <div className="scale-chip">Grid: 1 ft squares • 1 ft = {Math.round(currentFloor?.scalePxPerFt||16)} px</div>
+            <div className="zoom-pad">
+              <button className="btn" title="Zoom in" onClick={()=>setZoom(z=>Math.min(2.5, +(z+0.1).toFixed(2)))}>＋</button>
+              <button className="btn" title="Zoom out" onClick={()=>setZoom(z=>Math.max(.4, +(z-0.1).toFixed(2)))}>－</button>
+              <button className="btn" title="Reset zoom" onClick={()=>setZoom(1)}>⟲</button>
+            </div>
+          </div>
+
+          {/* TOP TOOLBAR (floating, hides) */}
+          <header className={`absolute left-0 right-0 top-0 z-30 border-b border-[var(--line)] bg-[rgba(10,10,12,.88)] backdrop-blur fade-hide ${toolbarHidden? 'toolbar-hidden':''}`} onMouseEnter={()=>setToolbarHidden(false)}>
+            <div className="px-3 py-2 flex items-center gap-2">
+              <div className="text-[12px] text-zinc-300 mr-2">Quote Builder — POS + Networking</div>
+
+              {/* Locations */}
+              <select className="input h-8" value={locId} onChange={e=>setLocId(e.target.value)}>
+                {locations.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+              <button className="btn h-8" onClick={addLocation}>+ Location</button>
+              <input className="input h-8 w-80" placeholder="Location Address (auto detects zone)" value={currentLocation?.address||''} onChange={e=>setAddress(e.target.value)} />
+
+              {/* Floors */}
+              <select className="input h-8" value={currentFloor?.id||''} onChange={e=>setFloorId(e.target.value)}>
+                {currentLocation?.floors.map(f=> <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+              <button className="btn h-8" onClick={addFloor}>+ Floor/Area</button>
+
+              <div className="ml-auto flex items-center gap-2">
+                {/* Admin-only Pricing removed from UI per spec */}
+              </div>
+            </div>
+          </header>
+
+          {/* BOTTOM TOOLBAR (layers + export + reset + scale) */}
+          <div className="absolute left-0 right-0 bottom-0 z-30 border-t border-[var(--line)] bg-[rgba(10,10,12,.9)] backdrop-blur">
+            <div className="px-3 py-2 flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <select className="input h-8" value={activeLayer?.id||''} onChange={e=>setActiveLayerId(e.target.value)}>
+                  {currentFloor?.layers.map(l=> <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+                <button className="btn h-8" onClick={addLayer}>+ Layer</button>
+                <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                  {currentFloor?.layers.map(l=> (
+                    <label key={l.id} className="flex items-center gap-1"><input type="checkbox" checked={l.visible} onChange={()=>toggleLayerVisibility(l.id)} /><span>{l.name}</span></label>
+                  ))}
+                </div>
+                {activeLayer?.type==='network' && (
+                  <button className={`btn h-8 ${mode==='addCable'?'ring-1 ring-emerald-400':''}`} onClick={()=>setMode(mode==='addCable'?'idle':'addCable')}>{mode==='addCable'? 'Click start/end on map…' : '+ Add Cable Run'}</button>
+                )}
+                <label className="ml-2 text-[12px] text-zinc-300">Scale <input type="number" className="input h-8 w-24 ml-1" value={currentFloor?.scalePxPerFt||16} onChange={e=> updateCurrentLocation(loc=>{ const f=loc.floors.find(f=>f.id===currentFloor.id); f.scalePxPerFt=Math.max(4, Number(e.target.value)||16); return loc; })}/> px/ft</label>
+              </div>
+
+              <div className="ml-auto flex items-center gap-2">
+                <button className="btn h-8" onClick={exportJSON}>Export JSON</button>
+                <button className="btn h-8 text-red-300 border-red-700/50" onClick={resetFloor}>Reset Floor</button>
+              </div>
+            </div>
+          </div>
+
+          {/* LEFT SIDEBAR (overlay) */}
+          {leftOpen && (
+            <aside className="absolute left-0 top-0 bottom-0 z-20 w-[340px] p-3 border-r border-[var(--line)] bg-[rgba(10,10,12,.92)] backdrop-blur overflow-hidden">
+              <div className="h-full flex flex-col gap-3">
+                <Collapser side="left" onClick={()=>setLeftOpen(false)} />
+
+                <div className="panel p-3 h-[22%] overflow-hidden">
+                  <SectionTitle>Start with a Blank Station</SectionTitle>
+                  <div className="flex items-center gap-2">
+                    <button className="btn" onClick={()=>addStation('Blank Station')}>+ Blank Station</button>
+                    <select className="input w-full" onChange={(e)=>{ if(e.target.value) addStation(e.target.value); e.target.value=''; }} defaultValue="">
+                      <option value="" disabled>Common Station Names…</option>
+                      {["Networking Area","Server Station","Bar Station","Bar Service Station","Takeout Station","Host Station","Barista Station","Retail Station","Expo Station","Print Kitchen Station","KDS Kitchen Station","Full Kitchen Station","Access Point","Ethernet Switch"].map(n=> <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="panel p-3 h-[30%] overflow-hidden">
+                  <SectionTitle>Prebuilt Station Templates</SectionTitle>
+                  <div className="h-full overflow-auto scroll-slim space-y-2 pr-1">
+                    {PREBUILT_TEMPLATES.map(t=> (
+                      <button key={t.id} className="w-full text-left px-3 py-2 border border-[var(--line)] rounded-md hover:bg-[rgba(30,30,35,.7)]" onClick={()=>addTemplateStation(t)}>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium" style={{color:t.color}}>{t.label}</div>
+                          <div className="text-[11px] text-zinc-400">{t.ttiMin} min</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel p-3 h-[26%] overflow-hidden">
+                  <SectionTitle>Toast Hardware (install labor only)</SectionTitle>
+                  <div className="h-full overflow-auto scroll-slim space-y-2 pr-1">
+                    {hardwareCatalog.map(hw=> (
+                      <div key={hw.id} className="border border-[var(--line)] rounded-md px-2 py-1.5">
+                        <div className="flex items-center justify-between text-[12px]">
+                          <div>
+                            <div className="font-medium">{hw.name}</div>
+                            <div className="text-[11px] text-zinc-400">{hw.category} • TtI: {hw.ttiMin} min</div>
+                          </div>
+                        </div>
+                        {selected.kind==='station' && (
+                          <button className="mt-1 btn w-full text-[12px]" onClick={()=>addHardwareToStation(selected.id, hw.id)}>Add to: {currentFloor?.stations.find(s=>s.id===selected.id)?.name||"Station"}</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 h-[22%]">
+                  <div className="panel p-3 overflow-hidden">
+                    <SectionTitle>Objects — FOH</SectionTitle>
+                    <div className="h-full overflow-auto grid grid-cols-2 gap-2 pr-1">
+                      {FOH_OBJECTS.map(o=> (
+                        <button key={o.type} className="panel px-2 py-2 text-center text-xs hover:bg-[rgba(30,30,35,.7)]" onClick={()=>addObject(o)}>{o.type}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="panel p-3 overflow-hidden">
+                    <SectionTitle>Objects — BOH</SectionTitle>
+                    <div className="h-full overflow-auto grid grid-cols-2 gap-2 pr-1">
+                      {BOH_OBJECTS.map(o=> (
+                        <button key={o.type} className="panel px-2 py-2 text-center text-xs hover:bg-[rgba(30,30,35,.7)]" onClick={()=>addObject(o)}>{o.type}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="panel p-3 overflow-hidden col-span-2">
+                    <SectionTitle>Structure & Labels</SectionTitle>
+                    <div className="grid grid-cols-3 gap-2">
+                      {STRUCTURE_OBJECTS.map(o=> (
+                        <button key={o.type} className="panel px-2 py-2 text-center text-xs hover:bg-[rgba(30,30,35,.7)]" onClick={()=>addObject(o)}>{o.type}</button>
+                      ))}
+                      <button className="btn" onClick={addLabel}>+ Label</button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </aside>
+          )}
+          {!leftOpen && <button className="collapse-tab" style={{left:0}} title="Open left panel" onClick={()=>setLeftOpen(true)}>›</button>}
+
+          {/* RIGHT SIDEBAR (overlay) */}
+          {rightOpen && (
+            <aside className="absolute right-0 top-0 bottom-0 z-20 w-[360px] p-3 border-l border-[var(--line)] bg-[rgba(10,10,12,.92)] backdrop-blur overflow-hidden">
+              <div className="h-full flex flex-col gap-3">
+                <Collapser side="right" onClick={()=>setRightOpen(false)} />
+
+                <div className="panel p-3 h-[28%] overflow-hidden">
+                  <SectionTitle>Location Integrations</SectionTitle>
+                  <div className="h-full overflow-auto scroll-slim space-y-2 pr-1">
+                    {integrations.map(integ=> (
+                      <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-[var(--line)] rounded-md px-2 py-1.5">
+                        <div>
+                          <div className="font-medium">{integ.name}</div>
+                          <div className="text-[11px] text-zinc-400">TtI: {integ.ttiMin} min</div>
+                        </div>
+                        <input type="checkbox" checked={currentLocation.integrationIds.includes(integ.id)} onChange={()=>toggleIntegration(integ.id)} />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="panel p-3 h-[26%] overflow-hidden">
+                  <SectionTitle>Travel & Support Plan</SectionTitle>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <label className="text-[12px] text-zinc-400">Travel Zone
+                      <select className="input w-full mt-1" value={currentLocation.travel?.zone||'cape'} onChange={e=>updateCurrentLocation(loc=>{ loc.travel={...loc.travel, zone:e.target.value}; return loc; })} disabled={currentLocation.travel?.remote}>
+                        <option value="cape">Cape Cod</option>
+                        <option value="southShore">South Shore (≤60 mi)</option>
+                        <option value="southernNE">Southern New England (60–100 mi)</option>
+                        <option value="ne100+">New England >100 mi</option>
+                        <option value="island">Islands (MV/Nantucket)</option>
+                        <option value="outOfRegion">Outside New England</option>
+                      </select>
+                    </label>
+                    <div className="flex items-end gap-3">
+                      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={!!currentLocation.travel?.remote} onChange={e=>updateCurrentLocation(loc=>{ loc.travel={...loc.travel, remote:e.target.checked}; return loc; })}/> Remote Only</label>
+                      {currentLocation.travel?.zone==='island' && !currentLocation.travel?.remote && (
+                        <>
+                          <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={!!currentLocation.travel?.islandVehicle} onChange={e=>updateCurrentLocation(loc=>{ loc.travel={...loc.travel, islandVehicle:e.target.checked}; return loc; })}/> Vehicle ferry</label>
+                          <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={!!currentLocation.travel?.lodging} onChange={e=>updateCurrentLocation(loc=>{ loc.travel={...loc.travel, lodging:e.target.checked}; return loc; })}/> Lodging</label>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-[var(--line)]">
+                    <div className="text-[12px] text-zinc-400 mb-1">Support Plan Tiers</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[0,10,20,30].map(pct=> (
+                        <label key={pct} className={`panel py-1.5 text-center cursor-pointer ${ supportTier===pct ? 'ring-1 ring-emerald-400':''}`}
+                               onClick={()=>setSupportTier(pct)}>
+                          <div className="text-sm">{pct===0?'None': `Tier ${pct/10}`}</div>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-[12px]">
+                      <label className="flex items-center gap-2"><input type="radio" name="period" checked={supportPeriod==='monthly'} onChange={()=>setSupportPeriod('monthly')} /> Monthly</label>
+                      <label className="flex items-center gap-2"><input type="radio" name="period" checked={supportPeriod==='annual'} onChange={()=>setSupportPeriod('annual')} /> Annual (5% off)</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="panel p-3 h-[31%] overflow-hidden">
+                  <SectionTitle>Payment Summary</SectionTitle>
+                  <div className="space-y-2 text-sm max-h-[70%] overflow-auto pr-1">
+                    <SummaryRow label="Hardware labor" minutes={estimate.mins.hardware} rate={rates.hourly} dollars={(estimate.mins.hardware/60)*rates.hourly} />
+                    <SummaryRow label="Station overhead" minutes={estimate.mins.overhead} rate={rates.hourly} dollars={(estimate.mins.overhead/60)*rates.hourly} />
+                    <SummaryRow label="Integrations" minutes={estimate.mins.integrations} rate={rates.hourly} dollars={(estimate.mins.integrations/60)*rates.hourly} />
+                    <SummaryRow label="Networking & cabling" minutes={estimate.mins.cabling} rate={rates.hourly} dollars={(estimate.mins.cabling/60)*rates.hourly} />
+                    <SummaryRow label="Travel" dollars={estimate.travelCost} />
+                    <div className="h-px bg-[var(--line)] my-2" />
+                    <SummaryRow label="Install time" raw={`${minutesToHm(estimate.totalMin)}`} />
+                    <SummaryRow label="Install cost" dollars={estimate.installCost} />
+                    <SummaryRow label={`Support Plan (${supportPeriod==='monthly'?'Monthly':'Annual'})`} dollars={supportPeriod==='monthly'? estimate.supportMonthly : estimate.supportAnnual} />
+                    <div className="h-px bg-[var(--line)] my-2" />
+                    <SummaryRow label="Install + Travel" strong dollars={estimate.installCost + estimate.travelCost} />
+                    <SummaryRow label={`Install + Travel + First ${supportPeriod==='monthly'?'Month':'Year'}`} strong dollars={estimate.combinedFirst} />
+                  </div>
+                  <div className="pt-2 flex items-center gap-2">
+                    <button className="btn w-1/2">Save Build</button>
+                    <button className="btn w-1/2">Schedule Install</button>
+                  </div>
+                </div>
+
+              </div>
+            </aside>
+          )}
+          {!rightOpen && <button className="collapse-tab right" title="Open right panel" onClick={()=>setRightOpen(true)}>‹</button>}
+        </div>
+      );
+    }
+
+    // ---------- Subcomponents
+    function SectionTitle({children}){ return <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">{children}</h2> }
+
+    function SummaryRow({label, dollars, minutes, rate, raw, strong}){
+      return (
+        <div className={`flex items-center justify-between ${strong? 'text-base font-semibold':'text-sm'}`}>
+          <span className="text-zinc-300">{label}</span>
+          <span className="tabular-nums text-right">
+            {raw? raw : (
+              dollars!=null ? `$${Number(dollars||0).toFixed(2)}` : `${minutes||0} min${rate? ` @ $${rate}/hr`:''}`
+            )}
+          </span>
+        </div>
+      );
+    }
+
+    function Collapser({side, onClick}){
+      return (
+        <button className={`absolute ${side==='left'?'right-[-12px]':'left-[-12px]'} top-1/2 -translate-y-1/2 w-6 h-10 bg-[#0f0f13] border border-[var(--line)] rounded-${side==='left'?'r':'l'}-md flex items-center justify-center shadow-soft`} onClick={onClick} title={`Collapse ${side} panel`}>
+          {side==='left'? '‹' : '›'}
+        </button>
+      );
+    }
+
+    // Mount
+    ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+  </script>
+</body>
+</html>
