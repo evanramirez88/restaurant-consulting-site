@@ -6,6 +6,7 @@ import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 import QuoteBuilder from './pages/QuoteBuilder';
+import MenuBuilder from './pages/MenuBuilder';
 
 // Manual ScrollRestoration component for HashRouter
 const ScrollToTop = () => {
@@ -29,6 +30,7 @@ const App: React.FC = () => {
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/quote" element={<QuoteBuilder />} />
+          <Route path="/menu-builder" element={<MenuBuilder />} />
         </Routes>
       </Layout>
     </HashRouter>
