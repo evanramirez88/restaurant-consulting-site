@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Phone, Mail, MapPin, Clock, CheckCircle, AlertCircle, Loader2, Calendar, ArrowRight } from 'lucide-react';
 import { PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
 
 interface FormData {
@@ -324,6 +325,69 @@ const Contact: React.FC = () => {
           </div>
 
         </div>
+
+        {/* Schedule a Call Section */}
+        <div className="mt-12 bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* Info Side */}
+            <div className="bg-brand-dark p-8 flex flex-col justify-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-accent/20 text-brand-accent text-sm font-semibold mb-4 w-fit">
+                <Calendar className="w-4 h-4" />
+                Book Online
+              </div>
+              <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-4">
+                Prefer to Schedule a Call?
+              </h3>
+              <p className="text-slate-300 mb-6">
+                Skip the form and book a time directly on my calendar. Choose a slot that works around your service schedule.
+              </p>
+              <div className="space-y-3 text-slate-400 text-sm mb-6">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="text-brand-accent w-4 h-4" />
+                  <span>15-30 min discovery calls</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="text-brand-accent w-4 h-4" />
+                  <span>Evening availability</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="text-brand-accent w-4 h-4" />
+                  <span>Calendar confirmations</span>
+                </div>
+              </div>
+              <Link
+                to="/schedule"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-accent text-white rounded-lg font-bold hover:bg-orange-600 transition-colors w-fit"
+              >
+                View Full Calendar
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Compact Acuity Embed */}
+            <div className="p-4">
+              <iframe
+                src="https://app.acuityscheduling.com/schedule.php?owner=34242148"
+                title="Schedule Appointment"
+                width="100%"
+                height="450"
+                frameBorder="0"
+                className="w-full rounded-lg"
+              ></iframe>
+              <p className="text-center text-xs text-slate-400 mt-2">
+                <a
+                  href="https://app.acuityscheduling.com/schedule.php?owner=34242148"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-brand-accent"
+                >
+                  Open in new window
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

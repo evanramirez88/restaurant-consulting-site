@@ -39,8 +39,8 @@ const Home: React.FC = () => {
                 Get Your Free Quote
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-              <Link 
-                to="/contact" 
+              <Link
+                to="/schedule"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white/10 text-white border border-white/20 rounded-lg font-bold text-lg hover:bg-white/20 transition-all backdrop-blur-sm"
               >
                 Schedule Discovery Call
