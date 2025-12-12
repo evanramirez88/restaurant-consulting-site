@@ -61,6 +61,7 @@ export const NAVIGATION = [
   { name: 'About', path: '/about' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'Menu Builder', path: '/menu-builder' },
+  { name: 'Schedule', path: '/schedule' },
   { name: 'Contact', path: '/contact' },
 ];
 
