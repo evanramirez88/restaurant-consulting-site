@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, CheckCircle, AlertCircle, Loader2, Calendar, ArrowRight } from 'lucide-react';
 import { PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
+import { useSEO } from '../src/components/SEO';
 
 interface FormData {
   name: string;
@@ -19,6 +20,12 @@ interface FormStatus {
 }
 
 const Contact: React.FC = () => {
+  useSEO({
+    title: 'Contact Toast POS Consultant | Cape Cod Restaurant Tech',
+    description: 'Contact Cape Cod\'s trusted Toast POS consultant. Get help with POS installation, menu configuration, or restaurant networking. Call (508) 247-4936 today!',
+    canonical: 'https://ccrestaurantconsulting.com/#/contact',
+  });
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     businessName: '',
@@ -110,8 +117,8 @@ const Contact: React.FC = () => {
     <div className="bg-slate-50 min-h-screen">
       <div className="bg-brand-dark py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="font-serif text-4xl font-bold text-white mb-4">Get In Touch</h1>
-          <p className="text-slate-300">POS Down? Call immediately. For everything else, fill out the form.</p>
+          <h1 className="font-serif text-4xl font-bold text-white mb-4">Contact Your Cape Cod Toast POS Consultant</h1>
+          <p className="text-slate-300">POS down? Call <a href="tel:5082474936" className="text-brand-accent hover:underline">(508) 247-4936</a> immediately. For everything else, fill out the form below.</p>
         </div>
       </div>
 
@@ -120,7 +127,7 @@ const Contact: React.FC = () => {
 
           {/* Contact Info Card */}
           <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-brand-accent h-fit">
-            <h3 className="font-serif text-2xl font-bold text-brand-dark mb-6">Contact Info</h3>
+            <h2 className="font-serif text-2xl font-bold text-brand-dark mb-6">Contact Info</h2>
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
@@ -170,7 +177,7 @@ const Contact: React.FC = () => {
 
           {/* Form */}
           <div className="lg:col-span-2 bg-white p-8 rounded-xl shadow-lg">
-            <h3 className="font-serif text-2xl font-bold text-brand-dark mb-6">Send a Message</h3>
+            <h2 className="font-serif text-2xl font-bold text-brand-dark mb-6">Send a Message</h2>
 
             {/* Status Messages */}
             {status.type === 'success' && (
