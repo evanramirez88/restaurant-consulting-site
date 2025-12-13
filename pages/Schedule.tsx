@@ -2,12 +2,19 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, CheckCircle2, Phone } from 'lucide-react';
 import { PHONE_NUMBER } from '../constants';
+import { useSEO } from '../src/components/SEO';
 
 // Acuity Scheduling configuration
 const ACUITY_OWNER_ID = '34242148';
 const ACUITY_EMBED_URL = `https://app.acuityscheduling.com/schedule.php?owner=${ACUITY_OWNER_ID}`;
 
 const Schedule: React.FC = () => {
+  useSEO({
+    title: 'Schedule a Toast POS Consultation | Cape Cod Restaurant Tech',
+    description: 'Book a free consultation with Cape Cod\'s Toast POS expert. Discuss POS installation, menu configuration, or networking needs. Flexible scheduling available.',
+    canonical: 'https://ccrestaurantconsulting.com/#/schedule',
+  });
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Section */}
@@ -18,10 +25,10 @@ const Schedule: React.FC = () => {
             Book Online 24/7
           </div>
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-4">
-            Schedule a <span className="text-brand-accent">Consultation</span>
+            Schedule a <span className="text-brand-accent">Toast POS Consultation</span>
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl mx-auto">
-            Pick a time that works for you. Whether it's a quick discovery call or a full project consultation,
+            Book time with Cape Cod's Toast POS consultant. Whether it's a quick discovery call or a full project consultation,
             I'll make time to understand your restaurant's needs.
           </p>
         </div>

@@ -19,6 +19,7 @@ import {
   Save,
   Calendar
 } from 'lucide-react';
+import { useSEO } from '../src/components/SEO';
 import {
   AdvancedStation,
   FloorObject,
@@ -165,6 +166,12 @@ function classifyAddress(addr: string): Partial<TravelSettings> {
 // ============================================
 
 const QuoteBuilder: React.FC = () => {
+  useSEO({
+    title: 'Toast POS Quote Builder | Cape Cod Restaurant Consulting',
+    description: 'Build your custom Toast POS installation quote. Design floor plans, select hardware, and get instant pricing for your Cape Cod restaurant.',
+    canonical: 'https://ccrestaurantconsulting.com/#/quote',
+  });
+
   // Persistent state
   const [rates] = usePersistentState<Rates>(LS_KEY + ":rates", DEFAULT_RATES);
   const [travel] = usePersistentState<TravelRates>(LS_KEY + ":travel", DEFAULT_TRAVEL);

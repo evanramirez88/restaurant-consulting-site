@@ -1,0 +1,14 @@
+# Robots.txt for Cape Cod Restaurant Consulting
+# https://ccrestaurantconsulting.com
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://ccrestaurantconsulting.com/sitemap.xml
+
+# Crawl delay (optional - be polite to the server)
+Crawl-delay: 1
+
+# Block common bot paths (optional)
+Disallow: /api/

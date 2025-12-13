@@ -12,8 +12,14 @@ import {
   ArrowRight,
   Construction
 } from 'lucide-react';
+import { useSEO } from '../src/components/SEO';
 
 const MenuBuilder: React.FC = () => {
+  useSEO({
+    title: 'Restaurant Menu Builder (Coming Soon) | Cape Cod Consulting',
+    description: 'Design beautiful restaurant menus with our upcoming menu builder tool. Export to PDF or sync with Toast digital menu boards. Coming soon!',
+    canonical: 'https://ccrestaurantconsulting.com/#/menu-builder',
+  });
   const upcomingFeatures = [
     {
       icon: FileText,

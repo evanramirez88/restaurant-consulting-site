@@ -1,16 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ShieldCheck, Terminal, BookOpen, Clock, Activity } from 'lucide-react';
+import { useSEO } from '../src/components/SEO';
 
 const Services: React.FC = () => {
+  useSEO({
+    title: 'Toast POS Installation & Restaurant Services | Cape Cod',
+    description: 'Professional Toast POS installation, menu configuration, restaurant networking, and operations consulting in Cape Cod & SE Massachusetts. Get a free quote!',
+    canonical: 'https://ccrestaurantconsulting.com/#/services',
+  });
+
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
       {/* Header */}
       <div className="bg-brand-primary py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="font-serif text-4xl font-bold text-white mb-4">Services</h1>
+          <h1 className="font-serif text-4xl font-bold text-white mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
           <p className="text-slate-300 max-w-2xl mx-auto text-lg">
-            Operational expertise meets technical precision. I build systems that survive the Friday night rush.
+            Professional POS installation, menu configuration, and restaurant networking in Cape Cod. Systems built to survive the Friday night rush.
           </p>
         </div>
       </div>
@@ -74,23 +81,36 @@ const Services: React.FC = () => {
         
         <div className="mt-16 text-center">
           <div className="inline-block bg-brand-dark p-8 rounded-2xl shadow-xl">
-             <h2 className="text-2xl font-bold text-white mb-4">Not sure what you need?</h2>
-             <p className="text-slate-300 mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving.</p>
-             <Link to="/contact" className="inline-block bg-brand-accent text-white px-6 py-3 rounded-lg font-bold hover:bg-amber-600 transition-colors">
-               Schedule Call
-             </Link>
+             <h2 className="text-2xl font-bold text-white mb-4">Need a Custom POS Solution?</h2>
+             <p className="text-slate-300 mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
+             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+               <Link to="/schedule" className="inline-block bg-brand-accent text-white px-6 py-3 rounded-lg font-bold hover:bg-amber-600 transition-colors">
+                 Schedule a Call
+               </Link>
+               <Link to="/quote" className="inline-block bg-white/10 text-white border border-white/20 px-6 py-3 rounded-lg font-bold hover:bg-white/20 transition-colors">
+                 Build Your Quote
+               </Link>
+             </div>
           </div>
+        </div>
+
+        {/* Service Area Info */}
+        <div className="mt-12 text-center">
+          <p className="text-slate-600">
+            Serving restaurants in <strong>Cape Cod</strong>, <strong>South Shore</strong>, and <strong>Southeastern Massachusetts</strong>.{' '}
+            <Link to="/contact" className="text-brand-accent hover:underline">Contact us</Link> to discuss your project.
+          </p>
         </div>
       </div>
     </div>
   );
 };
 
-const ServiceSection: React.FC<{ 
-  title: string, 
-  description: string, 
-  features: string[], 
-  icon: React.ElementType 
+const ServiceSection: React.FC<{
+  title: string,
+  description: string,
+  features: string[],
+  icon: React.ElementType
 }> = ({ title, description, features, icon: Icon }) => (
   <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col md:flex-row">
     <div className="bg-slate-100 p-8 flex items-center justify-center md:w-1/4 border-r border-slate-200">
@@ -102,7 +122,7 @@ const ServiceSection: React.FC<{
       </div>
     </div>
     <div className="p-8 md:w-3/4">
-      <h3 className="font-serif text-2xl font-bold text-brand-dark mb-3">{title}</h3>
+      <h2 className="font-serif text-2xl font-bold text-brand-dark mb-3">{title}</h2>
       <p className="text-slate-600 mb-6 leading-relaxed text-lg">{description}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {features.map((feature, idx) => (
