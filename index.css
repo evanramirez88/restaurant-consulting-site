@@ -1,25 +1,336 @@
 @import "tailwindcss";
 
-/* Custom theme using CSS variables for Tailwind 4 */
+/* Google Fonts - Inter and Playfair Display */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* Custom theme using CSS variables for Tailwind 4 - Coastal Night Palette */
 @theme {
-  /* Brand Colors */
-  --color-brand-dark: #0f172a;
-  --color-brand-primary: #1e293b;
-  --color-brand-accent: #d97706;
-  --color-brand-light: #f8fafc;
+  /* Coastal Night Palette */
+  --color-ink: #0b0b0d;      /* Primary background */
+  --color-coal: #111114;     /* Card background */
+  --color-slate: #1b1b20;    /* Elevated surfaces */
+  --color-line: #2a2a31;     /* Borders */
+  --color-brass: #c9a962;    /* Premium accent */
+  --color-mint: #34d399;     /* Tech accent/CTAs */
+  --color-cream: #f5f3ef;    /* Primary text */
+  --color-mist: #9ca3af;     /* Secondary text */
+  --color-coral: #ef6c58;    /* Warning */
+  --color-bay: #0ea5e9;      /* Links */
+
+  /* Legacy brand colors (mapped to new palette for compatibility) */
+  --color-brand-dark: #0b0b0d;
+  --color-brand-primary: #111114;
+  --color-brand-accent: #c9a962;
+  --color-brand-light: #f5f3ef;
 
   /* Font Families */
   --font-serif: 'Playfair Display', serif;
   --font-sans: 'Inter', sans-serif;
 }
 
-/* Base styles */
+/* Base styles - Dark theme */
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-brand-light);
-  color: var(--color-brand-dark);
+  background-color: var(--color-ink);
+  color: var(--color-cream);
+  position: relative;
+}
+
+/* Grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
+}
+
+/* ========================
+   UTILITY CLASSES
+   ======================== */
+
+/* Brass accent utilities */
+.text-brass {
+  color: var(--color-brass);
+}
+
+.bg-brass {
+  background-color: var(--color-brass);
+}
+
+.border-brass {
+  border-color: var(--color-brass);
+}
+
+/* Mint glow animation for CTAs */
+.glow-mint {
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-mint:hover {
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+}
+
+@keyframes mint-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+  }
+}
+
+.glow-mint-pulse {
+  animation: mint-pulse 2s ease-in-out infinite;
+}
+
+/* Grain overlay utility class */
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Brass line - animated horizontal line */
+.brass-line {
+  position: relative;
+  display: inline-block;
+}
+
+.brass-line::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-brass), transparent);
+  transition: width 0.4s ease;
+}
+
+.brass-line:hover::after {
+  width: 100%;
+}
+
+/* Static brass line (no animation) */
+.brass-line-static::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--color-brass), transparent);
+}
+
+/* ========================
+   DARK THEME OVERRIDES
+   ======================== */
+
+/* Override default Tailwind classes for dark theme */
+.bg-white {
+  background-color: var(--color-coal) !important;
+}
+
+.bg-slate-50 {
+  background-color: var(--color-ink) !important;
+}
+
+.text-slate-900 {
+  color: var(--color-cream) !important;
+}
+
+.text-slate-600 {
+  color: var(--color-mist) !important;
+}
+
+.text-slate-500 {
+  color: var(--color-mist) !important;
+}
+
+.text-slate-400 {
+  color: var(--color-mist) !important;
+}
+
+.text-slate-300 {
+  color: var(--color-mist) !important;
+}
+
+.border-slate-200 {
+  border-color: var(--color-line) !important;
+}
+
+.border-slate-800 {
+  border-color: var(--color-line) !important;
+}
+
+/* Brand accent overrides */
+.text-brand-accent {
+  color: var(--color-brass) !important;
+}
+
+.bg-brand-accent {
+  background-color: var(--color-mint) !important;
+}
+
+.hover\:bg-brand-accent:hover {
+  background-color: var(--color-brass) !important;
+}
+
+.hover\:text-brand-accent:hover {
+  color: var(--color-brass) !important;
+}
+
+.bg-brand-dark {
+  background-color: var(--color-ink) !important;
+}
+
+/* Link styling */
+a:not([class]) {
+  color: var(--color-bay);
+  transition: color 0.2s ease;
+}
+
+a:not([class]):hover {
+  color: var(--color-brass);
+}
+
+/* Card styling */
+.card, [class*="rounded-lg"][class*="shadow"] {
+  background-color: var(--color-coal);
+  border: 1px solid var(--color-line);
+}
+
+/* Header/navbar glass effect for dark theme */
+.bg-white\/95 {
+  background-color: rgba(17, 17, 20, 0.95) !important;
+}
+
+/* Button primary styling */
+.bg-brand-accent {
+  background-color: var(--color-mint) !important;
+  color: var(--color-ink) !important;
+}
+
+.bg-brand-accent:hover {
+  background-color: #2ab584 !important;
+}
+
+/* Orange/coral warnings */
+.bg-orange-600, .hover\:bg-orange-600:hover {
+  background-color: var(--color-coral) !important;
+}
+
+.text-orange-100 {
+  color: rgba(239, 108, 88, 0.3) !important;
+}
+
+/* ========================
+   COMPONENT ENHANCEMENTS
+   ======================== */
+
+/* Hero section enhancements */
+.hero-gradient {
+  background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-coal) 50%, var(--color-slate) 100%);
+}
+
+/* Premium card style */
+.card-premium {
+  background: var(--color-coal);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.card-premium:hover {
+  border-color: var(--color-brass);
+  box-shadow: 0 8px 32px rgba(201, 169, 98, 0.1);
+}
+
+/* CTA button with mint glow */
+.cta-primary {
+  background-color: var(--color-mint);
+  color: var(--color-ink);
+  font-weight: 600;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+}
+
+.cta-primary:hover {
+  background-color: #2ab584;
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.4), 0 0 60px rgba(52, 211, 153, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Secondary button */
+.cta-secondary {
+  background-color: transparent;
+  color: var(--color-cream);
+  font-weight: 600;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-line);
+  transition: all 0.3s ease;
+}
+
+.cta-secondary:hover {
+  border-color: var(--color-brass);
+  color: var(--color-brass);
+}
+
+/* Elevated surface */
+.surface-elevated {
+  background-color: var(--color-slate);
+  border: 1px solid var(--color-line);
+}
+
+/* Section dividers */
+.section-divider {
+  border-top: 1px solid var(--color-line);
+}
+
+/* Text selection */
+::selection {
+  background-color: var(--color-brass);
+  color: var(--color-ink);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-mist);
 }

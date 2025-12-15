@@ -10,13 +10,13 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, description, link = '/services' }) => (
-  <div className="bg-slate-50 p-8 rounded-xl border border-slate-100 hover:shadow-xl hover:border-brand-accent/30 transition-all duration-300 group">
-    <div className="w-14 h-14 bg-brand-dark rounded-lg flex items-center justify-center mb-6 group-hover:bg-brand-accent transition-colors">
-      <Icon className="text-white w-7 h-7" />
+  <div className="bg-slate p-8 rounded-xl border border-line hover:shadow-xl hover:border-brass/30 transition-all duration-300 group card-premium">
+    <div className="w-14 h-14 bg-ink rounded-lg flex items-center justify-center mb-6 group-hover:bg-brass transition-colors border border-line">
+      <Icon className="text-mint w-7 h-7 group-hover:text-ink transition-colors" />
     </div>
-    <h3 className="font-serif text-xl font-bold text-brand-dark mb-3">{title}</h3>
-    <p className="text-slate-600 leading-relaxed text-sm mb-4">{description}</p>
-    <Link to={link} className="text-brand-accent font-semibold text-sm hover:underline inline-flex items-center">
+    <h3 className="font-serif text-xl font-bold text-cream mb-3">{title}</h3>
+    <p className="text-mist leading-relaxed text-sm mb-4">{description}</p>
+    <Link to={link} className="text-brass font-semibold text-sm hover:text-mint transition-colors inline-flex items-center brass-line">
       Learn More <ArrowRight className="w-3 h-3 ml-1" />
     </Link>
   </div>
