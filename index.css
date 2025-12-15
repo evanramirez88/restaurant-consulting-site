@@ -144,6 +144,62 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========================
+   NAVIGATION STYLES
+   ======================== */
+
+/* Navigation link with animated brass underline */
+.nav-link {
+  position: relative;
+  padding-bottom: 4px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-brass);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Active nav link - always show underline */
+.nav-link-active::after {
+  width: 100%;
+}
+
+/* Mobile navigation link styles */
+.mobile-nav-link {
+  position: relative;
+  display: block;
+}
+
+.mobile-nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-brass);
+  transition: width 0.3s ease;
+}
+
+.mobile-nav-link:hover::before,
+.mobile-nav-link.active::before {
+  width: 60px;
+}
+
+/* ========================
    DARK THEME OVERRIDES
    ======================== */
 
