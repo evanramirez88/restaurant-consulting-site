@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MonitorCheck, Wifi, ClipboardList, PhoneCall, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, MonitorCheck, Wifi, ClipboardList, PhoneCall, CheckCircle2, ChevronDown } from 'lucide-react';
 import ServiceCard from '../src/components/ServiceCard';
 import FeatureRow from '../src/components/FeatureRow';
 import { useSEO } from '../src/components/SEO';
@@ -14,62 +14,49 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section - extends behind transparent nav */}
-      <section className="relative bg-ink min-h-[700px] flex items-center overflow-hidden grain-overlay -mt-[72px] pt-[72px]">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-            alt="Toast POS terminal installation in restaurant kitchen"
-            className="w-full h-full object-cover opacity-15"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/95 to-transparent" />
+      {/* Hero Section - Full viewport with animated gradient */}
+      <section className="relative h-screen min-h-[600px] flex flex-col items-center justify-center overflow-hidden hero-animated-gradient hero-grain -mt-[72px]">
+        {/* Brass horizontal line - draws across on load */}
+        <div className="absolute top-1/3 left-0 right-0 z-10">
+          <div className="brass-draw-line mx-auto max-w-4xl" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brass/10 text-brass border border-brass/20 text-sm font-semibold mb-6">
-              <span className="w-2 h-2 rounded-full bg-brass animate-pulse"></span>
-              Toast POS Consultant in Cape Cod
-            </div>
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-cream leading-tight mb-6">
-              Cape Cod's Trusted <span className="text-brass">Toast POS Consultant</span> &amp; Restaurant Tech Expert
-            </h1>
-            <p className="text-lg text-mist mb-8 leading-relaxed">
-              Toast POS installation, networking, and operational consulting from someone who's worked every station in your kitchen. I don't just fix wires; I fix workflows.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/quote"
-                className="inline-flex items-center justify-center px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-all shadow-lg glow-mint"
-              >
-                Get Your Free Quote
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-              <Link
-                to="/schedule"
-                className="inline-flex items-center justify-center px-8 py-4 bg-cream/10 text-cream border border-line rounded-lg font-bold text-lg hover:bg-cream/20 hover:border-brass transition-all backdrop-blur-sm"
-              >
-                Schedule Discovery Call
-              </Link>
-            </div>
+        {/* Main content container */}
+        <div className="relative z-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Main headline */}
+          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-cream leading-tight mb-6 hero-fade-in hero-fade-in-delay-1">
+            Restaurant Technology.
+            <br />
+            <span className="text-cream">Expertly Implemented.</span>
+          </h1>
 
-            {/* Quick Trust Indicators */}
-            <div className="mt-12 flex flex-wrap gap-x-8 gap-y-4 text-mist text-sm font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-mint w-4 h-4" />
-                <span>50+ Restaurants Served</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-mint w-4 h-4" />
-                <span>Toast Certified Partner</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-mint w-4 h-4" />
-                <span>Same-Day Invoicing</span>
-              </div>
-            </div>
+          {/* Subheadline */}
+          <p className="text-lg md:text-xl text-mist mb-10 font-normal tracking-wide hero-fade-in hero-fade-in-delay-2">
+            Toast POS &bull; Networking &bull; Operations Consulting
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center hero-fade-in hero-fade-in-delay-3">
+            <Link
+              to="/quote"
+              className="inline-flex items-center justify-center px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-all shadow-lg glow-mint"
+            >
+              Build Your Quote
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+            <Link
+              to="/schedule"
+              className="inline-flex items-center justify-center px-8 py-4 bg-transparent text-cream border border-brass rounded-lg font-bold text-lg hover:bg-brass/10 hover:text-brass transition-all"
+            >
+              Schedule Consultation
+            </Link>
           </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 hero-fade-in hero-fade-in-delay-4">
+          <span className="text-mist text-sm font-medium tracking-wide">Scroll to explore</span>
+          <ChevronDown className="w-5 h-5 text-mist scroll-indicator" />
         </div>
       </section>
 
