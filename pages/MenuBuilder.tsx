@@ -54,32 +54,32 @@ const MenuBuilder: React.FC = () => {
   ];
 
   return (
-    <div className="bg-slate-100 min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-brand-dark text-white py-16">
+    <div className="bg-ink min-h-screen">
+      {/* Hero Section - extends behind transparent nav */}
+      <section className="bg-coal text-white py-16 pt-24 -mt-[72px] border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="p-4 bg-brand-accent/20 rounded-xl">
-              <UtensilsCrossed size={48} className="text-brand-accent" />
+            <div className="p-4 bg-brass/20 rounded-xl">
+              <UtensilsCrossed size={48} className="text-brass" />
             </div>
           </div>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-center mb-4">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-center mb-4 text-cream">
             Menu Builder
           </h1>
-          <p className="text-xl text-slate-300 text-center max-w-2xl mx-auto">
+          <p className="text-xl text-mist text-center max-w-2xl mx-auto">
             Design beautiful, professional menus for your restaurant with our upcoming menu design tool.
           </p>
         </div>
       </section>
 
       {/* Coming Soon Banner */}
-      <section className="bg-brand-accent/10 border-y border-brand-accent/30 py-8">
+      <section className="bg-brass/10 border-y border-brass/30 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-4">
-            <Construction size={32} className="text-brand-accent" />
+            <Construction size={32} className="text-brass" />
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-brand-dark">Coming Soon</h2>
-              <p className="text-slate-600">
+              <h2 className="text-2xl font-bold text-cream">Coming Soon</h2>
+              <p className="text-mist">
                 This powerful tool is currently under development. Check back soon!
               </p>
             </div>
@@ -88,12 +88,12 @@ const MenuBuilder: React.FC = () => {
       </section>
 
       {/* Features Preview */}
-      <section className="py-16">
+      <section className="py-16 bg-slate">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif text-3xl font-bold text-brand-dark text-center mb-4">
+          <h2 className="font-serif text-3xl font-bold text-cream text-center mb-4">
             What's Coming
           </h2>
-          <p className="text-slate-600 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-mist text-center mb-12 max-w-2xl mx-auto">
             The Menu Builder will help you create stunning menus that match your brand and delight your guests.
           </p>
 
@@ -101,15 +101,15 @@ const MenuBuilder: React.FC = () => {
             {upcomingFeatures.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                className="bg-coal rounded-xl p-6 border border-line hover:border-brass transition-colors"
               >
-                <div className="w-12 h-12 bg-brand-accent/10 rounded-xl flex items-center justify-center mb-4">
-                  <feature.icon size={24} className="text-brand-accent" />
+                <div className="w-12 h-12 bg-brass/10 rounded-xl flex items-center justify-center mb-4">
+                  <feature.icon size={24} className="text-brass" />
                 </div>
-                <h3 className="font-bold text-lg text-brand-dark mb-2">
+                <h3 className="font-bold text-lg text-cream mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-slate-600 text-sm">
+                <p className="text-mist text-sm">
                   {feature.description}
                 </p>
               </div>
@@ -119,9 +119,9 @@ const MenuBuilder: React.FC = () => {
       </section>
 
       {/* Preview Mockup */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-ink">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-slate-900 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-coal rounded-2xl p-8 shadow-2xl border border-line">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-3 h-3 rounded-full bg-red-500"></div>
               <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
@@ -222,24 +222,24 @@ const MenuBuilder: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-16 bg-coal border-t border-line">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-serif text-3xl font-bold text-brand-dark mb-4">
+          <h2 className="font-serif text-3xl font-bold text-cream mb-4">
             Ready to Get Started?
           </h2>
-          <p className="text-slate-600 mb-8">
+          <p className="text-mist mb-8">
             While Menu Builder is under development, check out our Quote Builder to plan your POS installation, or get in touch for a consultation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/quote"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-accent text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-mint text-ink rounded-lg font-semibold hover:bg-mint/90 transition-colors glow-mint"
             >
               Try Quote Builder <ArrowRight size={18} />
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-300 text-brand-dark rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate border border-line text-cream rounded-lg font-semibold hover:border-brass hover:text-brass transition-colors"
             >
               Contact Us
             </Link>
@@ -248,12 +248,12 @@ const MenuBuilder: React.FC = () => {
       </section>
 
       {/* Notify Me */}
-      <section className="py-16 bg-brand-dark text-white">
+      <section className="py-16 bg-slate text-cream border-t border-line">
         <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-serif text-2xl font-bold mb-4">
             Get Notified When It's Ready
           </h2>
-          <p className="text-slate-300 mb-6">
+          <p className="text-mist mb-6">
             Enter your email to be the first to know when Menu Builder launches.
           </p>
           <form
@@ -266,12 +266,12 @@ const MenuBuilder: React.FC = () => {
             <input
               type="email"
               placeholder="your@email.com"
-              className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="flex-1 px-4 py-3 rounded-lg bg-coal border border-line text-cream placeholder-mist focus:outline-none focus:ring-2 focus:ring-brass"
               required
             />
             <button
               type="submit"
-              className="px-6 py-3 bg-brand-accent text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+              className="px-6 py-3 bg-mint text-ink rounded-lg font-semibold hover:bg-mint/90 transition-colors glow-mint"
             >
               Notify Me
             </button>
