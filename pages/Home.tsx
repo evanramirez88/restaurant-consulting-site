@@ -1,6 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MonitorCheck, Wifi, ClipboardList, PhoneCall, CheckCircle2, ChevronDown } from 'lucide-react';
+import {
+  ArrowRight,
+  MonitorCheck,
+  Wifi,
+  ClipboardList,
+  PhoneCall,
+  CheckCircle2,
+  ChevronDown,
+  Monitor,
+  Users,
+  ChefHat,
+  Wine,
+  FileText
+} from 'lucide-react';
 import ServiceCard from '../src/components/ServiceCard';
 import FeatureRow from '../src/components/FeatureRow';
 import { useSEO } from '../src/components/SEO';
@@ -95,6 +108,94 @@ const Home: React.FC = () => {
               description="The 'Restaurant 911'. Tech, staffing, or crisis management available nights and weekends."
               link="/contact"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Comprehensive Services Grid */}
+      <section className="py-20 bg-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-cream mb-4">
+              Comprehensive Restaurant Solutions
+            </h2>
+            <p className="text-mist text-lg">
+              From technology to training, we've got you covered.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Toast POS Services */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <Monitor className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Toast POS Services</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Complete installation, configuration, and staff training for your restaurant's point-of-sale system.
+              </p>
+            </Link>
+
+            {/* Networking & IT */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <Wifi className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Networking & IT</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Enterprise-grade WiFi, network infrastructure, and IT solutions built for high-volume hospitality.
+              </p>
+            </Link>
+
+            {/* Front of House Operations */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <Users className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Front of House Operations</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Service flow optimization, table management, and guest experience enhancement strategies.
+              </p>
+            </Link>
+
+            {/* Kitchen & Back of House */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <ChefHat className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Kitchen & Back of House</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Line efficiency, prep workflows, and kitchen display system setup for seamless BOH operations.
+              </p>
+            </Link>
+
+            {/* Bar Programs */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <Wine className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Bar Programs</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Beverage menu development, inventory control, and bar workflow optimization for profitability.
+              </p>
+            </Link>
+
+            {/* Admin & SOPs */}
+            <Link
+              to="/services"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+            >
+              <FileText className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
+              <h3 className="font-serif text-xl font-bold text-cream mb-2">Admin & SOPs</h3>
+              <p className="text-mist text-sm leading-relaxed">
+                Standard operating procedures, documentation systems, and administrative workflow design.
+              </p>
+            </Link>
           </div>
         </div>
       </section>
