@@ -17,8 +17,8 @@ const Schedule: React.FC = () => {
 
   return (
     <div className="bg-ink min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-coal py-16 border-b border-line">
+      {/* Hero Section - extends behind transparent nav */}
+      <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brass/10 text-brass border border-brass/20 text-sm font-semibold mb-6">
             <Calendar className="w-4 h-4" />

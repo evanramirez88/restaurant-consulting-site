@@ -12,8 +12,8 @@ const Services: React.FC = () => {
 
   return (
     <div className="bg-ink min-h-screen pb-20">
-      {/* Header */}
-      <div className="bg-coal py-16 border-b border-line">
+      {/* Header - extends behind transparent nav */}
+      <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="font-serif text-4xl font-bold text-cream mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
           <p className="text-mist max-w-2xl mx-auto text-lg">

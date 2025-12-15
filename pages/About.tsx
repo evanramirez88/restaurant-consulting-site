@@ -12,9 +12,10 @@ const About: React.FC = () => {
 
   return (
     <div className="bg-ink">
-      <div className="bg-coal py-20 text-center border-b border-line">
+      {/* Header - extends behind transparent nav */}
+      <div className="bg-coal py-20 pt-28 text-center border-b border-line -mt-[72px]">
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-cream mb-4">Cape Cod's Restaurant Technology Consultant</h1>
-        <p className="text-mist text-lg max-w-2xl mx-auto">Toast POS expertise from someone who's worked every station in your kitchen.</p>
+        <p className="text-mist text-lg max-w-2xl mx-auto px-4">Toast POS expertise from someone who's worked every station in your kitchen.</p>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

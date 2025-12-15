@@ -14,8 +14,8 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative bg-ink min-h-[600px] flex items-center overflow-hidden grain-overlay">
+      {/* Hero Section - extends behind transparent nav */}
+      <section className="relative bg-ink min-h-[700px] flex items-center overflow-hidden grain-overlay -mt-[72px] pt-[72px]">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img
@@ -26,7 +26,7 @@ const Home: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/95 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brass/10 text-brass border border-brass/20 text-sm font-semibold mb-6">
               <span className="w-2 h-2 rounded-full bg-brass animate-pulse"></span>

@@ -115,7 +115,8 @@ const Contact: React.FC = () => {
 
   return (
     <div className="bg-ink min-h-screen">
-      <div className="bg-coal py-16 border-b border-line">
+      {/* Header - extends behind transparent nav */}
+      <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="font-serif text-4xl font-bold text-cream mb-4">Contact Your Cape Cod Toast POS Consultant</h1>
           <p className="text-mist">POS down? Call <a href="tel:5082474936" className="text-mint hover:text-brass transition-colors">(508) 247-4936</a> immediately. For everything else, fill out the form below.</p>

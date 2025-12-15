@@ -761,9 +761,9 @@ const QuoteBuilder: React.FC = () => {
   // ============================================
 
   return (
-    <div className="bg-slate-900 min-h-screen relative">
+    <div className="bg-slate-900 min-h-screen relative -mt-[72px] pt-[72px]">
       {/* Header Toolbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-700 bg-slate-900/95 backdrop-blur">
+      <header className="sticky top-[72px] z-30 border-b border-slate-700 bg-slate-900/95 backdrop-blur">
         <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
           <h1 className="text-white font-semibold text-sm mr-4">Quote Builder - POS + Networking</h1>
 
