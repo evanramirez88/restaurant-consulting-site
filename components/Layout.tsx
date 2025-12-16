@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Phone } from 'lucide-react';
 import { NAVIGATION, COMPANY_NAME, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
+import { initScrollAnimations } from '../src/hooks/useScrollAnimation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -38,6 +39,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
+
+  // Initialize scroll-triggered animations on route change
+  useEffect(() => {
+    // Small delay to ensure DOM is ready after route change
+    const timeoutId = setTimeout(() => {
+      initScrollAnimations();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-ink text-cream font-sans">
@@ -87,7 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Get Quote CTA Button */}
               <Link
                 to="/quote"
-                className="bg-mint text-ink px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 glow-mint hover:scale-[1.02]"
+                className="bg-mint text-ink px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 glow-pulse hover:scale-[1.02]"
               >
                 Get Quote
               </Link>
@@ -150,7 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 bg-mint text-ink px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 glow-mint"
+              className="mt-8 bg-mint text-ink px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 glow-pulse"
               style={{
                 transitionDelay: isMobileMenuOpen ? `${NAVIGATION.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',

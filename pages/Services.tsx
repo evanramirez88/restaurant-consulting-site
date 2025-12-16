@@ -14,8 +14,9 @@ const Services: React.FC = () => {
     <div className="bg-ink min-h-screen pb-20">
       {/* Header - extends behind transparent nav */}
       <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
           <h1 className="font-serif text-4xl font-bold text-cream mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
+          <div className="brass-line-draw short mb-6" />
           <p className="text-mist max-w-2xl mx-auto text-lg">
             Professional POS installation, menu configuration, and restaurant networking in Cape Cod. Systems built to survive the Friday night rush.
           </p>
@@ -79,12 +80,13 @@ const Services: React.FC = () => {
 
         </div>
 
-        <div className="mt-16 text-center">
-          <div className="inline-block bg-slate p-8 rounded-2xl shadow-xl border border-line">
+        <div className="mt-16 text-center animate-on-scroll">
+          <div className="inline-block bg-slate p-8 rounded-2xl shadow-xl border border-line card-hover-glow">
              <h2 className="text-2xl font-bold text-cream mb-4">Need a Custom POS Solution?</h2>
+             <div className="brass-line-draw short mb-4" />
              <p className="text-mist mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link to="/schedule" className="inline-block bg-mint text-ink px-6 py-3 rounded-lg font-bold hover:bg-mint/90 transition-colors glow-mint">
+               <Link to="/schedule" className="inline-block bg-mint text-ink px-6 py-3 rounded-lg font-bold hover:bg-mint/90 transition-colors glow-pulse">
                  Schedule a Call
                </Link>
                <Link to="/quote" className="inline-block bg-cream/10 text-cream border border-line px-6 py-3 rounded-lg font-bold hover:bg-cream/20 hover:border-brass transition-colors">
@@ -112,7 +114,7 @@ const ServiceSection: React.FC<{
   features: string[],
   icon: React.ElementType
 }> = ({ title, description, features, icon: Icon }) => (
-  <div className="bg-coal rounded-xl shadow-md border border-line overflow-hidden flex flex-col md:flex-row">
+  <div className="bg-coal rounded-xl shadow-md border border-line overflow-hidden flex flex-col md:flex-row animate-on-scroll card-hover-glow">
     <div className="bg-slate p-8 flex items-center justify-center md:w-1/4 border-r border-line">
       <div className="text-center">
         <div className="w-16 h-16 bg-ink rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 border border-line">

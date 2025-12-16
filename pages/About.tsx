@@ -14,12 +14,15 @@ const About: React.FC = () => {
     <div className="bg-ink">
       {/* Header - extends behind transparent nav */}
       <div className="bg-coal py-20 pt-28 text-center border-b border-line -mt-[72px]">
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-cream mb-4">Cape Cod's Restaurant Technology Consultant</h1>
-        <p className="text-mist text-lg max-w-2xl mx-auto px-4">Toast POS expertise from someone who's worked every station in your kitchen.</p>
+        <div className="animate-on-scroll">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-cream mb-4">Cape Cod's Restaurant Technology Consultant</h1>
+          <div className="brass-line-draw short mb-6" />
+          <p className="text-mist text-lg max-w-2xl mx-auto px-4">Toast POS expertise from someone who's worked every station in your kitchen.</p>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="prose prose-lg prose-invert mx-auto">
+        <div className="prose prose-lg prose-invert mx-auto animate-on-scroll">
           <p className="lead text-xl text-cream font-semibold mb-8">
             I didn't start in IT. I started in kitchens.
           </p>
@@ -67,15 +70,16 @@ const About: React.FC = () => {
 
       {/* CTA Section */}
       <div className="bg-slate py-16 border-t border-line">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+        <div className="max-w-4xl mx-auto px-4 text-center animate-on-scroll">
           <h2 className="font-serif text-2xl md:text-3xl font-bold text-cream mb-4">Ready to Work Together?</h2>
+          <div className="brass-line-draw short mb-6" />
           <p className="text-mist mb-8">
             Let's discuss your Toast POS installation, restaurant networking needs, or operational challenges.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/contact"
-              className="px-6 py-3 bg-mint text-ink rounded-lg font-bold hover:bg-mint/90 transition-colors glow-mint"
+              className="px-6 py-3 bg-mint text-ink rounded-lg font-bold hover:bg-mint/90 transition-colors glow-pulse"
             >
               Get in Touch
             </Link>

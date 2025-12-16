@@ -117,8 +117,9 @@ const Contact: React.FC = () => {
     <div className="bg-ink min-h-screen">
       {/* Header - extends behind transparent nav */}
       <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-7xl mx-auto px-4 text-center animate-on-scroll">
           <h1 className="font-serif text-4xl font-bold text-cream mb-4">Contact Your Cape Cod Toast POS Consultant</h1>
+          <div className="brass-line-draw short mb-6" />
           <p className="text-mist">POS down? Call <a href="tel:5082474936" className="text-mint hover:text-brass transition-colors">(508) 247-4936</a> immediately. For everything else, fill out the form below.</p>
         </div>
       </div>
@@ -127,7 +128,7 @@ const Contact: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Contact Info Card */}
-          <div className="bg-coal p-8 rounded-xl shadow-lg border-t-4 border-brass h-fit border-x border-b border-line">
+          <div className="bg-coal p-8 rounded-xl shadow-lg border-t-4 border-brass h-fit border-x border-b border-line animate-on-scroll slide-left card-hover-glow">
             <h2 className="font-serif text-2xl font-bold text-cream mb-6">Contact Info</h2>
 
             <div className="space-y-6">
@@ -177,7 +178,7 @@ const Contact: React.FC = () => {
           </div>
 
           {/* Form */}
-          <div className="lg:col-span-2 bg-coal p-8 rounded-xl shadow-lg border border-line">
+          <div className="lg:col-span-2 bg-coal p-8 rounded-xl shadow-lg border border-line animate-on-scroll slide-right">
             <h2 className="font-serif text-2xl font-bold text-cream mb-6">Send a Message</h2>
 
             {/* Status Messages */}
@@ -318,7 +319,7 @@ const Contact: React.FC = () => {
               <button
                 type="submit"
                 disabled={status.type === 'loading'}
-                className="w-full md:w-auto px-8 py-4 bg-mint text-ink font-bold rounded-lg hover:bg-mint/90 transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-mint"
+                className="w-full md:w-auto px-8 py-4 bg-mint text-ink font-bold rounded-lg hover:bg-mint/90 transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-pulse"
               >
                 {status.type === 'loading' ? (
                   <>
@@ -335,7 +336,7 @@ const Contact: React.FC = () => {
         </div>
 
         {/* Schedule a Call Section */}
-        <div className="mt-12 bg-coal rounded-xl shadow-lg overflow-hidden border border-line">
+        <div className="mt-12 bg-coal rounded-xl shadow-lg overflow-hidden border border-line animate-on-scroll card-hover-glow">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Info Side */}
             <div className="bg-slate p-8 flex flex-col justify-center border-r border-line">
@@ -365,7 +366,7 @@ const Contact: React.FC = () => {
               </div>
               <Link
                 to="/schedule"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-mint text-ink rounded-lg font-bold hover:bg-mint/90 transition-colors w-fit glow-mint"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-mint text-ink rounded-lg font-bold hover:bg-mint/90 transition-colors w-fit glow-pulse"
               >
                 View Full Calendar
                 <ArrowRight className="w-4 h-4" />

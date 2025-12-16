@@ -548,3 +548,280 @@ a:not([class]):hover {
     opacity: 1;
   }
 }
+
+/* ========================
+   SCROLL-TRIGGERED ANIMATIONS
+   ======================== */
+
+/* Base state for scroll-triggered elements */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children animation */
+.stagger-child {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.stagger-child.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Animation variants */
+.animate-on-scroll.fade-only {
+  transform: none;
+}
+
+.animate-on-scroll.slide-left {
+  transform: translateX(-30px);
+}
+
+.animate-on-scroll.slide-left.is-visible {
+  transform: translateX(0);
+}
+
+.animate-on-scroll.slide-right {
+  transform: translateX(30px);
+}
+
+.animate-on-scroll.slide-right.is-visible {
+  transform: translateX(0);
+}
+
+.animate-on-scroll.scale-in {
+  transform: scale(0.95);
+}
+
+.animate-on-scroll.scale-in.is-visible {
+  transform: scale(1);
+}
+
+/* ========================
+   BRASS LINE DRAW ANIMATION (Section Dividers)
+   ======================== */
+
+.brass-line-draw {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.brass-line-draw::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  transition: width 1s ease-out, left 1s ease-out;
+}
+
+.brass-line-draw.is-visible::after,
+.animate-on-scroll.is-visible .brass-line-draw::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Variant: Draw from left */
+.brass-line-draw.from-left::after {
+  left: 0;
+}
+
+/* Variant: Fixed width */
+.brass-line-draw.short {
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.brass-line-draw.short::after {
+  background: linear-gradient(90deg, transparent 0%, var(--color-brass) 50%, transparent 100%);
+}
+
+/* ========================
+   GLOW PULSE ANIMATION (CTA Buttons)
+   ======================== */
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.4), 0 0 50px rgba(52, 211, 153, 0.15);
+  }
+}
+
+.glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.glow-pulse:hover {
+  animation-play-state: paused;
+  box-shadow: 0 0 35px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+}
+
+/* Brass variant */
+@keyframes glow-pulse-brass {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(201, 169, 98, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(201, 169, 98, 0.35), 0 0 45px rgba(201, 169, 98, 0.1);
+  }
+}
+
+.glow-pulse-brass {
+  animation: glow-pulse-brass 3s ease-in-out infinite;
+}
+
+/* ========================
+   ENHANCED CARD HOVER EFFECTS
+   ======================== */
+
+.card-hover-lift {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s ease-out;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(201, 169, 98, 0.1);
+  border-color: var(--color-brass);
+}
+
+/* Card with glow effect on hover */
+.card-hover-glow {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s ease-out;
+}
+
+.card-hover-glow:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.25),
+    0 0 20px rgba(201, 169, 98, 0.15),
+    inset 0 1px 0 rgba(201, 169, 98, 0.1);
+  border-color: var(--color-brass);
+}
+
+/* ========================
+   PARALLAX BACKGROUND
+   ======================== */
+
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.parallax-bg {
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 100%;
+  height: 140%;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Subtle parallax decorative elements */
+.parallax-element {
+  position: absolute;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.parallax-orb {
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-brass) 0%, transparent 70%);
+  opacity: 0.03;
+  filter: blur(40px);
+}
+
+.parallax-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  opacity: 0.1;
+}
+
+/* ========================
+   PREFERS-REDUCED-MOTION
+   ======================== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations for users who prefer reduced motion */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Show scroll-animated elements immediately */
+  .animate-on-scroll,
+  .stagger-child {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Disable parallax */
+  .parallax-bg,
+  .parallax-element {
+    transform: none !important;
+  }
+
+  /* Disable glow pulse */
+  .glow-pulse,
+  .glow-pulse-brass,
+  .glow-mint-pulse {
+    animation: none !important;
+  }
+
+  /* Disable hero animations */
+  .hero-fade-in {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .brass-draw-line,
+  .brass-line-draw::after {
+    width: 100% !important;
+    animation: none !important;
+  }
+
+  .scroll-indicator {
+    animation: none !important;
+  }
+
+  /* Keep hover states but remove motion */
+  .card-hover-lift:hover,
+  .card-hover-glow:hover {
+    transform: none !important;
+  }
+}
+
+/* ========================
+   SMOOTH SCROLLING
+   ======================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
