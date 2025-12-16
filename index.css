@@ -450,3 +450,101 @@ a:not([class]):hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-mist);
 }
+
+/* ========================
+   MENU BUILDER COMING SOON ANIMATIONS
+   ======================== */
+
+/* Icon pulse animation - subtle glow effect */
+@keyframes icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.6;
+  }
+}
+
+.icon-pulse {
+  animation: icon-pulse 3s ease-in-out infinite;
+}
+
+/* Icon morph - container subtle rotation */
+@keyframes icon-morph {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(2deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+.icon-morph {
+  animation: icon-morph 6s ease-in-out infinite;
+}
+
+/* Icon fade animations for morphing between two icons */
+@keyframes icon-fade-cycle-out {
+  0%, 45% {
+    opacity: 1;
+  }
+  50%, 95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes icon-fade-cycle-in {
+  0%, 45% {
+    opacity: 0;
+  }
+  50%, 95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.icon-fade-out {
+  animation: icon-fade-cycle-out 6s ease-in-out infinite;
+}
+
+.icon-fade-in {
+  animation: icon-fade-cycle-in 6s ease-in-out infinite;
+}
+
+/* Brass underline for Coming Soon text */
+.brass-underline {
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  position: relative;
+}
+
+.brass-underline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  animation: brass-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes brass-shimmer {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
