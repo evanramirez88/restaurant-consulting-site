@@ -96,7 +96,7 @@ const QuoteTeaser: React.FC = () => {
         <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link
             to="/quote-builder"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-mint text-ink rounded-lg font-semibold hover:bg-mint/90 transition-all glow-mint"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-mint text-ink rounded-lg font-semibold hover:bg-mint/90 transition-all glow-pulse"
           >
             Launch Quote Builder
           </Link>

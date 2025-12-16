@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -19,16 +19,52 @@ import FeatureRow from '../src/components/FeatureRow';
 import { useSEO } from '../src/components/SEO';
 
 const Home: React.FC = () => {
+  const [parallaxOffset, setParallaxOffset] = useState(0);
+
   useSEO({
     title: 'Toast POS Consultant Cape Cod | R&G Consulting LLC',
     description: 'Expert Toast POS installation, menu configuration, and restaurant networking in Cape Cod, MA. Get your free quote today! Call (508) 247-4936.',
     canonical: 'https://ccrestaurantconsulting.com/',
   });
 
+  // Parallax effect for hero section
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    const handleScroll = () => {
+      const scrolled = window.scrollY;
+      if (scrolled < window.innerHeight) {
+        setParallaxOffset(scrolled * 0.3);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Full viewport with animated gradient */}
-      <section className="relative h-screen min-h-[600px] flex flex-col items-center justify-center overflow-hidden hero-animated-gradient hero-grain -mt-[72px]">
+      {/* Hero Section - Full viewport with animated gradient and parallax */}
+      <section className="relative h-screen min-h-[600px] flex flex-col items-center justify-center overflow-hidden hero-animated-gradient hero-grain -mt-[72px] parallax-container">
+        {/* Parallax decorative elements */}
+        <div
+          className="parallax-element parallax-orb w-[600px] h-[600px] -top-[200px] -right-[200px]"
+          style={{ transform: `translateY(${parallaxOffset * 0.5}px)` }}
+        />
+        <div
+          className="parallax-element parallax-orb w-[400px] h-[400px] bottom-[10%] -left-[100px]"
+          style={{ transform: `translateY(${parallaxOffset * 0.3}px)` }}
+        />
+        <div
+          className="parallax-element parallax-line w-[300px] top-[20%] left-[10%] rotate-12"
+          style={{ transform: `translateY(${parallaxOffset * 0.4}px) rotate(12deg)` }}
+        />
+        <div
+          className="parallax-element parallax-line w-[200px] bottom-[30%] right-[15%] -rotate-6"
+          style={{ transform: `translateY(${parallaxOffset * 0.2}px) rotate(-6deg)` }}
+        />
+
         {/* Brass horizontal line - draws across on load */}
         <div className="absolute top-1/3 left-0 right-0 z-10">
           <div className="brass-draw-line mx-auto max-w-4xl" />
@@ -52,7 +88,7 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center hero-fade-in hero-fade-in-delay-3">
             <Link
               to="/quote"
-              className="inline-flex items-center justify-center px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-all shadow-lg glow-mint"
+              className="inline-flex items-center justify-center px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-all shadow-lg glow-pulse"
             >
               Build Your Quote
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -76,14 +112,15 @@ const Home: React.FC = () => {
       {/* Services Grid */}
       <section className="py-20 bg-coal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-cream mb-4">Toast POS Installation &amp; Restaurant Technology Services</h2>
+            <div className="brass-line-draw short mb-6" />
             <p className="text-mist text-lg">
               From POS installation to restaurant networking, we deliver operational solutions—not just IT support. <Link to="/services" className="text-bay hover:text-brass transition-colors">View all services</Link>.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 animate-on-scroll">
             <ServiceCard
               icon={MonitorCheck}
               title="Toast POS Installation"
@@ -115,20 +152,21 @@ const Home: React.FC = () => {
       {/* Comprehensive Services Grid */}
       <section className="py-20 bg-ink">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-cream mb-4">
               Comprehensive Restaurant Solutions
             </h2>
+            <div className="brass-line-draw short mb-6" />
             <p className="text-mist text-lg">
               From technology to training, we've got you covered.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-on-scroll">
             {/* Toast POS Services */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <Monitor className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Toast POS Services</h3>
@@ -140,7 +178,7 @@ const Home: React.FC = () => {
             {/* Networking & IT */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <Wifi className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Networking & IT</h3>
@@ -152,7 +190,7 @@ const Home: React.FC = () => {
             {/* Front of House Operations */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <Users className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Front of House Operations</h3>
@@ -164,7 +202,7 @@ const Home: React.FC = () => {
             {/* Kitchen & Back of House */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <ChefHat className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Kitchen & Back of House</h3>
@@ -176,7 +214,7 @@ const Home: React.FC = () => {
             {/* Bar Programs */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <Wine className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Bar Programs</h3>
@@ -188,7 +226,7 @@ const Home: React.FC = () => {
             {/* Admin & SOPs */}
             <Link
               to="/services"
-              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-brass/20 hover:border-t-brass"
+              className="group relative bg-coal p-6 rounded-r-lg border-l-4 border-t-4 border-l-brass border-t-transparent card-hover-lift stagger-child"
             >
               <FileText className="w-8 h-8 text-brass mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-serif text-xl font-bold text-cream mb-2">Admin & SOPs</h3>
@@ -204,14 +242,14 @@ const Home: React.FC = () => {
       <section className="bg-slate py-20 border-y border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="lg:w-1/2">
+            <div className="lg:w-1/2 animate-on-scroll slide-left">
               <img
                 src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=985&q=80"
                 alt="Restaurant kitchen workflow during service - POS consultant understands operations"
                 className="rounded-2xl shadow-2xl border border-line"
               />
             </div>
-            <div className="lg:w-1/2">
+            <div className="lg:w-1/2 animate-on-scroll slide-right">
               <span className="text-brass font-bold uppercase tracking-wider mb-2 text-sm block brass-line-static">Why Choose R&amp;G Consulting</span>
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-cream mb-6">
                 Restaurant Technology Consulting From Someone Who's Worked the Line
@@ -245,7 +283,7 @@ const Home: React.FC = () => {
 
       {/* Social Proof Bar */}
       <section className="bg-ink py-12 text-center border-y border-line">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 animate-on-scroll">
            <p className="text-mist text-sm font-semibold uppercase tracking-widest mb-8">Trusted by Independent Restaurant Owners Across Cape Cod &amp; SE Massachusetts</p>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
              <div className="text-cream font-serif text-2xl font-bold flex items-center justify-center">The Portside</div>
@@ -259,15 +297,16 @@ const Home: React.FC = () => {
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-slate via-coal to-ink relative overflow-hidden grain-overlay">
         <div className="absolute inset-0 bg-brass/5"></div>
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-4 animate-on-scroll">
           <h2 className="font-serif text-3xl md:text-5xl font-bold text-cream mb-6">Ready for Professional POS Installation in Cape Cod?</h2>
+          <div className="brass-line-draw short mb-6" />
           <p className="text-mist text-lg mb-8 max-w-2xl mx-auto">
             Stop waiting on hold with support lines. Get a Toast POS specialist who understands your restaurant. <Link to="/contact" className="text-bay underline hover:text-brass transition-colors">Contact us today</Link>.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-colors shadow-lg glow-mint"
+              className="px-8 py-4 bg-mint text-ink rounded-lg font-bold text-lg hover:bg-mint/90 transition-colors shadow-lg glow-pulse"
             >
               Build Your Quote
             </Link>

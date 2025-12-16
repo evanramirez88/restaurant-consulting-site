@@ -10,7 +10,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, description, link = '/services' }) => (
-  <div className="bg-slate p-8 rounded-xl border border-line hover:shadow-xl hover:border-brass/30 transition-all duration-300 group card-premium">
+  <div className="bg-slate p-8 rounded-xl border border-line card-hover-lift group card-premium stagger-child">
     <div className="w-14 h-14 bg-ink rounded-lg flex items-center justify-center mb-6 group-hover:bg-brass transition-colors border border-line">
       <Icon className="text-mint w-7 h-7 group-hover:text-ink transition-colors" />
     </div>
