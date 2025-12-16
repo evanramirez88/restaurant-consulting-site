@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
+import QuoteTeaser from './pages/QuoteTeaser';
 import QuoteBuilder from './pages/QuoteBuilder';
 import MenuBuilder from './pages/MenuBuilder';
 import Schedule from './pages/Schedule';
@@ -30,7 +31,8 @@ const App: React.FC = () => {
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/quote" element={<QuoteBuilder />} />
+          <Route path="/quote" element={<QuoteTeaser />} />
+          <Route path="/quote-builder" element={<QuoteBuilder />} />
           <Route path="/menu-builder" element={<MenuBuilder />} />
           <Route path="/schedule" element={<Schedule />} />
         </Routes>
