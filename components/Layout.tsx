@@ -185,49 +185,78 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-coal text-mist py-12 border-t border-line">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-1">
-            <h3 className="font-serif text-cream text-lg font-bold mb-4">{COMPANY_NAME}</h3>
-            <p className="text-sm leading-relaxed mb-4">
-              Bridging the gap between restaurant operations and technology.
-              We speak both languages.
-            </p>
-            <div className="text-sm">
-              <p>Cape Cod, MA</p>
-              <p>Serving New England & Remote</p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-cream font-semibold mb-4">Services</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/services" className="hover:text-brass transition-colors">Toast POS Installation</Link></li>
-              <li><Link to="/services" className="hover:text-brass transition-colors">Network & IT Support</Link></li>
-              <li><Link to="/services" className="hover:text-brass transition-colors">Menu Costing & Engineering</Link></li>
-              <li><Link to="/services" className="hover:text-brass transition-colors">Emergency Support</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-cream font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/about" className="hover:text-brass transition-colors">About Evan</Link></li>
-              <li><Link to="/quote" className="hover:text-brass transition-colors">Quote Builder</Link></li>
-              <li><Link to="/contact" className="hover:text-brass transition-colors">Contact</Link></li>
-              <li><span className="text-line cursor-not-allowed">Partner Login</span></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-cream font-semibold mb-4">Contact</h4>
-            <div className="space-y-3 text-sm">
-              <a href={`tel:${PHONE_NUMBER}`} className="block hover:text-cream transition-colors">{PHONE_NUMBER}</a>
-              <a href={`mailto:${EMAIL_ADDRESS}`} className="block hover:text-cream transition-colors">{EMAIL_ADDRESS}</a>
-              <p className="text-mist/60 text-xs mt-4">
-                &copy; {new Date().getFullYear()} R&G Consulting LLC.<br/>All rights reserved.
+      <footer className="bg-slate border-t border-brass">
+        {/* Main Footer Content */}
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+            {/* Column 1: Brand */}
+            <div>
+              <h3 className="font-serif text-cream text-lg font-semibold mb-3">{COMPANY_NAME}</h3>
+              <p className="text-mist text-sm leading-relaxed mb-5">
+                Bridging the gap between restaurant operations and technology. We speak both languages.
               </p>
             </div>
+
+            {/* Column 2: Quick Links */}
+            <div>
+              <h4 className="text-cream font-semibold text-sm uppercase tracking-wider mb-4">Quick Links</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <Link to="/services" className="text-mist hover:text-cream transition-colors duration-200">
+                    Services
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/quote" className="text-mist hover:text-brass transition-colors duration-200">
+                    Quote Builder
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-mist hover:text-cream transition-colors duration-200">
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Contact Info */}
+            <div>
+              <h4 className="text-cream font-semibold text-sm uppercase tracking-wider mb-4">Contact</h4>
+              <div className="space-y-2.5 text-sm text-mist">
+                <a
+                  href={`tel:${PHONE_NUMBER}`}
+                  className="block hover:text-brass transition-colors duration-200"
+                >
+                  {PHONE_NUMBER}
+                </a>
+                <a
+                  href={`mailto:${EMAIL_ADDRESS}`}
+                  className="block hover:text-brass transition-colors duration-200"
+                >
+                  {EMAIL_ADDRESS}
+                </a>
+                <p className="pt-2 text-mist/80">
+                  Cape Cod, South Shore &amp; Greater Boston
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-line/50">
+          <div className="max-w-7xl mx-auto px-6 py-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs text-mist/70">
+              <p>
+                &copy; 2025 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
+              </p>
+              <p className="text-mist/60">
+                Serving Cape Cod, South Shore, and Greater Boston
+              </p>
+            </div>
+            <p className="text-[11px] text-mist/40 mt-3">
+              Built with ♥ and Claude Code
+            </p>
           </div>
         </div>
       </footer>
