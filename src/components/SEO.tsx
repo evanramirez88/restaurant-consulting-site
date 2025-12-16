@@ -12,6 +12,7 @@ interface SEOProps {
 export const SITE_NAME = 'Cape Cod Restaurant Consulting';
 export const SITE_URL = 'https://ccrestaurantconsulting.com';
 export const DEFAULT_OG_IMAGE = 'https://ccrestaurantconsulting.com/og-image.jpg';
+export const DEFAULT_OG_DESCRIPTION = 'Expert Toast POS implementation, networking, and operations consulting for restaurants across New England.';
 
 /**
  * Custom SEO hook for managing document meta tags

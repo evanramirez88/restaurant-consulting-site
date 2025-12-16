@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#0b0b0d" rx="4"/>
+
+  <!-- Interlocking CC Monogram -->
+  <!-- First C (left, brass) -->
+  <path
+    d="M13 8 C7 8, 4 12, 4 16 C4 20, 7 24, 13 24 C15 24, 16.5 23.5, 17.5 22.5"
+    fill="none"
+    stroke="#c9a962"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Second C (right, offset and interlocking, brass) -->
+  <path
+    d="M22 8 C16 8, 13 12, 13 16 C13 20, 16 24, 22 24 C24 24, 25.5 23.5, 26.5 22.5"
+    fill="none"
+    stroke="#c9a962"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+</svg>
