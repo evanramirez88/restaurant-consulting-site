@@ -31,7 +31,7 @@ const Contact: React.FC = () => {
     businessName: '',
     email: '',
     phone: '',
-    service: 'New POS Installation',
+    service: 'Toast POS',
     message: '',
     website: '' // Honeypot - should remain empty
   });
@@ -95,7 +95,7 @@ const Contact: React.FC = () => {
           businessName: '',
           email: '',
           phone: '',
-          service: 'New POS Installation',
+          service: 'Toast POS',
           message: '',
           website: ''
         });
@@ -228,7 +228,7 @@ const Contact: React.FC = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-slate border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                    className="w-full bg-coal border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                     placeholder="John Doe"
                     required
                   />
@@ -243,7 +243,7 @@ const Contact: React.FC = () => {
                     name="businessName"
                     value={formData.businessName}
                     onChange={handleChange}
-                    className="w-full bg-slate border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                    className="w-full bg-coal border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                     placeholder="The Seaside Grill"
                   />
                 </div>
@@ -260,7 +260,7 @@ const Contact: React.FC = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-slate border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                    className="w-full bg-coal border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                     placeholder="john@restaurant.com"
                     required
                   />
@@ -275,7 +275,7 @@ const Contact: React.FC = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full bg-slate border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                    className="w-full bg-coal border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                     placeholder="(508) 555-0123"
                   />
                 </div>
@@ -283,19 +283,18 @@ const Contact: React.FC = () => {
 
               <div>
                 <label htmlFor="service" className="block text-sm font-medium text-cream mb-2">
-                  Service Needed
+                  Service Interest
                 </label>
                 <select
                   id="service"
                   name="service"
                   value={formData.service}
                   onChange={handleChange}
-                  className="w-full bg-slate border border-line rounded-lg p-3 text-cream focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                  className="w-full bg-coal border border-line rounded-lg p-3 text-cream focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                 >
-                  <option value="New POS Installation">New POS Installation</option>
-                  <option value="Network/Wifi Issues">Network/Wifi Issues</option>
-                  <option value="Operations Consulting">Operations Consulting</option>
-                  <option value="Urgent Support">Urgent Support</option>
+                  <option value="Toast POS">Toast POS</option>
+                  <option value="Networking">Networking</option>
+                  <option value="Operations">Operations</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -310,7 +309,7 @@ const Contact: React.FC = () => {
                   rows={5}
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full bg-slate border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
+                  className="w-full bg-coal border border-line rounded-lg p-3 text-cream placeholder-mist focus:ring-2 focus:ring-brass focus:border-brass transition-colors"
                   placeholder="Describe your issue or project..."
                   required
                 ></textarea>
