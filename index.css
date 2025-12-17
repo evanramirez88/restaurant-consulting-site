@@ -3,36 +3,43 @@
 /* Google Fonts - Inter and Playfair Display */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* Custom theme using CSS variables for Tailwind 4 - Coastal Night Palette */
+/* Custom theme using CSS variables for Tailwind 4 - Olive Grove Palette */
 @theme {
-  /* Coastal Night Palette */
-  --color-ink: #0b0b0d;      /* Primary background */
-  --color-coal: #111114;     /* Card background */
-  --color-slate: #1b1b20;    /* Elevated surfaces */
-  --color-line: #2a2a31;     /* Borders */
-  --color-brass: #c9a962;    /* Premium accent */
-  --color-mint: #34d399;     /* Tech accent/CTAs */
-  --color-cream: #f5f3ef;    /* Primary text */
-  --color-mist: #9ca3af;     /* Secondary text */
-  --color-coral: #ef6c58;    /* Warning */
-  --color-bay: #0ea5e9;      /* Links */
+  /* Olive Grove Palette - Warm Mediterranean meets Cape Cod Coastal */
+  --color-grove-dark: #3D4A3F;    /* Deep olive — headers, nav, footer */
+  --color-grove: #4F5D51;         /* Primary sage */
+  --color-grove-light: #6B7A6C;   /* Hover states */
+  --color-grove-mist: #8A9B8C;    /* Secondary text on dark */
+  --color-parchment: #FAF8F5;     /* Page background */
+  --color-linen: #F3EFE8;         /* Section backgrounds */
+  --color-sand: #E8E2D9;          /* Cards, dividers */
+  --color-ink: #2C2F2D;           /* Body text */
+  --color-ink-light: #4A4D4B;     /* Secondary text */
+  --color-terracotta: #C4704E;    /* Primary CTA */
+  --color-terracotta-dark: #A85A3A; /* CTA hover */
+  --color-bay: #5B8A9A;           /* Links */
+  --color-toast-orange: #FF6A38;  /* Secondary CTA */
 
-  /* Legacy brand colors (mapped to new palette for compatibility) */
-  --color-brand-dark: #0b0b0d;
-  --color-brand-primary: #111114;
-  --color-brand-accent: #c9a962;
-  --color-brand-light: #f5f3ef;
+  /* Legacy mappings for compatibility */
+  --color-coal: #F3EFE8;          /* Maps to linen */
+  --color-slate: #3D4A3F;         /* Maps to grove-dark */
+  --color-line: #E8E2D9;          /* Maps to sand */
+  --color-brass: #4F5D51;         /* Maps to grove */
+  --color-mint: #C4704E;          /* Maps to terracotta */
+  --color-cream: #2C2F2D;         /* Maps to ink (inverted for light theme) */
+  --color-mist: #4A4D4B;          /* Maps to ink-light */
+  --color-coral: #FF6A38;         /* Maps to toast-orange */
 
   /* Font Families */
   --font-serif: 'Playfair Display', serif;
   --font-sans: 'Inter', sans-serif;
 }
 
-/* Base styles - Dark theme */
+/* Base styles - Olive Grove Light Theme */
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-ink);
-  color: var(--color-cream);
+  background-color: var(--color-parchment);
+  color: var(--color-ink);
   position: relative;
 }
 
@@ -58,40 +65,40 @@ h1, h2, h3, h4, h5, h6 {
    UTILITY CLASSES
    ======================== */
 
-/* Brass accent utilities */
-.text-brass {
-  color: var(--color-brass);
+/* Grove accent utilities */
+.text-grove {
+  color: var(--color-grove);
 }
 
-.bg-brass {
-  background-color: var(--color-brass);
+.bg-grove {
+  background-color: var(--color-grove);
 }
 
-.border-brass {
-  border-color: var(--color-brass);
+.border-grove {
+  border-color: var(--color-grove);
 }
 
-/* Mint glow animation for CTAs */
-.glow-mint {
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+/* Terracotta glow animation for CTAs */
+.glow-terracotta {
+  box-shadow: 0 0 20px rgba(196, 112, 78, 0.3);
   transition: box-shadow 0.3s ease;
 }
 
-.glow-mint:hover {
-  box-shadow: 0 0 30px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+.glow-terracotta:hover {
+  box-shadow: 0 0 30px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
 }
 
-@keyframes mint-pulse {
+@keyframes terracotta-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+    box-shadow: 0 0 20px rgba(196, 112, 78, 0.3);
   }
   50% {
-    box-shadow: 0 0 35px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+    box-shadow: 0 0 35px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
   }
 }
 
-.glow-mint-pulse {
-  animation: mint-pulse 2s ease-in-out infinite;
+.glow-terracotta-pulse {
+  animation: terracotta-pulse 2s ease-in-out infinite;
 }
 
 /* Grain overlay utility class */
@@ -112,7 +119,28 @@ h1, h2, h3, h4, h5, h6 {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* Brass line - animated horizontal line */
+/* Grove line - animated horizontal line */
+.grove-line {
+  position: relative;
+  display: inline-block;
+}
+
+.grove-line::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-grove), transparent);
+  transition: width 0.4s ease;
+}
+
+.grove-line:hover::after {
+  width: 100%;
+}
+
+/* Legacy brass-line class (maps to grove) */
 .brass-line {
   position: relative;
   display: inline-block;
@@ -125,7 +153,7 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-brass), transparent);
+  background: linear-gradient(90deg, var(--color-grove), transparent);
   transition: width 0.4s ease;
 }
 
@@ -133,76 +161,86 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
 }
 
-/* Static brass line (no animation) */
+/* Static grove line (no animation) */
+.grove-line-static::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--color-grove), transparent);
+}
+
+/* Legacy brass-line-static class (maps to grove) */
 .brass-line-static::after {
   content: '';
   display: block;
   width: 60px;
   height: 2px;
   margin-top: 12px;
-  background: linear-gradient(90deg, var(--color-brass), transparent);
+  background: linear-gradient(90deg, var(--color-grove), transparent);
 }
 
 /* ========================
-   DARK THEME OVERRIDES
+   OLIVE GROVE THEME OVERRIDES
    ======================== */
 
-/* Override default Tailwind classes for dark theme */
+/* Override default Tailwind classes for light theme */
 .bg-white {
-  background-color: var(--color-coal) !important;
+  background-color: var(--color-parchment) !important;
 }
 
 .bg-slate-50 {
-  background-color: var(--color-ink) !important;
+  background-color: var(--color-linen) !important;
 }
 
 .text-slate-900 {
-  color: var(--color-cream) !important;
+  color: var(--color-ink) !important;
 }
 
 .text-slate-600 {
-  color: var(--color-mist) !important;
+  color: var(--color-ink-light) !important;
 }
 
 .text-slate-500 {
-  color: var(--color-mist) !important;
+  color: var(--color-ink-light) !important;
 }
 
 .text-slate-400 {
-  color: var(--color-mist) !important;
+  color: var(--color-ink-light) !important;
 }
 
 .text-slate-300 {
-  color: var(--color-mist) !important;
+  color: var(--color-ink-light) !important;
 }
 
 .border-slate-200 {
-  border-color: var(--color-line) !important;
+  border-color: var(--color-sand) !important;
 }
 
 .border-slate-800 {
-  border-color: var(--color-line) !important;
+  border-color: var(--color-sand) !important;
 }
 
 /* Brand accent overrides */
 .text-brand-accent {
-  color: var(--color-brass) !important;
+  color: var(--color-grove) !important;
 }
 
 .bg-brand-accent {
-  background-color: var(--color-mint) !important;
+  background-color: var(--color-terracotta) !important;
 }
 
 .hover\:bg-brand-accent:hover {
-  background-color: var(--color-brass) !important;
+  background-color: var(--color-terracotta-dark) !important;
 }
 
 .hover\:text-brand-accent:hover {
-  color: var(--color-brass) !important;
+  color: var(--color-grove) !important;
 }
 
 .bg-brand-dark {
-  background-color: var(--color-ink) !important;
+  background-color: var(--color-grove-dark) !important;
 }
 
 /* Link styling */
@@ -212,37 +250,39 @@ a:not([class]) {
 }
 
 a:not([class]):hover {
-  color: var(--color-brass);
+  color: var(--color-bay);
+  text-decoration: underline;
 }
 
-/* Card styling */
+/* Card styling - parchment bg, sand border, grove left border */
 .card, [class*="rounded-lg"][class*="shadow"] {
-  background-color: var(--color-coal);
-  border: 1px solid var(--color-line);
+  background-color: var(--color-parchment);
+  border: 1px solid var(--color-sand);
+  border-left: 4px solid var(--color-grove);
 }
 
-/* Header/navbar glass effect for dark theme */
+/* Header/navbar glass effect for grove theme */
 .bg-white\/95 {
-  background-color: rgba(17, 17, 20, 0.95) !important;
+  background-color: rgba(61, 74, 63, 0.95) !important;
 }
 
 /* Button primary styling */
 .bg-brand-accent {
-  background-color: var(--color-mint) !important;
-  color: var(--color-ink) !important;
+  background-color: var(--color-terracotta) !important;
+  color: var(--color-parchment) !important;
 }
 
 .bg-brand-accent:hover {
-  background-color: #2ab584 !important;
+  background-color: var(--color-terracotta-dark) !important;
 }
 
-/* Orange/coral warnings */
+/* Orange/toast warnings */
 .bg-orange-600, .hover\:bg-orange-600:hover {
-  background-color: var(--color-coral) !important;
+  background-color: var(--color-toast-orange) !important;
 }
 
 .text-orange-100 {
-  color: rgba(239, 108, 88, 0.3) !important;
+  color: rgba(255, 106, 56, 0.3) !important;
 }
 
 /* ========================
@@ -269,17 +309,17 @@ a:not([class]):hover {
 .hero-animated-gradient {
   background: linear-gradient(
     135deg,
-    var(--color-ink) 0%,
-    #12121a 25%,
-    #0d0d12 50%,
-    #15151d 75%,
-    var(--color-ink) 100%
+    var(--color-grove-dark) 0%,
+    #3D4A3F 25%,
+    #4F5D51 50%,
+    #3D4A3F 75%,
+    var(--color-grove-dark) 100%
   );
   background-size: 400% 400%;
   animation: gradient-shift 20s ease infinite;
 }
 
-/* Brass line draw animation on load */
+/* Grove line draw animation on load */
 @keyframes draw-line {
   0% {
     width: 0;
@@ -297,7 +337,7 @@ a:not([class]):hover {
 .brass-draw-line {
   position: relative;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-grove-mist), transparent);
   width: 0;
   animation: draw-line 1.5s ease-out 0.3s forwards;
 }
@@ -365,71 +405,72 @@ a:not([class]):hover {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* Legacy hero gradient */
+/* Legacy hero gradient - now olive grove colors */
 .hero-gradient {
-  background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-coal) 50%, var(--color-slate) 100%);
+  background: linear-gradient(135deg, var(--color-grove-dark) 0%, var(--color-grove) 50%, var(--color-grove-light) 100%);
 }
 
-/* Premium card style */
+/* Premium card style - parchment bg, sand border, grove left accent */
 .card-premium {
-  background: var(--color-coal);
-  border: 1px solid var(--color-line);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  background: var(--color-parchment);
+  border: 1px solid var(--color-sand);
+  border-left: 4px solid var(--color-grove);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 .card-premium:hover {
-  border-color: var(--color-brass);
-  box-shadow: 0 8px 32px rgba(201, 169, 98, 0.1);
+  border-color: var(--color-grove);
+  box-shadow: 0 8px 32px rgba(79, 93, 81, 0.15);
 }
 
-/* CTA button with mint glow */
+/* CTA button with terracotta styling */
 .cta-primary {
-  background-color: var(--color-mint);
-  color: var(--color-ink);
+  background-color: var(--color-terracotta);
+  color: var(--color-parchment);
   font-weight: 600;
   padding: 1rem 2rem;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+  box-shadow: 0 0 20px rgba(196, 112, 78, 0.2);
 }
 
 .cta-primary:hover {
-  background-color: #2ab584;
-  box-shadow: 0 0 30px rgba(52, 211, 153, 0.4), 0 0 60px rgba(52, 211, 153, 0.15);
+  background-color: var(--color-terracotta-dark);
+  box-shadow: 0 0 30px rgba(196, 112, 78, 0.4), 0 0 60px rgba(196, 112, 78, 0.15);
   transform: translateY(-1px);
 }
 
 /* Secondary button */
 .cta-secondary {
   background-color: transparent;
-  color: var(--color-cream);
+  color: var(--color-ink);
   font-weight: 600;
   padding: 1rem 2rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--color-sand);
   transition: all 0.3s ease;
 }
 
 .cta-secondary:hover {
-  border-color: var(--color-brass);
-  color: var(--color-brass);
+  border-color: var(--color-grove);
+  color: var(--color-grove);
 }
 
 /* Elevated surface */
 .surface-elevated {
-  background-color: var(--color-slate);
-  border: 1px solid var(--color-line);
+  background-color: var(--color-linen);
+  border: 1px solid var(--color-sand);
 }
 
 /* Section dividers */
 .section-divider {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-sand);
 }
 
 /* Text selection */
 ::selection {
-  background-color: var(--color-brass);
-  color: var(--color-ink);
+  background-color: var(--color-grove);
+  color: var(--color-parchment);
 }
 
 /* Scrollbar styling */
@@ -439,16 +480,16 @@ a:not([class]):hover {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-ink);
+  background: var(--color-linen);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-line);
+  background: var(--color-sand);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-mist);
+  background: var(--color-grove-mist);
 }
 
 /* ========================
@@ -521,11 +562,11 @@ a:not([class]):hover {
   animation: icon-fade-cycle-in 6s ease-in-out infinite;
 }
 
-/* Brass underline for Coming Soon text */
+/* Grove underline for Coming Soon text */
 .brass-underline {
   width: 120px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
   position: relative;
 }
 
@@ -536,11 +577,11 @@ a:not([class]):hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
-  animation: brass-shimmer 3s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
+  animation: grove-shimmer 3s ease-in-out infinite;
 }
 
-@keyframes brass-shimmer {
+@keyframes grove-shimmer {
   0%, 100% {
     opacity: 0.5;
   }
@@ -607,7 +648,7 @@ a:not([class]):hover {
 }
 
 /* ========================
-   BRASS LINE DRAW ANIMATION (Section Dividers)
+   GROVE LINE DRAW ANIMATION (Section Dividers)
    ======================== */
 
 .brass-line-draw {
@@ -625,7 +666,7 @@ a:not([class]):hover {
   left: 50%;
   width: 0;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
   transition: width 1s ease-out, left 1s ease-out;
 }
 
@@ -647,7 +688,7 @@ a:not([class]):hover {
 }
 
 .brass-line-draw.short::after {
-  background: linear-gradient(90deg, transparent 0%, var(--color-brass) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--color-grove) 50%, transparent 100%);
 }
 
 /* ========================
@@ -656,10 +697,10 @@ a:not([class]):hover {
 
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
+    box-shadow: 0 0 20px rgba(196, 112, 78, 0.25);
   }
   50% {
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.4), 0 0 50px rgba(52, 211, 153, 0.15);
+    box-shadow: 0 0 30px rgba(196, 112, 78, 0.4), 0 0 50px rgba(196, 112, 78, 0.15);
   }
 }
 
@@ -669,21 +710,21 @@ a:not([class]):hover {
 
 .glow-pulse:hover {
   animation-play-state: paused;
-  box-shadow: 0 0 35px rgba(52, 211, 153, 0.5), 0 0 60px rgba(52, 211, 153, 0.2);
+  box-shadow: 0 0 35px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
 }
 
-/* Brass variant */
-@keyframes glow-pulse-brass {
+/* Grove variant */
+@keyframes glow-pulse-grove {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(201, 169, 98, 0.2);
+    box-shadow: 0 0 15px rgba(79, 93, 81, 0.2);
   }
   50% {
-    box-shadow: 0 0 25px rgba(201, 169, 98, 0.35), 0 0 45px rgba(201, 169, 98, 0.1);
+    box-shadow: 0 0 25px rgba(79, 93, 81, 0.35), 0 0 45px rgba(79, 93, 81, 0.1);
   }
 }
 
 .glow-pulse-brass {
-  animation: glow-pulse-brass 3s ease-in-out infinite;
+  animation: glow-pulse-grove 3s ease-in-out infinite;
 }
 
 /* ========================
@@ -696,8 +737,8 @@ a:not([class]):hover {
 
 .card-hover-lift:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(201, 169, 98, 0.1);
-  border-color: var(--color-brass);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 30px rgba(79, 93, 81, 0.1);
+  border-color: var(--color-grove);
 }
 
 /* Card with glow effect on hover */
@@ -708,10 +749,10 @@ a:not([class]):hover {
 .card-hover-glow:hover {
   transform: translateY(-6px);
   box-shadow:
-    0 15px 35px rgba(0, 0, 0, 0.25),
-    0 0 20px rgba(201, 169, 98, 0.15),
-    inset 0 1px 0 rgba(201, 169, 98, 0.1);
-  border-color: var(--color-brass);
+    0 15px 35px rgba(0, 0, 0, 0.08),
+    0 0 20px rgba(79, 93, 81, 0.15),
+    inset 0 1px 0 rgba(79, 93, 81, 0.1);
+  border-color: var(--color-grove);
 }
 
 /* ========================
@@ -742,15 +783,15 @@ a:not([class]):hover {
 
 .parallax-orb {
   border-radius: 50%;
-  background: radial-gradient(circle, var(--color-brass) 0%, transparent 70%);
-  opacity: 0.03;
+  background: radial-gradient(circle, var(--color-grove-mist) 0%, transparent 70%);
+  opacity: 0.15;
   filter: blur(40px);
 }
 
 .parallax-line {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-brass), transparent);
-  opacity: 0.1;
+  background: linear-gradient(90deg, transparent, var(--color-grove-mist), transparent);
+  opacity: 0.3;
 }
 
 /* ========================
