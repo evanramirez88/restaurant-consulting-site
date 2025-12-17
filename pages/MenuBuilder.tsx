@@ -27,7 +27,7 @@ const MenuBuilder: React.FC = () => {
   };
 
   return (
-    <div className="bg-ink min-h-screen flex items-center justify-center relative hero-grain">
+    <div className="bg-grove-dark min-h-screen flex items-center justify-center relative hero-grain">
       {/* Full page centered content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center relative z-10">
 
@@ -36,17 +36,17 @@ const MenuBuilder: React.FC = () => {
           <div className="inline-flex items-center justify-center">
             <div className="relative">
               {/* Pulsing background */}
-              <div className="absolute inset-0 bg-brass/20 rounded-2xl icon-pulse"></div>
+              <div className="absolute inset-0 bg-grove/20 rounded-2xl icon-pulse"></div>
               {/* Icon container with morphing effect */}
-              <div className="relative p-6 bg-brass/10 rounded-2xl border border-brass/30 icon-morph">
+              <div className="relative p-6 bg-grove/10 rounded-2xl border border-grove-mist/30 icon-morph">
                 <div className="relative w-16 h-16 flex items-center justify-center">
                   <UtensilsCrossed
                     size={40}
-                    className="text-brass absolute icon-fade-out"
+                    className="text-grove-mist absolute icon-fade-out"
                   />
                   <Monitor
                     size={40}
-                    className="text-brass absolute icon-fade-in"
+                    className="text-grove-mist absolute icon-fade-in"
                   />
                 </div>
               </div>
@@ -55,13 +55,13 @@ const MenuBuilder: React.FC = () => {
         </div>
 
         {/* Headline */}
-        <h1 className="hero-fade-in hero-fade-in-delay-1 font-serif text-5xl md:text-6xl font-bold text-brass mb-4">
+        <h1 className="hero-fade-in hero-fade-in-delay-1 font-serif text-5xl md:text-6xl font-bold text-terracotta mb-4">
           Menu Builder
         </h1>
 
-        {/* Subheadline with brass underline */}
+        {/* Subheadline with grove underline */}
         <div className="hero-fade-in hero-fade-in-delay-1 mb-10">
-          <p className="text-2xl md:text-3xl text-cream font-serif mb-3">
+          <p className="text-2xl md:text-3xl text-parchment font-serif mb-3">
             Coming Soon
           </p>
           <div className="brass-underline mx-auto"></div>
@@ -69,15 +69,15 @@ const MenuBuilder: React.FC = () => {
 
         {/* Body Copy - exact text as specified */}
         <div className="hero-fade-in hero-fade-in-delay-2 mb-12 text-left max-w-xl mx-auto">
-          <p className="text-xl text-brass font-semibold mb-4">
+          <p className="text-xl text-parchment font-semibold mb-4">
             Migrate Your Menu to Toast — Intelligently
           </p>
-          <p className="text-mist leading-relaxed mb-4">
+          <p className="text-grove-mist leading-relaxed mb-4">
             Converting from another POS? We're building an AI-powered tool that transforms
             your existing menu data into Toast-ready format. Upload exports, images, or
             PDFs — get a complete menu structure ready for implementation.
           </p>
-          <p className="text-mist italic">
+          <p className="text-grove-mist italic">
             Currently in development.
           </p>
         </div>
@@ -92,21 +92,21 @@ const MenuBuilder: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="flex-1 px-5 py-4 rounded-lg bg-coal border border-line text-cream placeholder-mist focus:outline-none focus:ring-2 focus:ring-brass focus:border-transparent transition-all"
+                  className="flex-1 px-5 py-4 rounded-lg bg-linen border border-sand text-ink placeholder-ink-light focus:outline-none focus:ring-2 focus:ring-grove focus:border-transparent transition-all"
                   required
                 />
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-8 py-4 bg-mint text-ink rounded-lg font-semibold hover:bg-mint/90 transition-all glow-mint disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold hover:bg-terracotta-dark transition-all glow-terracotta disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {isSubmitting ? 'Joining...' : 'Join the Waitlist'}
                 </button>
               </div>
             </form>
           ) : (
-            <div className="max-w-md mx-auto p-6 bg-coal/50 rounded-lg border border-mint/30">
-              <p className="text-mint font-medium">
+            <div className="max-w-md mx-auto p-6 bg-grove/50 rounded-lg border border-grove-mist/30">
+              <p className="text-parchment font-medium">
                 Thanks! We'll notify you when Menu Builder launches.
               </p>
             </div>
@@ -117,7 +117,7 @@ const MenuBuilder: React.FC = () => {
         <div className="hero-fade-in hero-fade-in-delay-4">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-mist hover:text-brass transition-colors"
+            className="inline-flex items-center gap-2 text-grove-mist hover:text-parchment transition-colors"
           >
             <ArrowLeft size={18} />
             Back to Home

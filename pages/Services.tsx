@@ -11,13 +11,13 @@ const Services: React.FC = () => {
   });
 
   return (
-    <div className="bg-ink min-h-screen pb-20">
+    <div className="bg-parchment min-h-screen pb-20">
       {/* Header - extends behind transparent nav */}
-      <div className="bg-coal py-16 pt-24 border-b border-line -mt-[72px]">
+      <div className="bg-grove-dark py-16 pt-24 border-b border-grove -mt-[72px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
-          <h1 className="font-serif text-4xl font-bold text-cream mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
+          <h1 className="font-serif text-4xl font-bold text-parchment mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
           <div className="brass-line-draw short mb-6" />
-          <p className="text-mist max-w-2xl mx-auto text-lg">
+          <p className="text-grove-mist max-w-2xl mx-auto text-lg">
             Professional POS installation, menu configuration, and restaurant networking in Cape Cod. Systems built to survive the Friday night rush.
           </p>
         </div>
@@ -81,15 +81,15 @@ const Services: React.FC = () => {
         </div>
 
         <div className="mt-16 text-center animate-on-scroll">
-          <div className="inline-block bg-slate p-8 rounded-2xl shadow-xl border border-line card-hover-glow">
-             <h2 className="text-2xl font-bold text-cream mb-4">Need a Custom POS Solution?</h2>
+          <div className="inline-block bg-linen p-8 rounded-2xl shadow-xl border border-sand border-l-4 border-l-grove card-hover-glow">
+             <h2 className="text-2xl font-bold text-ink mb-4">Need a Custom POS Solution?</h2>
              <div className="brass-line-draw short mb-4" />
-             <p className="text-mist mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
+             <p className="text-ink-light mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link to="/schedule" className="inline-block bg-mint text-ink px-6 py-3 rounded-lg font-bold hover:bg-mint/90 transition-colors glow-pulse">
+               <Link to="/schedule" className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-bold hover:bg-terracotta-dark transition-colors glow-pulse">
                  Schedule a Call
                </Link>
-               <Link to="/quote" className="inline-block bg-cream/10 text-cream border border-line px-6 py-3 rounded-lg font-bold hover:bg-cream/20 hover:border-brass transition-colors">
+               <Link to="/quote" className="inline-block bg-parchment text-ink border border-sand px-6 py-3 rounded-lg font-bold hover:bg-linen hover:border-grove transition-colors">
                  Build Your Quote
                </Link>
              </div>
@@ -98,9 +98,9 @@ const Services: React.FC = () => {
 
         {/* Service Area Info */}
         <div className="mt-12 text-center">
-          <p className="text-mist">
-            Serving restaurants in <strong className="text-cream">Cape Cod</strong>, <strong className="text-cream">South Shore</strong>, and <strong className="text-cream">Southeastern Massachusetts</strong>.{' '}
-            <Link to="/contact" className="text-bay hover:text-brass transition-colors">Contact us</Link> to discuss your project.
+          <p className="text-ink-light">
+            Serving restaurants in <strong className="text-ink">Cape Cod</strong>, <strong className="text-ink">South Shore</strong>, and <strong className="text-ink">Southeastern Massachusetts</strong>.{' '}
+            <Link to="/contact" className="text-bay hover:underline transition-colors">Contact us</Link> to discuss your project.
           </p>
         </div>
       </div>
@@ -114,23 +114,23 @@ const ServiceSection: React.FC<{
   features: string[],
   icon: React.ElementType
 }> = ({ title, description, features, icon: Icon }) => (
-  <div className="bg-coal rounded-xl shadow-md border border-line overflow-hidden flex flex-col md:flex-row animate-on-scroll card-hover-glow">
-    <div className="bg-slate p-8 flex items-center justify-center md:w-1/4 border-r border-line">
+  <div className="bg-parchment rounded-xl shadow-md border border-sand border-l-4 border-l-grove overflow-hidden flex flex-col md:flex-row animate-on-scroll card-hover-glow">
+    <div className="bg-linen p-8 flex items-center justify-center md:w-1/4 border-r border-sand">
       <div className="text-center">
-        <div className="w-16 h-16 bg-ink rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 border border-line">
-          <Icon className="w-8 h-8 text-mint" />
+        <div className="w-16 h-16 bg-grove rounded-full flex items-center justify-center shadow-sm mx-auto mb-4">
+          <Icon className="w-8 h-8 text-parchment" />
         </div>
-        <div className="font-bold text-mist uppercase tracking-widest text-xs">Core Service</div>
+        <div className="font-bold text-ink-light uppercase tracking-widest text-xs">Core Service</div>
       </div>
     </div>
     <div className="p-8 md:w-3/4">
-      <h2 className="font-serif text-2xl font-bold text-cream mb-3">{title}</h2>
-      <p className="text-mist mb-6 leading-relaxed text-lg">{description}</p>
+      <h2 className="font-serif text-2xl font-bold text-ink mb-3">{title}</h2>
+      <p className="text-ink-light mb-6 leading-relaxed text-lg">{description}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {features.map((feature, idx) => (
           <div key={idx} className="flex items-start gap-3">
-            <Check className="w-5 h-5 text-mint flex-shrink-0 mt-0.5" />
-            <span className="text-cream/80 text-sm font-medium">{feature}</span>
+            <Check className="w-5 h-5 text-grove flex-shrink-0 mt-0.5" />
+            <span className="text-ink/80 text-sm font-medium">{feature}</span>
           </div>
         ))}
       </div>

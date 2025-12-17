@@ -51,20 +51,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-ink text-cream font-sans">
+    <div className="min-h-screen flex flex-col bg-parchment text-ink font-sans">
       {/* Floating Navigation */}
       <header
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ease-out ${
           isScrolled
-            ? 'bg-coal/95 backdrop-blur-md border-b border-line shadow-lg'
-            : 'bg-transparent border-b border-transparent'
+            ? 'bg-grove-dark/95 backdrop-blur-md border-b border-grove shadow-lg'
+            : 'bg-grove-dark border-b border-transparent'
         }`}
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <span className="font-sans font-medium text-[14px] text-cream tracking-wide">
+              <span className="font-sans font-medium text-[14px] text-parchment tracking-wide">
                 Cape Cod Restaurant Consulting
               </span>
             </Link>
@@ -77,16 +77,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   to={item.path}
                   className={({ isActive }) =>
                     `relative text-[14px] font-medium transition-colors duration-200 py-1 ${
-                      isActive ? 'text-brass' : 'text-mist hover:text-cream'
+                      isActive ? 'text-parchment' : 'text-grove-mist hover:text-parchment'
                     } group`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       {item.name}
-                      {/* Brass underline - static for active, animated on hover */}
+                      {/* Underline - static for active, animated on hover */}
                       <span
-                        className={`absolute bottom-0 left-0 h-[2px] bg-brass transition-all duration-300 ease-out ${
+                        className={`absolute bottom-0 left-0 h-[2px] bg-parchment transition-all duration-300 ease-out ${
                           isActive ? 'w-full' : 'w-0 group-hover:w-full'
                         }`}
                       />
@@ -98,7 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Get Quote CTA Button */}
               <Link
                 to="/quote"
-                className="bg-mint text-ink px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 glow-pulse hover:scale-[1.02]"
+                className="bg-terracotta text-parchment px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 hover:bg-terracotta-dark hover:scale-[1.02]"
               >
                 Get Quote
               </Link>
@@ -107,7 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-cream hover:text-brass p-2 transition-colors z-[110]"
+              className="md:hidden text-parchment hover:text-grove-mist p-2 transition-colors z-[110]"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -125,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }`}
       >
         {/* Dark overlay background */}
-        <div className="absolute inset-0 bg-ink/98 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-grove-dark/98 backdrop-blur-sm" />
 
         {/* Menu content */}
         <div className="relative h-full flex flex-col justify-center items-center px-6">
@@ -137,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   `relative text-2xl font-medium transition-all duration-300 py-2 ${
-                    isActive ? 'text-brass' : 'text-cream'
+                    isActive ? 'text-parchment' : 'text-grove-mist'
                   }`
                 }
                 style={{
@@ -150,7 +150,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <>
                     {item.name}
                     {isActive && (
-                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brass" />
+                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-parchment" />
                     )}
                   </>
                 )}
@@ -161,7 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 bg-mint text-ink px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 glow-pulse"
+              className="mt-8 bg-terracotta text-parchment px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-terracotta-dark"
               style={{
                 transitionDelay: isMobileMenuOpen ? `${NAVIGATION.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',
@@ -174,7 +174,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Contact info at bottom */}
           <div
-            className="absolute bottom-12 text-center text-mist text-sm"
+            className="absolute bottom-12 text-center text-grove-mist text-sm"
             style={{
               transitionDelay: isMobileMenuOpen ? '400ms' : '0ms',
               transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',
@@ -182,7 +182,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               transition: 'all 0.3s ease-out',
             }}
           >
-            <a href={`tel:${PHONE_NUMBER}`} className="flex items-center justify-center gap-2 hover:text-cream transition-colors">
+            <a href={`tel:${PHONE_NUMBER}`} className="flex items-center justify-center gap-2 hover:text-parchment transition-colors">
               <Phone size={16} />
               {PHONE_NUMBER}
             </a>
@@ -196,34 +196,34 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate border-t border-brass">
+      <footer className="bg-grove-dark border-t border-grove">
         {/* Main Footer Content */}
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
             {/* Column 1: Brand */}
             <div>
-              <h3 className="font-serif text-cream text-lg font-semibold mb-3">{COMPANY_NAME}</h3>
-              <p className="text-mist text-sm leading-relaxed mb-5">
+              <h3 className="font-serif text-parchment text-lg font-semibold mb-3">{COMPANY_NAME}</h3>
+              <p className="text-grove-mist text-sm leading-relaxed mb-5">
                 Bridging the gap between restaurant operations and technology. We speak both languages.
               </p>
             </div>
 
             {/* Column 2: Quick Links */}
             <div>
-              <h4 className="text-cream font-semibold text-sm uppercase tracking-wider mb-4">Quick Links</h4>
+              <h4 className="text-parchment font-semibold text-sm uppercase tracking-wider mb-4">Quick Links</h4>
               <ul className="space-y-2.5 text-sm">
                 <li>
-                  <Link to="/services" className="text-mist hover:text-cream transition-colors duration-200">
+                  <Link to="/services" className="text-grove-mist hover:text-parchment transition-colors duration-200">
                     Services
                   </Link>
                 </li>
                 <li>
-                  <Link to="/quote" className="text-mist hover:text-brass transition-colors duration-200">
+                  <Link to="/quote" className="text-grove-mist hover:text-parchment transition-colors duration-200">
                     Quote Builder
                   </Link>
                 </li>
                 <li>
-                  <Link to="/contact" className="text-mist hover:text-cream transition-colors duration-200">
+                  <Link to="/contact" className="text-grove-mist hover:text-parchment transition-colors duration-200">
                     Contact
                   </Link>
                 </li>
@@ -232,21 +232,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Column 3: Contact Info */}
             <div>
-              <h4 className="text-cream font-semibold text-sm uppercase tracking-wider mb-4">Contact</h4>
-              <div className="space-y-2.5 text-sm text-mist">
+              <h4 className="text-parchment font-semibold text-sm uppercase tracking-wider mb-4">Contact</h4>
+              <div className="space-y-2.5 text-sm text-grove-mist">
                 <a
                   href={`tel:${PHONE_NUMBER}`}
-                  className="block hover:text-brass transition-colors duration-200"
+                  className="block hover:text-parchment transition-colors duration-200"
                 >
                   {PHONE_NUMBER}
                 </a>
                 <a
                   href={`mailto:${EMAIL_ADDRESS}`}
-                  className="block hover:text-brass transition-colors duration-200"
+                  className="block hover:text-parchment transition-colors duration-200"
                 >
                   {EMAIL_ADDRESS}
                 </a>
-                <p className="pt-2 text-mist/80">
+                <p className="pt-2 text-grove-mist/80">
                   Cape Cod, South Shore &amp; Greater Boston
                 </p>
               </div>
@@ -255,17 +255,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-line/50">
+        <div className="border-t border-grove/50">
           <div className="max-w-7xl mx-auto px-6 py-5">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs text-mist/70">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs text-grove-mist/70">
               <p>
                 &copy; 2025 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
               </p>
-              <p className="text-mist/60">
+              <p className="text-grove-mist/60">
                 Serving Cape Cod, South Shore, and Greater Boston
               </p>
             </div>
-            <p className="text-[11px] text-mist/40 mt-3">
+            <p className="text-[11px] text-grove-mist/40 mt-3">
               Built with ♥ and Claude Code
             </p>
           </div>
