@@ -90,7 +90,7 @@ const Schedule: React.FC = () => {
               </p>
               <a
                 href={`tel:${PHONE_NUMBER}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-terracotta text-parchment rounded-lg font-semibold hover:bg-terracotta-dark transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-terracotta text-parchment rounded-lg font-semibold hover:bg-terracotta-dark transition-all btn-hover"
               >
                 <Phone className="w-4 h-4" />
                 {PHONE_NUMBER}
@@ -103,13 +103,13 @@ const Schedule: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   to="/quote"
-                  className="flex-1 px-4 py-2 bg-parchment border border-sand rounded-lg text-sm font-medium text-ink hover:border-grove hover:text-grove transition-colors text-center"
+                  className="flex-1 px-4 py-2 bg-grove text-parchment rounded-lg text-sm font-semibold hover:bg-grove-dark transition-all text-center shadow-sm btn-hover"
                 >
                   Build a Quote
                 </Link>
                 <Link
                   to="/contact"
-                  className="flex-1 px-4 py-2 bg-parchment border border-sand rounded-lg text-sm font-medium text-ink hover:border-grove hover:text-grove transition-colors text-center"
+                  className="flex-1 px-4 py-2 bg-linen border-2 border-grove-light text-ink rounded-lg text-sm font-semibold hover:border-grove hover:text-grove transition-all text-center btn-hover"
                 >
                   Send Message
                 </Link>
@@ -170,7 +170,7 @@ const Schedule: React.FC = () => {
           </p>
           <Link
             to="/services"
-            className="inline-flex items-center px-6 py-3 bg-terracotta text-parchment rounded-lg font-bold hover:bg-terracotta-dark transition-colors shadow-lg"
+            className="inline-flex items-center px-6 py-3 bg-terracotta text-parchment rounded-lg font-bold hover:bg-terracotta-dark transition-all shadow-lg btn-hover"
           >
             View Our Services
           </Link>
