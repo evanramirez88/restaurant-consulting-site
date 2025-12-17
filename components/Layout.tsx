@@ -95,10 +95,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </NavLink>
               ))}
 
+              {/* Availability Badge */}
+              <span className="hidden lg:flex items-center gap-2 text-[13px] text-grove-mist">
+                <span className="availability-dot"></span>
+                <span>Available Now</span>
+              </span>
+
               {/* Get Quote CTA Button */}
               <Link
                 to="/quote"
-                className="bg-terracotta text-parchment px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 hover:bg-terracotta-dark hover:scale-[1.02] shadow-md"
+                className="bg-terracotta text-parchment px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 hover:bg-terracotta-dark shadow-md btn-hover"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
               >
                 Get Quote
@@ -162,7 +168,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 bg-terracotta text-parchment px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-terracotta-dark shadow-lg"
+              className="mt-8 bg-terracotta text-parchment px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-terracotta-dark shadow-lg btn-hover"
               style={{
                 transitionDelay: isMobileMenuOpen ? `${NAVIGATION.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',

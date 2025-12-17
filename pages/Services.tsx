@@ -88,14 +88,15 @@ const Services: React.FC = () => {
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                <Link
                  to="/schedule"
-                 className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-semibold hover:bg-terracotta-dark transition-colors glow-pulse shadow-md"
+                 className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-semibold hover:bg-terracotta-dark transition-all glow-pulse shadow-md btn-hover"
                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
                >
                  Schedule a Call
                </Link>
                <Link
                  to="/quote"
-                 className="inline-block bg-linen text-grove-dark border-2 border-grove-light px-6 py-3 rounded-lg font-semibold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm"
+                 className="inline-block bg-grove text-parchment border-2 border-grove px-6 py-3 rounded-lg font-semibold hover:bg-grove-dark hover:border-grove-dark transition-all shadow-md btn-hover"
+                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
                >
                  Build Your Quote
                </Link>

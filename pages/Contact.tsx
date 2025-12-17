@@ -318,7 +318,7 @@ const Contact: React.FC = () => {
               <button
                 type="submit"
                 disabled={status.type === 'loading'}
-                className="w-full md:w-auto px-8 py-4 bg-terracotta text-parchment font-bold rounded-lg hover:bg-terracotta-dark transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-pulse"
+                className="w-full md:w-auto px-8 py-4 bg-terracotta text-parchment font-bold rounded-lg hover:bg-terracotta-dark transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-pulse btn-hover"
               >
                 {status.type === 'loading' ? (
                   <>
@@ -365,7 +365,7 @@ const Contact: React.FC = () => {
               </div>
               <Link
                 to="/schedule"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-terracotta text-parchment rounded-lg font-bold hover:bg-terracotta-dark transition-colors w-fit glow-pulse"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-terracotta text-parchment rounded-lg font-bold hover:bg-terracotta-dark transition-all w-fit glow-pulse btn-hover"
               >
                 View Full Calendar
                 <ArrowRight className="w-4 h-4" />
