@@ -88,15 +88,34 @@ const Services: React.FC = () => {
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                <Link
                  to="/schedule"
-                 className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-semibold hover:bg-terracotta-dark transition-all glow-pulse shadow-md btn-hover"
-                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover"
+                 style={{
+                   backgroundColor: '#C4704E',
+                   color: '#FAF8F5',
+                   textShadow: '0 1px 2px rgba(0,0,0,0.15)'
+                 }}
+                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A85A3A'}
+                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C4704E'}
                >
                  Schedule a Call
                </Link>
                <Link
                  to="/quote"
-                 className="inline-block bg-grove text-parchment border-2 border-grove px-6 py-3 rounded-lg font-semibold hover:bg-grove-dark hover:border-grove-dark transition-all shadow-md btn-hover"
-                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover"
+                 style={{
+                   backgroundColor: '#4F5D51',
+                   color: '#FAF8F5',
+                   border: '2px solid #4F5D51',
+                   textShadow: '0 1px 2px rgba(0,0,0,0.15)'
+                 }}
+                 onMouseEnter={(e) => {
+                   e.currentTarget.style.backgroundColor = '#3D4A3F';
+                   e.currentTarget.style.borderColor = '#3D4A3F';
+                 }}
+                 onMouseLeave={(e) => {
+                   e.currentTarget.style.backgroundColor = '#4F5D51';
+                   e.currentTarget.style.borderColor = '#4F5D51';
+                 }}
                >
                  Build Your Quote
                </Link>
