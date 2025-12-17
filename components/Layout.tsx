@@ -196,7 +196,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-grove-dark border-t border-grove">
+      <footer className="bg-grove-dark border-t border-grove footer-pattern">
         {/* Main Footer Content */}
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">

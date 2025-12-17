@@ -89,7 +89,7 @@ const Services: React.FC = () => {
                <Link to="/schedule" className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-bold hover:bg-terracotta-dark transition-colors glow-pulse">
                  Schedule a Call
                </Link>
-               <Link to="/quote" className="inline-block bg-parchment text-ink border border-sand px-6 py-3 rounded-lg font-bold hover:bg-linen hover:border-grove transition-colors">
+               <Link to="/quote" className="inline-block bg-linen text-grove-dark border-2 border-grove-light px-6 py-3 rounded-lg font-bold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm">
                  Build Your Quote
                </Link>
              </div>
