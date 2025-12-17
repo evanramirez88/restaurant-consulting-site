@@ -109,8 +109,11 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Olive branch section divider */}
+      <div className="olive-branch-divider wide bg-parchment"></div>
+
       {/* Services Grid */}
-      <section className="py-20 bg-linen">
+      <section className="py-20 section-light-gradient">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-ink mb-4">Toast POS Installation &amp; Restaurant Technology Services</h2>
@@ -239,7 +242,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Value Prop / Split Section */}
-      <section className="bg-linen py-20 border-y border-sand">
+      <section className="section-warm-gradient py-20 border-y border-sand">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2 animate-on-scroll slide-left">
@@ -282,7 +285,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Social Proof Bar */}
-      <section className="bg-grove-dark py-12 text-center border-y border-grove">
+      <section className="section-dark-grain py-12 text-center border-y border-grove">
         <div className="max-w-7xl mx-auto px-4 animate-on-scroll">
            <p className="text-grove-mist text-sm font-semibold uppercase tracking-widest mb-8">Trusted by Independent Restaurant Owners Across Cape Cod &amp; SE Massachusetts</p>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-70 hover:opacity-100 transition-all duration-500">
@@ -293,6 +296,9 @@ const Home: React.FC = () => {
            </div>
         </div>
       </section>
+
+      {/* Olive branch divider */}
+      <div className="olive-branch-divider bg-parchment"></div>
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-grove-dark via-grove to-grove-light relative overflow-hidden grain-overlay">

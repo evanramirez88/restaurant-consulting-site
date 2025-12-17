@@ -85,13 +85,13 @@ const About: React.FC = () => {
             </Link>
             <Link
               to="/services"
-              className="px-6 py-3 bg-parchment border border-sand text-ink rounded-lg font-bold hover:border-grove hover:text-grove transition-colors"
+              className="px-6 py-3 bg-linen text-grove-dark border-2 border-grove-light rounded-lg font-bold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm"
             >
               View Services
             </Link>
             <Link
               to="/schedule"
-              className="px-6 py-3 bg-parchment border border-sand text-ink rounded-lg font-bold hover:border-grove hover:text-grove transition-colors"
+              className="px-6 py-3 bg-linen text-grove-dark border-2 border-grove-light rounded-lg font-bold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm"
             >
               Schedule a Call
             </Link>
