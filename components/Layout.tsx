@@ -98,7 +98,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Get Quote CTA Button */}
               <Link
                 to="/quote"
-                className="bg-terracotta text-parchment px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 hover:bg-terracotta-dark hover:scale-[1.02]"
+                className="bg-terracotta text-parchment px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-300 hover:bg-terracotta-dark hover:scale-[1.02] shadow-md"
+                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
               >
                 Get Quote
               </Link>
@@ -161,11 +162,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 bg-terracotta text-parchment px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-terracotta-dark"
+              className="mt-8 bg-terracotta text-parchment px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-terracotta-dark shadow-lg"
               style={{
                 transitionDelay: isMobileMenuOpen ? `${NAVIGATION.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',
                 opacity: isMobileMenuOpen ? 1 : 0,
+                textShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}
             >
               Get Quote

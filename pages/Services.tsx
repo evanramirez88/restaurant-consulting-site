@@ -86,10 +86,17 @@ const Services: React.FC = () => {
              <div className="brass-line-draw short mb-4" />
              <p className="text-ink-light mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link to="/schedule" className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-bold hover:bg-terracotta-dark transition-colors glow-pulse">
+               <Link
+                 to="/schedule"
+                 className="inline-block bg-terracotta text-parchment px-6 py-3 rounded-lg font-semibold hover:bg-terracotta-dark transition-colors glow-pulse shadow-md"
+                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}
+               >
                  Schedule a Call
                </Link>
-               <Link to="/quote" className="inline-block bg-linen text-grove-dark border-2 border-grove-light px-6 py-3 rounded-lg font-bold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm">
+               <Link
+                 to="/quote"
+                 className="inline-block bg-linen text-grove-dark border-2 border-grove-light px-6 py-3 rounded-lg font-semibold hover:bg-parchment hover:border-grove hover:text-grove transition-all shadow-sm"
+               >
                  Build Your Quote
                </Link>
              </div>
