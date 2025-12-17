@@ -88,14 +88,16 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center hero-fade-in hero-fade-in-delay-3">
             <Link
               to="/quote"
-              className="inline-flex items-center justify-center px-8 py-4 bg-terracotta text-parchment rounded-lg font-bold text-lg hover:bg-terracotta-dark transition-all shadow-lg glow-pulse"
+              className="inline-flex items-center justify-center px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold text-lg hover:bg-terracotta-dark transition-all shadow-lg glow-pulse"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
             >
               Build Your Quote
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
               to="/schedule"
-              className="inline-flex items-center justify-center px-8 py-4 bg-transparent text-parchment border border-grove-mist rounded-lg font-bold text-lg hover:bg-parchment/10 hover:text-parchment transition-all"
+              className="inline-flex items-center justify-center px-8 py-4 bg-parchment/15 text-parchment border-2 border-parchment rounded-lg font-semibold text-lg hover:bg-parchment/25 transition-all"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
             >
               Schedule Consultation
             </Link>
@@ -312,13 +314,14 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 bg-terracotta text-parchment rounded-lg font-bold text-lg hover:bg-terracotta-dark transition-colors shadow-lg glow-pulse"
+              className="px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold text-lg hover:bg-terracotta-dark transition-colors shadow-lg glow-pulse"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
             >
               Build Your Quote
             </Link>
             <a
               href="tel:5082474936"
-              className="px-8 py-4 bg-grove-dark text-parchment border border-grove-mist rounded-lg font-bold text-lg hover:border-parchment hover:text-parchment transition-colors shadow-lg flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-parchment text-grove-dark border-2 border-parchment rounded-lg font-semibold text-lg hover:bg-parchment/90 transition-colors shadow-lg flex items-center justify-center gap-2"
             >
               <PhoneCall size={20} /> Call (508) 247-4936
             </a>
