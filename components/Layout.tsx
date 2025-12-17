@@ -210,9 +210,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
             {/* Column 1: Brand */}
             <div>
-              <h3 className="font-serif text-parchment text-lg font-semibold mb-3">{COMPANY_NAME}</h3>
-              <p className="text-grove-mist text-sm leading-relaxed mb-5">
+              <h3 className="font-serif text-parchment text-lg font-semibold mb-3">Cape Cod Restaurant Consulting</h3>
+              <p className="text-grove-mist text-sm leading-relaxed mb-3">
                 Bridging the gap between restaurant operations and technology. We speak both languages.
+              </p>
+              <p className="text-grove-mist text-sm leading-relaxed">
+                Cape Cod, MA
+              </p>
+              <p className="text-grove-mist/80 text-sm">
+                Serving Cape Cod, the South Shore, and All of New England
               </p>
             </div>
 
@@ -254,9 +260,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   {EMAIL_ADDRESS}
                 </a>
-                <p className="pt-2 text-grove-mist/80">
-                  Cape Cod, South Shore &amp; Greater Boston
-                </p>
               </div>
             </div>
           </div>
@@ -270,7 +273,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 &copy; 2025 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
               </p>
               <p className="text-grove-mist/60">
-                Serving Cape Cod, South Shore, and Greater Boston
+                Serving New England &amp; Remote
               </p>
             </div>
             <p className="text-[11px] text-grove-mist/40 mt-3">

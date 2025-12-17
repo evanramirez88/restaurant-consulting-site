@@ -88,16 +88,29 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center hero-fade-in hero-fade-in-delay-3">
             <Link
               to="/quote"
-              className="inline-flex items-center justify-center px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold text-lg hover:bg-terracotta-dark transition-all shadow-lg glow-pulse btn-hover"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover"
+              style={{
+                backgroundColor: '#C4704E',
+                color: '#FAF8F5',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A85A3A'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C4704E'}
             >
               Build Your Quote
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
               to="/schedule"
-              className="inline-flex items-center justify-center px-8 py-4 bg-parchment/15 text-parchment border-2 border-parchment rounded-lg font-semibold text-lg hover:bg-parchment/25 transition-all btn-hover"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all btn-hover"
+              style={{
+                backgroundColor: 'rgba(250, 248, 245, 0.15)',
+                color: '#FAF8F5',
+                border: '2px solid #FAF8F5',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(250, 248, 245, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(250, 248, 245, 0.15)'}
             >
               Schedule Consultation
             </Link>
@@ -314,14 +327,27 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold text-lg hover:bg-terracotta-dark transition-all shadow-lg glow-pulse btn-hover"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover"
+              style={{
+                backgroundColor: '#C4704E',
+                color: '#FAF8F5',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A85A3A'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C4704E'}
             >
               Build Your Quote
             </Link>
             <a
               href="tel:5082474936"
-              className="px-8 py-4 bg-parchment text-grove-dark border-2 border-parchment rounded-lg font-semibold text-lg hover:bg-parchment/90 transition-all shadow-lg flex items-center justify-center gap-2 btn-hover"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-hover"
+              style={{
+                backgroundColor: '#FAF8F5',
+                color: '#3D4A3F',
+                border: '2px solid #FAF8F5'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(250, 248, 245, 0.9)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FAF8F5'}
             >
               <PhoneCall size={20} /> Call (508) 247-4936
             </a>
