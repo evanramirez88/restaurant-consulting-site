@@ -259,7 +259,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Bridging the gap between restaurant operations and technology. We speak both languages.
               </p>
               <p className="text-gray-500 text-sm">
-                Serving Cape Cod, the South Shore, and All of New England
+                Cape Cod, MA | Serving New England &amp; Remote
               </p>
             </div>
 

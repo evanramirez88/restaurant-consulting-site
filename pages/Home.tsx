@@ -8,11 +8,7 @@ import {
   PhoneCall,
   CheckCircle2,
   ChevronDown,
-  Monitor,
-  Users,
-  ChefHat,
-  Wine,
-  FileText
+  Phone
 } from 'lucide-react';
 import ServiceCard from '../src/components/ServiceCard';
 import FeatureRow from '../src/components/FeatureRow';
@@ -45,8 +41,8 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Full viewport with animated gradient and parallax */}
-      <section className="relative h-screen min-h-[600px] flex flex-col items-center justify-center overflow-hidden hero-animated-gradient hero-grain parallax-container">
+      {/* Hero Section - Full viewport */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-primary-dark grain-overlay">
         {/* Parallax decorative elements */}
         <div
           className="parallax-element parallax-orb w-[600px] h-[600px] -top-[200px] -right-[200px]"
@@ -56,49 +52,60 @@ const Home: React.FC = () => {
           className="parallax-element parallax-orb w-[400px] h-[400px] bottom-[10%] -left-[100px]"
           style={{ transform: `translateY(${parallaxOffset * 0.3}px)` }}
         />
-        <div
-          className="parallax-element parallax-line w-[300px] top-[20%] left-[10%] rotate-12"
-          style={{ transform: `translateY(${parallaxOffset * 0.4}px) rotate(12deg)` }}
-        />
-        <div
-          className="parallax-element parallax-line w-[200px] bottom-[30%] right-[15%] -rotate-6"
-          style={{ transform: `translateY(${parallaxOffset * 0.2}px) rotate(-6deg)` }}
-        />
-
-        {/* Amber horizontal line - draws across on load */}
-        <div className="absolute top-1/3 left-0 right-0 z-10">
-          <div className="brass-draw-line mx-auto max-w-4xl" />
-        </div>
 
         {/* Main content container */}
         <div className="relative z-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Availability Badge */}
+          <div className="hero-fade-in hero-fade-in-delay-1 mb-8">
+            <span className="inline-flex items-center gap-2 bg-teal-600/90 text-white text-sm font-medium px-4 py-2 rounded-full">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              Available for New Projects
+            </span>
+          </div>
+
           {/* Main headline */}
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 hero-fade-in hero-fade-in-delay-1">
-            Restaurant Technology.
+          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 hero-fade-in hero-fade-in-delay-1">
+            Restaurant Tech That Actually
             <br />
-            <span className="text-white">Expertly Implemented.</span>
+            <span className="text-amber-400 italic">Understands Restaurants.</span>
           </h1>
 
-          {/* Subheadline */}
-          <p className="text-lg md:text-xl text-gray-300 mb-10 font-normal tracking-wide hero-fade-in hero-fade-in-delay-2">
-            Toast POS &bull; Networking &bull; Operations Consulting
+          {/* Description */}
+          <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto hero-fade-in hero-fade-in-delay-2">
+            Toast POS installation, networking, and operational consulting from someone who's worked every station in your kitchen. I don't just fix wires; I fix workflows.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center hero-fade-in hero-fade-in-delay-3">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 hero-fade-in hero-fade-in-delay-3">
             <Link
               to="/quote"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover bg-orange-600 text-white hover:bg-orange-700"
             >
-              Build Your Quote
+              Get Your Free Quote
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
               to="/schedule"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all btn-hover border-2 border-white text-white hover:bg-white hover:text-primary-dark"
             >
-              Schedule Consultation
+              Schedule Discovery Call
             </Link>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-gray-400 text-sm hero-fade-in hero-fade-in-delay-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-gray-500" />
+              <span>50+ Restaurants Served</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-gray-500" />
+              <span>Toast Certified Partner</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-gray-500" />
+              <span>Same-Day Invoicing</span>
+            </div>
           </div>
         </div>
 
@@ -109,17 +116,63 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Section divider */}
-      <div className="olive-branch-divider wide bg-white"></div>
+      {/* Why Choose R&G Section - Two columns */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            {/* Image Left */}
+            <div className="lg:w-1/2 animate-on-scroll slide-left">
+              <img
+                src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=985&q=80"
+                alt="Restaurant kitchen workflow during service - POS consultant understands operations"
+                className="rounded-2xl shadow-2xl border border-gray-200"
+              />
+            </div>
 
-      {/* Services Grid */}
+            {/* Content Right */}
+            <div className="lg:w-1/2 animate-on-scroll slide-right">
+              <span className="text-amber-600 font-bold uppercase tracking-widest text-sm block mb-3">
+                WHY CHOOSE R&amp;G
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-8 leading-tight">
+                Most IT Guys Have Never Worked a Friday Night Rush. I Have.
+              </h2>
+
+              <div className="space-y-6">
+                <FeatureRow
+                  title="Restaurant-Native"
+                  desc="I speak '86', 'on the fly', and 'in the weeds'. No translation needed."
+                />
+                <FeatureRow
+                  title="After-Hours Availability"
+                  desc="60% of my meetings happen in the evening because that's when you're available."
+                />
+                <FeatureRow
+                  title="Proprietary Costing"
+                  desc="My algorithmic quoting system gives you accurate numbers in minutes, not days."
+                />
+              </div>
+
+              <div className="mt-8">
+                <Link to="/about" className="text-amber-600 font-bold hover:text-orange-600 transition-colors inline-flex items-center">
+                  Read My Story <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Overview Section */}
       <section className="py-20 section-light-gradient">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Toast POS Installation &amp; Restaurant Technology Services</h2>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Not Just IT Support. Operational Solutions.
+            </h2>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 text-lg">
-              From POS installation to restaurant networking, we deliver operational solutions—not just IT support. <Link to="/services" className="text-amber-500 hover:text-amber-600 hover:underline transition-colors">View all services</Link>.
+              Most vendors stop at the router. I start there and work my way to the line cook's ticket rail.
             </p>
           </div>
 
@@ -132,7 +185,7 @@ const Home: React.FC = () => {
             />
             <ServiceCard
               icon={Wifi}
-              title="Restaurant Networking"
+              title="Networking & IT"
               description="Enterprise-grade WiFi and failover systems designed for high-volume hospitality environments."
               link="/services"
             />
@@ -144,7 +197,7 @@ const Home: React.FC = () => {
             />
             <ServiceCard
               icon={PhoneCall}
-              title="Emergency POS Support"
+              title="Emergency Support"
               description="The 'Restaurant 911'. Tech, staffing, or crisis management available nights and weekends."
               link="/contact"
             />
@@ -152,175 +205,44 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Comprehensive Services Grid */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Comprehensive Restaurant Solutions
-            </h2>
-            <div className="brass-line-draw short mb-6" />
-            <p className="text-gray-600 text-lg">
-              From technology to training, we've got you covered.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-on-scroll">
-            {/* Toast POS Services */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <Monitor className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Toast POS Services</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Complete installation, configuration, and staff training for your restaurant's point-of-sale system.
-              </p>
-            </Link>
-
-            {/* Networking & IT */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <Wifi className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Networking & IT</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Enterprise-grade WiFi, network infrastructure, and IT solutions built for high-volume hospitality.
-              </p>
-            </Link>
-
-            {/* Front of House Operations */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <Users className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Front of House Operations</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Service flow optimization, table management, and guest experience enhancement strategies.
-              </p>
-            </Link>
-
-            {/* Kitchen & Back of House */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <ChefHat className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Kitchen & Back of House</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Line efficiency, prep workflows, and kitchen display system setup for seamless BOH operations.
-              </p>
-            </Link>
-
-            {/* Bar Programs */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <Wine className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Bar Programs</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Beverage menu development, inventory control, and bar workflow optimization for profitability.
-              </p>
-            </Link>
-
-            {/* Admin & SOPs */}
-            <Link
-              to="/services"
-              className="group relative bg-white p-6 rounded-lg border border-gray-200 border-l-4 border-l-amber-500 card-hover-lift stagger-child"
-            >
-              <FileText className="w-8 h-8 text-amber-500 mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Admin & SOPs</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Standard operating procedures, documentation systems, and administrative workflow design.
-              </p>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Value Prop / Split Section */}
-      <section className="section-warm-gradient py-20 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="lg:w-1/2 animate-on-scroll slide-left">
-              <img
-                src="https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=985&q=80"
-                alt="Restaurant kitchen workflow during service - POS consultant understands operations"
-                className="rounded-2xl shadow-2xl border border-gray-200"
-              />
-            </div>
-            <div className="lg:w-1/2 animate-on-scroll slide-right">
-              <span className="text-amber-500 font-bold uppercase tracking-wider mb-2 text-sm block brass-line-static">Why Choose R&amp;G Consulting</span>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Restaurant Technology Consulting From Someone Who's Worked the Line
-              </h2>
-              <div className="space-y-6">
-                <FeatureRow
-                  title="Restaurant-Native Expertise"
-                  desc="I speak '86', 'on the fly', and 'in the weeds'. No translation needed for your Toast POS setup."
-                />
-                <FeatureRow
-                  title="After-Hours Availability"
-                  desc="60% of my meetings happen in the evening because that's when you're available."
-                />
-                <FeatureRow
-                  title="Transparent Quoting"
-                  desc="My algorithmic quoting system gives you accurate POS installation numbers in minutes."
-                />
-              </div>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link to="/about" className="text-amber-500 font-bold hover:text-orange-600 transition-colors inline-flex items-center brass-line">
-                  About the Consultant <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-                <Link to="/contact" className="text-gray-600 font-bold hover:text-amber-500 transition-colors inline-flex items-center">
-                  Get in Touch <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof Bar */}
+      {/* Client Trust Bar */}
       <section className="section-dark-grain py-12 text-center border-y border-gray-800">
         <div className="max-w-7xl mx-auto px-4 animate-on-scroll">
-           <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest mb-8">Trusted by Independent Restaurant Owners Across Cape Cod &amp; SE Massachusetts</p>
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-70 hover:opacity-100 transition-all duration-500">
-             <div className="text-white font-display text-2xl font-bold flex items-center justify-center">The Portside</div>
-             <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Salt &amp; Vine</div>
-             <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Harbor Grill</div>
-             <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Main St. Tavern</div>
-           </div>
+          <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest mb-8">
+            Trusted by Independent Restaurant Owners Across Cape Cod &amp; SE Massachusetts
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-70 hover:opacity-100 transition-all duration-500">
+            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">The Portside</div>
+            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Salt &amp; Vine</div>
+            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Harbor Grill</div>
+            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Main St. Tavern</div>
+          </div>
         </div>
       </section>
 
-      {/* Section divider */}
-      <div className="olive-branch-divider bg-white"></div>
-
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary-dark via-primary to-secondary relative overflow-hidden grain-overlay">
+      <section className="py-24 bg-primary-dark relative overflow-hidden grain-overlay">
         <div className="absolute inset-0 bg-white/5"></div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-4 animate-on-scroll">
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-white mb-6">Ready for Professional POS Installation in Cape Cod?</h2>
+          <h2 className="font-display text-3xl md:text-5xl font-bold text-white mb-6">
+            Ready to fix your restaurant tech?
+          </h2>
           <div className="brass-line-draw short mb-6" />
-          <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
-            Stop waiting on hold with support lines. Get a Toast POS specialist who understands your restaurant. <Link to="/contact" className="text-white underline hover:text-amber-400 transition-colors">Contact us today</Link>.
+          <p className="text-gray-300 text-lg mb-10 max-w-2xl mx-auto">
+            Stop waiting on hold with support lines. Get a specialist who knows your business.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover bg-orange-600 text-white hover:bg-orange-700"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg btn-hover border-2 border-white text-white hover:bg-white hover:text-primary-dark"
             >
               Build Your Quote
             </Link>
             <a
               href="tel:5082474936"
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-hover bg-white text-primary-dark hover:bg-gray-100"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-hover bg-orange-600 text-white hover:bg-orange-700"
             >
-              <PhoneCall size={20} /> Call (508) 247-4936
+              <Phone size={20} /> Call (508) 247-4936
             </a>
           </div>
         </div>
