@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Plus,
   Trash2,
@@ -17,8 +18,14 @@ import {
   Cable,
   Building2,
   Save,
-  Calendar
+  Calendar,
+  Wrench
 } from 'lucide-react';
+
+// ============================================
+// COMING SOON FLAG - Set to false when ready to launch
+// ============================================
+const SHOW_COMING_SOON = true;
 import { useSEO } from '../src/components/SEO';
 import {
   AdvancedStation,
@@ -759,6 +766,32 @@ const QuoteBuilder: React.FC = () => {
   // ============================================
   // RENDER
   // ============================================
+
+  // Coming Soon overlay - preserves all functional code while showing placeholder
+  if (SHOW_COMING_SOON) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center max-w-xl px-6">
+          <div className="text-amber-400 text-6xl mb-6">
+            <Wrench className="w-16 h-16 mx-auto" />
+          </div>
+          <h1 className="text-4xl font-serif text-white mb-4">Quote Builder</h1>
+          <p className="text-xl text-amber-400 mb-6">Coming Soon</p>
+          <p className="text-gray-400 mb-8">
+            We're building an intelligent quoting tool that configures your
+            Toast POS installation in minutes. Get accurate pricing based on
+            your specific restaurant layout and needs.
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+          >
+            Contact for Custom Quote
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-900 min-h-screen relative -mt-[72px] pt-[72px]">

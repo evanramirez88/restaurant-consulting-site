@@ -12,18 +12,19 @@ const About: React.FC = () => {
 
   return (
     <div className="bg-white">
-      {/* Header */}
+      {/* Hero Section */}
       <div className="bg-primary-dark py-20 pt-12 text-center border-b border-gray-800">
         <div className="animate-on-scroll">
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">Cape Cod's Restaurant Technology Consultant</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">The Face Behind the Tech</h1>
           <div className="brass-line-draw short mb-6" />
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto px-4">Toast POS expertise from someone who's worked every station in your kitchen.</p>
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto px-4 italic">It's not about the wires. It's about the service.</p>
         </div>
       </div>
 
+      {/* Content Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="prose prose-lg mx-auto animate-on-scroll">
-          <p className="lead text-xl text-gray-900 font-semibold mb-8">
+          <p className="lead text-xl text-gray-900 font-bold mb-8">
             I didn't start in IT. I started in kitchens.
           </p>
 
@@ -39,21 +40,21 @@ const About: React.FC = () => {
             When a typical IT vendor shows up, they see network configurations and hardware specs. When I show up, I see your operation. I know you can't shut down for 'standard maintenance windows.' I know you need someone who can explain technical problems in plain English while you're managing fifty other fires. I know the difference between 'fixed' and 'fixed right.'
           </p>
 
-          <div className="my-10 border-l-4 border-amber-500 pl-6 py-2 italic text-gray-600 bg-gray-50 rounded-r-lg">
+          <div className="my-10 border-l-4 border-amber-500 pl-6 py-4 italic text-gray-700 bg-gray-50 rounded-r-lg">
             "I became the bridge. Someone who speaks fluent restaurant AND fluent tech."
           </div>
 
-          <h2 className="font-display text-2xl font-bold text-gray-900 mb-4">Why I Specialize in Toast POS</h2>
           <p className="mb-6 text-gray-600">
-            After years in restaurants, I specialized in Toast POS—not because it was trendy, but because I saw how much restaurants struggled with vendors who didn't understand their world. Toast POS installation and menu configuration require someone who understands both the technology and the operation.
+            After years in restaurants, I specialized in Toast POS—not because it was trendy, but because I saw how much restaurants struggled with vendors who didn't understand their world.
           </p>
 
           <p className="mb-12 text-gray-600">
-            Now I work with independent restaurants and small groups across Cape Cod, South Shore, and SE Massachusetts. I handle <Link to="/services" className="text-amber-500 hover:underline transition-colors">Toast POS installation</Link>, network setup, menu configuration, and operations consulting—and show up when things go sideways, evenings, weekends, whenever you need me.
+            Now I work with independent restaurants and small groups across New England. I install systems, fix networks, optimize operations, and show up when things go sideways—evenings, weekends, whenever you need me. Because I remember what it was like to be on your side of the phone at 11 PM on a Friday.
           </p>
 
           <hr className="my-12 border-gray-200" />
 
+          {/* Author Card */}
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border border-gray-200">
                <img src="https://images.unsplash.com/photo-1556157382-97eda2d62296?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt={`${OWNER_NAME} - Toast POS Consultant Cape Cod`} className="w-full h-full object-cover" />
