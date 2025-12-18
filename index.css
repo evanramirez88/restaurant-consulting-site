@@ -1,39 +1,60 @@
 @import "tailwindcss";
 
-/* Google Fonts - Fraunces (headlines), Source Serif 4 (body), Work Sans (UI) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Work+Sans:wght@400;500;600;700&display=swap');
+/* Google Fonts - Playfair Display (headlines), Inter (body/UI) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
-/* Custom theme using CSS variables for Tailwind 4 - Olive Grove Palette */
+/* Custom theme using CSS variables for Tailwind 4 - Navy & Amber Palette */
 @theme {
-  /* Olive Grove Palette - Warm Mediterranean meets Cape Cod Coastal */
-  --color-grove-dark: #3D4A3F;    /* Deep olive — headers, nav, footer */
-  --color-grove: #4F5D51;         /* Primary sage */
-  --color-grove-light: #6B7A6C;   /* Hover states */
-  --color-grove-mist: #8A9B8C;    /* Secondary text on dark */
-  --color-parchment: #FAF8F5;     /* Page background */
-  --color-linen: #F3EFE8;         /* Section backgrounds */
-  --color-sand: #E8E2D9;          /* Cards, dividers */
-  --color-ink: #2C2F2D;           /* Body text */
-  --color-ink-light: #4A4D4B;     /* Secondary text */
-  --color-terracotta: #C4704E;    /* Primary CTA */
-  --color-terracotta-dark: #A85A3A; /* CTA hover */
-  --color-bay: #5B8A9A;           /* Links */
-  --color-toast-orange: #FF6A38;  /* Secondary CTA */
+  /* Primary Navy Palette */
+  --color-primary-dark: #0f172a;     /* Deep navy — utility bar, footer */
+  --color-primary: #1e293b;          /* Primary navy */
+  --color-secondary: #334155;        /* Secondary slate */
+
+  /* Accent Colors - Amber/Orange */
+  --color-accent: #f59e0b;           /* Amber accent */
+  --color-accent-hover: #d97706;     /* Amber hover */
+  --color-cta: #ea580c;              /* Orange CTA */
+  --color-cta-hover: #c2410c;        /* Orange CTA hover */
+
+  /* Neutral Colors */
+  --color-white: #ffffff;
+  --color-light-bg: #f8fafc;         /* Light background */
+  --color-text-dark: #1f2937;        /* Dark text */
+  --color-text-muted: #6b7280;       /* Muted text */
+  --color-text-light: #f1f5f9;       /* Light text on dark bg */
+
+  /* Utility Colors */
+  --color-success: #10b981;          /* Success green */
+  --color-border: #e5e7eb;           /* Light border */
+  --color-border-dark: #374151;      /* Dark border */
 
   /* Legacy mappings for compatibility */
-  --color-coal: #F3EFE8;          /* Maps to linen */
-  --color-slate: #3D4A3F;         /* Maps to grove-dark */
-  --color-line: #E8E2D9;          /* Maps to sand */
-  --color-brass: #4F5D51;         /* Maps to grove */
-  --color-mint: #C4704E;          /* Maps to terracotta */
-  --color-cream: #2C2F2D;         /* Maps to ink (inverted for light theme) */
-  --color-mist: #4A4D4B;          /* Maps to ink-light */
-  --color-coral: #FF6A38;         /* Maps to toast-orange */
+  --color-coal: #f8fafc;
+  --color-slate: #0f172a;
+  --color-line: #e5e7eb;
+  --color-brass: #f59e0b;
+  --color-mint: #10b981;
+  --color-cream: #1f2937;
+  --color-mist: #6b7280;
+  --color-coral: #ea580c;
+  --color-parchment: #ffffff;
+  --color-linen: #f8fafc;
+  --color-sand: #e5e7eb;
+  --color-ink: #1f2937;
+  --color-ink-light: #6b7280;
+  --color-terracotta: #ea580c;
+  --color-terracotta-dark: #c2410c;
+  --color-bay: #f59e0b;
+  --color-toast-orange: #ea580c;
+  --color-grove-dark: #0f172a;
+  --color-grove: #1e293b;
+  --color-grove-light: #334155;
+  --color-grove-mist: #94a3b8;
 
   /* Font Families */
-  --font-display: 'Fraunces', serif;      /* Headlines */
-  --font-serif: 'Source Serif 4', serif;  /* Body text, quotes */
-  --font-sans: 'Work Sans', sans-serif;   /* UI elements, buttons, nav */
+  --font-display: 'Playfair Display', serif;  /* Headlines */
+  --font-serif: 'Playfair Display', serif;    /* Headlines (alias) */
+  --font-sans: 'Inter', sans-serif;           /* Body text, UI elements */
 
   /* Typography Scale */
   --text-xs: 0.75rem;
@@ -52,32 +73,18 @@
   --leading-ui: 1.4;
 }
 
-/* Base styles - Olive Grove Light Theme */
+/* Base styles - Light Theme with Navy Accents */
 body {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 400;
   line-height: var(--leading-body);
-  background-color: var(--color-parchment);
-  color: var(--color-ink);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
   position: relative;
   font-size: var(--text-base);
 }
 
-/* Page background texture - subtle linen/paper grain */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.06;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch' result='noise'/%3E%3CfeDiffuseLighting in='noise' lighting-color='%23FAF8F5' surfaceScale='2'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E");
-}
-
-/* Headlines - Fraunces display font */
+/* Headlines - Playfair Display */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 600;
@@ -88,7 +95,7 @@ h1 { font-weight: 700; }
 h2 { font-weight: 700; }
 h3 { font-weight: 600; }
 
-/* UI elements - Work Sans */
+/* UI elements - Inter */
 button,
 input,
 select,
@@ -101,11 +108,11 @@ label {
   line-height: var(--leading-ui);
 }
 
-/* Quotes - Source Serif 4 italic */
+/* Quotes - Playfair Display italic */
 blockquote,
 .quote,
 q {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
 }
@@ -116,7 +123,7 @@ q {
 }
 
 .font-serif {
-  font-family: var(--font-display); /* Use display font for .font-serif (headlines) */
+  font-family: var(--font-display);
 }
 
 .font-sans {
@@ -124,89 +131,71 @@ q {
 }
 
 .font-body {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 /* ========================
    UTILITY CLASSES
    ======================== */
 
-/* Grove accent utilities */
-.text-grove {
-  color: var(--color-grove);
+/* Amber accent utilities */
+.text-amber {
+  color: var(--color-accent);
 }
 
-.bg-grove {
-  background-color: var(--color-grove);
+.bg-amber {
+  background-color: var(--color-accent);
 }
 
-.border-grove {
-  border-color: var(--color-grove);
+.border-amber {
+  border-color: var(--color-accent);
 }
 
-/* Terracotta glow animation for CTAs */
-.glow-terracotta {
-  box-shadow: 0 0 20px rgba(196, 112, 78, 0.3);
+/* Orange glow animation for CTAs */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
   transition: box-shadow 0.3s ease;
 }
 
-.glow-terracotta:hover {
-  box-shadow: 0 0 30px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
+.glow-orange:hover {
+  box-shadow: 0 0 30px rgba(234, 88, 12, 0.5), 0 0 60px rgba(234, 88, 12, 0.2);
 }
 
-@keyframes terracotta-pulse {
+@keyframes orange-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(196, 112, 78, 0.3);
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
   }
   50% {
-    box-shadow: 0 0 35px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
+    box-shadow: 0 0 35px rgba(234, 88, 12, 0.5), 0 0 60px rgba(234, 88, 12, 0.2);
   }
 }
 
-.glow-terracotta-pulse {
-  animation: terracotta-pulse 2s ease-in-out infinite;
+.glow-orange-pulse {
+  animation: orange-pulse 2s ease-in-out infinite;
 }
 
-/* Grain overlay utility class */
-.grain-overlay {
-  position: relative;
-}
-
-.grain-overlay::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-}
-
-/* Grove line - animated horizontal line */
-.grove-line {
+/* Amber line animations */
+.amber-line {
   position: relative;
   display: inline-block;
 }
 
-.grove-line::after {
+.amber-line::after {
   content: '';
   position: absolute;
   bottom: -4px;
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-grove), transparent);
+  background: linear-gradient(90deg, var(--color-accent), transparent);
   transition: width 0.4s ease;
 }
 
-.grove-line:hover::after {
+.amber-line:hover::after {
   width: 100%;
 }
 
-/* Legacy brass-line class (maps to grove) */
+/* Legacy brass-line class (maps to amber) */
 .brass-line {
   position: relative;
   display: inline-block;
@@ -219,7 +208,7 @@ q {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-grove), transparent);
+  background: linear-gradient(90deg, var(--color-accent), transparent);
   transition: width 0.4s ease;
 }
 
@@ -227,128 +216,134 @@ q {
   width: 100%;
 }
 
-/* Static grove line (no animation) */
-.grove-line-static::after {
+/* Static amber line (no animation) */
+.amber-line-static::after {
   content: '';
   display: block;
   width: 60px;
   height: 2px;
   margin-top: 12px;
-  background: linear-gradient(90deg, var(--color-grove), transparent);
+  background: linear-gradient(90deg, var(--color-accent), transparent);
 }
 
-/* Legacy brass-line-static class (maps to grove) */
+/* Legacy brass-line-static class (maps to amber) */
 .brass-line-static::after {
   content: '';
   display: block;
   width: 60px;
   height: 2px;
   margin-top: 12px;
-  background: linear-gradient(90deg, var(--color-grove), transparent);
+  background: linear-gradient(90deg, var(--color-accent), transparent);
+}
+
+/* Grove line - now uses amber */
+.grove-line {
+  position: relative;
+  display: inline-block;
+}
+
+.grove-line::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-accent), transparent);
+  transition: width 0.4s ease;
+}
+
+.grove-line:hover::after {
+  width: 100%;
+}
+
+.grove-line-static::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--color-accent), transparent);
 }
 
 /* ========================
-   OLIVE GROVE THEME OVERRIDES
+   THEME OVERRIDES
    ======================== */
 
 /* Override default Tailwind classes for light theme */
 .bg-white {
-  background-color: var(--color-parchment) !important;
+  background-color: var(--color-white) !important;
 }
 
 .bg-slate-50 {
-  background-color: var(--color-linen) !important;
+  background-color: var(--color-light-bg) !important;
 }
 
 .text-slate-900 {
-  color: var(--color-ink) !important;
+  color: var(--color-text-dark) !important;
 }
 
 .text-slate-600 {
-  color: var(--color-ink-light) !important;
+  color: var(--color-text-muted) !important;
 }
 
 .text-slate-500 {
-  color: var(--color-ink-light) !important;
+  color: var(--color-text-muted) !important;
 }
 
 .text-slate-400 {
-  color: var(--color-ink-light) !important;
+  color: var(--color-text-muted) !important;
 }
 
 .text-slate-300 {
-  color: var(--color-ink-light) !important;
+  color: var(--color-text-muted) !important;
 }
 
 .border-slate-200 {
-  border-color: var(--color-sand) !important;
+  border-color: var(--color-border) !important;
 }
 
 .border-slate-800 {
-  border-color: var(--color-sand) !important;
+  border-color: var(--color-border-dark) !important;
 }
 
 /* Brand accent overrides */
 .text-brand-accent {
-  color: var(--color-grove) !important;
+  color: var(--color-accent) !important;
 }
 
 .bg-brand-accent {
-  background-color: var(--color-terracotta) !important;
+  background-color: var(--color-cta) !important;
 }
 
 .hover\:bg-brand-accent:hover {
-  background-color: var(--color-terracotta-dark) !important;
+  background-color: var(--color-cta-hover) !important;
 }
 
 .hover\:text-brand-accent:hover {
-  color: var(--color-grove) !important;
+  color: var(--color-accent) !important;
 }
 
 .bg-brand-dark {
-  background-color: var(--color-grove-dark) !important;
+  background-color: var(--color-primary-dark) !important;
 }
 
 /* Link styling */
 a:not([class]) {
-  color: var(--color-bay);
+  color: var(--color-accent);
   transition: color 0.2s ease;
 }
 
 a:not([class]):hover {
-  color: var(--color-bay);
+  color: var(--color-accent-hover);
   text-decoration: underline;
 }
 
-/* Card styling - parchment bg, sand border, grove left border */
+/* Card styling - white bg, light border, amber left border */
 .card, [class*="rounded-lg"][class*="shadow"] {
-  background-color: var(--color-parchment);
-  border: 1px solid var(--color-sand);
-  border-left: 4px solid var(--color-grove);
-}
-
-/* Header/navbar glass effect for grove theme */
-.bg-white\/95 {
-  background-color: rgba(61, 74, 63, 0.95) !important;
-}
-
-/* Button primary styling */
-.bg-brand-accent {
-  background-color: var(--color-terracotta) !important;
-  color: var(--color-parchment) !important;
-}
-
-.bg-brand-accent:hover {
-  background-color: var(--color-terracotta-dark) !important;
-}
-
-/* Orange/toast warnings */
-.bg-orange-600, .hover\:bg-orange-600:hover {
-  background-color: var(--color-toast-orange) !important;
-}
-
-.text-orange-100 {
-  color: rgba(255, 106, 56, 0.3) !important;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
 }
 
 /* ========================
@@ -359,7 +354,7 @@ a:not([class]):hover {
    HERO SECTION ANIMATIONS
    ======================== */
 
-/* Animated gradient background - very slow movement */
+/* Animated gradient background - navy tones */
 @keyframes gradient-shift {
   0% {
     background-position: 0% 50%;
@@ -375,17 +370,17 @@ a:not([class]):hover {
 .hero-animated-gradient {
   background: linear-gradient(
     135deg,
-    var(--color-grove-dark) 0%,
-    #3D4A3F 25%,
-    #4F5D51 50%,
-    #3D4A3F 75%,
-    var(--color-grove-dark) 100%
+    var(--color-primary-dark) 0%,
+    #0f172a 25%,
+    #1e293b 50%,
+    #0f172a 75%,
+    var(--color-primary-dark) 100%
   );
   background-size: 400% 400%;
   animation: gradient-shift 20s ease infinite;
 }
 
-/* Grove line draw animation on load */
+/* Amber line draw animation on load */
 @keyframes draw-line {
   0% {
     width: 0;
@@ -403,7 +398,7 @@ a:not([class]):hover {
 .brass-draw-line {
   position: relative;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-grove-mist), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   width: 0;
   animation: draw-line 1.5s ease-out 0.3s forwards;
 }
@@ -457,7 +452,7 @@ a:not([class]):hover {
   animation: scroll-bounce 2s ease-in-out infinite;
 }
 
-/* Hero grain overlay - stronger for hero section */
+/* Hero grain overlay */
 .hero-grain::after {
   content: '';
   position: absolute;
@@ -467,35 +462,35 @@ a:not([class]):hover {
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  opacity: 0.08;
+  opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* Legacy hero gradient - now olive grove colors */
+/* Legacy hero gradient - now navy colors */
 .hero-gradient {
-  background: linear-gradient(135deg, var(--color-grove-dark) 0%, var(--color-grove) 50%, var(--color-grove-light) 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-secondary) 100%);
 }
 
-/* Premium card style - parchment bg, sand border, grove left accent */
+/* Premium card style - white bg, light border, amber left accent */
 .card-premium {
-  background: var(--color-parchment);
-  border: 1px solid var(--color-sand);
-  border-left: 4px solid var(--color-grove);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
 }
 
 .card-premium:hover {
-  border-color: var(--color-grove);
+  border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--color-grove);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--color-accent);
 }
 
 /* Standard card with warm styling */
 .card-warm {
-  background: var(--color-parchment);
-  border: 1px solid var(--color-sand);
-  border-left: 4px solid var(--color-grove);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -505,10 +500,10 @@ a:not([class]):hover {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* CTA button with terracotta styling - high contrast and legibility */
+/* CTA button with orange styling - high contrast and legibility */
 .cta-primary {
-  background-color: var(--color-terracotta);
-  color: var(--color-parchment);
+  background-color: var(--color-cta);
+  color: var(--color-white);
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
@@ -516,84 +511,83 @@ a:not([class]):hover {
   padding: 1rem 2rem;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(196, 112, 78, 0.35);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .cta-primary:hover {
-  background-color: var(--color-terracotta-dark);
-  box-shadow: 0 6px 20px rgba(196, 112, 78, 0.45), 0 0 40px rgba(196, 112, 78, 0.2);
+  background-color: var(--color-cta-hover);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45), 0 0 40px rgba(234, 88, 12, 0.2);
   transform: translateY(-2px);
 }
 
 /* Secondary button - improved legibility */
 .cta-secondary {
-  background-color: var(--color-linen);
-  color: var(--color-ink);
+  background-color: var(--color-white);
+  color: var(--color-primary-dark);
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
   letter-spacing: 0.01em;
   padding: 1rem 2rem;
   border-radius: 0.5rem;
-  border: 2px solid var(--color-grove-light);
+  border: 2px solid var(--color-primary-dark);
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .cta-secondary:hover {
-  border-color: var(--color-grove);
-  color: var(--color-grove);
-  background-color: var(--color-parchment);
+  background-color: var(--color-primary-dark);
+  color: var(--color-white);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Secondary button on dark backgrounds - HIGH CONTRAST */
 .cta-secondary-dark {
-  background-color: rgba(250, 248, 245, 0.15);
-  color: var(--color-parchment);
+  background-color: transparent;
+  color: var(--color-white);
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
   letter-spacing: 0.01em;
   padding: 1rem 2rem;
   border-radius: 0.5rem;
-  border: 2px solid var(--color-parchment);
+  border: 2px solid var(--color-white);
   transition: all 0.3s ease;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .cta-secondary-dark:hover {
-  border-color: var(--color-parchment);
-  background-color: rgba(250, 248, 245, 0.25);
+  background-color: var(--color-white);
+  color: var(--color-primary-dark);
   transform: translateY(-2px);
 }
 
 /* Elevated surface */
 .surface-elevated {
-  background-color: var(--color-linen);
-  border: 1px solid var(--color-sand);
+  background-color: var(--color-light-bg);
+  border: 1px solid var(--color-border);
 }
 
 /* Section dividers */
 .section-divider {
-  border-top: 1px solid var(--color-sand);
+  border-top: 1px solid var(--color-border);
 }
 
 /* ========================
-   ATMOSPHERIC TEXTURES & EFFECTS
+   SECTION BACKGROUNDS
    ======================== */
 
-/* Light section - soft gradient from linen to parchment */
+/* Light section - soft gradient */
 .section-light-gradient {
-  background: linear-gradient(180deg, var(--color-linen) 0%, var(--color-parchment) 100%);
+  background: linear-gradient(180deg, var(--color-light-bg) 0%, var(--color-white) 100%);
 }
 
 /* Dark section with subtle grain overlay */
 .section-dark-grain {
   position: relative;
-  background-color: var(--color-grove-dark);
+  background-color: var(--color-primary-dark);
 }
 
 .section-dark-grain::before {
@@ -614,18 +608,37 @@ a:not([class]):hover {
   z-index: 2;
 }
 
-/* Warm atmospheric gradient for hero sections */
+/* Warm atmospheric gradient for sections */
 .section-warm-gradient {
-  background: linear-gradient(135deg, var(--color-linen) 0%, var(--color-parchment) 50%, var(--color-sand) 100%);
+  background: linear-gradient(135deg, var(--color-light-bg) 0%, var(--color-white) 50%, var(--color-light-bg) 100%);
+}
+
+/* Grain overlay utility class */
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 /* ========================
-   OLIVE BRANCH SECTION DIVIDER
+   DECORATIVE ELEMENTS
    ======================== */
 
+/* Olive branch divider - now subtle with amber */
 .olive-branch-divider {
   position: relative;
-  height: 60px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -634,25 +647,17 @@ a:not([class]):hover {
 
 .olive-branch-divider::before {
   content: '';
-  position: absolute;
-  width: 200px;
-  height: 40px;
-  opacity: 0.15;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q50 20 100 20 T200 20' stroke='%234F5D51' stroke-width='1' fill='none'/%3E%3Cellipse cx='30' cy='18' rx='8' ry='4' fill='%234F5D51' transform='rotate(-30 30 18)'/%3E%3Cellipse cx='50' cy='22' rx='8' ry='4' fill='%234F5D51' transform='rotate(30 50 22)'/%3E%3Cellipse cx='70' cy='18' rx='8' ry='4' fill='%234F5D51' transform='rotate(-25 70 18)'/%3E%3Cellipse cx='90' cy='22' rx='8' ry='4' fill='%234F5D51' transform='rotate(25 90 22)'/%3E%3Cellipse cx='110' cy='18' rx='8' ry='4' fill='%234F5D51' transform='rotate(-30 110 18)'/%3E%3Cellipse cx='130' cy='22' rx='8' ry='4' fill='%234F5D51' transform='rotate(30 130 22)'/%3E%3Cellipse cx='150' cy='18' rx='8' ry='4' fill='%234F5D51' transform='rotate(-25 150 18)'/%3E%3Cellipse cx='170' cy='22' rx='8' ry='4' fill='%234F5D51' transform='rotate(25 170 22)'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  opacity: 0.3;
 }
 
-/* Wider variant */
 .olive-branch-divider.wide::before {
-  width: 300px;
+  width: 200px;
 }
 
-/* ========================
-   FOOTER DECORATIVE ELEMENTS
-   ======================== */
-
+/* Footer decorative elements */
 .footer-pattern {
   position: relative;
 }
@@ -666,15 +671,15 @@ a:not([class]):hover {
   height: 4px;
   background: linear-gradient(90deg,
     transparent 0%,
-    var(--color-grove) 15%,
-    var(--color-grove-mist) 50%,
-    var(--color-grove) 85%,
+    var(--color-accent) 15%,
+    var(--color-accent-hover) 50%,
+    var(--color-accent) 85%,
     transparent 100%
   );
   opacity: 0.4;
 }
 
-/* Subtle wave pattern for footer top */
+/* Footer wave */
 .footer-wave {
   position: relative;
 }
@@ -686,14 +691,14 @@ a:not([class]):hover {
   left: 0;
   right: 0;
   height: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 20' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'%3E%3Cpath d='M0 20 Q300 0 600 10 T1200 0 L1200 20 Z' fill='%233D4A3F'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 20' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'%3E%3Cpath d='M0 20 Q300 0 600 10 T1200 0 L1200 20 Z' fill='%230f172a'/%3E%3C/svg%3E");
   background-size: cover;
 }
 
 /* Text selection */
 ::selection {
-  background-color: var(--color-grove);
-  color: var(--color-parchment);
+  background-color: var(--color-accent);
+  color: var(--color-white);
 }
 
 /* Scrollbar styling */
@@ -703,23 +708,23 @@ a:not([class]):hover {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-linen);
+  background: var(--color-light-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-sand);
+  background: var(--color-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-grove-mist);
+  background: var(--color-text-muted);
 }
 
 /* ========================
    MENU BUILDER COMING SOON ANIMATIONS
    ======================== */
 
-/* Icon pulse animation - subtle glow effect */
+/* Icon pulse animation */
 @keyframes icon-pulse {
   0%, 100% {
     transform: scale(1);
@@ -735,7 +740,7 @@ a:not([class]):hover {
   animation: icon-pulse 3s ease-in-out infinite;
 }
 
-/* Icon morph - container subtle rotation */
+/* Icon morph */
 @keyframes icon-morph {
   0%, 100% {
     transform: rotate(0deg);
@@ -752,7 +757,7 @@ a:not([class]):hover {
   animation: icon-morph 6s ease-in-out infinite;
 }
 
-/* Icon fade animations for morphing between two icons */
+/* Icon fade animations */
 @keyframes icon-fade-cycle-out {
   0%, 45% {
     opacity: 1;
@@ -785,11 +790,11 @@ a:not([class]):hover {
   animation: icon-fade-cycle-in 6s ease-in-out infinite;
 }
 
-/* Grove underline for Coming Soon text */
+/* Amber underline for Coming Soon text */
 .brass-underline {
   width: 120px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   position: relative;
 }
 
@@ -800,10 +805,20 @@ a:not([class]):hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
-  animation: grove-shimmer 3s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: amber-shimmer 3s ease-in-out infinite;
 }
 
+@keyframes amber-shimmer {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Legacy grove-shimmer for compatibility */
 @keyframes grove-shimmer {
   0%, 100% {
     opacity: 0.5;
@@ -871,7 +886,7 @@ a:not([class]):hover {
 }
 
 /* ========================
-   GROVE LINE DRAW ANIMATION (Section Dividers)
+   AMBER LINE DRAW ANIMATION
    ======================== */
 
 .brass-line-draw {
@@ -889,7 +904,7 @@ a:not([class]):hover {
   left: 50%;
   width: 0;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-grove), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   transition: width 1s ease-out, left 1s ease-out;
 }
 
@@ -899,31 +914,29 @@ a:not([class]):hover {
   left: 0;
 }
 
-/* Variant: Draw from left */
 .brass-line-draw.from-left::after {
   left: 0;
 }
 
-/* Variant: Fixed width */
 .brass-line-draw.short {
   max-width: 200px;
   margin: 0 auto;
 }
 
 .brass-line-draw.short::after {
-  background: linear-gradient(90deg, transparent 0%, var(--color-grove) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--color-accent) 50%, transparent 100%);
 }
 
 /* ========================
-   GLOW PULSE ANIMATION (CTA Buttons)
+   GLOW PULSE ANIMATION
    ======================== */
 
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(196, 112, 78, 0.25);
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.25);
   }
   50% {
-    box-shadow: 0 0 30px rgba(196, 112, 78, 0.4), 0 0 50px rgba(196, 112, 78, 0.15);
+    box-shadow: 0 0 30px rgba(234, 88, 12, 0.4), 0 0 50px rgba(234, 88, 12, 0.15);
   }
 }
 
@@ -933,25 +946,48 @@ a:not([class]):hover {
 
 .glow-pulse:hover {
   animation-play-state: paused;
-  box-shadow: 0 0 35px rgba(196, 112, 78, 0.5), 0 0 60px rgba(196, 112, 78, 0.2);
+  box-shadow: 0 0 35px rgba(234, 88, 12, 0.5), 0 0 60px rgba(234, 88, 12, 0.2);
 }
 
-/* Grove variant */
-@keyframes glow-pulse-grove {
+/* Amber glow variant */
+@keyframes glow-pulse-amber {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(79, 93, 81, 0.2);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
   }
   50% {
-    box-shadow: 0 0 25px rgba(79, 93, 81, 0.35), 0 0 45px rgba(79, 93, 81, 0.1);
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.35), 0 0 45px rgba(245, 158, 11, 0.1);
   }
 }
 
 .glow-pulse-brass {
-  animation: glow-pulse-grove 3s ease-in-out infinite;
+  animation: glow-pulse-amber 3s ease-in-out infinite;
+}
+
+/* Terracotta glow animation for CTAs - legacy */
+.glow-terracotta {
+  box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-terracotta:hover {
+  box-shadow: 0 0 30px rgba(234, 88, 12, 0.5), 0 0 60px rgba(234, 88, 12, 0.2);
+}
+
+@keyframes terracotta-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(234, 88, 12, 0.5), 0 0 60px rgba(234, 88, 12, 0.2);
+  }
+}
+
+.glow-terracotta-pulse {
+  animation: terracotta-pulse 2s ease-in-out infinite;
 }
 
 /* ========================
-   ENHANCED CARD HOVER EFFECTS
+   CARD HOVER EFFECTS
    ======================== */
 
 .card-hover-lift {
@@ -960,11 +996,10 @@ a:not([class]):hover {
 
 .card-hover-lift:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 30px rgba(79, 93, 81, 0.1);
-  border-color: var(--color-grove);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 30px rgba(245, 158, 11, 0.1);
+  border-color: var(--color-accent);
 }
 
-/* Card with glow effect on hover */
 .card-hover-glow {
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, border-color 0.3s ease-out;
 }
@@ -973,13 +1008,13 @@ a:not([class]):hover {
   transform: translateY(-6px);
   box-shadow:
     0 15px 35px rgba(0, 0, 0, 0.08),
-    0 0 20px rgba(79, 93, 81, 0.15),
-    inset 0 1px 0 rgba(79, 93, 81, 0.1);
-  border-color: var(--color-grove);
+    0 0 20px rgba(245, 158, 11, 0.15),
+    inset 0 1px 0 rgba(245, 158, 11, 0.1);
+  border-color: var(--color-accent);
 }
 
 /* ========================
-   PARALLAX BACKGROUND
+   PARALLAX
    ======================== */
 
 .parallax-container {
@@ -997,7 +1032,6 @@ a:not([class]):hover {
   pointer-events: none;
 }
 
-/* Subtle parallax decorative elements */
 .parallax-element {
   position: absolute;
   will-change: transform;
@@ -1006,14 +1040,14 @@ a:not([class]):hover {
 
 .parallax-orb {
   border-radius: 50%;
-  background: radial-gradient(circle, var(--color-grove-mist) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%);
   opacity: 0.15;
   filter: blur(40px);
 }
 
 .parallax-line {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-grove-mist), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   opacity: 0.3;
 }
 
@@ -1022,7 +1056,6 @@ a:not([class]):hover {
    ======================== */
 
 @media (prefers-reduced-motion: reduce) {
-  /* Disable all animations for users who prefer reduced motion */
   *,
   *::before,
   *::after {
@@ -1032,27 +1065,23 @@ a:not([class]):hover {
     scroll-behavior: auto !important;
   }
 
-  /* Show scroll-animated elements immediately */
   .animate-on-scroll,
   .stagger-child {
     opacity: 1 !important;
     transform: none !important;
   }
 
-  /* Disable parallax */
   .parallax-bg,
   .parallax-element {
     transform: none !important;
   }
 
-  /* Disable glow pulse */
   .glow-pulse,
   .glow-pulse-brass,
   .glow-mint-pulse {
     animation: none !important;
   }
 
-  /* Disable hero animations */
   .hero-fade-in {
     opacity: 1 !important;
     transform: none !important;
@@ -1069,7 +1098,6 @@ a:not([class]):hover {
     animation: none !important;
   }
 
-  /* Keep hover states but remove motion */
   .card-hover-lift:hover,
   .card-hover-glow:hover {
     transform: none !important;
@@ -1080,7 +1108,6 @@ a:not([class]):hover {
    BUTTON HOVER MICRO-INTERACTIONS
    ======================== */
 
-/* Standard button hover effect */
 .btn-hover {
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -1093,7 +1120,6 @@ a:not([class]):hover {
   transform: scale(0.98);
 }
 
-/* Primary button enhanced hover */
 .cta-primary:hover,
 .glow-pulse:hover {
   transform: scale(1.02) translateY(-2px);
@@ -1103,7 +1129,6 @@ a:not([class]):hover {
    NAV LINK UNDERLINE ANIMATION
    ======================== */
 
-/* Enhanced nav link underline - grows from center */
 .nav-link-underline {
   position: relative;
 }
@@ -1115,7 +1140,7 @@ a:not([class]):hover {
   left: 50%;
   width: 0;
   height: 2px;
-  background-color: currentColor;
+  background-color: var(--color-accent);
   transition: width 0.2s ease, left 0.2s ease;
 }
 
@@ -1144,7 +1169,7 @@ a:not([class]):hover {
   display: inline-block;
   width: 8px;
   height: 8px;
-  background-color: #22c55e;
+  background-color: var(--color-success);
   border-radius: 50%;
 }
 
@@ -1155,13 +1180,13 @@ a:not([class]):hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #22c55e;
+  background-color: var(--color-success);
   border-radius: 50%;
   animation: availability-pulse 2s ease-in-out infinite;
 }
 
 /* ========================
-   STATS COUNTER ANIMATION
+   STATS
    ======================== */
 
 .stat-number {
@@ -1173,10 +1198,9 @@ a:not([class]):hover {
 }
 
 /* ========================
-   CARD HOVER MICRO-INTERACTIONS
+   CARD MICRO-HOVER
    ======================== */
 
-/* Enhanced card hover with subtle lift */
 .card-micro-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -1199,7 +1223,6 @@ html {
     scroll-behavior: auto;
   }
 
-  /* Disable button hover transforms */
   .btn-hover:hover,
   .btn-hover:active,
   .cta-primary:hover,
@@ -1207,12 +1230,10 @@ html {
     transform: none !important;
   }
 
-  /* Disable card hover transforms */
   .card-micro-hover:hover {
     transform: none !important;
   }
 
-  /* Disable availability pulse */
   .availability-dot::before {
     animation: none !important;
   }

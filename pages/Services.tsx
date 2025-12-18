@@ -11,13 +11,13 @@ const Services: React.FC = () => {
   });
 
   return (
-    <div className="bg-parchment min-h-screen pb-20">
-      {/* Header - extends behind transparent nav */}
-      <div className="bg-grove-dark py-16 pt-24 border-b border-grove -mt-[72px]">
+    <div className="bg-white min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-primary-dark py-16 pt-8 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
-          <h1 className="font-serif text-4xl font-bold text-parchment mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
+          <h1 className="font-display text-4xl font-bold text-white mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
           <div className="brass-line-draw short mb-6" />
-          <p className="text-grove-mist max-w-2xl mx-auto text-lg">
+          <p className="text-gray-400 max-w-2xl mx-auto text-lg">
             Professional POS installation, menu configuration, and restaurant networking in Cape Cod. Systems built to survive the Friday night rush.
           </p>
         </div>
@@ -81,41 +81,20 @@ const Services: React.FC = () => {
         </div>
 
         <div className="mt-16 text-center animate-on-scroll">
-          <div className="inline-block bg-linen p-8 rounded-2xl shadow-xl border border-sand border-l-4 border-l-grove card-hover-glow">
-             <h2 className="text-2xl font-bold text-ink mb-4">Need a Custom POS Solution?</h2>
+          <div className="inline-block bg-gray-50 p-8 rounded-2xl shadow-xl border border-gray-200 border-l-4 border-l-amber-500 card-hover-glow">
+             <h2 className="text-2xl font-bold text-gray-900 mb-4">Need a Custom POS Solution?</h2>
              <div className="brass-line-draw short mb-4" />
-             <p className="text-ink-light mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
+             <p className="text-gray-600 mb-6">Let's hop on a 15-minute discovery call. No sales pitch, just problem solving for your restaurant.</p>
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                <Link
                  to="/schedule"
-                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover"
-                 style={{
-                   backgroundColor: '#C4704E',
-                   color: '#FAF8F5',
-                   textShadow: '0 1px 2px rgba(0,0,0,0.15)'
-                 }}
-                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#A85A3A'}
-                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#C4704E'}
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover bg-orange-600 text-white hover:bg-orange-700"
                >
                  Schedule a Call
                </Link>
                <Link
                  to="/quote"
-                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover"
-                 style={{
-                   backgroundColor: '#4F5D51',
-                   color: '#FAF8F5',
-                   border: '2px solid #4F5D51',
-                   textShadow: '0 1px 2px rgba(0,0,0,0.15)'
-                 }}
-                 onMouseEnter={(e) => {
-                   e.currentTarget.style.backgroundColor = '#3D4A3F';
-                   e.currentTarget.style.borderColor = '#3D4A3F';
-                 }}
-                 onMouseLeave={(e) => {
-                   e.currentTarget.style.backgroundColor = '#4F5D51';
-                   e.currentTarget.style.borderColor = '#4F5D51';
-                 }}
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover bg-primary-dark text-white hover:bg-primary"
                >
                  Build Your Quote
                </Link>
@@ -125,9 +104,9 @@ const Services: React.FC = () => {
 
         {/* Service Area Info */}
         <div className="mt-12 text-center">
-          <p className="text-ink-light">
-            Serving restaurants in <strong className="text-ink">Cape Cod</strong>, <strong className="text-ink">South Shore</strong>, and <strong className="text-ink">Southeastern Massachusetts</strong>.{' '}
-            <Link to="/contact" className="text-bay hover:underline transition-colors">Contact us</Link> to discuss your project.
+          <p className="text-gray-600">
+            Serving restaurants in <strong className="text-gray-900">Cape Cod</strong>, <strong className="text-gray-900">South Shore</strong>, and <strong className="text-gray-900">Southeastern Massachusetts</strong>.{' '}
+            <Link to="/contact" className="text-amber-500 hover:underline transition-colors">Contact us</Link> to discuss your project.
           </p>
         </div>
       </div>
@@ -141,23 +120,23 @@ const ServiceSection: React.FC<{
   features: string[],
   icon: React.ElementType
 }> = ({ title, description, features, icon: Icon }) => (
-  <div className="bg-parchment rounded-xl shadow-md border border-sand border-l-4 border-l-grove overflow-hidden flex flex-col md:flex-row animate-on-scroll card-hover-glow">
-    <div className="bg-linen p-8 flex items-center justify-center md:w-1/4 border-r border-sand">
+  <div className="bg-white rounded-xl shadow-md border border-gray-200 border-l-4 border-l-amber-500 overflow-hidden flex flex-col md:flex-row animate-on-scroll card-hover-glow">
+    <div className="bg-gray-50 p-8 flex items-center justify-center md:w-1/4 border-r border-gray-200">
       <div className="text-center">
-        <div className="w-16 h-16 bg-grove rounded-full flex items-center justify-center shadow-sm mx-auto mb-4">
-          <Icon className="w-8 h-8 text-parchment" />
+        <div className="w-16 h-16 bg-primary-dark rounded-full flex items-center justify-center shadow-sm mx-auto mb-4">
+          <Icon className="w-8 h-8 text-white" />
         </div>
-        <div className="font-bold text-ink-light uppercase tracking-widest text-xs">Core Service</div>
+        <div className="font-bold text-gray-500 uppercase tracking-widest text-xs">Core Service</div>
       </div>
     </div>
     <div className="p-8 md:w-3/4">
-      <h2 className="font-serif text-2xl font-bold text-ink mb-3">{title}</h2>
-      <p className="text-ink-light mb-6 leading-relaxed text-lg">{description}</p>
+      <h2 className="font-display text-2xl font-bold text-gray-900 mb-3">{title}</h2>
+      <p className="text-gray-600 mb-6 leading-relaxed text-lg">{description}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {features.map((feature, idx) => (
           <div key={idx} className="flex items-start gap-3">
-            <Check className="w-5 h-5 text-grove flex-shrink-0 mt-0.5" />
-            <span className="text-ink/80 text-sm font-medium">{feature}</span>
+            <Check className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-700 text-sm font-medium">{feature}</span>
           </div>
         ))}
       </div>

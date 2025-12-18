@@ -14,7 +14,7 @@ const QuoteTeaser: React.FC = () => {
   });
 
   return (
-    <div className="bg-grove-dark min-h-screen flex items-center justify-center relative hero-grain">
+    <div className="bg-primary-dark min-h-screen flex items-center justify-center relative hero-grain">
       {/* Full page centered content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center relative z-10">
 
@@ -68,13 +68,13 @@ const QuoteTeaser: React.FC = () => {
         </div>
 
         {/* Headline */}
-        <h1 className="hero-fade-in hero-fade-in-delay-1 font-serif text-5xl md:text-6xl font-bold text-terracotta mb-4">
+        <h1 className="hero-fade-in hero-fade-in-delay-1 font-display text-5xl md:text-6xl font-bold text-orange-500 mb-4">
           Quote Builder
         </h1>
 
         {/* Subheadline */}
         <div className="hero-fade-in hero-fade-in-delay-1 mb-10">
-          <p className="text-2xl md:text-3xl text-parchment font-serif mb-3">
+          <p className="text-2xl md:text-3xl text-white font-display mb-3">
             Configure Your POS System
           </p>
           <div className="brass-underline mx-auto"></div>
@@ -82,12 +82,12 @@ const QuoteTeaser: React.FC = () => {
 
         {/* Body Copy */}
         <div className="hero-fade-in hero-fade-in-delay-2 mb-12 max-w-2xl mx-auto">
-          <p className="text-lg text-grove-mist leading-relaxed mb-6">
+          <p className="text-lg text-gray-300 leading-relaxed mb-6">
             Build a custom Toast POS configuration for your restaurant. Get instant
             estimates for installation time and support costs. Design your floor layout
             with our interactive canvas.
           </p>
-          <p className="text-parchment font-medium text-lg">
+          <p className="text-white font-medium text-lg">
             Interactive configuration &bull; Instant estimates &bull; Scheduling integration
           </p>
         </div>
@@ -96,8 +96,7 @@ const QuoteTeaser: React.FC = () => {
         <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link
             to="/quote-builder"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-terracotta text-parchment rounded-lg font-semibold hover:bg-terracotta-dark transition-all glow-pulse shadow-lg btn-hover"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-all glow-pulse shadow-lg btn-hover"
           >
             Launch Quote Builder
           </Link>
@@ -105,8 +104,7 @@ const QuoteTeaser: React.FC = () => {
             href={ACUITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-parchment/15 text-parchment rounded-lg font-semibold border-2 border-parchment hover:bg-parchment/25 transition-all btn-hover"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 text-white rounded-lg font-semibold border-2 border-white hover:bg-white/20 transition-all btn-hover"
           >
             <Calendar size={20} />
             Schedule Consultation Instead
@@ -117,7 +115,7 @@ const QuoteTeaser: React.FC = () => {
         <div className="hero-fade-in hero-fade-in-delay-4">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-grove-mist hover:text-parchment transition-colors"
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft size={18} />
             Back to Home
@@ -137,12 +135,12 @@ const QuoteTeaser: React.FC = () => {
           position: relative;
           width: 320px;
           height: 220px;
-          background: linear-gradient(135deg, var(--color-linen), var(--color-parchment));
-          border: 1px solid var(--color-sand);
-          border-left: 4px solid var(--color-grove);
+          background: linear-gradient(135deg, #f8fafc, #ffffff);
+          border: 1px solid #e5e7eb;
+          border-left: 4px solid #f59e0b;
           border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
           animation: float 6s ease-in-out infinite;
         }
 
@@ -159,8 +157,8 @@ const QuoteTeaser: React.FC = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(79, 93, 81, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(79, 93, 81, 0.1) 1px, transparent 1px);
+            linear-gradient(rgba(15, 23, 42, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 42, 0.1) 1px, transparent 1px);
           background-size: 20px 20px;
           padding: 20px;
         }
@@ -172,26 +170,26 @@ const QuoteTeaser: React.FC = () => {
           align-items: center;
           gap: 4px;
           font-size: 10px;
-          color: var(--color-ink-light);
+          color: #6b7280;
           animation: station-pulse 3s ease-in-out infinite;
         }
 
         .station-icon {
           width: 40px;
           height: 40px;
-          background: linear-gradient(135deg, var(--color-terracotta), var(--color-terracotta-dark));
+          background: linear-gradient(135deg, #ea580c, #c2410c);
           border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(196, 112, 78, 0.3);
+          box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
         }
 
         .station-kds {
-          background: linear-gradient(135deg, var(--color-grove), var(--color-grove-dark));
-          box-shadow: 0 4px 12px rgba(79, 93, 81, 0.3);
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
         }
 
         .station-bar {
-          background: linear-gradient(135deg, var(--color-bay), #4a7a8a);
-          box-shadow: 0 4px 12px rgba(91, 138, 154, 0.3);
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
         .preview-station-1 {
@@ -244,7 +242,7 @@ const QuoteTeaser: React.FC = () => {
           inset: 0;
           width: 100%;
           height: 100%;
-          color: var(--color-grove);
+          color: #f59e0b;
           opacity: 0.4;
         }
 
@@ -267,8 +265,8 @@ const QuoteTeaser: React.FC = () => {
           position: absolute;
           top: 12px;
           right: 12px;
-          background: rgba(61, 74, 63, 0.95);
-          border: 1px solid var(--color-terracotta);
+          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid #f59e0b;
           border-radius: 8px;
           padding: 8px 12px;
           display: flex;
@@ -279,16 +277,16 @@ const QuoteTeaser: React.FC = () => {
 
         @keyframes bubble-glow {
           0%, 100% {
-            box-shadow: 0 0 10px rgba(196, 112, 78, 0.2);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
           }
           50% {
-            box-shadow: 0 0 20px rgba(196, 112, 78, 0.4);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
           }
         }
 
         .estimate-label {
           font-size: 9px;
-          color: var(--color-grove-mist);
+          color: #9ca3af;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -296,7 +294,7 @@ const QuoteTeaser: React.FC = () => {
         .estimate-value {
           font-size: 14px;
           font-weight: 600;
-          color: var(--color-terracotta);
+          color: #f59e0b;
         }
 
         @media (min-width: 640px) {
