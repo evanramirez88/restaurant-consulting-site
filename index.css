@@ -1238,3 +1238,213 @@ html {
     animation: none !important;
   }
 }
+
+/* ========================
+   DARK MODE SUPPORT
+   ======================== */
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Dark mode text colors */
+.dark .text-gray-700 {
+  color: #d1d5db;
+}
+
+.dark .text-gray-600 {
+  color: #9ca3af;
+}
+
+.dark .text-gray-500 {
+  color: #6b7280;
+}
+
+/* Dark mode backgrounds */
+.dark .bg-white {
+  background-color: #1f2937;
+}
+
+.dark .bg-gray-50 {
+  background-color: #111827;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f2937;
+}
+
+/* Dark mode borders */
+.dark .border-gray-200 {
+  border-color: #374151;
+}
+
+.dark .border-gray-300 {
+  border-color: #4b5563;
+}
+
+/* ========================
+   ADMIN PANEL STYLES
+   ======================== */
+
+/* Toggle switch animation */
+.toggle-switch {
+  transition: background-color 0.2s ease;
+}
+
+.toggle-switch-handle {
+  transition: transform 0.2s ease;
+}
+
+/* Admin panel animations */
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-duration: 0.2s;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fade-in-keyframes;
+}
+
+@keyframes fade-in-keyframes {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.slide-in-from-top-2 {
+  animation-name: slide-in-from-top;
+}
+
+/* Admin form inputs */
+.admin-input {
+  background-color: rgba(17, 24, 39, 0.5);
+  border: 1px solid #4b5563;
+  color: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  outline: none;
+}
+
+.admin-input::placeholder {
+  color: #6b7280;
+}
+
+/* Status indicator variations */
+.status-available {
+  background-color: #22c55e;
+}
+
+.status-busy {
+  background-color: #eab308;
+}
+
+.status-offline {
+  background-color: #6b7280;
+}
+
+/* Admin card styles */
+.admin-card {
+  background-color: rgba(31, 41, 55, 0.5);
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+}
+
+/* Segmented control */
+.segmented-control {
+  display: grid;
+  padding: 0.25rem;
+  background-color: rgba(17, 24, 39, 0.5);
+  border-radius: 0.75rem;
+}
+
+.segmented-control-item {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segmented-control-item.active {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.segmented-control-item:not(.active) {
+  color: #9ca3af;
+}
+
+.segmented-control-item:not(.active):hover {
+  background-color: rgba(55, 65, 81, 0.5);
+  color: #fff;
+}
+
+/* Availability panel dropdown animation */
+@keyframes availability-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.availability-panel-enter {
+  animation: availability-panel-enter 0.2s ease-out forwards;
+}
+
+/* Touch-friendly tap highlight */
+@media (hover: none) {
+  button, a {
+    -webkit-tap-highlight-color: rgba(245, 158, 11, 0.2);
+  }
+}
+
+/* Ensure minimum touch target size */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Admin scrollbar styling */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

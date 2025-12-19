@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Phone, UtensilsCrossed } from 'lucide-react';
 import { NAVIGATION, COMPANY_NAME, PHONE_NUMBER, EMAIL_ADDRESS } from '../constants';
 import { initScrollAnimations } from '../src/hooks/useScrollAnimation';
+import AvailabilityIndicator from '../src/components/AvailabilityIndicator';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -134,10 +135,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Right side - CTA Button */}
             <div className="hidden lg:flex items-center gap-4">
               {/* Availability Badge */}
-              <span className="hidden xl:flex items-center gap-2 text-[13px] text-gray-500">
-                <span className="availability-dot"></span>
-                <span>Available Now</span>
-              </span>
+              <div className="hidden xl:block">
+                <AvailabilityIndicator />
+              </div>
 
               {/* Get Quote CTA Button - Orange */}
               <Link
