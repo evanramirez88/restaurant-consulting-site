@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Shield, Clock, Phone, Zap, AlertCircle } from 'lucide-react';
+import { Check, Shield, X } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
 const SupportPlans: React.FC = () => {
@@ -17,14 +17,14 @@ const SupportPlans: React.FC = () => {
       name: 'Essential',
       monthlyPrice: 125,
       annualPrice: 1200,
+      annualSavings: 300,
       description: 'Perfect for single-location restaurants with basic support needs',
       features: [
-        'Business hours phone support (9AM-9PM)',
-        'Email support with 4-hour response time',
-        'Remote diagnostics and troubleshooting',
-        'Toast POS configuration assistance',
-        'Monthly system health check',
-        'Priority scheduling for on-site visits'
+        '2 hours per month included',
+        '48-hour response time',
+        'Email support',
+        'Monthly plan reviews',
+        'Basic menu guidance'
       ],
       highlighted: false
     },
@@ -32,17 +32,15 @@ const SupportPlans: React.FC = () => {
       name: 'Professional',
       monthlyPrice: 250,
       annualPrice: 2400,
+      annualSavings: 600,
       description: 'For busy restaurants that need faster response times',
       features: [
-        'Extended hours support (7AM-11PM)',
-        'Email support with 2-hour response time',
-        'Remote diagnostics and troubleshooting',
-        'Toast POS configuration assistance',
-        'Bi-weekly system health checks',
-        'Priority scheduling for on-site visits',
-        '1 free on-site visit per quarter',
-        'Menu optimization consultation',
-        'Integration setup assistance'
+        '4 hours per month included',
+        '24-hour response time',
+        'Priority email & phone support',
+        'Weekly optimization consultations',
+        'Menu engineering & analysis',
+        'Staff training resources'
       ],
       highlighted: true
     },
@@ -50,23 +48,35 @@ const SupportPlans: React.FC = () => {
       name: 'Premium',
       monthlyPrice: 400,
       annualPrice: 3600,
+      annualSavings: 1200,
       description: 'Maximum coverage for high-volume operations',
       features: [
-        '24/7 emergency phone support',
-        'Email support with 1-hour response time',
-        'Remote diagnostics and troubleshooting',
-        'Toast POS configuration assistance',
-        'Weekly system health checks',
-        'Priority scheduling for on-site visits',
-        '2 free on-site visits per quarter',
-        'Menu optimization consultation',
-        'Integration setup assistance',
+        '8 hours per month included',
+        'Same-day response time',
         'Dedicated account manager',
-        'Staff training sessions (quarterly)',
-        'Network monitoring and maintenance'
+        'Daily POS monitoring & alerts',
+        'Advanced menu optimization',
+        'Full staff training & onboarding',
+        'Quarterly business reviews'
       ],
       highlighted: false
     }
+  ];
+
+  // All possible features for comparison grid
+  const allFeatures = [
+    { name: 'Monthly hours included', essential: '2', professional: '4', premium: '8' },
+    { name: 'Response time', essential: '48-hour', professional: '24-hour', premium: 'Same-day' },
+    { name: 'Email support', essential: true, professional: true, premium: true },
+    { name: 'Phone support', essential: false, professional: true, premium: true },
+    { name: 'Priority support', essential: false, professional: true, premium: true },
+    { name: 'Plan reviews', essential: 'Monthly', professional: 'Weekly', premium: 'Daily monitoring' },
+    { name: 'Menu guidance', essential: 'Basic', professional: 'Engineering & analysis', premium: 'Advanced optimization' },
+    { name: 'Staff training resources', essential: false, professional: true, premium: true },
+    { name: 'Dedicated account manager', essential: false, professional: false, premium: true },
+    { name: 'POS monitoring & alerts', essential: false, professional: false, premium: true },
+    { name: 'Staff onboarding', essential: false, professional: false, premium: true },
+    { name: 'Business reviews', essential: false, professional: false, premium: 'Quarterly' }
   ];
 
   return (
@@ -76,15 +86,15 @@ const SupportPlans: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
           <div className="inline-flex items-center gap-3 mb-4">
             <Shield className="w-12 h-12 text-amber-500" />
-            <h1 className="font-display text-4xl font-bold text-white">Toast Guardian</h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Toast Guardian</h1>
           </div>
           <div className="brass-line-draw short mb-6" />
-          <p className="text-amber-400 text-2xl font-semibold mb-4">
+          <p className="text-amber-400 text-xl sm:text-2xl font-semibold mb-4">
             Never get caught off guard again
           </p>
-          <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-400 max-w-2xl mx-auto text-base sm:text-lg">
             When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone.
-            Toast Guardian provides 24/7 support plans built for Cape Cod restaurants.
+            Toast Guardian provides reliable support plans built for Cape Cod restaurants.
           </p>
         </div>
       </div>
@@ -92,10 +102,10 @@ const SupportPlans: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
         {/* Billing Toggle */}
         <div className="flex justify-center mb-12 animate-on-scroll">
-          <div className="inline-flex items-center gap-4 bg-white rounded-xl shadow-lg border border-gray-200 p-2">
+          <div className="inline-flex items-center gap-2 sm:gap-4 bg-white rounded-xl shadow-lg border border-gray-200 p-2">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
                 billingPeriod === 'monthly'
                   ? 'bg-amber-500 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900'
@@ -105,28 +115,28 @@ const SupportPlans: React.FC = () => {
             </button>
             <button
               onClick={() => setBillingPeriod('annual')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm sm:text-base ${
                 billingPeriod === 'annual'
                   ? 'bg-amber-500 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Annual
-              <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
-                Save 2 months
+              <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full whitespace-nowrap">
+                Save up to $1,200
               </span>
             </button>
           </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-16">
           {plans.map((plan, idx) => (
             <div
               key={plan.name}
               className={`rounded-xl shadow-xl border-2 overflow-hidden flex flex-col animate-on-scroll ${
                 plan.highlighted
-                  ? 'border-amber-500 transform scale-105 relative'
+                  ? 'border-amber-500 transform md:scale-105 relative'
                   : 'border-gray-200'
               }`}
               style={{ animationDelay: `${idx * 100}ms` }}
@@ -137,22 +147,22 @@ const SupportPlans: React.FC = () => {
                 </div>
               )}
 
-              <div className="p-8 bg-white flex-grow">
+              <div className="p-6 sm:p-8 bg-white flex-grow">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                 <p className="text-gray-600 text-sm mb-6 min-h-[40px]">{plan.description}</p>
 
                 <div className="mb-6">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-gray-900">
+                    <span className="text-4xl sm:text-5xl font-bold text-gray-900">
                       ${billingPeriod === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
                     </span>
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 text-sm sm:text-base">
                       /{billingPeriod === 'monthly' ? 'month' : 'year'}
                     </span>
                   </div>
                   {billingPeriod === 'annual' && (
-                    <p className="text-sm text-green-600 mt-2">
-                      ${(plan.monthlyPrice * 12 - plan.annualPrice).toFixed(0)} annual savings
+                    <p className="text-sm text-green-600 mt-2 font-semibold">
+                      Save ${plan.annualSavings}/year
                     </p>
                   )}
                 </div>
@@ -167,7 +177,7 @@ const SupportPlans: React.FC = () => {
                 </div>
 
                 <Link
-                  to="/contact"
+                  to="/schedule"
                   className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover ${
                     plan.highlighted
                       ? 'text-white glow-pulse'
@@ -175,115 +185,130 @@ const SupportPlans: React.FC = () => {
                   }`}
                   style={plan.highlighted ? { backgroundColor: '#ea580c' } : {}}
                 >
-                  Get Started
+                  Schedule Consultation
                 </Link>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Why Toast Guardian Section */}
-        <div className="bg-gray-50 rounded-2xl p-8 shadow-xl border border-gray-200 border-l-4 border-l-amber-500 mb-16 animate-on-scroll">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            Why Toast Guardian?
-          </h2>
-          <div className="brass-line-draw short mb-8" />
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">We Actually Answer</h3>
-              <p className="text-gray-600 text-sm">
-                No phone trees, no ticket systems. Call and talk to someone who knows your setup.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Restaurant-Specific</h3>
-              <p className="text-gray-600 text-sm">
-                We understand kitchen workflow, ticket routing, and the Friday night chaos.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Proactive Monitoring</h3>
-              <p className="text-gray-600 text-sm">
-                We catch issues before they become problems during service.
-              </p>
-            </div>
+        {/* Feature Comparison Grid */}
+        <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden mb-16 animate-on-scroll">
+          <div className="bg-primary-dark p-6 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Compare Plans</h2>
+            <div className="brass-line-draw short" />
           </div>
-        </div>
 
-        {/* FAQ / Additional Info */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 animate-on-scroll">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Common Questions</h2>
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                What's covered in remote support?
-              </h3>
-              <p className="text-gray-600 text-sm ml-7">
-                Toast POS configuration, menu changes, troubleshooting printer issues, network diagnostics,
-                integration problems, and staff training via screen share.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                Do you charge for on-site visits?
-              </h3>
-              <p className="text-gray-600 text-sm ml-7">
-                Professional and Premium plans include free quarterly visits. Additional on-site work is billed
-                at standard rates, but plan members get priority scheduling and discounted labor.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                Can I upgrade or downgrade my plan?
-              </h3>
-              <p className="text-gray-600 text-sm ml-7">
-                Yes, you can change plans at any time. Changes take effect at the start of your next billing cycle.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                What if I need support outside my plan hours?
-              </h3>
-              <p className="text-gray-600 text-sm ml-7">
-                Emergency support is available 24/7 for all plan tiers, billed at emergency rates.
-                Premium members get 24/7 coverage included.
-              </p>
-            </div>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b-2 border-gray-200">
+                  <th className="text-left p-4 font-semibold text-gray-900">Feature</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Essential</th>
+                  <th className="text-center p-4 font-semibold text-amber-600 bg-amber-50">Professional</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Premium</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allFeatures.map((feature, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="p-4 font-medium text-gray-900 border-b border-gray-200">
+                      {feature.name}
+                    </td>
+                    <td className="p-4 text-center border-b border-gray-200">
+                      {typeof feature.essential === 'boolean' ? (
+                        feature.essential ? (
+                          <Check className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : (
+                          <X className="w-5 h-5 text-gray-300 mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-gray-700 text-sm">{feature.essential}</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center bg-amber-50 border-b border-amber-100">
+                      {typeof feature.professional === 'boolean' ? (
+                        feature.professional ? (
+                          <Check className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : (
+                          <X className="w-5 h-5 text-gray-300 mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-gray-700 text-sm font-medium">{feature.professional}</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center border-b border-gray-200">
+                      {typeof feature.premium === 'boolean' ? (
+                        feature.premium ? (
+                          <Check className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : (
+                          <X className="w-5 h-5 text-gray-300 mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-gray-700 text-sm">{feature.premium}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Accordion */}
+          <div className="md:hidden p-4 space-y-4">
+            {plans.map((plan) => (
+              <div key={plan.name} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className={`p-4 font-bold text-white ${plan.highlighted ? 'bg-amber-500' : 'bg-gray-800'}`}>
+                  {plan.name}
+                </div>
+                <div className="p-4 space-y-3">
+                  {allFeatures.map((feature, idx) => {
+                    const value = plan.name === 'Essential' ? feature.essential :
+                                  plan.name === 'Professional' ? feature.professional :
+                                  feature.premium;
+                    return (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span className="font-medium text-gray-700">{feature.name}</span>
+                        <span className="text-gray-900">
+                          {typeof value === 'boolean' ? (
+                            value ? (
+                              <Check className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <X className="w-5 h-5 text-gray-300" />
+                            )
+                          ) : (
+                            value
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* CTA */}
         <div className="mt-16 text-center animate-on-scroll">
-          <div className="inline-block bg-primary-dark p-8 rounded-2xl shadow-xl border border-gray-700">
-            <h2 className="text-2xl font-bold text-white mb-4">Ready to protect your restaurant?</h2>
+          <div className="inline-block bg-primary-dark p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-700">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ready to protect your restaurant?</h2>
             <div className="brass-line-draw short mb-4" />
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-300 mb-6 text-sm sm:text-base">
               Let's discuss which Toast Guardian plan is right for your operation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/schedule"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover text-sm sm:text-base"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
-                Schedule a Call
+                Schedule Consultation
               </Link>
               <Link
                 to="/contact"
-                className="inline-block px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md btn-hover"
+                className="inline-block px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md btn-hover text-sm sm:text-base"
               >
                 Contact Us
               </Link>
