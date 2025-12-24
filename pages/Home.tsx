@@ -242,7 +242,8 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg btn-hover cta-secondary-dark"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg btn-hover glow-pulse"
+              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               Get Your Free Quote
             </Link>
