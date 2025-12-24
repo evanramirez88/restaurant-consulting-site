@@ -142,7 +142,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Get Quote CTA Button - Orange */}
               <Link
                 to="/quote"
-                className="bg-orange-600 text-white px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-200 hover:bg-orange-700 shadow-md hover:shadow-lg btn-hover"
+                className="px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg btn-hover"
+                style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Get Quote
               </Link>
@@ -205,8 +206,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 bg-orange-600 text-white px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 hover:bg-orange-700 shadow-lg btn-hover"
+              className="mt-8 px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 shadow-lg btn-hover"
               style={{
+                backgroundColor: '#ea580c',
+                color: '#ffffff',
                 transitionDelay: isMobileMenuOpen ? `${NAV_ITEMS.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',
                 opacity: isMobileMenuOpen ? 1 : 0,

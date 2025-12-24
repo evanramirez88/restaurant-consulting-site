@@ -88,13 +88,15 @@ const Services: React.FC = () => {
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                <Link
                  to="/schedule"
-                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover bg-orange-600 text-white hover:bg-orange-700"
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover"
+                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
                >
                  Schedule a Call
                </Link>
                <Link
                  to="/quote"
-                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover bg-primary-dark text-white hover:bg-primary"
+                 className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover"
+                 style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
                >
                  Build Your Quote
                </Link>

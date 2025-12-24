@@ -80,7 +80,8 @@ const About: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/contact"
-              className="px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition-colors glow-pulse"
+              className="px-6 py-3 rounded-lg font-bold transition-colors glow-pulse"
+              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               Get in Touch
             </Link>

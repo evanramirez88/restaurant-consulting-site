@@ -784,7 +784,8 @@ const QuoteBuilder: React.FC = () => {
           </p>
           <Link
             to="/contact"
-            className="inline-block px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+            className="inline-block px-6 py-3 rounded transition-colors"
+            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
             Contact for Custom Quote
           </Link>
