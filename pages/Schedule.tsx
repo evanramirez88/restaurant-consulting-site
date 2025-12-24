@@ -90,7 +90,8 @@ const Schedule: React.FC = () => {
               </p>
               <a
                 href={`tel:${PHONE_NUMBER}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-all btn-hover"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all btn-hover"
+                style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 <Phone className="w-4 h-4" />
                 {PHONE_NUMBER}
@@ -170,7 +171,8 @@ const Schedule: React.FC = () => {
           </p>
           <Link
             to="/services"
-            className="inline-flex items-center px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition-all shadow-lg btn-hover"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-bold transition-all shadow-lg btn-hover"
+            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
             View Our Services
           </Link>

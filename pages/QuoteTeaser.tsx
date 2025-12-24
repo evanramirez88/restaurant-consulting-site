@@ -96,7 +96,8 @@ const QuoteTeaser: React.FC = () => {
         <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link
             to="/quote-builder"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-all glow-pulse shadow-lg btn-hover"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all glow-pulse shadow-lg btn-hover"
+            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
             Launch Quote Builder
           </Link>
@@ -104,7 +105,7 @@ const QuoteTeaser: React.FC = () => {
             href={ACUITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 text-white rounded-lg font-semibold border-2 border-white hover:bg-white/20 transition-all btn-hover"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all btn-hover cta-secondary-dark"
           >
             <Calendar size={20} />
             Schedule Consultation Instead
