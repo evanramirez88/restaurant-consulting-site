@@ -65,15 +65,22 @@ const Home: React.FC = () => {
 
           {/* Main headline */}
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 hero-fade-in hero-fade-in-delay-1">
-            Restaurant Tech That Actually
+            Your POS Crashed Mid-Rush.
             <br />
-            <span className="text-amber-400 italic">Understands Restaurants.</span>
+            <span className="text-amber-400 italic">Never Again.</span>
           </h1>
 
           {/* Description */}
-          <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto hero-fade-in hero-fade-in-delay-2">
-            Toast POS installation, networking, and operational consulting from someone who's worked every station in your kitchen. I don't just fix wires; I fix workflows.
+          <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto hero-fade-in hero-fade-in-delay-2">
+            Toast POS installation, bulletproof networking, and operational consulting from someone who's worked the line, run the pass, and closed out the registers. When your tech goes down during a 200-cover Saturday, you need someone who's been there—not a call center.
           </p>
+
+          {/* Pain points solved */}
+          <div className="flex flex-wrap justify-center gap-4 mb-10 text-sm text-gray-300 hero-fade-in hero-fade-in-delay-2">
+            <span className="bg-white/10 px-4 py-2 rounded-full">✓ Zero-downtime installations</span>
+            <span className="bg-white/10 px-4 py-2 rounded-full">✓ After-hours support</span>
+            <span className="bg-white/10 px-4 py-2 rounded-full">✓ Menu built your way</span>
+          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 hero-fade-in hero-fade-in-delay-3">
@@ -81,30 +88,30 @@ const Home: React.FC = () => {
               to="/quote"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover bg-orange-600 text-white hover:bg-orange-700"
             >
-              Get Your Free Quote
+              Get a Quote in 2 Minutes
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
               to="/schedule"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all btn-hover border-2 border-white text-white hover:bg-white hover:text-primary-dark"
             >
-              Schedule Discovery Call
+              Book a Free 15-Min Call
             </Link>
           </div>
 
           {/* Trust Indicators */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-gray-400 text-sm hero-fade-in hero-fade-in-delay-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-gray-500" />
-              <span>50+ Restaurants Served</span>
+              <CheckCircle2 className="w-4 h-4 text-teal-500" />
+              <span>50+ Restaurants Launched</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-gray-500" />
-              <span>Toast Certified Partner</span>
+              <CheckCircle2 className="w-4 h-4 text-teal-500" />
+              <span>10+ Years in Hospitality</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-gray-500" />
-              <span>Same-Day Invoicing</span>
+              <CheckCircle2 className="w-4 h-4 text-teal-500" />
+              <span>Response Within 2 Hours</span>
             </div>
           </div>
         </div>
@@ -132,24 +139,24 @@ const Home: React.FC = () => {
             {/* Content Right */}
             <div className="lg:w-1/2 animate-on-scroll slide-right">
               <span className="text-amber-600 font-bold uppercase tracking-widest text-sm block mb-3">
-                WHY CHOOSE R&amp;G
+                THE R&amp;G DIFFERENCE
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-8 leading-tight">
-                Most IT Guys Have Never Worked a Friday Night Rush. I Have.
+                Your Last IT Guy Made You Explain What "86'd" Means. I Won't.
               </h2>
 
               <div className="space-y-6">
                 <FeatureRow
-                  title="Restaurant-Native"
-                  desc="I speak '86', 'on the fly', and 'in the weeds'. No translation needed."
+                  title="Kitchen-Tested Expertise"
+                  desc="I've expedited, bartended, and managed—so I build systems that survive a 300-cover night, not just a demo."
                 />
                 <FeatureRow
-                  title="After-Hours Availability"
-                  desc="60% of my meetings happen in the evening because that's when you're available."
+                  title="Your Schedule, Not Mine"
+                  desc="Need to meet after close? No problem. 60% of my consultations happen evenings and weekends."
                 />
                 <FeatureRow
-                  title="Proprietary Costing"
-                  desc="My algorithmic quoting system gives you accurate numbers in minutes, not days."
+                  title="Transparent Pricing, Fast"
+                  desc="Get an accurate quote in minutes with my algorithmic pricing tool—no sales calls, no surprises."
                 />
               </div>
 
@@ -168,11 +175,11 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Not Just IT Support. Operational Solutions.
+              From Setup to Service—I've Got You Covered
             </h2>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 text-lg">
-              Most vendors stop at the router. I start there and work my way to the line cook's ticket rail.
+              Tech that works is table stakes. I deliver systems that make your team faster, your tickets cleaner, and your margins healthier.
             </p>
           </div>
 
@@ -180,25 +187,25 @@ const Home: React.FC = () => {
             <ServiceCard
               icon={MonitorCheck}
               title="Toast POS Installation"
-              description="Full hardware deployment, menu configuration, and staff training. We're online before the dinner rush."
+              description="Hardware, menus, modifiers, and staff trained—all before your next service. No downtime, no chaos."
               link="/services"
             />
             <ServiceCard
               icon={Wifi}
               title="Networking & IT"
-              description="Enterprise-grade WiFi and failover systems designed for high-volume hospitality environments."
+              description="Dual-WAN failover, guest WiFi isolation, and enterprise-grade coverage that handles peak volume."
               link="/services"
             />
             <ServiceCard
               icon={ClipboardList}
               title="Operations Consulting"
-              description="Menu engineering, BOH workflow optimization, and SOP development to protect your margins."
+              description="Ticket routing that makes sense, station setups that flow, and SOPs that stick. Protect your margins."
               link="/services"
             />
             <ServiceCard
               icon={PhoneCall}
               title="Emergency Support"
-              description="The 'Restaurant 911'. Tech, staffing, or crisis management available nights and weekends."
+              description="Printer died mid-rush? Network down on a Saturday? I answer nights and weekends—period."
               link="/contact"
             />
           </div>
@@ -209,7 +216,7 @@ const Home: React.FC = () => {
       <section className="section-dark-grain py-12 text-center border-y border-gray-800">
         <div className="max-w-7xl mx-auto px-4 animate-on-scroll">
           <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest mb-8">
-            Trusted by Independent Restaurant Owners Across Cape Cod &amp; SE Massachusetts
+            Trusted by Independent Restaurants from Provincetown to Providence
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-70 hover:opacity-100 transition-all duration-500">
             <div className="text-white font-display text-2xl font-bold flex items-center justify-center">The Portside</div>
@@ -225,24 +232,24 @@ const Home: React.FC = () => {
         <div className="absolute inset-0 bg-white/5"></div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-4 animate-on-scroll">
           <h2 className="font-display text-3xl md:text-5xl font-bold text-white mb-6">
-            Ready to fix your restaurant tech?
+            Stop Losing Sales to Broken Tech
           </h2>
           <div className="brass-line-draw short mb-6" />
           <p className="text-gray-300 text-lg mb-10 max-w-2xl mx-auto">
-            Stop waiting on hold with support lines. Get a specialist who knows your business.
+            Every crashed terminal, slow ticket, and network hiccup costs you money. Let's fix it—before your next rush, not during it.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
               className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg btn-hover border-2 border-white text-white hover:bg-white hover:text-primary-dark"
             >
-              Build Your Quote
+              Get Your Free Quote
             </Link>
             <a
               href="tel:5082474936"
               className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-hover bg-orange-600 text-white hover:bg-orange-700"
             >
-              <Phone size={20} /> Call (508) 247-4936
+              <Phone size={20} /> Call Now: (508) 247-4936
             </a>
           </div>
         </div>
