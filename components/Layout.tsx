@@ -13,6 +13,7 @@ interface LayoutProps {
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'Services', path: '/services' },
+  { name: 'Support Plans', path: '/support-plans' },
   { name: 'About', path: '/about' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'Contact', path: '/contact' },
@@ -273,6 +274,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <Link to="/services" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
                     Services
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/support-plans" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
+                    Support Plans
                   </Link>
                 </li>
                 <li>
