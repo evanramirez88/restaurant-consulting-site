@@ -9,6 +9,7 @@ import QuoteTeaser from './pages/QuoteTeaser';
 import QuoteBuilder from './pages/QuoteBuilder';
 import MenuBuilder from './pages/MenuBuilder';
 import Schedule from './pages/Schedule';
+import SupportPlans from './pages/SupportPlans';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -41,6 +42,7 @@ const App: React.FC = () => {
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
+        <Route path="/support-plans" element={<PublicLayout><SupportPlans /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
         <Route path="/quote" element={<PublicLayout><QuoteTeaser /></PublicLayout>} />
         <Route path="/quote-builder" element={<PublicLayout><QuoteBuilder /></PublicLayout>} />
