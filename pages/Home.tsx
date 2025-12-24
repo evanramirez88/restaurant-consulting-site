@@ -104,7 +104,7 @@ const Home: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-gray-400 text-sm hero-fade-in hero-fade-in-delay-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-500" />
-              <span>50+ Restaurants Launched</span>
+              <span>25+ Cape Cod & New England Restaurants Served</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-500" />
@@ -213,17 +213,192 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Client Success Stories Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
+            <span className="text-amber-600 font-bold uppercase tracking-widest text-sm block mb-3">
+              REAL RESULTS
+            </span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Recent Client Success Stories
+            </h2>
+            <div className="brass-line-draw short mb-6" />
+            <p className="text-gray-600 text-lg">
+              From emergency recoveries to complex multi-location deployments—real projects, real outcomes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-on-scroll">
+            {/* Case Study A: Emergency Recovery */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Emergency Recovery</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Seafood Restaurant — Network Failure</h3>
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold text-gray-900">POS Transition:</span> Toast → Toast (restored/stabilized)
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Crisis:</span> Complete network failure at noon, day before July 4th weekend
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Response:</span> On-site within the hour, operational by 5 PM
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Outcome:</span> Saved their busiest weekend of the year—zero downtime during peak season
+                </div>
+              </div>
+            </div>
+
+            {/* Case Study B: Ground-Up Implementation */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Full Deployment</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Historic Diner — West Chatham</h3>
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold text-gray-900">POS Transition:</span> Manual/Cash Register → Toast
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Challenge:</span> Cash register + handwritten tickets to modern POS system
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Scope:</span> Complete Toast deployment + operational workflow redesign + staff training
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Outcome:</span> Seamless transition from analog to digital—staff confident on day one
+                </div>
+              </div>
+            </div>
+
+            {/* Case Study C: Complex Menu Engineering */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Menu Architecture</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Pizza & Ice Cream Shop — Westport</h3>
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold text-gray-900">POS Transition:</span> Legacy System → Toast
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Challenge:</span> Pizza modifiers, ice cream combinations, complex sizing/pricing logic
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Scope:</span> Advanced menu architecture with nested modifiers and dynamic pricing
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Outcome:</span> First recurring service agreement—now handling all their menu updates
+                </div>
+              </div>
+            </div>
+
+            {/* Case Study D: Multi-Location Portfolio */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Multi-Location</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Restaurant Group — 3 Concepts</h3>
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold text-gray-900">POS Transition:</span> Various Systems → Toast (unified platform)
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Concepts:</span> QSR burger shack, full-service tiki bar, and food truck
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Scope:</span> Three different service models unified on Toast ecosystem
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Outcome:</span> Concept-specific configurations with consolidated reporting—owner sees everything
+                </div>
+              </div>
+            </div>
+
+            {/* Case Study E: Retail Hybrid */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Retail + Food Service</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Market & Café — Sandwich</h3>
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold text-gray-900">POS Transition:</span> Legacy System → Toast Retail + Toast
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Challenge:</span> Grocery retail + deli/cafe operations on single system
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Scope:</span> Dual-mode Toast configuration for retail and restaurant workflows
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">Outcome:</span> One platform handling both retail inventory and made-to-order cafe items
+                </div>
+              </div>
+            </div>
+
+            {/* POS Conversions Info Card */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Platform Expertise</span>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">POS Conversions We Support</h3>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="font-semibold text-gray-900">Square → Toast</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="font-semibold text-gray-900">Clover → Toast</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="font-semibold text-gray-900">Lightspeed → Toast</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="font-semibold text-gray-900">Legacy/Manual → Toast</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="font-semibold text-gray-900">Upserve: Supported</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-4 italic">
+                  Platform-agnostic consulting—I'll tell you when switching isn't the right move.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Client Trust Bar */}
       <section className="section-dark-grain py-12 text-center border-y border-gray-800">
         <div className="max-w-7xl mx-auto px-4 animate-on-scroll">
           <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest mb-8">
-            Trusted by Independent Restaurants from Provincetown to Providence
+            Serving Independent Restaurants from Provincetown to Providence
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-70 hover:opacity-100 transition-all duration-500">
-            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">The Portside</div>
-            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Salt &amp; Vine</div>
-            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Harbor Grill</div>
-            <div className="text-white font-display text-2xl font-bold flex items-center justify-center">Main St. Tavern</div>
+            <div className="text-white font-display text-xl font-bold flex items-center justify-center">Emergency Recovery</div>
+            <div className="text-white font-display text-xl font-bold flex items-center justify-center">POS Conversions</div>
+            <div className="text-white font-display text-xl font-bold flex items-center justify-center">Complex Menus</div>
+            <div className="text-white font-display text-xl font-bold flex items-center justify-center">Multi-Location</div>
           </div>
         </div>
       </section>
