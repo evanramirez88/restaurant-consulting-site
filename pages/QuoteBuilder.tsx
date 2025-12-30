@@ -19,11 +19,13 @@ import {
   Building2,
   Save,
   Calendar,
-  Wrench
+  Wrench,
+  Loader2
 } from 'lucide-react';
 
 // ============================================
 // COMING SOON FLAG - Set to false when ready to launch
+// This is the local fallback. The API flag takes precedence.
 // ============================================
 const SHOW_COMING_SOON = true;
 import { useSEO } from '../src/components/SEO';
@@ -178,6 +180,30 @@ const QuoteBuilder: React.FC = () => {
     description: 'Build your custom Toast POS installation quote. Design floor plans, select hardware, and get instant pricing for your Cape Cod restaurant.',
     canonical: 'https://ccrestaurantconsulting.com/#/quote',
   });
+
+  // Feature flag state
+  const [featureFlagLoading, setFeatureFlagLoading] = useState(true);
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState(!SHOW_COMING_SOON);
+
+  // Check feature flag from API on load
+  useEffect(() => {
+    const checkFeatureFlag = async () => {
+      try {
+        const response = await fetch('/api/admin/feature-flags');
+        const result = await response.json();
+        if (result.success && result.data?.flags) {
+          setIsFeatureEnabled(result.data.flags.quote_builder_enabled === true);
+        }
+      } catch (error) {
+        console.error('Failed to check feature flag:', error);
+        // Fall back to local constant
+        setIsFeatureEnabled(!SHOW_COMING_SOON);
+      } finally {
+        setFeatureFlagLoading(false);
+      }
+    };
+    checkFeatureFlag();
+  }, []);
 
   // Persistent state
   const [rates] = usePersistentState<Rates>(LS_KEY + ":rates", DEFAULT_RATES);
@@ -795,8 +821,17 @@ const QuoteBuilder: React.FC = () => {
   // RENDER
   // ============================================
 
-  // Coming Soon overlay - preserves all functional code while showing placeholder
-  if (SHOW_COMING_SOON) {
+  // Loading state while checking feature flag
+  if (featureFlagLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" aria-label="Loading" />
+      </div>
+    );
+  }
+
+  // Coming Soon overlay - shows when feature is disabled via API or local flag
+  if (!isFeatureEnabled) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center max-w-xl px-6">

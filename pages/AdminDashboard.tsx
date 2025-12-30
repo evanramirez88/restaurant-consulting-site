@@ -4,7 +4,8 @@ import {
   Loader2, LogOut, Save, CheckCircle, AlertCircle, ChevronDown, ChevronUp,
   MapPin, Clock, Phone, Mail, DollarSign, UtensilsCrossed, RefreshCw,
   LayoutDashboard, Calendar, Settings, FileText, Users, TrendingUp,
-  Eye, MousePointer, UserPlus, ExternalLink, Shield, Trash2, Monitor
+  Eye, MousePointer, UserPlus, ExternalLink, Shield, Trash2, Monitor,
+  ToggleLeft, ToggleRight, Sliders, Car, AlertTriangle
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
@@ -17,7 +18,28 @@ const CAPE_COD_TOWNS = [
 
 type AvailabilityStatus = 'available' | 'busy' | 'offline';
 type LocationType = 'remote' | 'onsite' | 'both';
-type TabType = 'overview' | 'availability' | 'configuration' | 'audit' | 'sessions';
+type TabType = 'overview' | 'availability' | 'configuration' | 'feature-flags' | 'rates' | 'audit' | 'sessions';
+
+interface FeatureFlags {
+  quote_builder_enabled: boolean;
+  menu_builder_enabled: boolean;
+  client_portal_enabled: boolean;
+  maintenance_mode: boolean;
+}
+
+interface BusinessRates {
+  hourly_rate: number;
+  remote_rate: number;
+  onsite_rate: number;
+  emergency_rate: number;
+  after_hours_multiplier: number;
+  travel_cape_cod: number;
+  travel_south_shore: number;
+  travel_islands: number;
+  support_tier_1_percent: number;
+  support_tier_2_percent: number;
+  support_tier_3_percent: number;
+}
 
 interface AvailabilityData {
   status: AvailabilityStatus;
@@ -139,6 +161,36 @@ const AdminDashboard: React.FC = () => {
   const [sessions, setSessions] = useState<SessionEntry[]>(MOCK_SESSIONS);
   const [analytics, setAnalytics] = useState<AnalyticsData>(MOCK_ANALYTICS);
 
+  // Feature flags state
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlags>({
+    quote_builder_enabled: false,
+    menu_builder_enabled: false,
+    client_portal_enabled: false,
+    maintenance_mode: false
+  });
+  const [flagsLastUpdated, setFlagsLastUpdated] = useState<number | null>(null);
+  const [flagsSaveStatus, setFlagsSaveStatus] = useState<SaveStatus>({ type: 'idle', message: '' });
+  const [pendingFlagToggle, setPendingFlagToggle] = useState<string | null>(null);
+  const [showFlagConfirm, setShowFlagConfirm] = useState<{ key: string; newValue: boolean } | null>(null);
+
+  // Business rates state
+  const [businessRates, setBusinessRates] = useState<BusinessRates>({
+    hourly_rate: 110,
+    remote_rate: 80,
+    onsite_rate: 100,
+    emergency_rate: 150,
+    after_hours_multiplier: 1.25,
+    travel_cape_cod: 0,
+    travel_south_shore: 100,
+    travel_islands: 300,
+    support_tier_1_percent: 10,
+    support_tier_2_percent: 20,
+    support_tier_3_percent: 30
+  });
+  const [editedRates, setEditedRates] = useState<Partial<BusinessRates>>({});
+  const [ratesLastUpdated, setRatesLastUpdated] = useState<number | null>(null);
+  const [ratesSaveStatus, setRatesSaveStatus] = useState<SaveStatus>({ type: 'idle', message: '' });
+
   // Check authentication and load data
   useEffect(() => {
     const init = async () => {
@@ -152,7 +204,7 @@ const AdminDashboard: React.FC = () => {
         }
 
         setIsAuthenticated(true);
-        await Promise.all([loadAvailability(), loadConfig()]);
+        await Promise.all([loadAvailability(), loadConfig(), loadFeatureFlags(), loadRates()]);
       } catch (error) {
         console.error('Init error:', error);
         navigate('/admin/login');
@@ -190,6 +242,126 @@ const AdminDashboard: React.FC = () => {
       console.error('Load config error:', error);
     }
   };
+
+  const loadFeatureFlags = async () => {
+    try {
+      const response = await fetch('/api/admin/feature-flags');
+      const result = await response.json();
+      if (result.success && result.data) {
+        setFeatureFlags(result.data.flags);
+        setFlagsLastUpdated(result.data.lastUpdated);
+      }
+    } catch (error) {
+      console.error('Load feature flags error:', error);
+    }
+  };
+
+  const loadRates = async () => {
+    try {
+      const response = await fetch('/api/admin/rates');
+      const result = await response.json();
+      if (result.success && result.data) {
+        setBusinessRates(result.data.rates);
+        setRatesLastUpdated(result.data.lastUpdated);
+      }
+    } catch (error) {
+      console.error('Load rates error:', error);
+    }
+  };
+
+  const toggleFeatureFlag = async (key: string, newValue: boolean) => {
+    setPendingFlagToggle(key);
+    setFlagsSaveStatus({ type: 'saving', message: '' });
+
+    try {
+      const response = await fetch('/api/admin/feature-flags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: newValue })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFeatureFlags(result.data.flags);
+        setFlagsLastUpdated(result.data.lastUpdated);
+        setFlagsSaveStatus({
+          type: 'success',
+          message: `${key.replace(/_/g, ' ')} ${newValue ? 'enabled' : 'disabled'}!`
+        });
+        setTimeout(() => {
+          setFlagsSaveStatus({ type: 'idle', message: '' });
+        }, 3000);
+      } else {
+        throw new Error(result.error || 'Failed to update flag');
+      }
+    } catch (error) {
+      console.error('Toggle feature flag error:', error);
+      setFlagsSaveStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to update'
+      });
+    } finally {
+      setPendingFlagToggle(null);
+      setShowFlagConfirm(null);
+    }
+  };
+
+  const saveRates = async () => {
+    if (Object.keys(editedRates).length === 0) return;
+
+    setRatesSaveStatus({ type: 'saving', message: '' });
+
+    try {
+      const response = await fetch('/api/admin/rates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rates: editedRates })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setBusinessRates(result.data.rates);
+        setRatesLastUpdated(result.data.lastUpdated);
+        setEditedRates({});
+        setRatesSaveStatus({
+          type: 'success',
+          message: 'Rates updated successfully!'
+        });
+        setTimeout(() => {
+          setRatesSaveStatus({ type: 'idle', message: '' });
+        }, 3000);
+      } else {
+        throw new Error(result.error || 'Failed to update rates');
+      }
+    } catch (error) {
+      console.error('Save rates error:', error);
+      setRatesSaveStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to update'
+      });
+    }
+  };
+
+  const handleRateChange = (key: keyof BusinessRates, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setEditedRates(prev => ({ ...prev, [key]: numValue }));
+    } else if (value === '') {
+      const { [key]: removed, ...rest } = editedRates;
+      setEditedRates(rest);
+    }
+  };
+
+  const getRateValue = (key: keyof BusinessRates): string => {
+    if (key in editedRates) {
+      return String(editedRates[key]);
+    }
+    return String(businessRates[key]);
+  };
+
+  const hasUnsavedRates = Object.keys(editedRates).length > 0;
 
   const handleLogout = async () => {
     try {
@@ -337,6 +509,8 @@ const AdminDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'availability', label: 'Availability', icon: <Calendar className="w-4 h-4" /> },
     { id: 'configuration', label: 'Configuration', icon: <Settings className="w-4 h-4" /> },
+    { id: 'feature-flags', label: 'Feature Flags', icon: <ToggleRight className="w-4 h-4" /> },
+    { id: 'rates', label: 'Business Rates', icon: <DollarSign className="w-4 h-4" /> },
     { id: 'audit', label: 'Audit Log', icon: <FileText className="w-4 h-4" /> },
     { id: 'sessions', label: 'Sessions', icon: <Users className="w-4 h-4" /> },
   ];
@@ -868,6 +1042,437 @@ const AdminDashboard: React.FC = () => {
                 );
               })}
             </div>
+          </section>
+        )}
+
+        {/* Feature Flags Tab */}
+        {activeTab === 'feature-flags' && (
+          <section className="admin-card p-6" aria-labelledby="flags-heading">
+            <div className="flex items-center justify-between mb-6">
+              <h2 id="flags-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
+                <ToggleRight className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                Feature Flags
+              </h2>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={loadFeatureFlags}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Refresh"
+                  aria-label="Refresh feature flags"
+                >
+                  <RefreshCw className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            {/* Flag Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* Quote Builder Flag */}
+              <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${featureFlags.quote_builder_enabled ? 'bg-green-500' : 'bg-red-500'}`} aria-hidden="true" />
+                    <div>
+                      <p className="text-white font-medium">Quote Builder</p>
+                      <p className="text-gray-400 text-xs">Interactive POS quoting tool</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFlagConfirm({ key: 'quote_builder_enabled', newValue: !featureFlags.quote_builder_enabled })}
+                    disabled={pendingFlagToggle === 'quote_builder_enabled'}
+                    className="relative"
+                    aria-label={`Toggle Quote Builder ${featureFlags.quote_builder_enabled ? 'off' : 'on'}`}
+                  >
+                    {pendingFlagToggle === 'quote_builder_enabled' ? (
+                      <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                    ) : featureFlags.quote_builder_enabled ? (
+                      <ToggleRight className="w-10 h-10 text-green-500" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Menu Builder Flag */}
+              <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${featureFlags.menu_builder_enabled ? 'bg-green-500' : 'bg-red-500'}`} aria-hidden="true" />
+                    <div>
+                      <p className="text-white font-medium">Menu Builder</p>
+                      <p className="text-gray-400 text-xs">AI-powered menu migration</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFlagConfirm({ key: 'menu_builder_enabled', newValue: !featureFlags.menu_builder_enabled })}
+                    disabled={pendingFlagToggle === 'menu_builder_enabled'}
+                    className="relative"
+                    aria-label={`Toggle Menu Builder ${featureFlags.menu_builder_enabled ? 'off' : 'on'}`}
+                  >
+                    {pendingFlagToggle === 'menu_builder_enabled' ? (
+                      <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                    ) : featureFlags.menu_builder_enabled ? (
+                      <ToggleRight className="w-10 h-10 text-green-500" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Client Portal Flag */}
+              <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${featureFlags.client_portal_enabled ? 'bg-green-500' : 'bg-red-500'}`} aria-hidden="true" />
+                    <div>
+                      <p className="text-white font-medium">Client Portal</p>
+                      <p className="text-gray-400 text-xs">Customer dashboard access</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFlagConfirm({ key: 'client_portal_enabled', newValue: !featureFlags.client_portal_enabled })}
+                    disabled={pendingFlagToggle === 'client_portal_enabled'}
+                    className="relative"
+                    aria-label={`Toggle Client Portal ${featureFlags.client_portal_enabled ? 'off' : 'on'}`}
+                  >
+                    {pendingFlagToggle === 'client_portal_enabled' ? (
+                      <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                    ) : featureFlags.client_portal_enabled ? (
+                      <ToggleRight className="w-10 h-10 text-green-500" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Maintenance Mode Flag */}
+              <div className={`p-4 rounded-lg border ${featureFlags.maintenance_mode ? 'bg-red-900/20 border-red-500/50' : 'bg-gray-900/30 border-gray-700'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${featureFlags.maintenance_mode ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`} aria-hidden="true" />
+                    <div>
+                      <p className={`font-medium ${featureFlags.maintenance_mode ? 'text-red-300' : 'text-white'}`}>
+                        Maintenance Mode
+                      </p>
+                      <p className="text-gray-400 text-xs">Disables all public features</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFlagConfirm({ key: 'maintenance_mode', newValue: !featureFlags.maintenance_mode })}
+                    disabled={pendingFlagToggle === 'maintenance_mode'}
+                    className="relative"
+                    aria-label={`Toggle Maintenance Mode ${featureFlags.maintenance_mode ? 'off' : 'on'}`}
+                  >
+                    {pendingFlagToggle === 'maintenance_mode' ? (
+                      <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                    ) : featureFlags.maintenance_mode ? (
+                      <ToggleRight className="w-10 h-10 text-red-500" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Messages */}
+            {flagsSaveStatus.type !== 'idle' && (
+              <div className="flex items-center gap-2 mb-4">
+                {flagsSaveStatus.type === 'success' && (
+                  <div className="flex items-center gap-2 text-green-400" role="status">
+                    <CheckCircle className="w-5 h-5" aria-hidden="true" />
+                    <span className="text-sm">{flagsSaveStatus.message}</span>
+                  </div>
+                )}
+                {flagsSaveStatus.type === 'error' && (
+                  <div className="flex items-center gap-2 text-red-400" role="alert">
+                    <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                    <span className="text-sm">{flagsSaveStatus.message}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Last Updated */}
+            <p className="text-xs text-gray-500">
+              Last updated: {formatTimeAgo(flagsLastUpdated)}
+            </p>
+          </section>
+        )}
+
+        {/* Confirmation Modal for Feature Flags */}
+        {showFlagConfirm && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700 shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
+                <h3 className="text-lg font-bold text-white">Confirm Change</h3>
+              </div>
+              <p className="text-gray-300 mb-6">
+                Are you sure you want to {showFlagConfirm.newValue ? 'enable' : 'disable'}{' '}
+                <span className="font-semibold text-white">
+                  {showFlagConfirm.key.replace(/_/g, ' ').replace(/enabled/g, '').trim()}
+                </span>?
+                {showFlagConfirm.key === 'maintenance_mode' && showFlagConfirm.newValue && (
+                  <span className="block mt-2 text-red-400 text-sm">
+                    Warning: This will disable all public features on the site.
+                  </span>
+                )}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFlagConfirm(null)}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => toggleFeatureFlag(showFlagConfirm.key, showFlagConfirm.newValue)}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors font-semibold ${
+                    showFlagConfirm.key === 'maintenance_mode' && showFlagConfirm.newValue
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white'
+                  }`}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Business Rates Tab */}
+        {activeTab === 'rates' && (
+          <section className="admin-card p-6" aria-labelledby="rates-heading">
+            <div className="flex items-center justify-between mb-6">
+              <h2 id="rates-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                Business Rates
+              </h2>
+              <button
+                onClick={loadRates}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                title="Refresh"
+                aria-label="Refresh rates"
+              >
+                <RefreshCw className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Hourly Rates Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Hourly Rates
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { key: 'hourly_rate', label: 'Standard Rate', icon: DollarSign },
+                  { key: 'remote_rate', label: 'Remote Rate', icon: Monitor },
+                  { key: 'onsite_rate', label: 'On-Site Rate', icon: MapPin },
+                  { key: 'emergency_rate', label: 'Emergency Rate', icon: AlertCircle },
+                ].map(({ key, label, icon: Icon }) => (
+                  <div key={key} className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon className="w-4 h-4 text-amber-400" />
+                      <label className="text-gray-300 text-sm font-medium">{label}</label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-400">$</span>
+                      <input
+                        type="number"
+                        value={getRateValue(key as keyof BusinessRates)}
+                        onChange={(e) => handleRateChange(key as keyof BusinessRates, e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px] admin-input"
+                        min="0"
+                        max="1000"
+                        step="5"
+                        aria-label={label}
+                      />
+                      <span className="text-gray-400 text-sm">/hr</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* After Hours Multiplier */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                After Hours Multiplier
+              </h3>
+              <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700 max-w-xs">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sliders className="w-4 h-4 text-amber-400" />
+                  <label className="text-gray-300 text-sm font-medium">Rate Multiplier</label>
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    value={getRateValue('after_hours_multiplier')}
+                    onChange={(e) => handleRateChange('after_hours_multiplier', e.target.value)}
+                    className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px] admin-input"
+                    min="1"
+                    max="5"
+                    step="0.05"
+                    aria-label="After hours multiplier"
+                  />
+                  <span className="text-gray-400 text-sm">x</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Applied to work outside normal business hours
+                </p>
+              </div>
+            </div>
+
+            {/* Travel Rates Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Car className="w-4 h-4" />
+                Travel Fees
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { key: 'travel_cape_cod', label: 'Cape Cod', description: 'Local area' },
+                  { key: 'travel_south_shore', label: 'South Shore', description: 'Plymouth to Boston' },
+                  { key: 'travel_islands', label: 'Islands', description: 'MV & Nantucket' },
+                ].map(({ key, label, description }) => (
+                  <div key={key} className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                    <div className="mb-2">
+                      <label className="text-gray-300 text-sm font-medium">{label}</label>
+                      <p className="text-xs text-gray-500">{description}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-400">$</span>
+                      <input
+                        type="number"
+                        value={getRateValue(key as keyof BusinessRates)}
+                        onChange={(e) => handleRateChange(key as keyof BusinessRates, e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px] admin-input"
+                        min="0"
+                        max="2000"
+                        step="25"
+                        aria-label={`${label} travel fee`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Support Plan Tiers */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Support Plan Tiers (% of install cost)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { key: 'support_tier_1_percent', label: 'Tier 1 - Basic', color: 'text-blue-400' },
+                  { key: 'support_tier_2_percent', label: 'Tier 2 - Standard', color: 'text-amber-400' },
+                  { key: 'support_tier_3_percent', label: 'Tier 3 - Premium', color: 'text-green-400' },
+                ].map(({ key, label, color }) => (
+                  <div key={key} className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                    <div className="mb-2">
+                      <label className={`text-sm font-medium ${color}`}>{label}</label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={getRateValue(key as keyof BusinessRates)}
+                        onChange={(e) => handleRateChange(key as keyof BusinessRates, e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent min-h-[44px] admin-input"
+                        min="0"
+                        max="100"
+                        step="1"
+                        aria-label={`${label} percentage`}
+                      />
+                      <span className="text-gray-400 text-sm">%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quote Builder Preview */}
+            <div className="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-600">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Quote Builder Preview
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                How these rates affect Quote Builder calculations:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <p className="text-gray-400">1hr Remote Work</p>
+                  <p className="text-white font-semibold">${Number(getRateValue('remote_rate')).toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <p className="text-gray-400">1hr On-Site Work</p>
+                  <p className="text-white font-semibold">${Number(getRateValue('onsite_rate')).toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <p className="text-gray-400">1hr Emergency (After Hours)</p>
+                  <p className="text-white font-semibold">
+                    ${(Number(getRateValue('emergency_rate')) * Number(getRateValue('after_hours_multiplier'))).toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <p className="text-gray-400">$1000 Install - Tier 2 Support</p>
+                  <p className="text-white font-semibold">
+                    ${(1000 * Number(getRateValue('support_tier_2_percent')) / 100).toFixed(2)}/mo
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button & Status */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <button
+                onClick={saveRates}
+                disabled={ratesSaveStatus.type === 'saving' || !hasUnsavedRates}
+                className={`flex-1 sm:flex-none px-6 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 min-h-[48px] ${
+                  hasUnsavedRates
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {ratesSaveStatus.type === 'saving' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" aria-hidden="true" />
+                    <span>{hasUnsavedRates ? 'Save Changes' : 'No Changes'}</span>
+                  </>
+                )}
+              </button>
+
+              {ratesSaveStatus.type === 'success' && (
+                <div className="flex items-center gap-2 text-green-400" role="status">
+                  <CheckCircle className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-sm">{ratesSaveStatus.message}</span>
+                </div>
+              )}
+
+              {ratesSaveStatus.type === 'error' && (
+                <div className="flex items-center gap-2 text-red-400" role="alert">
+                  <AlertCircle className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-sm">{ratesSaveStatus.message}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Last Updated */}
+            <p className="text-xs text-gray-500 mt-4">
+              Last updated: {formatTimeAgo(ratesLastUpdated)}
+            </p>
           </section>
         )}
 

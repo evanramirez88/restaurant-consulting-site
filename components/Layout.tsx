@@ -9,13 +9,14 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-// Navigation items for the main nav (including Quote Builder)
+// Navigation items for the main nav - ORDERED for user flow
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'Services', path: '/services' },
   { name: 'Support Plans', path: '/support-plans' },
-  { name: 'About', path: '/about' },
   { name: 'Quote Builder', path: '/quote' },
+  { name: 'Menu Builder', path: '/menu-builder' },
+  { name: 'About', path: '/about' },
   { name: 'Contact', path: '/contact' },
 ];
 
@@ -287,6 +288,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/menu-builder" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
+                    Menu Builder
+                  </Link>
+                </li>
+                <li>
                   <Link to="/about" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
                     About
                   </Link>
@@ -299,6 +305,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <Link to="/portal" className="text-gray-500 hover:text-amber-400 transition-colors duration-200">
                     Client Portal
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin" className="text-gray-600 hover:text-amber-400 transition-colors duration-200 text-xs">
+                    Admin
                   </Link>
                 </li>
               </ul>

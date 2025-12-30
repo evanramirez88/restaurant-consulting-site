@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -11,12 +11,14 @@ import {
   CheckCircle,
   AlertTriangle,
   Shield,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
 // ============================================
 // COMING SOON FLAG - Set to false when ready to launch
+// This is the local fallback. The API flag takes precedence.
 // ============================================
 const SHOW_COMING_SOON = true;
 
@@ -222,12 +224,45 @@ const ClientPortal: React.FC = () => {
     canonical: 'https://ccrestaurantconsulting.com/#/portal',
   });
 
-  // Coming Soon overlay
-  if (SHOW_COMING_SOON) {
+  // Feature flag state
+  const [featureFlagLoading, setFeatureFlagLoading] = useState(true);
+  const [isFeatureEnabled, setIsFeatureEnabled] = useState(!SHOW_COMING_SOON);
+
+  // Check feature flag from API on load
+  useEffect(() => {
+    const checkFeatureFlag = async () => {
+      try {
+        const response = await fetch('/api/admin/feature-flags');
+        const result = await response.json();
+        if (result.success && result.data?.flags) {
+          setIsFeatureEnabled(result.data.flags.client_portal_enabled === true);
+        }
+      } catch (error) {
+        console.error('Failed to check feature flag:', error);
+        // Fall back to local constant
+        setIsFeatureEnabled(!SHOW_COMING_SOON);
+      } finally {
+        setFeatureFlagLoading(false);
+      }
+    };
+    checkFeatureFlag();
+  }, []);
+
+  // Loading state while checking feature flag
+  if (featureFlagLoading) {
+    return (
+      <div className="bg-primary-dark min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" aria-label="Loading" />
+      </div>
+    );
+  }
+
+  // Coming Soon overlay - shows when feature is disabled
+  if (!isFeatureEnabled) {
     return <ComingSoonOverlay />;
   }
 
-  // Future: Full portal landing page when SHOW_COMING_SOON = false
+  // Future: Full portal landing page when feature is enabled
   return (
     <div className="bg-primary-dark min-h-screen">
       {/* This will be the full portal landing page in the future */}
