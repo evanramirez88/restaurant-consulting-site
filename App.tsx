@@ -12,6 +12,9 @@ import Schedule from './pages/Schedule';
 import SupportPlans from './pages/SupportPlans';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import ClientPortal from './pages/ClientPortal';
+import ClientLogin from './pages/ClientLogin';
+import ClientDashboard from './pages/ClientDashboard';
 
 // Manual ScrollRestoration component for HashRouter
 const ScrollToTop = () => {
@@ -37,6 +40,11 @@ const App: React.FC = () => {
         {/* Admin routes (no layout wrapper) */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Client Portal routes (no layout wrapper) */}
+        <Route path="/portal" element={<PublicLayout><ClientPortal /></PublicLayout>} />
+        <Route path="/portal/login" element={<ClientLogin />} />
+        <Route path="/portal/dashboard" element={<ClientDashboard />} />
 
         {/* Public routes with layout */}
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />

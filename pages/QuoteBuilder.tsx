@@ -457,6 +457,34 @@ const QuoteBuilder: React.FC = () => {
     }
   };
 
+  // Keyboard shortcuts for accessibility
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape key to deselect
+      if (e.key === 'Escape') {
+        setSelected({ kind: null, id: null });
+        setMode('idle');
+        setPendingCableStart(null);
+        return;
+      }
+
+      // Delete key to remove selected item
+      if (e.key === 'Delete' && selected.kind && selected.id) {
+        e.preventDefault();
+        if (selected.kind === 'station') {
+          removeStation(selected.id);
+        } else if (selected.kind === 'object') {
+          removeObject(selected.id);
+        } else if (selected.kind === 'label') {
+          removeLabel(selected.id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selected]);
+
   // Hardware operations
   const addHardwareToStation = (stationId: string, hid: string) => {
     const st = currentFloor?.stations.find(s => s.id === stationId);
@@ -799,7 +827,7 @@ const QuoteBuilder: React.FC = () => {
       {/* Header Toolbar */}
       <header className="sticky top-[72px] z-30 border-b border-slate-700 bg-slate-900/95 backdrop-blur">
         <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
-          <h1 className="text-white font-semibold text-sm mr-4">Quote Builder - POS + Networking</h1>
+          <h1 className="text-white font-serif font-semibold text-sm mr-4">Quote Builder - POS + Networking</h1>
 
           {/* Location selector */}
           <select
@@ -811,7 +839,7 @@ const QuoteBuilder: React.FC = () => {
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
           </select>
-          <button onClick={addLocation} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2">
+          <button onClick={addLocation} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
             <Plus size={14} /> Location
           </button>
 
@@ -833,7 +861,7 @@ const QuoteBuilder: React.FC = () => {
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
-          <button onClick={addFloor} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2">
+          <button onClick={addFloor} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
             <Plus size={14} /> Floor
           </button>
         </div>
@@ -845,18 +873,19 @@ const QuoteBuilder: React.FC = () => {
           <aside className="w-80 border-r border-slate-700 bg-slate-900/95 overflow-y-auto p-4 space-y-4">
             <button
               onClick={() => setLeftOpen(false)}
-              className="absolute top-2 right-2 text-slate-400 hover:text-white"
+              className="absolute top-2 right-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              aria-label="Close left sidebar"
             >
               <ChevronLeft size={18} />
             </button>
 
             {/* Blank Station */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Add Station</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Add Station</h3>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => addStation('Blank Station')}
-                  className="bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white"
+                  className="bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   + Blank Station
                 </button>
@@ -875,17 +904,17 @@ const QuoteBuilder: React.FC = () => {
 
             {/* Templates */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Station Templates</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Station Templates</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {STATION_TEMPLATES.map(t => (
                   <button
                     key={t.id}
                     onClick={() => addTemplateStation(t)}
-                    className="w-full text-left px-3 py-2 border border-slate-600 rounded-lg hover:bg-slate-700/50 transition-colors"
+                    className="w-full text-left px-3 py-2 border border-slate-600 rounded-lg hover:bg-slate-700/50 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium" style={{ color: t.color }}>{t.label}</span>
-                      <span className="text-xs text-slate-400">{t.ttiMin} min</span>
+                      <span className="text-xs text-slate-200">{t.ttiMin} min</span>
                     </div>
                   </button>
                 ))}
@@ -894,20 +923,20 @@ const QuoteBuilder: React.FC = () => {
 
             {/* Hardware Catalog */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Hardware (Labor Only)</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Hardware (Labor Only)</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {hardwareCatalog.map(hw => (
                   <div key={hw.id} className="border border-slate-600 rounded-lg px-3 py-2">
                     <div className="flex items-center justify-between text-sm">
                       <div>
                         <div className="font-medium text-white">{hw.name}</div>
-                        <div className="text-xs text-slate-400">{hw.category} - TTI: {hw.ttiMin} min</div>
+                        <div className="text-xs text-slate-200">{hw.category} - TTI: {hw.ttiMin} min</div>
                       </div>
                     </div>
                     {selected.kind === 'station' && (
                       <button
                         onClick={() => addHardwareToStation(selected.id!, hw.id)}
-                        className="mt-2 w-full bg-slate-700 hover:bg-slate-600 rounded px-2 py-1 text-xs text-white"
+                        className="mt-2 w-full bg-slate-700 hover:bg-slate-600 rounded px-2 py-1 text-xs text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       >
                         Add to: {currentFloor?.stations.find(s => s.id === selected.id)?.name || "Station"}
                       </button>
@@ -919,27 +948,27 @@ const QuoteBuilder: React.FC = () => {
 
             {/* FOH/BOH Objects */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Objects</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Objects</h3>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">FOH</div>
+                  <div className="text-xs text-slate-200 mb-1">FOH</div>
                   {FOH_OBJECTS.map(o => (
                     <button
                       key={o.type}
                       onClick={() => addObject(o)}
-                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white"
+                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     >
                       {o.type}
                     </button>
                   ))}
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">BOH</div>
+                  <div className="text-xs text-slate-200 mb-1">BOH</div>
                   {BOH_OBJECTS.map(o => (
                     <button
                       key={o.type}
                       onClick={() => addObject(o)}
-                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white"
+                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     >
                       {o.type}
                     </button>
@@ -947,20 +976,20 @@ const QuoteBuilder: React.FC = () => {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">Structure</div>
+                <div className="text-xs text-slate-200 mb-1">Structure</div>
                 <div className="flex flex-wrap gap-1">
                   {STRUCTURE_OBJECTS.map(o => (
                     <button
                       key={o.type}
                       onClick={() => addObject(o)}
-                      className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white"
+                      className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     >
                       {o.type}
                     </button>
                   ))}
                   <button
                     onClick={addLabel}
-                    className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white"
+                    className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     + Label
                   </button>
@@ -973,7 +1002,8 @@ const QuoteBuilder: React.FC = () => {
         {!leftOpen && (
           <button
             onClick={() => setLeftOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-r-lg p-2 text-slate-400 hover:text-white"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-r-lg p-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            aria-label="Open left sidebar"
           >
             <ChevronRight size={18} />
           </button>
@@ -1014,10 +1044,10 @@ const QuoteBuilder: React.FC = () => {
                   onMouseDown={e => { e.stopPropagation(); dragStart(e, 'object', o.id); }}
                 >
                   <div className="absolute -top-7 left-0 flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white" onClick={() => updateObject(o.id, { w: o.w + 10 })}>W+</button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white" onClick={() => updateObject(o.id, { w: Math.max(10, o.w - 10) })}>W-</button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white" onClick={() => updateObject(o.id, { rot: (o.rot + 15) % 360 })}><RotateCw size={10} /></button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-red-400" onClick={() => removeObject(o.id)}><Trash2 size={10} /></button>
+                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: o.w + 10 })} aria-label="Increase width">W+</button>
+                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: Math.max(10, o.w - 10) })} aria-label="Decrease width">W-</button>
+                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { rot: (o.rot + 15) % 360 })} aria-label="Rotate object"><RotateCw size={10} /></button>
+                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeObject(o.id)} aria-label="Delete object"><Trash2 size={10} /></button>
                   </div>
                   <div className="text-[10px] text-white/80 px-1">{o.type}</div>
                 </div>
@@ -1033,10 +1063,10 @@ const QuoteBuilder: React.FC = () => {
                 >
                   {/* Action rail */}
                   <div className="absolute -left-8 top-2 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
-                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-red-400 hover:bg-red-900/50" onClick={() => removeStation(st.id)}>
+                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-red-400 hover:bg-red-900/50 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeStation(st.id)} aria-label="Delete station">
                       <Trash2 size={12} />
                     </button>
-                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-slate-400 hover:text-white" onClick={() => {
+                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Duplicate station" onClick={() => {
                       const dupe = deepClone(st);
                       dupe.id = uid();
                       dupe.x += 24;
@@ -1050,8 +1080,9 @@ const QuoteBuilder: React.FC = () => {
                       <Copy size={12} />
                     </button>
                     <button
-                      className={`w-6 h-6 rounded-full bg-slate-900 border flex items-center justify-center text-xs ${st.flags?.existing ? 'border-yellow-400 text-yellow-400' : 'border-slate-600 text-slate-400'}`}
+                      className={`w-6 h-6 rounded-full bg-slate-900 border flex items-center justify-center text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none ${st.flags?.existing ? 'border-yellow-400 text-yellow-400' : 'border-slate-600 text-slate-200'}`}
                       title="Mark as Existing"
+                      aria-label="Mark station as existing"
                       onClick={() => updateStation(st.id, { flags: { ...st.flags, existing: !st.flags?.existing } })}
                     >
                       E
@@ -1070,7 +1101,7 @@ const QuoteBuilder: React.FC = () => {
                       onChange={e => updateStation(st.id, { name: e.target.value })}
                       onClick={e => e.stopPropagation()}
                     />
-                    {st.dept && <span className="ml-auto text-[10px] text-slate-300 px-2 py-0.5 rounded-full border border-slate-600">{st.dept}</span>}
+                    {st.dept && <span className="ml-auto text-[10px] text-white px-2 py-0.5 rounded-full border border-slate-600">{st.dept}</span>}
                     {st.flags?.existing && !st.flags?.replace && <span className="text-[10px] text-yellow-300 ml-1">Existing</span>}
                   </div>
 
@@ -1083,17 +1114,18 @@ const QuoteBuilder: React.FC = () => {
                         <div key={idx} className="relative border border-slate-600 rounded-md px-2 py-1">
                           <div className="text-[11px] flex items-center gap-2 text-white">
                             <span>{hw.name}</span>
-                            <span className="text-slate-400">- {hw.ttiMin} min</span>
+                            <span className="text-slate-200">- {hw.ttiMin} min</span>
                             {assoc.flags?.existing && !assoc.flags?.replace && <span className="ml-auto text-[10px] text-yellow-300">Existing</span>}
                           </div>
                           <div className="absolute top-0 right-1 flex gap-1" onClick={e => e.stopPropagation()}>
                             <button
-                              className={`text-[10px] ${assoc.flags?.existing ? 'text-yellow-400' : 'text-slate-500'}`}
+                              className={`text-[10px] focus:ring-2 focus:ring-amber-500 focus:outline-none ${assoc.flags?.existing ? 'text-yellow-400' : 'text-slate-200'}`}
                               onClick={() => updateHardwareAssoc(st.id, idx, { flags: { ...assoc.flags, existing: !assoc.flags?.existing } })}
+                              aria-label="Mark hardware as existing"
                             >
                               E
                             </button>
-                            <button className="text-[10px] text-red-400" onClick={() => removeHardwareFromStation(st.id, idx)}>x</button>
+                            <button className="text-[10px] text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeHardwareFromStation(st.id, idx)} aria-label="Remove hardware">x</button>
                           </div>
                         </div>
                       );
@@ -1105,8 +1137,9 @@ const QuoteBuilder: React.FC = () => {
                         {hardwareCatalog.slice(0, 6).map(hw => (
                           <button
                             key={hw.id}
-                            className="text-[9px] bg-slate-700 hover:bg-slate-600 rounded px-1.5 py-0.5 text-white"
+                            className="text-[9px] bg-slate-700 hover:bg-slate-600 rounded px-1.5 py-0.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                             onClick={e => { e.stopPropagation(); addHardwareToStation(st.id, hw.id); }}
+                            aria-label={`Add ${hw.name} to station`}
                           >
                             +{hw.name.split(' ')[0]}
                           </button>
@@ -1133,15 +1166,16 @@ const QuoteBuilder: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     <input
-                      className="bg-transparent outline-none text-xs w-20 text-white"
+                      className="bg-transparent outline-none text-xs w-20 text-white focus:ring-2 focus:ring-amber-500"
                       value={l.text}
                       onChange={e => updateLabel(l.id, { text: e.target.value })}
                       onClick={e => e.stopPropagation()}
+                      aria-label="Label text"
                     />
-                    <button className="text-slate-400 hover:text-white" onClick={e => { e.stopPropagation(); updateLabel(l.id, { rot: (l.rot + 15) % 360 }); }}>
+                    <button className="text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={e => { e.stopPropagation(); updateLabel(l.id, { rot: (l.rot + 15) % 360 }); }} aria-label="Rotate label">
                       <RotateCw size={10} />
                     </button>
-                    <button className="text-red-400" onClick={e => { e.stopPropagation(); removeLabel(l.id); }}>
+                    <button className="text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={e => { e.stopPropagation(); removeLabel(l.id); }} aria-label="Delete label">
                       <Trash2 size={10} />
                     </button>
                   </div>
@@ -1162,8 +1196,9 @@ const QuoteBuilder: React.FC = () => {
                         {run.lengthFt} ft - {run.ttiMin} min
                       </div>
                       <button
-                        className="absolute -bottom-5 right-0 text-[10px] text-red-400 bg-slate-900/80 px-1 rounded border border-slate-700"
+                        className="absolute -bottom-5 right-0 text-[10px] text-red-400 bg-slate-900/80 px-1 rounded border border-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                         onClick={e => { e.stopPropagation(); removeCable(layer.id, run.id); }}
+                        aria-label="Remove cable run"
                       >
                         remove
                       </button>
@@ -1176,14 +1211,14 @@ const QuoteBuilder: React.FC = () => {
 
           {/* Zoom controls */}
           <div className="absolute right-4 bottom-4 flex items-center gap-2 bg-slate-800/90 rounded-lg px-3 py-2 border border-slate-600">
-            <button onClick={() => setZoom(z => Math.min(2.5, +(z + 0.1).toFixed(2)))} className="text-white hover:text-emerald-400">
+            <button onClick={() => setZoom(z => Math.min(2.5, +(z + 0.1).toFixed(2)))} className="text-white hover:text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Zoom in">
               <ZoomIn size={18} />
             </button>
             <span className="text-sm text-white">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))} className="text-white hover:text-emerald-400">
+            <button onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))} className="text-white hover:text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Zoom out">
               <ZoomOut size={18} />
             </button>
-            <button onClick={() => setZoom(1)} className="text-slate-400 hover:text-white ml-2">
+            <button onClick={() => setZoom(1)} className="text-slate-200 hover:text-white ml-2 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Reset zoom">
               <RefreshCw size={16} />
             </button>
           </div>
@@ -1199,20 +1234,21 @@ const QuoteBuilder: React.FC = () => {
           <aside className="w-96 border-l border-slate-700 bg-slate-900/95 overflow-y-auto p-4 space-y-4">
             <button
               onClick={() => setRightOpen(false)}
-              className="absolute top-2 left-2 text-slate-400 hover:text-white"
+              className="absolute top-2 left-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              aria-label="Close right sidebar"
             >
               <ChevronRight size={18} />
             </button>
 
             {/* Integrations */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Location Integrations</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Location Integrations</h3>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {integrations.map(integ => (
-                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-slate-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-700/50">
+                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-slate-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-700/50 focus-within:ring-2 focus-within:ring-amber-500">
                     <div>
                       <div className="font-medium text-white">{integ.name}</div>
-                      <div className="text-[10px] text-slate-400">TTI: {integ.ttiMin} min</div>
+                      <div className="text-[10px] text-slate-200">TTI: {integ.ttiMin} min</div>
                     </div>
                     <input
                       type="checkbox"
@@ -1227,11 +1263,11 @@ const QuoteBuilder: React.FC = () => {
 
             {/* Travel & Support */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Travel & Support Plan</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Travel & Support Plan</h3>
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Travel Zone</label>
+                  <label className="text-xs text-slate-200 mb-1 block">Travel Zone</label>
                   <select
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
                     value={currentLocation?.travel?.zone || 'cape'}
@@ -1291,12 +1327,12 @@ const QuoteBuilder: React.FC = () => {
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-700">
-                <div className="text-xs text-slate-400 mb-2">Support Plan Tiers</div>
+                <div className="text-xs text-slate-200 mb-2">Support Plan Tiers</div>
                 <div className="grid grid-cols-4 gap-2">
                   {SUPPORT_TIERS.map(pct => (
                     <button
                       key={pct}
-                      className={`py-2 text-center rounded-lg border text-sm ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-slate-600 text-slate-400 hover:bg-slate-700/50'}`}
+                      className={`py-2 text-center rounded-lg border text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-slate-600 text-slate-200 hover:bg-slate-700/50'}`}
                       onClick={() => setSupportTier(pct)}
                     >
                       {pct === 0 ? 'None' : `${pct}%`}
@@ -1330,7 +1366,7 @@ const QuoteBuilder: React.FC = () => {
 
             {/* Payment Summary */}
             <div className="bg-brand-dark rounded-xl p-4 border border-slate-600">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Payment Summary</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Payment Summary</h3>
 
               <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
                 <SummaryRow label="Hardware labor" minutes={estimate.mins.hardware} rate={rates.hourly} />
@@ -1357,13 +1393,13 @@ const QuoteBuilder: React.FC = () => {
               <div className="mt-4 pt-4 border-t border-slate-600 space-y-2">
                 <button
                   onClick={() => setShowEmailModal(true)}
-                  className="w-full py-2.5 bg-brand-accent text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-brand-accent text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   <Mail size={16} /> Email Quote
                 </button>
                 <button
                   onClick={exportJSON}
-                  className="w-full py-2.5 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   <Download size={16} /> Export JSON
                 </button>
@@ -1375,7 +1411,8 @@ const QuoteBuilder: React.FC = () => {
         {!rightOpen && (
           <button
             onClick={() => setRightOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-l-lg p-2 text-slate-400 hover:text-white"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-l-lg p-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            aria-label="Open right sidebar"
           >
             <ChevronLeft size={18} />
           </button>
@@ -1387,7 +1424,7 @@ const QuoteBuilder: React.FC = () => {
         <div className="px-4 py-2 flex items-center gap-3 flex-wrap">
           {/* Layer controls */}
           <div className="flex items-center gap-2">
-            <Layers size={14} className="text-slate-400" />
+            <Layers size={14} className="text-slate-200" />
             <select
               className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
               value={activeLayerId}
@@ -1397,13 +1434,13 @@ const QuoteBuilder: React.FC = () => {
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
-            <button onClick={addLayer} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-2 py-1.5 text-sm text-white">
+            <button onClick={addLayer} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-2 py-1.5 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
               + Layer
             </button>
           </div>
 
           {/* Layer visibility toggles */}
-          <div className="flex items-center gap-3 text-xs text-slate-400">
+          <div className="flex items-center gap-3 text-xs text-slate-200">
             {currentFloor?.layers.map(l => (
               <label key={l.id} className="flex items-center gap-1 cursor-pointer">
                 <input
@@ -1420,7 +1457,7 @@ const QuoteBuilder: React.FC = () => {
           {/* Cable run button */}
           {activeLayer?.type === 'network' && (
             <button
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-slate-800 border border-slate-600 text-white hover:bg-slate-700'}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-slate-800 border border-slate-600 text-white hover:bg-slate-700'}`}
               onClick={() => {
                 setMode(mode === 'addCable' ? 'idle' : 'addCable');
                 setPendingCableStart(null);
@@ -1433,7 +1470,7 @@ const QuoteBuilder: React.FC = () => {
 
           {/* Scale control */}
           <div className="flex items-center gap-2 ml-4">
-            <span className="text-xs text-slate-400">Scale</span>
+            <span className="text-xs text-slate-200">Scale</span>
             <input
               type="number"
               className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-sm text-white w-20"
@@ -1444,13 +1481,13 @@ const QuoteBuilder: React.FC = () => {
                 return loc;
               })}
             />
-            <span className="text-xs text-slate-400">px/ft</span>
+            <span className="text-xs text-slate-200">px/ft</span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={resetFloor}
-              className="bg-red-900/50 border border-red-700 hover:bg-red-800/50 rounded-lg px-3 py-1.5 text-sm text-red-300"
+              className="bg-red-900/50 border border-red-700 hover:bg-red-800/50 rounded-lg px-3 py-1.5 text-sm text-red-300 focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
               Reset Floor
             </button>
@@ -1463,7 +1500,7 @@ const QuoteBuilder: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-600">
             <h3 className="font-serif text-2xl font-bold text-white mb-2">Save Your Quote</h3>
-            <p className="text-slate-400 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
+            <p className="text-slate-200 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
             <form
               className="space-y-4"
               onSubmit={e => {
@@ -1473,26 +1510,26 @@ const QuoteBuilder: React.FC = () => {
               }}
             >
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
-                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" required />
+                <label className="block text-sm font-medium text-white mb-1">Name</label>
+                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                <input type="email" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" required />
+                <label className="block text-sm font-medium text-white mb-1">Email</label>
+                <input type="email" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Restaurant Name</label>
-                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                <label className="block text-sm font-medium text-white mb-1">Restaurant Name</label>
+                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowEmailModal(false)}
-                  className="flex-1 py-2 text-slate-400 hover:bg-slate-700 rounded-lg border border-slate-600"
+                  className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-2 bg-brand-accent text-white rounded-lg hover:bg-amber-600">
+                <button type="submit" className="flex-1 py-2 bg-brand-accent text-white rounded-lg hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
                   Send Quote
                 </button>
               </div>
@@ -1520,7 +1557,7 @@ interface SummaryRowProps {
 function SummaryRow({ label, dollars, minutes, rate, raw, strong }: SummaryRowProps) {
   return (
     <div className={`flex items-center justify-between ${strong ? 'text-base font-semibold' : 'text-sm'}`}>
-      <span className="text-slate-300">{label}</span>
+      <span className="text-white">{label}</span>
       <span className="tabular-nums text-right text-white">
         {raw ? raw : (
           dollars != null ? `$${Number(dollars || 0).toFixed(2)}` :

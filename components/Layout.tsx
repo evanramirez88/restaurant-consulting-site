@@ -296,6 +296,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     Contact
                   </Link>
                 </li>
+                <li>
+                  <Link to="/portal" className="text-gray-500 hover:text-amber-400 transition-colors duration-200">
+                    Client Portal
+                  </Link>
+                </li>
               </ul>
             </div>
 
