@@ -501,6 +501,163 @@ section {
   font-size: 0.875rem;
 }
 
+/* Lane Badges */
+.lane-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.lane-badge-remote {
+  background: var(--accent);
+}
+
+/* Navigation Active State */
+.nav-links a.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Logo Link */
+.logo a {
+  text-decoration: none;
+}
+
+/* Coverage Section */
+.coverage {
+  background: var(--bg);
+}
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+}
+
+.coverage-zone {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.coverage-zone h3 {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+  color: var(--secondary);
+}
+
+.coverage-zone p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* Rate Cards */
+.rate-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  max-width: 700px;
+  margin: 0 auto 32px;
+}
+
+.rate-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.rate-card h3 {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.rate {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.rate span {
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.rate-card p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.rate-note {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Packages Section */
+.packages {
+  background: var(--bg);
+}
+
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.package-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
+
+.package-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.package-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.package-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* Pricing Annual Label */
+.price-annual {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 32px;
+}
+
+/* Pricing Note */
+.pricing-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .nav-links {
