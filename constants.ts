@@ -14,12 +14,13 @@ export const OWNER_NAME = "Evan Ramirez";
 export const PHONE_NUMBER = "(508) 247-4936";
 export const EMAIL_ADDRESS = "evanramirez@ccrestaurantconsulting.com";
 
-// Legacy pricing constants (for backward compatibility)
+// SECURITY: Actual pricing is calculated server-side via /api/quote/calculate
+// These values are placeholders for UI display only
 export const PRICING_CONSTANTS = {
-  HOURLY_RATE: 110,
-  TRAVEL_ZONES: [0, 150, 300],
-  CABLING_PER_DROP: 225,
-  TRAINING_RATE: 150,
+  HOURLY_RATE: 0, // Actual rate is server-side
+  TRAVEL_ZONES: [0, 0, 0],
+  CABLING_PER_DROP: 0,
+  TRAINING_RATE: 0,
 };
 
 export const STATION_CONFIGS: Record<StationType, StationConfig> = {
@@ -69,168 +70,173 @@ export const NAVIGATION = [
 // ADVANCED QUOTE BUILDER CONSTANTS
 // ============================================
 
+// SECURITY: Actual rates are calculated server-side via /api/quote/calculate
+// These are placeholder values - real pricing is protected server-side
 export const DEFAULT_RATES: Rates = {
-  hourly: 110
+  hourly: 0 // Actual rate is server-side only
 };
 
+// SECURITY: Travel rates are calculated server-side
 export const DEFAULT_TRAVEL: TravelRates = {
   capeCod: 0,
-  southShore: 100,        // <= 60 mi over the bridge
-  southernNE: 250,        // 60-100 mi
-  newEngland100Plus: 400, // > 100 mi
-  islandBase: 300,
-  islandVehicle: 200,
-  islandLodging: 250,
-  outOfRegionBase: 800
+  southShore: 0,
+  southernNE: 0,
+  newEngland100Plus: 0,
+  islandBase: 0,
+  islandVehicle: 0,
+  islandLodging: 0,
+  outOfRegionBase: 0
 };
 
-// Toast Hardware Catalog with Time-to-Install (TTI) minutes
+// SECURITY: TTI values are calculated server-side only
+// This catalog is for UI display purposes - actual labor times are protected
 export const HARDWARE_CATALOG: HardwareItem[] = [
-  { id: "toast-flex", name: "Toast Flex Terminal", category: "POS", ttiMin: 45 },
-  { id: "toast-flex-guest", name: "Guest Display (Flex)", category: "POS", ttiMin: 30 },
-  { id: "toast-go2", name: "Toast Go 2 (Handheld)", category: "POS", ttiMin: 25 },
-  { id: "toast-kds", name: "Kitchen Display (KDS)", category: "KDS", ttiMin: 30 },
-  { id: "receipt-printer", name: "Thermal Receipt Printer", category: "Printers", ttiMin: 20 },
-  { id: "impact-printer", name: "Kitchen Impact Printer", category: "Printers", ttiMin: 20 },
-  { id: "label-printer", name: "Label Printer", category: "Printers", ttiMin: 40 },
-  { id: "poe-switch", name: "Ethernet Switch (PoE)", category: "Network", ttiMin: 10 },
-  { id: "ap", name: "Wi-Fi Access Point", category: "Network", ttiMin: 25 },
-  { id: "router", name: "Toast Router / Hub", category: "Network", ttiMin: 25 },
-  { id: "card-reader-direct", name: "Card Reader (Toast Direct Attach)", category: "Card", ttiMin: 20 },
-  { id: "card-reader-guest", name: "Card Reader (Toast Guest Pay)", category: "Card", ttiMin: 20 },
-  { id: "card-reader-employee", name: "Card Reader (Swipe to Pay - Employee)", category: "Card", ttiMin: 20 },
-  { id: "ups", name: "UPS Battery Backup", category: "Power", ttiMin: 15 },
-  { id: "cash-drawer", name: "Cash Drawer", category: "Accessories", ttiMin: 15 },
-  { id: "barcode", name: "Barcode Scanner", category: "Retail", ttiMin: 15 },
-  { id: "scale", name: "By-Weight Scale", category: "Retail", ttiMin: 45 }
+  { id: "toast-flex", name: "Toast Flex Terminal", category: "POS", ttiMin: 0 },
+  { id: "toast-flex-guest", name: "Guest Display (Flex)", category: "POS", ttiMin: 0 },
+  { id: "toast-go2", name: "Toast Go 2 (Handheld)", category: "POS", ttiMin: 0 },
+  { id: "toast-kds", name: "Kitchen Display (KDS)", category: "KDS", ttiMin: 0 },
+  { id: "receipt-printer", name: "Thermal Receipt Printer", category: "Printers", ttiMin: 0 },
+  { id: "impact-printer", name: "Kitchen Impact Printer", category: "Printers", ttiMin: 0 },
+  { id: "label-printer", name: "Label Printer", category: "Printers", ttiMin: 0 },
+  { id: "poe-switch", name: "Ethernet Switch (PoE)", category: "Network", ttiMin: 0 },
+  { id: "ap", name: "Wi-Fi Access Point", category: "Network", ttiMin: 0 },
+  { id: "router", name: "Toast Router / Hub", category: "Network", ttiMin: 0 },
+  { id: "card-reader-direct", name: "Card Reader (Toast Direct Attach)", category: "Card", ttiMin: 0 },
+  { id: "card-reader-guest", name: "Card Reader (Toast Guest Pay)", category: "Card", ttiMin: 0 },
+  { id: "card-reader-employee", name: "Card Reader (Swipe to Pay - Employee)", category: "Card", ttiMin: 0 },
+  { id: "ups", name: "UPS Battery Backup", category: "Power", ttiMin: 0 },
+  { id: "cash-drawer", name: "Cash Drawer", category: "Accessories", ttiMin: 0 },
+  { id: "barcode", name: "Barcode Scanner", category: "Retail", ttiMin: 0 },
+  { id: "scale", name: "By-Weight Scale", category: "Retail", ttiMin: 0 }
 ];
 
-// Integrations with TTI
+// SECURITY: Integration TTI values are calculated server-side only
 export const INTEGRATIONS: IntegrationItem[] = [
-  { id: "toast-payroll", name: "Toast Payroll & Team Mgmt", ttiMin: 90 },
-  { id: "xtrachef", name: "xtraCHEF by Toast", ttiMin: 90 },
-  { id: "loyalty", name: "Toast Loyalty", ttiMin: 60 },
-  { id: "gift-cards", name: "Gift Cards", ttiMin: 45 },
-  { id: "online-ordering", name: "Online Ordering", ttiMin: 60 },
-  { id: "delivery-services", name: "Toast Delivery Services", ttiMin: 30 },
-  { id: "3p-delivery", name: "3rd-Party Delivery (Uber/DoorDash/Grubhub)", ttiMin: 60 },
-  { id: "opentable", name: "OpenTable", ttiMin: 60 },
-  { id: "tables", name: "Toast Tables (Reservations)", ttiMin: 90 },
-  { id: "email-mktg", name: "Email Marketing", ttiMin: 45 },
-  { id: "7shifts", name: "7shifts Scheduling", ttiMin: 75 }
+  { id: "toast-payroll", name: "Toast Payroll & Team Mgmt", ttiMin: 0 },
+  { id: "xtrachef", name: "xtraCHEF by Toast", ttiMin: 0 },
+  { id: "loyalty", name: "Toast Loyalty", ttiMin: 0 },
+  { id: "gift-cards", name: "Gift Cards", ttiMin: 0 },
+  { id: "online-ordering", name: "Online Ordering", ttiMin: 0 },
+  { id: "delivery-services", name: "Toast Delivery Services", ttiMin: 0 },
+  { id: "3p-delivery", name: "3rd-Party Delivery (Uber/DoorDash/Grubhub)", ttiMin: 0 },
+  { id: "opentable", name: "OpenTable", ttiMin: 0 },
+  { id: "tables", name: "Toast Tables (Reservations)", ttiMin: 0 },
+  { id: "email-mktg", name: "Email Marketing", ttiMin: 0 },
+  { id: "7shifts", name: "7shifts Scheduling", ttiMin: 0 }
 ];
 
-// Prebuilt Station Templates
+// SECURITY: Station template TTI values are calculated server-side only
+// ttiMin values here are for display purposes only (placeholders)
 export const STATION_TEMPLATES: StationTemplate[] = [
   {
     id: "tmpl-server",
     label: "Server Station",
-    ttiMin: 85,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-direct"],
     color: "#38bdf8"
   },
   {
     id: "tmpl-bar-plus",
     label: "Bar Station Plus Service",
-    ttiMin: 120,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-direct", "cash-drawer", "impact-printer"],
     color: "#22d3ee"
   },
   {
     id: "tmpl-bar",
     label: "Bar Station",
-    ttiMin: 100,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-direct", "cash-drawer"],
     color: "#0ea5e9"
   },
   {
     id: "tmpl-host",
     label: "Host Stand",
-    ttiMin: 100,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-direct", "cash-drawer"],
     color: "#a3e635"
   },
   {
     id: "tmpl-full-kitchen",
     label: "Full Kitchen",
-    ttiMin: 50,
+    ttiMin: 0,
     items: ["toast-kds", "impact-printer"],
     color: "#fbbf24"
   },
   {
     id: "tmpl-takeout",
     label: "Takeout Station",
-    ttiMin: 150,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-guest", "card-reader-employee", "cash-drawer", "toast-flex-guest"],
     color: "#f472b6"
   },
   {
     id: "tmpl-retail",
     label: "Retail Terminal",
-    ttiMin: 120,
+    ttiMin: 0,
     items: ["receipt-printer", "card-reader-guest", "card-reader-employee", "cash-drawer", "toast-flex-guest"],
     color: "#34d399"
   },
   {
     id: "tmpl-retail-weighed",
     label: "Weighed Retail Terminal",
-    ttiMin: 150,
+    ttiMin: 0,
     items: ["receipt-printer", "card-reader-guest", "card-reader-employee", "cash-drawer", "toast-flex-guest", "scale"],
     color: "#10b981"
   },
   {
     id: "tmpl-retail-full",
     label: "Full Retail Terminal",
-    ttiMin: 165,
+    ttiMin: 0,
     items: ["receipt-printer", "card-reader-guest", "card-reader-employee", "cash-drawer", "toast-flex-guest", "barcode", "scale"],
     color: "#059669"
   },
   {
     id: "tmpl-kds",
     label: "Kitchen KDS",
-    ttiMin: 30,
+    ttiMin: 0,
     items: ["toast-kds"],
     color: "#f59e0b"
   },
   {
     id: "tmpl-bar-service",
     label: "Bar Service Station",
-    ttiMin: 20,
+    ttiMin: 0,
     items: ["impact-printer"],
     color: "#22c55e"
   },
   {
     id: "tmpl-barista",
     label: "Barista Station",
-    ttiMin: 190,
+    ttiMin: 0,
     items: ["toast-flex", "receipt-printer", "card-reader-guest", "card-reader-employee", "cash-drawer", "toast-flex-guest", "label-printer"],
     color: "#8b5cf6"
   },
   {
     id: "tmpl-expo",
     label: "Expo Station",
-    ttiMin: 50,
+    ttiMin: 0,
     items: ["toast-kds", "impact-printer"],
     color: "#f59e0b"
   },
   {
     id: "tmpl-network",
     label: "Networking Area",
-    ttiMin: 35,
+    ttiMin: 0,
     items: ["router", "poe-switch"],
     color: "#14b8a6"
   },
   {
     id: "tmpl-ap",
     label: "Access Point",
-    ttiMin: 25,
+    ttiMin: 0,
     items: ["ap"],
     color: "#06b6d4"
   },
   {
     id: "tmpl-switch",
     label: "Ethernet Switch",
-    ttiMin: 10,
+    ttiMin: 0,
     items: ["poe-switch"],
     color: "#22c55e"
   }

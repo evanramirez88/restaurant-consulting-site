@@ -15,6 +15,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import ClientPortal from './pages/ClientPortal';
 import ClientLogin from './pages/ClientLogin';
 import ClientDashboard from './pages/ClientDashboard';
+import ProtectedRoute from './src/components/ProtectedRoute';
+import ClientProtectedRoute from './src/components/ClientProtectedRoute';
 
 // Manual ScrollRestoration component for HashRouter
 const ScrollToTop = () => {
@@ -37,14 +39,22 @@ const App: React.FC = () => {
     <HashRouter>
       <ScrollToTop />
       <Routes>
-        {/* Admin routes (no layout wrapper) */}
+        {/* Admin routes (protected) */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={
+          <ProtectedRoute redirectTo="/admin/login">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
 
-        {/* Client Portal routes (no layout wrapper) */}
+        {/* Client Portal routes (protected) */}
         <Route path="/portal" element={<PublicLayout><ClientPortal /></PublicLayout>} />
         <Route path="/portal/login" element={<ClientLogin />} />
-        <Route path="/portal/dashboard" element={<ClientDashboard />} />
+        <Route path="/portal/dashboard" element={
+          <ClientProtectedRoute redirectTo="/portal/login">
+            <ClientDashboard />
+          </ClientProtectedRoute>
+        } />
 
         {/* Public routes with layout */}
         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />

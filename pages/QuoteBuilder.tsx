@@ -705,11 +705,67 @@ const QuoteBuilder: React.FC = () => {
   }, [travel]);
 
   // ============================================
-  // ESTIMATION ENGINE
+  // SERVER-SIDE ESTIMATION ENGINE
   // ============================================
 
+  // State for server-calculated quote
+  const [serverQuote, setServerQuote] = useState<{
+    items: Array<{ type: string; label: string; cost: number }>;
+    summary: {
+      hardwareCost: number;
+      overheadCost: number;
+      integrationsCost: number;
+      cablingCost: number;
+      installCost: number;
+      travelCost: number;
+      supportMonthly: number;
+      supportAnnual: number;
+      totalFirst: number;
+    };
+    timeEstimate: { minHours: number; maxHours: number };
+  } | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  // Debounced quote calculation from server
+  useEffect(() => {
+    if (!currentLocation || !currentFloor) return;
+
+    const calculateQuote = async () => {
+      setQuoteLoading(true);
+      try {
+        const response = await fetch('/api/quote/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            floors: currentLocation.floors,
+            travel: currentLocation.travel,
+            integrationIds: currentLocation.integrationIds,
+            supportTier,
+            supportPeriod
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setServerQuote(data.quote);
+          }
+        }
+      } catch (error) {
+        console.error('Quote calculation error:', error);
+      } finally {
+        setQuoteLoading(false);
+      }
+    };
+
+    // Debounce the API call
+    const timeoutId = setTimeout(calculateQuote, 500);
+    return () => clearTimeout(timeoutId);
+  }, [currentLocation, currentFloor, supportTier, supportPeriod]);
+
+  // Estimate object compatible with existing UI
   const estimate = useMemo(() => {
-    if (!currentFloor) return {
+    if (!serverQuote) return {
       items: [],
       mins: { hardware: 0, overhead: 0, integrations: 0, cabling: 0 },
       totalMin: 0,
@@ -720,76 +776,28 @@ const QuoteBuilder: React.FC = () => {
       combinedFirst: 0
     };
 
-    const items: Array<{ type: string; label: string; minutes: number; dollars: number }> = [];
-    const mins = { hardware: 0, overhead: 0, integrations: 0, cabling: 0 };
-
-    // Stations & hardware
-    currentFloor.stations.forEach(st => {
-      const stationExisting = !!st.flags?.existing && !st.flags?.replace;
-      if (!stationExisting) {
-        mins.overhead += STATION_OVERHEAD_MIN;
-        items.push({
-          type: 'overhead',
-          label: `Station overhead - ${st.name}`,
-          minutes: STATION_OVERHEAD_MIN,
-          dollars: (STATION_OVERHEAD_MIN / 60) * rates.hourly
-        });
-      }
-      st.hardware.forEach(assoc => {
-        const hw = hwById[assoc.hid];
-        if (!hw) return;
-        const assocExisting = !!assoc.flags?.existing && !assoc.flags?.replace;
-        if (stationExisting || assocExisting) return;
-        mins.hardware += hw.ttiMin;
-        items.push({
-          type: 'hardware',
-          label: `${hw.name} - ${st.name}`,
-          minutes: hw.ttiMin,
-          dollars: (hw.ttiMin / 60) * rates.hourly
-        });
-      });
-    });
-
-    // Integrations
-    currentLocation?.integrationIds.forEach(id => {
-      const integ = integrations.find(i => i.id === id);
-      if (!integ) return;
-      mins.integrations += integ.ttiMin;
-      items.push({
-        type: 'integration',
-        label: `Integration - ${integ.name}`,
-        minutes: integ.ttiMin,
-        dollars: (integ.ttiMin / 60) * rates.hourly
-      });
-    });
-
-    // Cable runs
-    currentFloor.layers
-      .filter(l => l.type === 'network')
-      .forEach(layer => {
-        layer.cableRuns.forEach(run => {
-          mins.cabling += run.ttiMin;
-          items.push({
-            type: 'cabling',
-            label: `Cable run ${run.lengthFt} ft`,
-            minutes: run.ttiMin,
-            dollars: (run.ttiMin / 60) * rates.hourly
-          });
-        });
-      });
-
-    const totalMin = Math.round(Object.values(mins).reduce((a, b) => a + b, 0));
-    const installCost = (totalMin / 60) * rates.hourly;
-    const travelCost = currentLocation ? computeTravelCost(currentLocation) : 0;
-
-    const tierPct = supportTier / 100;
-    const supportMonthly = tierPct * installCost;
-    const supportAnnual = supportMonthly * 12 * 0.95;
-    const supportNow = supportPeriod === 'monthly' ? supportMonthly : supportAnnual;
-    const combinedFirst = installCost + travelCost + supportNow;
-
-    return { items, mins, totalMin, installCost, travelCost, supportMonthly, supportAnnual, combinedFirst };
-  }, [currentFloor, currentLocation, integrations, rates, supportTier, supportPeriod, hwById, computeTravelCost]);
+    return {
+      items: serverQuote.items.map(item => ({
+        type: item.type,
+        label: item.label,
+        minutes: 0, // Minutes are not exposed from server
+        dollars: item.cost
+      })),
+      mins: {
+        hardware: 0, // Actual minutes are server-side only
+        overhead: 0,
+        integrations: 0,
+        cabling: 0
+      },
+      totalMin: 0, // Time estimate is provided as range only
+      timeEstimate: serverQuote.timeEstimate,
+      installCost: serverQuote.summary.installCost,
+      travelCost: serverQuote.summary.travelCost,
+      supportMonthly: serverQuote.summary.supportMonthly,
+      supportAnnual: serverQuote.summary.supportAnnual,
+      combinedFirst: serverQuote.summary.totalFirst
+    };
+  }, [serverQuote]);
 
   // Export JSON
   const exportJSON = () => {
@@ -1401,16 +1409,22 @@ const QuoteBuilder: React.FC = () => {
 
             {/* Payment Summary */}
             <div className="bg-brand-dark rounded-xl p-4 border border-slate-600">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Payment Summary</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">
+                Payment Summary
+                {quoteLoading && <span className="ml-2 text-amber-400 animate-pulse">Calculating...</span>}
+              </h3>
 
               <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
-                <SummaryRow label="Hardware labor" minutes={estimate.mins.hardware} rate={rates.hourly} />
-                <SummaryRow label="Station overhead" minutes={estimate.mins.overhead} rate={rates.hourly} />
-                <SummaryRow label="Integrations" minutes={estimate.mins.integrations} rate={rates.hourly} />
-                <SummaryRow label="Networking & cabling" minutes={estimate.mins.cabling} rate={rates.hourly} />
+                <SummaryRow label="Hardware labor" dollars={serverQuote?.summary.hardwareCost || 0} />
+                <SummaryRow label="Station overhead" dollars={serverQuote?.summary.overheadCost || 0} />
+                <SummaryRow label="Integrations" dollars={serverQuote?.summary.integrationsCost || 0} />
+                <SummaryRow label="Networking & cabling" dollars={serverQuote?.summary.cablingCost || 0} />
                 <SummaryRow label="Travel" dollars={estimate.travelCost} />
                 <div className="h-px bg-slate-600 my-2" />
-                <SummaryRow label="Install time" raw={minutesToHm(estimate.totalMin)} />
+                <SummaryRow
+                  label="Est. install time"
+                  raw={serverQuote?.timeEstimate ? `${serverQuote.timeEstimate.minHours}-${serverQuote.timeEstimate.maxHours} hours` : '--'}
+                />
                 <SummaryRow label="Install cost" dollars={estimate.installCost} />
                 <SummaryRow
                   label={`Support Plan (${supportPeriod === 'monthly' ? 'Monthly' : 'Annual'})`}

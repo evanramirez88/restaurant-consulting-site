@@ -424,7 +424,9 @@ const MenuBuilderTool: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [actualFiles, setActualFiles] = useState<File[]>([]);
 
   // Generate mock parsed data (simulated)
   const generateMockParsedData = (): ParsedMenu => {
@@ -503,13 +505,15 @@ const MenuBuilderTool: React.FC = () => {
 
   // Process uploaded files
   const processFiles = (files: File[]) => {
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
     const newFiles: UploadedFile[] = [];
+    const newActualFiles: File[] = [];
 
     files.forEach(file => {
       if (validTypes.includes(file.type)) {
+        const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const uploadedFile: UploadedFile = {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: fileId,
           name: file.name,
           type: file.type,
           size: file.size
@@ -521,13 +525,15 @@ const MenuBuilderTool: React.FC = () => {
         }
 
         newFiles.push(uploadedFile);
+        newActualFiles.push(file);
       }
     });
 
     if (newFiles.length > 0) {
       setUploadedFiles(prev => [...prev, ...newFiles]);
+      setActualFiles(prev => [...prev, ...newActualFiles]);
     } else if (files.length > 0) {
-      setErrorMessage('Please upload PDF or image files (JPG, PNG, WebP)');
+      setErrorMessage('Please upload PDF or image files (JPG, PNG, WebP, HEIC)');
     }
   };
 
@@ -539,28 +545,84 @@ const MenuBuilderTool: React.FC = () => {
     }
   };
 
-  // Simulate OCR processing
-  const startProcessing = () => {
-    if (uploadedFiles.length === 0) return;
+  // Real OCR processing via API
+  const startProcessing = async () => {
+    if (uploadedFiles.length === 0 || actualFiles.length === 0) return;
 
     setOcrStatus('uploading');
     setErrorMessage(null);
 
-    // Simulate upload delay
-    setTimeout(() => {
+    try {
+      // Upload the first file (for now, single file processing)
+      const fileToUpload = actualFiles[0];
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+      formData.append('name', 'Web Upload');
+      formData.append('email', '');
+      formData.append('restaurantName', '');
+
+      const uploadResponse = await fetch('/api/menu/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+      const jobId = uploadResult.jobId;
+      setCurrentJobId(jobId);
       setOcrStatus('processing');
 
-      // Simulate OCR processing delay
-      setTimeout(() => {
-        setOcrStatus('parsing');
+      // Trigger OCR processing
+      const processResponse = await fetch('/api/menu/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      });
 
-        // Simulate AI parsing delay
-        setTimeout(() => {
-          setParsedMenu(generateMockParsedData());
-          setOcrStatus('complete');
-        }, 2000);
-      }, 2500);
-    }, 1500);
+      const processResult = await processResponse.json();
+
+      if (!processResult.success) {
+        throw new Error(processResult.error || 'Processing failed');
+      }
+
+      setOcrStatus('parsing');
+
+      // Short delay for UI feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (processResult.parsedMenu) {
+        setParsedMenu(processResult.parsedMenu);
+        setOcrStatus('complete');
+      } else {
+        // Poll for status if processing is async
+        const pollStatus = async () => {
+          const statusResponse = await fetch(`/api/menu/status?jobId=${jobId}`);
+          const statusResult = await statusResponse.json();
+
+          if (statusResult.success) {
+            if (statusResult.job.status === 'completed') {
+              setParsedMenu(statusResult.job.parsedMenu);
+              setOcrStatus('complete');
+            } else if (statusResult.job.status === 'failed') {
+              throw new Error(statusResult.job.error || 'Processing failed');
+            } else {
+              // Still processing, poll again
+              setTimeout(pollStatus, 2000);
+            }
+          }
+        };
+        pollStatus();
+      }
+
+    } catch (error) {
+      console.error('Processing error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Processing failed');
+      setOcrStatus('error');
+    }
   };
 
   // Export functions
