@@ -3,12 +3,68 @@ import { Link } from 'react-router-dom';
 import { Check, ShieldCheck, Terminal, BookOpen, Clock, Activity } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
+// FAQ data for SEO schema - dramatically increases AI citation likelihood
+const FAQ_DATA = [
+  {
+    question: "How long does a Toast POS installation take?",
+    answer: "A typical Toast POS installation takes 1-3 days depending on the number of terminals, kitchen display systems, and menu complexity. We schedule installations during off-hours to minimize disruption to your operations."
+  },
+  {
+    question: "Do you provide staff training for Toast POS?",
+    answer: "Yes, we provide comprehensive staff training for both front-of-house and back-of-house teams. This includes server training on order entry, manager training on reporting, and kitchen staff training on KDS operations."
+  },
+  {
+    question: "What areas do you serve for on-site Toast installation?",
+    answer: "We serve Cape Cod, South Shore Massachusetts, Southeastern Massachusetts, and the greater Boston area for on-site installations. We also offer remote support and menu configuration services nationwide."
+  },
+  {
+    question: "How much does Toast POS installation cost?",
+    answer: "Installation costs vary based on the number of terminals, complexity of your menu, and training requirements. Use our Quote Builder tool for an instant estimate, or schedule a free 15-minute discovery call for a custom quote."
+  },
+  {
+    question: "Do you offer ongoing Toast POS support?",
+    answer: "Yes, we offer Toast Guardian support plans starting at $125/month with 24-hour response times. Plans include menu updates, troubleshooting, and emergency support for when things break during busy service."
+  }
+];
+
 const Services: React.FC = () => {
   useSEO({
     title: 'Toast POS Installation & Restaurant Services | Cape Cod',
     description: 'Professional Toast POS installation, menu configuration, restaurant networking, and operations consulting in Cape Cod & SE Massachusetts. Get a free quote!',
     canonical: 'https://ccrestaurantconsulting.com/#/services',
   });
+
+  // Inject FAQPage schema for AI citation optimization
+  React.useEffect(() => {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": FAQ_DATA.map(faq => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    };
+
+    // Remove existing FAQ schema if present
+    const existingScript = document.querySelector('script[data-schema="faq-services"]');
+    if (existingScript) existingScript.remove();
+
+    // Add new FAQ schema
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'faq-services');
+    script.textContent = JSON.stringify(faqSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      const scriptToRemove = document.querySelector('script[data-schema="faq-services"]');
+      if (scriptToRemove) scriptToRemove.remove();
+    };
+  }, []);
 
   return (
     <div className="bg-white min-h-screen pb-20">

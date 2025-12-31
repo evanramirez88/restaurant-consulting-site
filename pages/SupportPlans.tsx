@@ -3,12 +3,66 @@ import { Link } from 'react-router-dom';
 import { Check, Shield, X } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
+// FAQ data for Support Plans - SEO schema optimization
+const SUPPORT_FAQ_DATA = [
+  {
+    question: "What is Toast Guardian?",
+    answer: "Toast Guardian is our comprehensive support plan for Toast POS systems. It provides ongoing maintenance, troubleshooting, menu updates, and emergency support to keep your restaurant running smoothly."
+  },
+  {
+    question: "How much do Toast support plans cost?",
+    answer: "Toast Guardian plans start at $125/month for Essential tier (2 hours included, 48-hour response), $250/month for Professional tier (4 hours, 24-hour response), and $400/month for Premium tier (8 hours, same-day response)."
+  },
+  {
+    question: "What's included in Toast Guardian support?",
+    answer: "All plans include remote troubleshooting, menu updates, system reviews, and email support. Higher tiers add phone support, priority response times, staff training resources, dedicated account managers, and quarterly on-site visits."
+  },
+  {
+    question: "Do you offer emergency Toast POS support?",
+    answer: "Yes, our Premium plan includes same-day emergency response. For Essential and Professional plans, emergency support is available at our hourly rate. We understand that POS issues during service can be critical."
+  },
+  {
+    question: "Can I save money with annual Toast support plans?",
+    answer: "Yes, annual plans save up to $1,200 per year compared to monthly billing. Essential saves $300/year, Professional saves $600/year, and Premium saves $1,200/year."
+  }
+];
+
 const SupportPlans: React.FC = () => {
   useSEO({
     title: 'Toast Guardian Support Plans | Cape Cod Restaurant Consulting',
     description: 'Never get caught off guard again. 24/7 Toast POS support plans starting at $125/month. Essential, Professional, and Premium tiers available.',
     canonical: 'https://ccrestaurantconsulting.com/#/support-plans',
   });
+
+  // Inject FAQPage schema for AI citation optimization
+  React.useEffect(() => {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": SUPPORT_FAQ_DATA.map(faq => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    };
+
+    const existingScript = document.querySelector('script[data-schema="faq-support"]');
+    if (existingScript) existingScript.remove();
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'faq-support');
+    script.textContent = JSON.stringify(faqSchema);
+    document.head.appendChild(script);
+
+    return () => {
+      const scriptToRemove = document.querySelector('script[data-schema="faq-support"]');
+      if (scriptToRemove) scriptToRemove.remove();
+    };
+  }, []);
 
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 

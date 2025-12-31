@@ -1,58 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Homepage -->
+  <!-- Homepage - Primary Landing Page -->
   <url>
     <loc>https://ccrestaurantconsulting.com/</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-12-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Services Page -->
+  <!-- Services - Core Service Offerings -->
   <url>
     <loc>https://ccrestaurantconsulting.com/#/services</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-12-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- About Page -->
+  <!-- Toast Guardian Support Plans - Recurring Revenue -->
   <url>
-    <loc>https://ccrestaurantconsulting.com/#/about</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Contact Page -->
-  <url>
-    <loc>https://ccrestaurantconsulting.com/#/contact</loc>
-    <lastmod>2025-12-13</lastmod>
+    <loc>https://ccrestaurantconsulting.com/#/support-plans</loc>
+    <lastmod>2025-12-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- Schedule Page -->
-  <url>
-    <loc>https://ccrestaurantconsulting.com/#/schedule</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Quote Builder -->
+  <!-- Quote Builder - Lead Generation Tool -->
   <url>
     <loc>https://ccrestaurantconsulting.com/#/quote</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-12-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- Menu Builder (Coming Soon) -->
+  <!-- Menu Builder - Lead Generation Tool -->
   <url>
     <loc>https://ccrestaurantconsulting.com/#/menu-builder</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-12-30</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- About Page - Trust Building -->
+  <url>
+    <loc>https://ccrestaurantconsulting.com/#/about</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Contact Page - Conversion -->
+  <url>
+    <loc>https://ccrestaurantconsulting.com/#/contact</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Schedule Page - Conversion -->
+  <url>
+    <loc>https://ccrestaurantconsulting.com/#/schedule</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Client Portal - Customer Access -->
+  <url>
+    <loc>https://ccrestaurantconsulting.com/#/portal</loc>
+    <lastmod>2025-12-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>
