@@ -1,23 +1,23 @@
 # Cape Cod Restaurant Consulting - Cloudflare Configuration
-name = "ccrc-site"
+name = "restaurant-consulting-site"
 compatibility_date = "2024-01-01"
-account_id = "81ae379e7d54cfc02c9eaac2930fd21b"
+pages_build_output_dir = "dist"
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "ccrc-admin"
-database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
+database_name = "rg-consulting-db"
+database_id = "c2fdafac-bc84-4ad7-974e-312dceb28263"
 
-# KV Namespace for rate limiting
+# KV Namespace for rate limiting and sessions
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "57fda5bf0515423db01df17ed5b335e6" # ccrc-rate-limit KV namespace
+id = "a922ece9ad7c42e08a3c1fe88e81db7b" # rg-consulting-sessions
 
-# R2 Bucket for file storage (menu uploads, etc.)
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "ccrc-uploads"
+# R2 Bucket for file storage (menu uploads, etc.) - TODO: Enable R2 in Cloudflare dashboard
+# [[r2_buckets]]
+# binding = "R2_BUCKET"
+# bucket_name = "ccrc-uploads"
 
 # Environment variables (set in Cloudflare dashboard or .dev.vars for local)
 # ADMIN_PASSWORD_HASH - SHA-256 hash of admin password
