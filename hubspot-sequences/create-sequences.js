@@ -51,10 +51,9 @@ const sequences = [
 ];
 
 async function createSequences() {
-  console.log('Launching browser...');
-  console.log('(Session will be saved for future runs)\n');
+  console.log('Launching browser with HubSpot session...\n');
 
-  // Use a dedicated automation profile (won't conflict with running Chrome)
+  // Use Playwright profile with copied Chrome cookies
   const userDataDir = process.env.LOCALAPPDATA + '/Playwright-HubSpot-Automation';
 
   const context = await chromium.launchPersistentContext(userDataDir, {

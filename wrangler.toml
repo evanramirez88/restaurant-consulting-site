@@ -3,22 +3,20 @@ name = "restaurant-consulting-site"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 
-# D1 Database binding
-# NOTE: For Pages deployments, configure bindings in Cloudflare Dashboard:
+# D1 Database binding - CONFIGURE IN CLOUDFLARE DASHBOARD FOR PAGES
 # Settings > Functions > D1 database bindings > Add binding
 # Variable name: DB, D1 database: rg-consulting-db
-[[d1_databases]]
-binding = "DB"
-database_name = "rg-consulting-db"
-database_id = "c2fdafac-bc84-4ad7-974e-312dceb28263"
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "rg-consulting-db"
+# database_id = "c2fdafac-bc84-4ad7-974e-312dceb28263"
 
-# KV Namespace for rate limiting and sessions
-# NOTE: For Pages deployments, configure bindings in Cloudflare Dashboard:
+# KV Namespace - CONFIGURE IN CLOUDFLARE DASHBOARD FOR PAGES
 # Settings > Functions > KV namespace bindings > Add binding
 # Variable name: RATE_LIMIT_KV, KV namespace: rg-consulting-sessions
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "a922ece9ad7c42e08a3c1fe88e81db7b"
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "a922ece9ad7c42e08a3c1fe88e81db7b"
 
 # R2 Bucket for file storage (menu uploads, etc.) - TODO: Enable R2 in Cloudflare dashboard
 # [[r2_buckets]]
