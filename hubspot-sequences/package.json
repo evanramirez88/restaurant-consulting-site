@@ -1,0 +1,16 @@
+{
+  "name": "hubspot-sequences",
+  "version": "1.0.0",
+  "description": "This folder contains 6 email sequences for OPERATION BREAKOUT 400K.\r HubSpot's API doesn't support programmatic sequence creation, so these templates\r are formatted for quick copy-paste into the HubSpot Sequences UI.",
+  "main": "enrollment-api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  }
+}
