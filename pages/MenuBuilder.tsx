@@ -539,13 +539,101 @@ const MenuBuilderTool: React.FC = () => {
 
   // Remove file
   const removeFile = (id: string) => {
+    const fileIndex = uploadedFiles.findIndex(f => f.id === id);
     setUploadedFiles(prev => prev.filter(f => f.id !== id));
+    if (fileIndex !== -1) {
+      setActualFiles(prev => prev.filter((_, i) => i !== fileIndex));
+    }
     if (selectedFile?.id === id) {
       setSelectedFile(null);
     }
   };
 
-  // Real OCR processing via API
+  // Process a single file and return parsed menu
+  const processFile = async (file: File): Promise<ParsedMenu | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', 'Web Upload');
+    formData.append('email', '');
+    formData.append('restaurantName', '');
+
+    const uploadResponse = await fetch('/api/menu/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const uploadResult = await uploadResponse.json();
+
+    if (!uploadResult.success) {
+      throw new Error(uploadResult.error || 'Upload failed');
+    }
+
+    const jobId = uploadResult.jobId;
+    setCurrentJobId(jobId);
+
+    // Trigger OCR processing
+    const processResponse = await fetch('/api/menu/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId })
+    });
+
+    const processResult = await processResponse.json();
+
+    if (!processResult.success) {
+      throw new Error(processResult.error || 'Processing failed');
+    }
+
+    if (processResult.parsedMenu) {
+      return processResult.parsedMenu;
+    }
+
+    // Poll for status if processing is async
+    const pollForResult = async (maxAttempts = 30): Promise<ParsedMenu | null> => {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const statusResponse = await fetch(`/api/menu/status?jobId=${jobId}`);
+        const statusResult = await statusResponse.json();
+
+        if (statusResult.success) {
+          if (statusResult.job.status === 'completed') {
+            return statusResult.job.parsedMenu;
+          } else if (statusResult.job.status === 'failed') {
+            throw new Error(statusResult.job.error || 'Processing failed');
+          }
+        }
+      }
+      throw new Error('Processing timed out');
+    };
+
+    return pollForResult();
+  };
+
+  // Merge multiple parsed menus into one
+  const mergeMenus = (menus: ParsedMenu[]): ParsedMenu => {
+    const allItems: MenuItem[] = [];
+    const allCategories = new Set<string>();
+    const allModifierGroups = new Set<string>();
+
+    menus.forEach((menu, menuIndex) => {
+      menu.items.forEach((item, itemIndex) => {
+        allItems.push({
+          ...item,
+          id: `item_${menuIndex + 1}_${itemIndex + 1}`
+        });
+      });
+      menu.categories.forEach(c => allCategories.add(c));
+      menu.modifierGroups.forEach(m => allModifierGroups.add(m));
+    });
+
+    return {
+      items: allItems,
+      categories: Array.from(allCategories),
+      modifierGroups: Array.from(allModifierGroups)
+    };
+  };
+
+  // Real OCR processing via API - supports batch processing
   const startProcessing = async () => {
     if (uploadedFiles.length === 0 || actualFiles.length === 0) return;
 
@@ -553,40 +641,25 @@ const MenuBuilderTool: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      // Upload the first file (for now, single file processing)
-      const fileToUpload = actualFiles[0];
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-      formData.append('name', 'Web Upload');
-      formData.append('email', '');
-      formData.append('restaurantName', '');
+      const allParsedMenus: ParsedMenu[] = [];
+      const totalFiles = actualFiles.length;
 
-      const uploadResponse = await fetch('/api/menu/upload', {
-        method: 'POST',
-        body: formData
-      });
+      // Process each file
+      for (let i = 0; i < totalFiles; i++) {
+        const file = actualFiles[i];
 
-      const uploadResult = await uploadResponse.json();
+        // Update status based on current file
+        if (i === 0) {
+          setOcrStatus('uploading');
+        }
 
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error || 'Upload failed');
-      }
+        // Process this file
+        setOcrStatus('processing');
+        const result = await processFile(file);
 
-      const jobId = uploadResult.jobId;
-      setCurrentJobId(jobId);
-      setOcrStatus('processing');
-
-      // Trigger OCR processing
-      const processResponse = await fetch('/api/menu/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId })
-      });
-
-      const processResult = await processResponse.json();
-
-      if (!processResult.success) {
-        throw new Error(processResult.error || 'Processing failed');
+        if (result) {
+          allParsedMenus.push(result);
+        }
       }
 
       setOcrStatus('parsing');
@@ -594,28 +667,15 @@ const MenuBuilderTool: React.FC = () => {
       // Short delay for UI feedback
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (processResult.parsedMenu) {
-        setParsedMenu(processResult.parsedMenu);
+      // Merge all results
+      if (allParsedMenus.length > 0) {
+        const mergedMenu = allParsedMenus.length === 1
+          ? allParsedMenus[0]
+          : mergeMenus(allParsedMenus);
+        setParsedMenu(mergedMenu);
         setOcrStatus('complete');
       } else {
-        // Poll for status if processing is async
-        const pollStatus = async () => {
-          const statusResponse = await fetch(`/api/menu/status?jobId=${jobId}`);
-          const statusResult = await statusResponse.json();
-
-          if (statusResult.success) {
-            if (statusResult.job.status === 'completed') {
-              setParsedMenu(statusResult.job.parsedMenu);
-              setOcrStatus('complete');
-            } else if (statusResult.job.status === 'failed') {
-              throw new Error(statusResult.job.error || 'Processing failed');
-            } else {
-              // Still processing, poll again
-              setTimeout(pollStatus, 2000);
-            }
-          }
-        };
-        pollStatus();
+        throw new Error('No menu data extracted');
       }
 
     } catch (error) {
@@ -728,7 +788,7 @@ const MenuBuilderTool: React.FC = () => {
                     type="file"
                     className="hidden"
                     multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif"
                     onChange={handleFileSelect}
                   />
 

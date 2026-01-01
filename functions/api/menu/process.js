@@ -16,7 +16,7 @@ const corsHeaders = {
 
 /**
  * Parse extracted text into menu structure
- * This uses pattern matching to identify menu items, prices, and categories
+ * Enhanced parsing with multiple price formats and category detection
  */
 function parseMenuText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
@@ -25,53 +25,115 @@ function parseMenuText(text) {
   const modifierGroups = new Set();
 
   let currentCategory = 'Uncategorized';
+  let pendingDescription = null;
 
-  // Price patterns
-  const pricePattern = /\$?\d+\.\d{2}/;
-  const categoryPatterns = [
-    /^(appetizers?|starters?)/i,
-    /^(entrees?|main courses?|mains?)/i,
-    /^(desserts?|sweets?)/i,
-    /^(beverages?|drinks?)/i,
-    /^(salads?)/i,
-    /^(soups?)/i,
-    /^(sandwiches?|wraps?)/i,
-    /^(sides?|side dishes?)/i,
-    /^(breakfast)/i,
-    /^(lunch)/i,
-    /^(dinner)/i,
-    /^(specials?)/i,
-    /^(kids?|children)/i
+  // Multiple price patterns for various formats
+  const pricePatterns = [
+    /\$\d+\.\d{2}/,           // $14.99
+    /\$\d+(?:\s|$)/,          // $14 (no cents)
+    /\d+\.\d{2}(?:\s|$)/,     // 14.99 (no dollar sign)
+    /(?:^|\s)\d{1,3}(?:\s|$)/ // Just a number like "14" at end
   ];
 
-  for (const line of lines) {
-    // Check if line is a category header
-    const isCategoryHeader = categoryPatterns.some(pattern => pattern.test(line)) ||
-                            (line.toUpperCase() === line && line.length < 30 && !pricePattern.test(line));
+  // Expanded category patterns for restaurant menus
+  const categoryPatterns = [
+    /^(appetizers?|starters?|small plates?)/i,
+    /^(entrees?|main courses?|mains?|large plates?)/i,
+    /^(desserts?|sweets?|dolci)/i,
+    /^(beverages?|drinks?|cocktails?|wines?|beers?)/i,
+    /^(salads?|greens?)/i,
+    /^(soups?|broths?)/i,
+    /^(sandwiches?|wraps?|subs?|hoagies?)/i,
+    /^(sides?|side dishes?|extras?)/i,
+    /^(breakfast|brunch|morning)/i,
+    /^(lunch)/i,
+    /^(dinner)/i,
+    /^(specials?|features?|today)/i,
+    /^(kids?|children|lil)/i,
+    /^(pizza|pies?)/i,
+    /^(pasta|noodles?)/i,
+    /^(seafood|fish|shellfish|from the sea)/i,
+    /^(burgers?|sliders?)/i,
+    /^(tacos?|burritos?|mexican)/i,
+    /^(sushi|rolls?|japanese)/i,
+    /^(shareables?|for the table)/i,
+    /^(raw bar|oysters?)/i,
+    /^(wings?|fingers?|tenders?)/i,
+    /^(flatbreads?)/i,
+    /^(bowls?|grain bowls?)/i,
+    /^(vegetarian|vegan|plant.?based)/i,
+    /^(gluten.?free)/i
+  ];
 
-    if (isCategoryHeader) {
-      currentCategory = line.replace(/[:\-]/g, '').trim();
+  // Function to extract price from a line
+  const extractPrice = (line) => {
+    for (const pattern of pricePatterns) {
+      const match = line.match(pattern);
+      if (match) {
+        let price = match[0].replace('$', '').trim();
+        // Ensure price has decimal
+        if (!price.includes('.')) {
+          price = price + '.00';
+        }
+        return { price, index: match.index };
+      }
+    }
+    return null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const nextLine = lines[i + 1] || '';
+
+    // Check if line is a category header
+    const matchedCategory = categoryPatterns.find(pattern => pattern.test(line));
+    const isAllCaps = line.toUpperCase() === line && line.length > 3 && line.length < 40;
+    const hasNoPrice = !extractPrice(line);
+
+    if ((matchedCategory || isAllCaps) && hasNoPrice) {
+      currentCategory = line.replace(/[:\-–—]/g, '').trim();
+      // Capitalize first letter of each word
+      currentCategory = currentCategory.split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
       categories.add(currentCategory);
       continue;
     }
 
     // Try to extract menu item with price
-    const priceMatch = line.match(pricePattern);
-    if (priceMatch) {
-      const price = priceMatch[0].replace('$', '');
-      const namePart = line.substring(0, priceMatch.index).trim();
+    const priceInfo = extractPrice(line);
+    if (priceInfo) {
+      const namePart = line.substring(0, priceInfo.index).trim();
+      const afterPrice = line.substring(priceInfo.index + priceInfo.price.length + 1).trim();
 
       if (namePart.length > 2) {
-        // Try to split name and description
-        const parts = namePart.split(/[\-–—]/).map(p => p.trim());
-        const name = parts[0];
-        const description = parts.slice(1).join(' - ') || '';
+        // Try to split name and description using various separators
+        const separatorMatch = namePart.match(/^(.+?)(?:[\-–—:|]|\s{2,})(.+)$/);
+        let name, description;
+
+        if (separatorMatch) {
+          name = separatorMatch[1].trim();
+          description = separatorMatch[2].trim();
+        } else {
+          name = namePart;
+          description = afterPrice || '';
+        }
+
+        // Check if next line might be a description (no price, shorter text)
+        if (!description && nextLine && !extractPrice(nextLine) && nextLine.length < 100) {
+          const isLikelyDescription = !categoryPatterns.some(p => p.test(nextLine)) &&
+                                      nextLine.toUpperCase() !== nextLine;
+          if (isLikelyDescription) {
+            description = nextLine;
+            i++; // Skip the next line since we used it
+          }
+        }
 
         items.push({
           id: `item_${items.length + 1}`,
-          name,
-          description,
-          price,
+          name: name.replace(/\.+$/, '').trim(),
+          description: description.replace(/\.+$/, '').trim(),
+          price: priceInfo.price,
           category: currentCategory,
           modifiers: []
         });
@@ -79,23 +141,57 @@ function parseMenuText(text) {
     }
   }
 
-  // Detect common modifier groups from descriptions
+  // Enhanced modifier detection
   const modifierKeywords = {
-    'Protein Add-Ons': ['chicken', 'shrimp', 'salmon', 'steak', 'tofu'],
-    'Temperature': ['rare', 'medium', 'well done', 'temperature'],
-    'Sauce Options': ['sauce', 'dressing', 'aioli', 'gravy'],
-    'Side Choices': ['side', 'choice of', 'served with']
+    'Protein Add-Ons': ['add chicken', 'add shrimp', 'add salmon', 'add steak', 'add tofu', 'add protein', 'grilled chicken', 'blackened'],
+    'Temperature': ['rare', 'medium rare', 'medium', 'medium well', 'well done', 'temperature', 'cooked to order'],
+    'Sauce Options': ['sauce', 'dressing', 'aioli', 'gravy', 'glaze', 'reduction', 'drizzle'],
+    'Side Choices': ['side of', 'choice of', 'served with', 'comes with', 'includes', 'pick your'],
+    'Spice Level': ['mild', 'medium heat', 'hot', 'extra hot', 'spicy', 'heat level'],
+    'Size Options': ['small', 'medium', 'large', 'half', 'full', 'regular', 'jumbo', 'petite'],
+    'Dietary Options': ['gluten free', 'gf', 'vegan', 'vegetarian', 'dairy free', 'keto']
   };
 
   items.forEach(item => {
     const fullText = `${item.name} ${item.description}`.toLowerCase();
     Object.entries(modifierKeywords).forEach(([group, keywords]) => {
-      if (keywords.some(kw => fullText.includes(kw))) {
-        item.modifiers.push(group);
-        modifierGroups.add(group);
+      if (keywords.some(kw => fullText.includes(kw.toLowerCase()))) {
+        if (!item.modifiers.includes(group)) {
+          item.modifiers.push(group);
+          modifierGroups.add(group);
+        }
       }
     });
   });
+
+  // If no categories were detected, try to auto-categorize based on item names
+  if (categories.size === 0 || (categories.size === 1 && categories.has('Uncategorized'))) {
+    const autoCategoryKeywords = {
+      'Appetizers': ['wings', 'nachos', 'dip', 'fries', 'rings', 'bites', 'sticks', 'poppers'],
+      'Salads': ['salad', 'greens', 'slaw'],
+      'Sandwiches': ['sandwich', 'burger', 'wrap', 'sub', 'hoagie', 'club', 'melt'],
+      'Entrees': ['steak', 'salmon', 'chicken breast', 'pork chop', 'filet', 'ribeye'],
+      'Seafood': ['shrimp', 'lobster', 'crab', 'oyster', 'clam', 'mussel', 'scallop'],
+      'Pizza': ['pizza', 'pie', 'flatbread'],
+      'Pasta': ['pasta', 'spaghetti', 'fettuccine', 'penne', 'linguine', 'ravioli'],
+      'Desserts': ['cake', 'pie', 'ice cream', 'cheesecake', 'brownie', 'cookie'],
+      'Beverages': ['coffee', 'tea', 'soda', 'juice', 'lemonade', 'smoothie']
+    };
+
+    items.forEach(item => {
+      if (item.category === 'Uncategorized') {
+        const itemText = `${item.name} ${item.description}`.toLowerCase();
+        for (const [category, keywords] of Object.entries(autoCategoryKeywords)) {
+          if (keywords.some(kw => itemText.includes(kw))) {
+            item.category = category;
+            categories.add(category);
+            break;
+          }
+        }
+      }
+    });
+    categories.delete('Uncategorized');
+  }
 
   return {
     items,
