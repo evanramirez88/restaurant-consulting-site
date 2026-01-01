@@ -7,7 +7,7 @@
  * Integrates with Square Invoices API
  */
 
-import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import {
   getOrCreateCustomer,
   listCustomerInvoices,

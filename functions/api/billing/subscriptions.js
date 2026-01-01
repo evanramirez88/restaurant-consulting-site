@@ -8,7 +8,7 @@
  * Integrates with Square Subscriptions API for recurring billing
  */
 
-import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import {
   getOrCreateCustomer,
   createSubscription,
