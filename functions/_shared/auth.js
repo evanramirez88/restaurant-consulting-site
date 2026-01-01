@@ -134,21 +134,20 @@ export async function verifyClientAuth(request, env) {
       return { authenticated: false, error: 'Server configuration error' };
     }
 
-    const isValid = await jwt.verify(token, jwtSecret);
+    const result = await verifyJWT(token, jwtSecret);
 
-    if (!isValid) {
-      return { authenticated: false, error: 'Invalid or expired session' };
+    if (!result.valid) {
+      return { authenticated: false, error: result.error || 'Invalid or expired session' };
     }
 
-    // Decode to get client ID
-    const decoded = jwt.decode(token);
-    const clientId = decoded?.payload?.clientId || decoded?.payload?.sub;
+    // Get client ID from payload
+    const clientId = result.payload?.clientId || result.payload?.sub;
 
     if (!clientId) {
       return { authenticated: false, error: 'Invalid token payload' };
     }
 
-    return { authenticated: true, clientId };
+    return { authenticated: true, clientId, payload: result.payload };
   } catch (error) {
     console.error('Client auth verification error:', error);
     return { authenticated: false, error: 'Authentication failed' };
