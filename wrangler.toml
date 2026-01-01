@@ -23,3 +23,10 @@ id = "a922ece9ad7c42e08a3c1fe88e81db7b" # rg-consulting-sessions
 # ADMIN_PASSWORD_HASH - SHA-256 hash of admin password
 # JWT_SECRET - Secret key for signing JWTs (optional, defaults to ADMIN_PASSWORD_HASH if not set)
 # CLIENT_JWT_SECRET - Secret for client portal tokens (optional, defaults to JWT_SECRET)
+
+# Square API Configuration (set in Cloudflare dashboard for production)
+# SQUARE_ACCESS_TOKEN - Square API access token (from developer.squareup.com)
+# SQUARE_ENVIRONMENT - 'sandbox' or 'production'
+# SQUARE_LOCATION_ID_LANE_A - Lane A location (Local Cape Cod): L6GGMPCHFM6WR
+# SQUARE_LOCATION_ID_LANE_B - Lane B location (National/Remote): LB8GE5HYZJYB7
+# SQUARE_WEBHOOK_SIGNATURE_KEY - Webhook signature verification key

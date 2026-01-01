@@ -122,14 +122,16 @@ const PortalBilling: React.FC = () => {
     description: 'View your support plan, billing history, and invoices.',
   });
 
-  // Load billing info
+  // Load billing info from Square APIs
   useEffect(() => {
     const loadBillingInfo = async () => {
       if (!slug) return;
 
       try {
         // Load client info
-        const clientResponse = await fetch(`/api/portal/${slug}/info`);
+        const clientResponse = await fetch(`/api/portal/${slug}/info`, {
+          credentials: 'include'
+        });
         const clientData = await clientResponse.json();
 
         if (!clientData.success) {
@@ -142,34 +144,57 @@ const PortalBilling: React.FC = () => {
         const planTier = client.support_plan_tier as keyof typeof SUPPORT_PLANS | null;
         const plan = planTier ? SUPPORT_PLANS[planTier] : null;
 
-        // Mock billing data - in production this would come from Square/Stripe
+        // Fetch subscription details from Square API
+        let subscriptionData = null;
+        try {
+          const subResponse = await fetch(`/api/billing/subscriptions?client_id=${client.id}`, {
+            credentials: 'include'
+          });
+          const subResult = await subResponse.json();
+          if (subResult.success) {
+            subscriptionData = subResult.data;
+          }
+        } catch (subError) {
+          console.error('Subscription fetch error:', subError);
+        }
+
+        // Fetch invoices from Square API
+        let invoices: Invoice[] = [];
+        try {
+          const invResponse = await fetch(`/api/billing/invoices?client_id=${client.id}`, {
+            credentials: 'include'
+          });
+          const invResult = await invResponse.json();
+          if (invResult.success && invResult.data) {
+            invoices = invResult.data.map((inv: any) => ({
+              id: inv.id,
+              number: inv.number || inv.invoice_number || inv.id.slice(0, 10).toUpperCase(),
+              amount: inv.amount || 0,
+              status: inv.status as 'paid' | 'pending' | 'overdue',
+              due_date: inv.due_date || '',
+              paid_date: inv.paid_date || null,
+              pdf_url: inv.pdf_url || inv.public_url || null
+            }));
+          }
+        } catch (invError) {
+          console.error('Invoice fetch error:', invError);
+        }
+
+        // Use subscription data if available, otherwise fall back to client data
+        const supportHours = subscriptionData?.hours || {
+          total: plan?.hours || 0,
+          used: client.support_hours_used || 0,
+          remaining: (plan?.hours || 0) - (client.support_hours_used || 0)
+        };
+
         const billingData: BillingInfo = {
-          client: client,
-          supportHours: {
-            total: plan?.hours || 0,
-            used: 1.5, // Would come from tracking
-            remaining: (plan?.hours || 0) - 1.5
+          client: {
+            ...client,
+            support_plan_status: subscriptionData?.status || client.support_plan_status,
+            support_plan_renews: subscriptionData?.renews_at || client.support_plan_renews
           },
-          invoices: [
-            {
-              id: 'inv_001',
-              number: 'INV-2025-001',
-              amount: plan?.price || 0,
-              status: 'paid',
-              due_date: '2025-01-01',
-              paid_date: '2024-12-28',
-              pdf_url: null
-            },
-            {
-              id: 'inv_002',
-              number: 'INV-2024-012',
-              amount: plan?.price || 0,
-              status: 'paid',
-              due_date: '2024-12-01',
-              paid_date: '2024-11-28',
-              pdf_url: null
-            }
-          ],
+          supportHours: supportHours,
+          invoices: invoices,
           planFeatures: plan?.features || []
         };
 
