@@ -17,6 +17,24 @@ import ClientLogin from './pages/ClientLogin';
 import ClientDashboard from './pages/ClientDashboard';
 import ProtectedRoute from './src/components/ProtectedRoute';
 import ClientProtectedRoute from './src/components/ClientProtectedRoute';
+import RepProtectedRoute from './src/components/RepProtectedRoute';
+
+// Slug-based Client Portal Components
+import PortalLayout from './pages/portal/PortalLayout';
+import PortalLanding from './pages/portal/PortalLanding';
+import PortalLogin from './pages/portal/PortalLogin';
+import PortalDashboard from './pages/portal/PortalDashboard';
+import PortalProjects from './pages/portal/PortalProjects';
+import PortalFiles from './pages/portal/PortalFiles';
+import PortalMessages from './pages/portal/PortalMessages';
+import PortalBilling from './pages/portal/PortalBilling';
+
+// Slug-based Rep Portal Components
+import RepLogin from './pages/rep/RepLogin';
+import RepDashboard from './pages/rep/RepDashboard';
+import RepClients from './pages/rep/RepClients';
+import RepReferrals from './pages/rep/RepReferrals';
+import RepMessages from './pages/rep/RepMessages';
 
 // Manual ScrollRestoration component for HashRouter
 const ScrollToTop = () => {
@@ -47,13 +65,66 @@ const App: React.FC = () => {
           </ProtectedRoute>
         } />
 
-        {/* Client Portal routes (protected) */}
+        {/* Legacy Client Portal routes (keep for backwards compatibility) */}
         <Route path="/portal" element={<PublicLayout><ClientPortal /></PublicLayout>} />
         <Route path="/portal/login" element={<ClientLogin />} />
         <Route path="/portal/dashboard" element={
           <ClientProtectedRoute redirectTo="/portal/login">
             <ClientDashboard />
           </ClientProtectedRoute>
+        } />
+
+        {/* Slug-based Client Portal routes */}
+        <Route path="/portal/:slug" element={<PortalLanding />} />
+        <Route path="/portal/:slug/login" element={<PortalLogin />} />
+        <Route path="/portal/:slug/dashboard" element={
+          <PortalLayout>
+            <PortalDashboard />
+          </PortalLayout>
+        } />
+        <Route path="/portal/:slug/projects" element={
+          <PortalLayout>
+            <PortalProjects />
+          </PortalLayout>
+        } />
+        <Route path="/portal/:slug/files" element={
+          <PortalLayout>
+            <PortalFiles />
+          </PortalLayout>
+        } />
+        <Route path="/portal/:slug/messages" element={
+          <PortalLayout>
+            <PortalMessages />
+          </PortalLayout>
+        } />
+        <Route path="/portal/:slug/billing" element={
+          <PortalLayout>
+            <PortalBilling />
+          </PortalLayout>
+        } />
+
+        {/* Slug-based Rep Portal routes */}
+        <Route path="/rep/:slug" element={<RepLogin />} />
+        <Route path="/rep/:slug/login" element={<RepLogin />} />
+        <Route path="/rep/:slug/dashboard" element={
+          <RepProtectedRoute>
+            <RepDashboard />
+          </RepProtectedRoute>
+        } />
+        <Route path="/rep/:slug/clients" element={
+          <RepProtectedRoute>
+            <RepClients />
+          </RepProtectedRoute>
+        } />
+        <Route path="/rep/:slug/referrals" element={
+          <RepProtectedRoute>
+            <RepReferrals />
+          </RepProtectedRoute>
+        } />
+        <Route path="/rep/:slug/messages" element={
+          <RepProtectedRoute>
+            <RepMessages />
+          </RepProtectedRoute>
         } />
 
         {/* Public routes with layout */}

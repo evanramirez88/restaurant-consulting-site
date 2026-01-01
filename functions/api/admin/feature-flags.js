@@ -33,14 +33,18 @@ export async function onRequestGet(context) {
 
     try {
       const results = await env.DB.prepare(
-        'SELECT key, value, updated_at FROM feature_flags'
+        'SELECT key, value, enabled, updated_at FROM feature_flags'
       ).all();
 
       if (results.results) {
         results.results.forEach(row => {
           if (ALLOWED_FLAGS.includes(row.key)) {
-            // Parse boolean values
-            flags[row.key] = row.value === 'true' || row.value === '1' || row.value === true;
+            // Parse boolean values - check both 'enabled' column and 'value' column for compatibility
+            if (row.enabled !== undefined && row.enabled !== null) {
+              flags[row.key] = row.enabled === 1 || row.enabled === true;
+            } else {
+              flags[row.key] = row.value === 'true' || row.value === '1' || row.value === true;
+            }
           }
         });
       }
@@ -124,23 +128,26 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Ensure table exists
+    // Ensure table exists (supports both legacy 'value' and new 'enabled' column)
     await env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS feature_flags (
         key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
+        value TEXT,
+        enabled INTEGER DEFAULT 0,
+        description TEXT,
         updated_at INTEGER DEFAULT (unixepoch())
       )
     `).run();
 
-    // Upsert the flag value
+    // Upsert the flag value (update both value and enabled for compatibility)
     await env.DB.prepare(`
-      INSERT INTO feature_flags (key, value, updated_at)
-      VALUES (?, ?, unixepoch())
+      INSERT INTO feature_flags (key, value, enabled, updated_at)
+      VALUES (?, ?, ?, unixepoch())
       ON CONFLICT(key) DO UPDATE SET
         value = excluded.value,
+        enabled = excluded.enabled,
         updated_at = unixepoch()
-    `).bind(key, value.toString()).run();
+    `).bind(key, value.toString(), value ? 1 : 0).run();
 
     // Fetch all updated flags
     const flags = { ...DEFAULT_FLAGS };

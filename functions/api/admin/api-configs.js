@@ -1,7 +1,37 @@
-// Admin API Configs - List and Update
+/**
+ * Admin API Configs - List and Update
+ *
+ * GET /api/admin/api-configs - List all API configurations
+ * POST /api/admin/api-configs - Create/update API configuration
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
+
+    // Ensure table exists
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS api_configs (
+        id TEXT PRIMARY KEY,
+        service TEXT NOT NULL UNIQUE,
+        provider TEXT NOT NULL,
+        display_name TEXT,
+        config_json TEXT,
+        is_active INTEGER DEFAULT 1,
+        fallback_provider TEXT,
+        rate_limit_per_hour INTEGER,
+        notes TEXT,
+        updated_at INTEGER DEFAULT (unixepoch())
+      )
+    `).run();
 
     const { results } = await db.prepare(`
       SELECT * FROM api_configs
@@ -12,24 +42,42 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('API Configs GET error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const body = await context.request.json();
     const now = Math.floor(Date.now() / 1000);
+
+    // Validate required fields
+    if (!body.service || !body.provider) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Service and provider are required'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
 
     // Upsert API config
     await db.prepare(`
@@ -65,15 +113,20 @@ export async function onRequestPost(context) {
       success: true,
       data: config
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('API Configs POST error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

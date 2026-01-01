@@ -1,6 +1,21 @@
-// Admin Availability Schedule API - Get, Update, Delete
+/**
+ * Admin Availability Schedule API - Get, Update, Delete
+ *
+ * GET /api/admin/availability/schedules/:id - Get single schedule (protected)
+ * PUT /api/admin/availability/schedules/:id - Update schedule (protected)
+ * DELETE /api/admin/availability/schedules/:id - Delete schedule (protected)
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
 
@@ -12,7 +27,7 @@ export async function onRequestGet(context) {
         error: 'Schedule not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -20,7 +35,7 @@ export async function onRequestGet(context) {
       success: true,
       data: schedule
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -28,13 +43,19 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPut(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
     const body = await context.request.json();
@@ -87,7 +108,7 @@ export async function onRequestPut(context) {
       success: true,
       data: schedule
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -95,13 +116,19 @@ export async function onRequestPut(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestDelete(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
 
@@ -110,7 +137,7 @@ export async function onRequestDelete(context) {
     return new Response(JSON.stringify({
       success: true
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -118,7 +145,11 @@ export async function onRequestDelete(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

@@ -1,7 +1,46 @@
-// Admin Availability Schedules API - List and Create
+/**
+ * Admin Availability Schedules API - List and Create
+ *
+ * GET /api/admin/availability/schedules - List all schedules (protected)
+ * POST /api/admin/availability/schedules - Create new schedule (protected)
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
+
+    // Ensure table exists
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS availability_schedules (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        status TEXT DEFAULT 'available',
+        location_type TEXT DEFAULT 'remote',
+        town TEXT,
+        address TEXT,
+        walk_ins_accepted INTEGER DEFAULT 0,
+        scheduling_available INTEGER DEFAULT 1,
+        scheduling_link TEXT,
+        scheduling_link_type TEXT,
+        availability_start INTEGER,
+        availability_end INTEGER,
+        display_start INTEGER,
+        display_end INTEGER,
+        custom_message TEXT,
+        priority INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER DEFAULT (unixepoch()),
+        updated_at INTEGER DEFAULT (unixepoch())
+      )
+    `).run();
 
     const { results } = await db.prepare(`
       SELECT * FROM availability_schedules
@@ -12,21 +51,28 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('Schedules GET error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const body = await context.request.json();
 
@@ -68,7 +114,7 @@ export async function onRequestPost(context) {
       success: true,
       data: schedule
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -76,7 +122,11 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }
