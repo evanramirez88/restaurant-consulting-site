@@ -4,10 +4,54 @@
  * Used by protected API endpoints to verify admin authentication
  */
 
-import jwt from '@tsndr/cloudflare-worker-jwt';
-
 const COOKIE_NAME = 'ccrc_admin_token';
 const CLIENT_COOKIE_NAME = 'ccrc_client_token';
+
+/**
+ * Verify a JWT token using native Web Crypto API
+ */
+async function verifyJWT(token, secret) {
+  try {
+    const [headerB64, payloadB64, signatureB64] = token.split('.');
+    if (!headerB64 || !payloadB64 || !signatureB64) {
+      return { valid: false, error: 'Invalid token format' };
+    }
+
+    const encoder = new TextEncoder();
+    const data = `${headerB64}.${payloadB64}`;
+
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    // Convert base64url to regular base64
+    const signatureBase64 = signatureB64.replace(/-/g, '+').replace(/_/g, '/');
+    const signatureBytes = Uint8Array.from(atob(signatureBase64), c => c.charCodeAt(0));
+
+    const isValid = await crypto.subtle.verify('HMAC', key, signatureBytes, encoder.encode(data));
+
+    if (!isValid) {
+      return { valid: false, error: 'Invalid signature' };
+    }
+
+    // Decode payload
+    const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(payloadJson);
+
+    // Check expiration
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return { valid: false, error: 'Token expired' };
+    }
+
+    return { valid: true, payload };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+}
 
 /**
  * Parse cookies from request
@@ -52,13 +96,13 @@ export async function verifyAuth(request, env) {
       return { authenticated: false, error: 'Server configuration error' };
     }
 
-    const isValid = await jwt.verify(token, jwtSecret);
+    const result = await verifyJWT(token, jwtSecret);
 
-    if (!isValid) {
-      return { authenticated: false, error: 'Invalid or expired session' };
+    if (!result.valid) {
+      return { authenticated: false, error: result.error || 'Invalid or expired session' };
     }
 
-    return { authenticated: true };
+    return { authenticated: true, payload: result.payload };
   } catch (error) {
     console.error('Auth verification error:', error);
     return { authenticated: false, error: 'Authentication failed' };

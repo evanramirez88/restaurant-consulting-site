@@ -12,7 +12,30 @@
  * - DB: D1 database binding with login_attempts table
  */
 
-import jwt from '@tsndr/cloudflare-worker-jwt';
+// Native JWT implementation using Web Crypto API
+async function signJWT(payload, secret) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+
+  const encoder = new TextEncoder();
+  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+  const data = `${headerB64}.${payloadB64}`;
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+  return `${data}.${signatureB64}`;
+}
 
 // Rate limiting constants
 const MAX_ATTEMPTS = 5;
@@ -143,7 +166,15 @@ export async function onRequestPost(context) {
     }
 
     // Parse request body
-    const data = await request.json();
+    let data;
+    try {
+      data = await request.json();
+    } catch (jsonError) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'JSON parse failed: ' + (jsonError.message || String(jsonError))
+      }), { status: 400, headers: corsHeaders });
+    }
 
     if (!data.password || typeof data.password !== 'string') {
       return new Response(JSON.stringify({
@@ -157,8 +188,9 @@ export async function onRequestPost(context) {
 
     // Hash the provided password and compare
     const passwordHash = await sha256(data.password);
+    const envHash = env.ADMIN_PASSWORD_HASH.toLowerCase();
 
-    if (passwordHash !== env.ADMIN_PASSWORD_HASH.toLowerCase()) {
+    if (passwordHash !== envHash) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid password',
@@ -170,17 +202,54 @@ export async function onRequestPost(context) {
     }
 
     // Password correct - clear rate limit and generate JWT
-    await clearRateLimit(env.DB, ipAddress);
+    try {
+      await clearRateLimit(env.DB, ipAddress);
+    } catch (clearError) {
+      console.error('Clear rate limit error:', clearError);
+      // Continue anyway
+    }
 
     const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+    if (!jwtSecret) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'JWT secret not configured'
+      }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+
     const now = Math.floor(Date.now() / 1000);
 
-    const token = await jwt.sign({
-      sub: 'admin',
-      iat: now,
-      exp: now + COOKIE_MAX_AGE,
-      iss: 'ccrc-admin'
-    }, jwtSecret);
+    let token;
+    try {
+      token = await signJWT({
+        sub: 'admin',
+        iat: now,
+        exp: now + COOKIE_MAX_AGE,
+        iss: 'ccrc-admin'
+      }, jwtSecret);
+    } catch (jwtError) {
+      console.error('JWT signing error:', jwtError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'JWT signing failed: ' + (jwtError.message || String(jwtError))
+      }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'JWT token was not generated'
+      }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
 
     // Build Set-Cookie header
     const isSecure = new URL(request.url).protocol === 'https:';
