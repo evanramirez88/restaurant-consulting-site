@@ -20,7 +20,9 @@ import {
   Save,
   Calendar,
   Wrench,
-  Loader2
+  Loader2,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 // ============================================
@@ -218,13 +220,24 @@ const QuoteBuilder: React.FC = () => {
   // UI state
   const [selected, setSelected] = useState<Selection>({ kind: null, id: null });
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   const [mode, setMode] = useState<'idle' | 'addCable'>('idle');
   const [pendingCableStart, setPendingCableStart] = useState<{ x: number; y: number } | null>(null);
   const [leftOpen, setLeftOpen] = usePersistentState(LS_KEY + ":leftOpen", true);
   const [rightOpen, setRightOpen] = usePersistentState(LS_KEY + ":rightOpen", true);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailForm, setEmailForm] = useState({ name: '', email: '', restaurantName: '', phone: '' });
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+
+  // Undo/Redo history
+  const [history, setHistory] = useState<Location[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoRef = useRef(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 
   // Derived state
   const currentLocation = useMemo(() =>
@@ -268,6 +281,50 @@ const QuoteBuilder: React.FC = () => {
       setActiveLayerId(currentFloor.layers[0]?.id || "");
     }
   }, [currentLocation, floorId, currentFloor, activeLayerId, setFloorId, setActiveLayerId]);
+
+  // Track history for undo/redo (debounced)
+  useEffect(() => {
+    if (isUndoRedoRef.current) {
+      isUndoRedoRef.current = false;
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setHistory(prev => {
+        const newHistory = prev.slice(0, historyIndex + 1);
+        newHistory.push(deepClone(locations));
+        // Keep only last 50 states
+        if (newHistory.length > 50) newHistory.shift();
+        return newHistory;
+      });
+      setHistoryIndex(prev => Math.min(prev + 1, 49));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [locations]);
+
+  // Undo function
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      isUndoRedoRef.current = true;
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setLocations(deepClone(history[newIndex]));
+    }
+  }, [history, historyIndex, setLocations]);
+
+  // Redo function
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      isUndoRedoRef.current = true;
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setLocations(deepClone(history[newIndex]));
+    }
+  }, [history, historyIndex, setLocations]);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
 
   // ============================================
   // STATE HELPERS
@@ -491,7 +548,28 @@ const QuoteBuilder: React.FC = () => {
         setSelected({ kind: null, id: null });
         setMode('idle');
         setPendingCableStart(null);
+        setIsPanning(false);
         return;
+      }
+
+      // Undo: Ctrl+Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y or Ctrl+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Space key to enable pan mode
+      if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        setIsPanning(true);
       }
 
       // Delete key to remove selected item
@@ -507,9 +585,20 @@ const QuoteBuilder: React.FC = () => {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ') {
+        setIsPanning(false);
+        panStartRef.current = null;
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selected]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [selected, undo, redo]);
 
   // Hardware operations
   const addHardwareToStation = (stationId: string, hid: string) => {
@@ -600,6 +689,54 @@ const QuoteBuilder: React.FC = () => {
       }
       return loc;
     });
+  };
+
+  // Pan handlers
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // Middle mouse button or Space+Left click for panning
+    if (e.button === 1 || (isPanning && e.button === 0)) {
+      e.preventDefault();
+      panStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        panX: pan.x,
+        panY: pan.y
+      };
+    }
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (panStartRef.current) {
+      const dx = e.clientX - panStartRef.current.x;
+      const dy = e.clientY - panStartRef.current.y;
+      setPan({
+        x: panStartRef.current.panX + dx,
+        y: panStartRef.current.panY + dy
+      });
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    panStartRef.current = null;
+  };
+
+  const handleCanvasWheel = (e: React.WheelEvent) => {
+    // Ctrl+scroll for zoom, regular scroll for pan
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(z => Math.max(0.25, Math.min(3, +(z + delta).toFixed(2))));
+    } else {
+      // Pan with scroll wheel
+      setPan(p => ({
+        x: p.x - e.deltaX,
+        y: p.y - e.deltaY
+      }));
+    }
+  };
+
+  const resetPan = () => {
+    setPan({ x: 0, y: 0 });
   };
 
   const resetFloor = () => {
@@ -1053,22 +1190,35 @@ const QuoteBuilder: React.FC = () => {
         )}
 
         {/* Canvas Area */}
-        <div className="flex-1 relative overflow-hidden bg-slate-950" onClick={() => setSelected({ kind: null, id: null })}>
+        <div
+          className="flex-1 relative overflow-hidden bg-slate-950"
+          onClick={() => !isPanning && setSelected({ kind: null, id: null })}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
+          onWheel={handleCanvasWheel}
+        >
           {/* Grid overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage: `linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)`,
-              backgroundSize: `${gridSize}px ${gridSize}px`
+              backgroundSize: `${gridSize}px ${gridSize}px`,
+              backgroundPosition: `${pan.x}px ${pan.y}px`
             }}
           />
 
           {/* Canvas */}
           <div
             ref={canvasRef}
-            className="absolute inset-0 overflow-auto"
+            className="absolute inset-0"
             onClick={canvasClick}
-            style={{ cursor: mode === 'addCable' ? 'crosshair' : 'default' }}
+            style={{
+              cursor: isPanning ? 'grab' : mode === 'addCable' ? 'crosshair' : 'default',
+              transform: `translate(${pan.x}px, ${pan.y}px)`,
+              userSelect: isPanning ? 'none' : 'auto'
+            }}
           >
             <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', minWidth: '2000px', minHeight: '1500px', position: 'relative' }}>
               {/* Objects */}
@@ -1261,9 +1411,15 @@ const QuoteBuilder: React.FC = () => {
             <button onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))} className="text-white hover:text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Zoom out">
               <ZoomOut size={18} />
             </button>
-            <button onClick={() => setZoom(1)} className="text-slate-200 hover:text-white ml-2 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Reset zoom">
+            <div className="w-px h-4 bg-slate-600 mx-1" />
+            <button onClick={() => { setZoom(1); resetPan(); }} className="text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Reset view">
               <RefreshCw size={16} />
             </button>
+          </div>
+
+          {/* Pan hint */}
+          <div className="absolute left-4 bottom-4 text-xs bg-slate-800/90 rounded-lg px-3 py-2 border border-slate-600 text-slate-300">
+            <span className="text-slate-400">Hold</span> Space <span className="text-slate-400">+ drag to pan • Scroll to pan • Ctrl+scroll to zoom</span>
           </div>
 
           {/* Scale chip */}
@@ -1471,6 +1627,30 @@ const QuoteBuilder: React.FC = () => {
       {/* Bottom Toolbar */}
       <footer className="sticky bottom-0 z-30 border-t border-slate-700 bg-slate-900/95 backdrop-blur">
         <div className="px-4 py-2 flex items-center gap-3 flex-wrap">
+          {/* Undo/Redo buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`p-2 rounded-lg border transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canUndo ? 'bg-slate-800 border-slate-600 text-white hover:bg-slate-700' : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed'}`}
+              aria-label="Undo (Ctrl+Z)"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={16} />
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className={`p-2 rounded-lg border transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canRedo ? 'bg-slate-800 border-slate-600 text-white hover:bg-slate-700' : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed'}`}
+              aria-label="Redo (Ctrl+Y)"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={16} />
+            </button>
+          </div>
+
+          <div className="w-px h-6 bg-slate-700" />
+
           {/* Layer controls */}
           <div className="flex items-center gap-2">
             <Layers size={14} className="text-slate-200" />
@@ -1548,41 +1728,159 @@ const QuoteBuilder: React.FC = () => {
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-600">
-            <h3 className="font-serif text-2xl font-bold text-white mb-2">Save Your Quote</h3>
-            <p className="text-slate-200 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
-            <form
-              className="space-y-4"
-              onSubmit={e => {
-                e.preventDefault();
-                setShowEmailModal(false);
-                alert('Quote request sent! (Simulation - will be connected to backend)');
-              }}
-            >
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">Name</label>
-                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">Email</label>
-                <input type="email" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">Restaurant Name</label>
-                <input type="text" className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" />
-              </div>
-              <div className="flex gap-3 pt-2">
+            {emailStatus.type === 'success' ? (
+              // Success state
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-white mb-2">Quote Sent!</h3>
+                <p className="text-slate-300 mb-6">{emailStatus.message}</p>
                 <button
-                  type="button"
-                  onClick={() => setShowEmailModal(false)}
-                  className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    setEmailStatus({ type: 'idle', message: '' });
+                    setEmailForm({ name: '', email: '', restaurantName: '', phone: '' });
+                  }}
+                  className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 py-2 bg-brand-accent text-white rounded-lg hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                  Send Quote
+                  Close
                 </button>
               </div>
-            </form>
+            ) : (
+              // Form state
+              <>
+                <h3 className="font-serif text-2xl font-bold text-white mb-2">Save Your Quote</h3>
+                <p className="text-slate-200 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
+                <form
+                  className="space-y-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setEmailSending(true);
+                    setEmailStatus({ type: 'idle', message: '' });
+
+                    try {
+                      const response = await fetch('/api/quote/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: emailForm.name,
+                          email: emailForm.email,
+                          restaurantName: emailForm.restaurantName,
+                          phone: emailForm.phone,
+                          quoteData: serverQuote,
+                          locations: locations,
+                          estimate: estimate
+                        })
+                      });
+
+                      const result = await response.json();
+
+                      if (result.success) {
+                        setEmailStatus({
+                          type: 'success',
+                          message: result.message || "We'll be in touch within 24 hours!"
+                        });
+                      } else {
+                        setEmailStatus({
+                          type: 'error',
+                          message: result.error || 'Failed to send quote request'
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Email send error:', error);
+                      setEmailStatus({
+                        type: 'error',
+                        message: 'Connection error. Please try again.'
+                      });
+                    } finally {
+                      setEmailSending(false);
+                    }
+                  }}
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Name *</label>
+                    <input
+                      type="text"
+                      value={emailForm.name}
+                      onChange={(e) => setEmailForm({ ...emailForm, name: e.target.value })}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      required
+                      disabled={emailSending}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Email *</label>
+                    <input
+                      type="email"
+                      value={emailForm.email}
+                      onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      required
+                      disabled={emailSending}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Restaurant Name</label>
+                    <input
+                      type="text"
+                      value={emailForm.restaurantName}
+                      onChange={(e) => setEmailForm({ ...emailForm, restaurantName: e.target.value })}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      disabled={emailSending}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={emailForm.phone}
+                      onChange={(e) => setEmailForm({ ...emailForm, phone: e.target.value })}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      placeholder="(optional)"
+                      disabled={emailSending}
+                    />
+                  </div>
+
+                  {/* Error message */}
+                  {emailStatus.type === 'error' && (
+                    <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
+                      {emailStatus.message}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEmailModal(false);
+                        setEmailStatus({ type: 'idle', message: '' });
+                      }}
+                      className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      disabled={emailSending}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-brand-accent text-white rounded-lg hover:bg-amber-600 focus:ring-2 focus:ring-amber-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      disabled={emailSending}
+                    >
+                      {emailSending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send Quote'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

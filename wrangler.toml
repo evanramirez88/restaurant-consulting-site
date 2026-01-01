@@ -1,6 +1,7 @@
 # Cape Cod Restaurant Consulting - Cloudflare Configuration
 name = "ccrc-site"
 compatibility_date = "2024-01-01"
+account_id = "81ae379e7d54cfc02c9eaac2930fd21b"
 
 # D1 Database binding
 [[d1_databases]]
