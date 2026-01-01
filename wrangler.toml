@@ -7,7 +7,7 @@ account_id = "81ae379e7d54cfc02c9eaac2930fd21b"
 [[d1_databases]]
 binding = "DB"
 database_name = "ccrc-admin"
-database_id = "YOUR_DATABASE_ID_HERE" # Replace after running: npx wrangler d1 create ccrc-admin
+database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
 
 # KV Namespace for rate limiting
 [[kv_namespaces]]
