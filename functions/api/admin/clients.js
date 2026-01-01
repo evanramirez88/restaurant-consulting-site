@@ -1,6 +1,20 @@
-// Admin Clients API - List and Create
+/**
+ * Admin Clients API - List and Create
+ *
+ * GET /api/admin/clients - List all clients (protected)
+ * POST /api/admin/clients - Create new client (protected)
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
 
     const { results } = await db.prepare(`
@@ -16,23 +30,41 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('Clients GET error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const body = await context.request.json();
+
+    // Validate required fields
+    if (!body.email || !body.name) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Email and name are required'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
 
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
@@ -47,7 +79,7 @@ export async function onRequestPost(context) {
       id,
       body.email,
       body.name,
-      body.company,
+      body.company || null,
       body.slug || null,
       body.phone || null,
       body.portal_enabled ? 1 : 0,
@@ -67,15 +99,20 @@ export async function onRequestPost(context) {
       success: true,
       data: client
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('Clients POST error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

@@ -1,6 +1,11 @@
-// Tickets API
-// GET /api/admin/tickets - List all tickets
-// POST /api/admin/tickets - Create a new ticket
+/**
+ * Admin Tickets API - List and Create
+ *
+ * GET /api/admin/tickets - List all tickets (protected)
+ * POST /api/admin/tickets - Create new ticket (protected)
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   try {
@@ -10,13 +15,10 @@ export async function onRequestGet(context) {
     const clientId = url.searchParams.get('client_id');
     const priority = url.searchParams.get('priority');
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication using proper JWT
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     // Build query with optional filters
@@ -60,7 +62,7 @@ export async function onRequestGet(context) {
       data: result.results || [],
       statusCounts
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -70,7 +72,7 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
@@ -79,13 +81,10 @@ export async function onRequestPost(context) {
   try {
     const { env, request } = context;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication using proper JWT
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const body = await request.json();
@@ -97,7 +96,7 @@ export async function onRequestPost(context) {
         error: 'client_id and subject are required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -111,7 +110,7 @@ export async function onRequestPost(context) {
       success: true,
       data: { id, client_id, subject, priority, status: 'open' }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -121,7 +120,11 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

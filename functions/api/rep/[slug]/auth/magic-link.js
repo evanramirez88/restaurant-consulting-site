@@ -1,5 +1,16 @@
-// Rep Magic Link API - Send magic link for rep authentication
+/**
+ * Rep Magic Link API - Send magic link for rep authentication
+ *
+ * POST /api/rep/:slug/auth/magic-link
+ */
 import jwt from '@tsndr/cloudflare-worker-jwt';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
 
 export async function onRequestPost(context) {
   try {
@@ -14,7 +25,7 @@ export async function onRequestPost(context) {
         error: 'Email is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -32,7 +43,7 @@ export async function onRequestPost(context) {
         success: true,
         message: 'If an account exists, a login link has been sent.'
       }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -44,7 +55,7 @@ export async function onRequestPost(context) {
         error: 'Server configuration error'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -60,38 +71,44 @@ export async function onRequestPost(context) {
     const origin = new URL(context.request.url).origin;
     const magicLink = `${origin}/#/rep/${slug}/login?token=${token}`;
 
-    // Log the magic link for development (remove in production)
-    console.log('Magic link for', rep.email, ':', magicLink);
+    // Send email with magic link using Resend if configured
+    let emailSent = false;
+    if (context.env.RESEND_API_KEY) {
+      try {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${context.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'R&G Consulting <noreply@ccrestaurantconsulting.com>',
+            to: [rep.email],
+            subject: 'Your Rep Portal Login Link',
+            html: generateMagicLinkEmail(rep.name, magicLink)
+          })
+        });
 
-    // TODO: Send email with magic link using email service
-    // For now, we'll just log it and return success
-    // In production, integrate with Resend or another email service:
-    //
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${context.env.RESEND_API_KEY}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'R&G Consulting <noreply@ccrestaurantconsulting.com>',
-    //     to: rep.email,
-    //     subject: 'Your Rep Portal Login Link',
-    //     html: `
-    //       <h2>Hi ${rep.name},</h2>
-    //       <p>Click the link below to sign in to your Rep Portal:</p>
-    //       <p><a href="${magicLink}">Sign In to Rep Portal</a></p>
-    //       <p>This link expires in 15 minutes.</p>
-    //       <p>If you didn't request this, you can ignore this email.</p>
-    //     `
-    //   })
-    // });
+        if (emailResponse.ok) {
+          emailSent = true;
+        } else {
+          console.error('Resend API error:', await emailResponse.text());
+        }
+      } catch (emailError) {
+        console.error('Email send error:', emailError);
+      }
+    } else {
+      // Log for development when Resend is not configured
+      console.log('RESEND_API_KEY not configured. Magic link for', rep.email, ':', magicLink);
+    }
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Magic link sent to your email'
+      message: emailSent
+        ? 'Magic link sent to your email'
+        : 'Login link generated (email service not configured)'
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Magic link error:', error);
@@ -100,7 +117,63 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
+}
+
+function generateMagicLinkEmail(name, magicLink) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Rep Portal Login</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
+      <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #1e293b; margin-bottom: 8px; font-size: 24px;">
+            Rep Portal Login
+          </h1>
+        </div>
+
+        <p style="color: #334155; font-size: 16px; line-height: 1.6;">
+          Hi ${name || 'there'},
+        </p>
+
+        <p style="color: #334155; font-size: 16px; line-height: 1.6;">
+          Click the button below to sign in to your Rep Portal:
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${magicLink}"
+             style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            Sign In to Rep Portal
+          </a>
+        </div>
+
+        <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
+          This link expires in 15 minutes. If you didn't request this, you can safely ignore this email.
+        </p>
+
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 32px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+          Cape Cod Restaurant Consulting | R&G Consulting LLC
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
 }

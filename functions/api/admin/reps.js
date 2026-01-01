@@ -1,6 +1,20 @@
-// Admin Reps API - List and Create
+/**
+ * Admin Reps API - List and Create
+ *
+ * GET /api/admin/reps - List all reps (protected)
+ * POST /api/admin/reps - Create new rep (protected)
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
 
     const { results } = await db.prepare(`
@@ -15,23 +29,41 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('Reps GET error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const body = await context.request.json();
+
+    // Validate required fields
+    if (!body.email || !body.name) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Email and name are required'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
 
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
@@ -62,15 +94,20 @@ export async function onRequestPost(context) {
       success: true,
       data: rep
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
+    console.error('Reps POST error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }
