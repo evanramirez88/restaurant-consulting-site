@@ -28,10 +28,20 @@ interface BusinessRates {
 }
 
 interface FeatureFlags {
+  // Tool Feature Flags
   quote_builder_enabled: boolean;
   menu_builder_enabled: boolean;
   client_portal_enabled: boolean;
+  rep_portal_enabled: boolean;
+  toast_hub_enabled: boolean;
+  // Mode Flags
   maintenance_mode: boolean;
+  // "Coming Soon" Mode Flags
+  quote_builder_coming_soon: boolean;
+  menu_builder_coming_soon: boolean;
+  client_portal_coming_soon: boolean;
+  rep_portal_coming_soon: boolean;
+  toast_hub_coming_soon: boolean;
 }
 
 interface ApiConfig {
@@ -41,6 +51,17 @@ interface ApiConfig {
   display_name: string;
   is_active: boolean;
   fallback_provider: string | null;
+}
+
+interface SiteContent {
+  id: string;
+  page: string;
+  section: string;
+  content_key: string;
+  content_value: string;
+  content_type: 'text' | 'html' | 'markdown' | 'json';
+  is_editable: boolean;
+  updated_at: number;
 }
 
 type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'content';
@@ -79,16 +100,34 @@ const ConfigManager: React.FC = () => {
 
   // Feature Flags
   const [featureFlags, setFeatureFlags] = useState<FeatureFlags>({
+    // Tool Feature Flags
     quote_builder_enabled: false,
     menu_builder_enabled: false,
     client_portal_enabled: false,
-    maintenance_mode: false
+    rep_portal_enabled: false,
+    toast_hub_enabled: false,
+    // Mode Flags
+    maintenance_mode: false,
+    // "Coming Soon" Mode Flags
+    quote_builder_coming_soon: false,
+    menu_builder_coming_soon: false,
+    client_portal_coming_soon: false,
+    rep_portal_coming_soon: false,
+    toast_hub_coming_soon: false
   });
   const [pendingFlagToggle, setPendingFlagToggle] = useState<string | null>(null);
   const [showFlagConfirm, setShowFlagConfirm] = useState<{ key: string; newValue: boolean } | null>(null);
 
   // API Configs
   const [apiConfigs, setApiConfigs] = useState<ApiConfig[]>([]);
+
+  // Site Content
+  const [siteContent, setSiteContent] = useState<SiteContent[]>([]);
+  const [contentGrouped, setContentGrouped] = useState<Record<string, Record<string, SiteContent[]>>>({});
+  const [editingContent, setEditingContent] = useState<SiteContent | null>(null);
+  const [contentSaveStatus, setContentSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [showAddContent, setShowAddContent] = useState(false);
+  const [newContent, setNewContent] = useState({ page: '', section: '', content_key: '', content_value: '', content_type: 'text' as const });
 
   useEffect(() => {
     loadAllData();
@@ -101,7 +140,8 @@ const ConfigManager: React.FC = () => {
         loadConfig(),
         loadRates(),
         loadFeatureFlags(),
-        loadApiConfigs()
+        loadApiConfigs(),
+        loadSiteContent()
       ]);
     } finally {
       setIsLoading(false);
@@ -153,6 +193,58 @@ const ConfigManager: React.FC = () => {
       }
     } catch (error) {
       console.error('Load API configs error:', error);
+    }
+  };
+
+  const loadSiteContent = async () => {
+    try {
+      const response = await fetch('/api/admin/site-content');
+      const result = await response.json();
+      if (result.success) {
+        setSiteContent(result.data || []);
+        setContentGrouped(result.grouped || {});
+      }
+    } catch (error) {
+      console.error('Load site content error:', error);
+    }
+  };
+
+  const saveSiteContent = async (content: { page: string; section: string; content_key: string; content_value: string; content_type: string }) => {
+    setContentSaveStatus('saving');
+    try {
+      const response = await fetch('/api/admin/site-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(content)
+      });
+      const result = await response.json();
+      if (result.success) {
+        await loadSiteContent();
+        setEditingContent(null);
+        setShowAddContent(false);
+        setNewContent({ page: '', section: '', content_key: '', content_value: '', content_type: 'text' });
+        setContentSaveStatus('success');
+        setTimeout(() => setContentSaveStatus('idle'), 3000);
+      } else {
+        setContentSaveStatus('error');
+      }
+    } catch (error) {
+      console.error('Save content error:', error);
+      setContentSaveStatus('error');
+    }
+  };
+
+  const deleteSiteContent = async (id: string) => {
+    if (!confirm('Delete this content block?')) return;
+    try {
+      await fetch('/api/admin/site-content', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      await loadSiteContent();
+    } catch (error) {
+      console.error('Delete content error:', error);
     }
   };
 
@@ -463,52 +555,164 @@ const ConfigManager: React.FC = () => {
 
       {/* Feature Flags Section */}
       {activeSection === 'flags' && (
-        <section className="admin-card p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Feature Flags</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { key: 'quote_builder_enabled', label: 'Quote Builder', desc: 'Interactive POS quoting tool' },
-              { key: 'menu_builder_enabled', label: 'Menu Builder', desc: 'AI-powered menu migration' },
-              { key: 'client_portal_enabled', label: 'Client Portal', desc: 'Customer dashboard access' },
-              { key: 'maintenance_mode', label: 'Maintenance Mode', desc: 'Disables all public features', danger: true }
-            ].map(({ key, label, desc, danger }) => (
-              <div
-                key={key}
-                className={`p-4 rounded-lg border ${
-                  danger && featureFlags[key as keyof FeatureFlags]
-                    ? 'bg-red-900/20 border-red-500/50'
-                    : 'bg-gray-900/30 border-gray-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        featureFlags[key as keyof FeatureFlags]
-                          ? (danger ? 'bg-red-500 animate-pulse' : 'bg-green-500')
-                          : 'bg-gray-500'
-                      }`} />
-                      <span className={danger && featureFlags[key as keyof FeatureFlags] ? 'text-red-300' : 'text-white'}>
-                        {label}
-                      </span>
+        <section className="space-y-6">
+          {/* Tool Activation Flags */}
+          <div className="admin-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Feature Activation</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Enable or disable features on the public website. Disabled features show a "Coming Soon" page if that option is enabled below.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { key: 'quote_builder_enabled', label: 'Quote Builder', desc: 'Interactive POS quoting tool', color: 'blue' },
+                { key: 'menu_builder_enabled', label: 'Menu Builder', desc: 'AI-powered menu migration', color: 'green' },
+                { key: 'client_portal_enabled', label: 'Client Portal', desc: 'Customer dashboard access', color: 'purple' },
+                { key: 'rep_portal_enabled', label: 'Rep Portal', desc: 'Sales rep dashboard access', color: 'amber' },
+                { key: 'toast_hub_enabled', label: 'Toast Hub', desc: 'Content & resource hub', color: 'cyan' }
+              ].map(({ key, label, desc, color }) => (
+                <div
+                  key={key}
+                  className={`p-4 rounded-lg border transition-all ${
+                    featureFlags[key as keyof FeatureFlags]
+                      ? `bg-${color}-500/10 border-${color}-500/30`
+                      : 'bg-gray-900/30 border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          featureFlags[key as keyof FeatureFlags] ? 'bg-green-500' : 'bg-gray-500'
+                        }`} />
+                        <span className="text-white font-medium">{label}</span>
+                      </div>
+                      <p className="text-gray-500 text-xs mt-1">{desc}</p>
                     </div>
-                    <p className="text-gray-500 text-xs mt-1">{desc}</p>
+                    <button
+                      onClick={() => setShowFlagConfirm({ key, newValue: !featureFlags[key as keyof FeatureFlags] })}
+                      disabled={pendingFlagToggle === key}
+                      className="transition-transform hover:scale-110"
+                    >
+                      {pendingFlagToggle === key ? (
+                        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                      ) : featureFlags[key as keyof FeatureFlags] ? (
+                        <ToggleRight className="w-10 h-10 text-green-500" />
+                      ) : (
+                        <ToggleLeft className="w-10 h-10 text-gray-500" />
+                      )}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setShowFlagConfirm({ key, newValue: !featureFlags[key as keyof FeatureFlags] })}
-                    disabled={pendingFlagToggle === key}
-                  >
-                    {pendingFlagToggle === key ? (
-                      <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
-                    ) : featureFlags[key as keyof FeatureFlags] ? (
-                      <ToggleRight className={`w-10 h-10 ${danger ? 'text-red-500' : 'text-green-500'}`} />
-                    ) : (
-                      <ToggleLeft className="w-10 h-10 text-gray-500" />
-                    )}
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Coming Soon Mode Flags */}
+          <div className="admin-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Coming Soon Pages</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              When a feature is disabled above, enabling "Coming Soon" shows a placeholder page instead of hiding the link entirely.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { key: 'quote_builder_coming_soon', label: 'Quote Builder', parentKey: 'quote_builder_enabled' },
+                { key: 'menu_builder_coming_soon', label: 'Menu Builder', parentKey: 'menu_builder_enabled' },
+                { key: 'client_portal_coming_soon', label: 'Client Portal', parentKey: 'client_portal_enabled' },
+                { key: 'rep_portal_coming_soon', label: 'Rep Portal', parentKey: 'rep_portal_enabled' },
+                { key: 'toast_hub_coming_soon', label: 'Toast Hub', parentKey: 'toast_hub_enabled' }
+              ].map(({ key, label, parentKey }) => {
+                const parentEnabled = featureFlags[parentKey as keyof FeatureFlags];
+                return (
+                  <div
+                    key={key}
+                    className={`p-4 rounded-lg border transition-all ${
+                      parentEnabled
+                        ? 'bg-gray-900/20 border-gray-800 opacity-50'
+                        : featureFlags[key as keyof FeatureFlags]
+                          ? 'bg-amber-500/10 border-amber-500/30'
+                          : 'bg-gray-900/30 border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-sm">{label}</span>
+                          {parentEnabled && (
+                            <span className="px-2 py-0.5 bg-green-500/10 text-green-400 text-xs rounded">Active</span>
+                          )}
+                        </div>
+                        <p className="text-gray-600 text-xs mt-1">
+                          {parentEnabled ? 'Feature is enabled' : 'Shows coming soon when disabled'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => !parentEnabled && setShowFlagConfirm({ key, newValue: !featureFlags[key as keyof FeatureFlags] })}
+                        disabled={pendingFlagToggle === key || parentEnabled}
+                        className={parentEnabled ? 'opacity-50 cursor-not-allowed' : 'transition-transform hover:scale-110'}
+                      >
+                        {pendingFlagToggle === key ? (
+                          <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
+                        ) : featureFlags[key as keyof FeatureFlags] ? (
+                          <ToggleRight className="w-8 h-8 text-amber-400" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-gray-500" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* System Mode Flags */}
+          <div className="admin-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-2">System Modes</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Global system flags that affect the entire website.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { key: 'maintenance_mode', label: 'Maintenance Mode', desc: 'Disables all public features and shows maintenance page', danger: true }
+              ].map(({ key, label, desc, danger }) => (
+                <div
+                  key={key}
+                  className={`p-4 rounded-lg border ${
+                    danger && featureFlags[key as keyof FeatureFlags]
+                      ? 'bg-red-900/20 border-red-500/50'
+                      : 'bg-gray-900/30 border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          featureFlags[key as keyof FeatureFlags]
+                            ? 'bg-red-500 animate-pulse'
+                            : 'bg-gray-500'
+                        }`} />
+                        <span className={featureFlags[key as keyof FeatureFlags] ? 'text-red-300' : 'text-white'}>
+                          {label}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-xs mt-1">{desc}</p>
+                    </div>
+                    <button
+                      onClick={() => setShowFlagConfirm({ key, newValue: !featureFlags[key as keyof FeatureFlags] })}
+                      disabled={pendingFlagToggle === key}
+                    >
+                      {pendingFlagToggle === key ? (
+                        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                      ) : featureFlags[key as keyof FeatureFlags] ? (
+                        <ToggleRight className="w-10 h-10 text-red-500" />
+                      ) : (
+                        <ToggleLeft className="w-10 h-10 text-gray-500" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -552,17 +756,239 @@ const ConfigManager: React.FC = () => {
 
       {/* Site Content Section */}
       {activeSection === 'content' && (
-        <section className="admin-card p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Site Content</h3>
-          <p className="text-gray-400 text-sm mb-4">
-            Edit text blocks displayed on the public website.
-          </p>
-          <div className="text-center py-8 text-gray-500 bg-gray-900/30 rounded-lg border border-gray-700">
-            <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p>Content editor coming soon</p>
-            <p className="text-xs mt-1">Edit hero text, service descriptions, and more</p>
+        <section className="space-y-6">
+          <div className="admin-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Site Content</h3>
+                <p className="text-gray-400 text-sm">Edit text blocks displayed on the public website</p>
+              </div>
+              <button
+                onClick={() => setShowAddContent(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                + Add Content
+              </button>
+            </div>
+
+            {/* Page Selector for common pages */}
+            <div className="flex gap-2 flex-wrap mb-4">
+              {['home', 'services', 'about', 'contact', 'support-plans'].map(page => {
+                const hasContent = contentGrouped[page];
+                return (
+                  <span
+                    key={page}
+                    className={`px-3 py-1 text-xs rounded-full capitalize ${
+                      hasContent ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-700 text-gray-400'
+                    }`}
+                  >
+                    {page.replace('-', ' ')}
+                    {hasContent && ` (${Object.values(contentGrouped[page] || {}).flat().length})`}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Content List by Page */}
+            {Object.keys(contentGrouped).length === 0 ? (
+              <div className="text-center py-8 text-gray-500 bg-gray-900/30 rounded-lg border border-gray-700">
+                <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p>No content blocks yet</p>
+                <p className="text-xs mt-1">Add content blocks to edit text on your website</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(contentGrouped).map(([page, sections]) => (
+                  <div key={page} className="border border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-gray-800/50 px-4 py-2 border-b border-gray-700">
+                      <h4 className="text-white font-medium capitalize">{page.replace('-', ' ')} Page</h4>
+                    </div>
+                    <div className="divide-y divide-gray-700/50">
+                      {Object.entries(sections).map(([section, items]) => (
+                        <div key={section} className="p-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{section}</p>
+                          <div className="space-y-2">
+                            {items.map(item => (
+                              <div
+                                key={item.id}
+                                className="flex items-start justify-between p-3 bg-gray-900/30 rounded-lg group"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm text-amber-400 font-mono">{item.content_key}</p>
+                                  <p className="text-white text-sm mt-1 truncate">
+                                    {item.content_value || <span className="text-gray-500 italic">Empty</span>}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => setEditingContent(item)}
+                                    className="px-3 py-1 text-xs text-amber-400 hover:bg-amber-500/20 rounded transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => deleteSiteContent(item.id)}
+                                    className="px-3 py-1 text-xs text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Add Common Content */}
+          <div className="admin-card p-6">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Quick Add Common Content</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { page: 'home', section: 'hero', key: 'title' },
+                { page: 'home', section: 'hero', key: 'subtitle' },
+                { page: 'home', section: 'cta', key: 'text' },
+                { page: 'services', section: 'header', key: 'title' },
+                { page: 'about', section: 'header', key: 'title' },
+                { page: 'contact', section: 'header', key: 'title' },
+                { page: 'support-plans', section: 'header', key: 'title' },
+                { page: 'support-plans', section: 'pricing', key: 'note' }
+              ].map(({ page, section, key }) => {
+                const exists = siteContent.some(c => c.page === page && c.section === section && c.content_key === key);
+                return (
+                  <button
+                    key={`${page}-${section}-${key}`}
+                    onClick={() => {
+                      if (!exists) {
+                        setNewContent({ page, section, content_key: key, content_value: '', content_type: 'text' });
+                        setShowAddContent(true);
+                      }
+                    }}
+                    disabled={exists}
+                    className={`p-2 text-xs rounded border transition-colors ${
+                      exists
+                        ? 'border-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'border-gray-600 text-gray-400 hover:border-amber-500 hover:text-amber-400'
+                    }`}
+                  >
+                    {page}/{section}/{key}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
+      )}
+
+      {/* Add/Edit Content Modal */}
+      {(showAddContent || editingContent) && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl max-w-lg w-full border border-gray-700">
+            <div className="p-6 border-b border-gray-700">
+              <h3 className="text-lg font-bold text-white">
+                {editingContent ? 'Edit Content Block' : 'Add Content Block'}
+              </h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Page</label>
+                  <input
+                    type="text"
+                    value={editingContent?.page || newContent.page}
+                    onChange={(e) => editingContent
+                      ? setEditingContent({ ...editingContent, page: e.target.value })
+                      : setNewContent({ ...newContent, page: e.target.value })}
+                    placeholder="e.g., home"
+                    className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Section</label>
+                  <input
+                    type="text"
+                    value={editingContent?.section || newContent.section}
+                    onChange={(e) => editingContent
+                      ? setEditingContent({ ...editingContent, section: e.target.value })
+                      : setNewContent({ ...newContent, section: e.target.value })}
+                    placeholder="e.g., hero"
+                    className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Content Key</label>
+                <input
+                  type="text"
+                  value={editingContent?.content_key || newContent.content_key}
+                  onChange={(e) => editingContent
+                    ? setEditingContent({ ...editingContent, content_key: e.target.value })
+                    : setNewContent({ ...newContent, content_key: e.target.value })}
+                  placeholder="e.g., title, subtitle, body"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Content Value</label>
+                <textarea
+                  value={editingContent?.content_value || newContent.content_value}
+                  onChange={(e) => editingContent
+                    ? setEditingContent({ ...editingContent, content_value: e.target.value })
+                    : setNewContent({ ...newContent, content_value: e.target.value })}
+                  rows={4}
+                  placeholder="Enter the content..."
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Content Type</label>
+                <select
+                  value={editingContent?.content_type || newContent.content_type}
+                  onChange={(e) => {
+                    const val = e.target.value as 'text' | 'html' | 'markdown' | 'json';
+                    editingContent
+                      ? setEditingContent({ ...editingContent, content_type: val })
+                      : setNewContent({ ...newContent, content_type: val });
+                  }}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                >
+                  <option value="text">Plain Text</option>
+                  <option value="html">HTML</option>
+                  <option value="markdown">Markdown</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowAddContent(false);
+                  setEditingContent(null);
+                  setNewContent({ page: '', section: '', content_key: '', content_value: '', content_type: 'text' });
+                }}
+                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const data = editingContent || newContent;
+                  saveSiteContent(data);
+                }}
+                disabled={contentSaveStatus === 'saving'}
+                className="px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {contentSaveStatus === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save Content
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Flag Confirmation Modal */}

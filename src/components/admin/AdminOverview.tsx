@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
-  Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase
+  Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
+  ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -26,6 +27,28 @@ interface AuditLogEntry {
   timestamp: number;
 }
 
+interface ClientPortal {
+  id: string;
+  name: string;
+  company: string;
+  slug: string | null;
+  portal_enabled: boolean;
+  support_plan_tier: string | null;
+  support_plan_status: string | null;
+  created_at?: number;
+  last_activity?: number;
+}
+
+interface RepPortal {
+  id: string;
+  name: string;
+  territory: string | null;
+  slug: string | null;
+  portal_enabled: boolean;
+  status: 'active' | 'inactive' | 'pending';
+  client_count?: number;
+}
+
 interface AdminOverviewProps {
   analytics: AnalyticsData;
   availability: AvailabilityData;
@@ -45,8 +68,245 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   onNavigateToTab,
   formatTimeAgo
 }) => {
+  const [clients, setClients] = useState<ClientPortal[]>([]);
+  const [reps, setReps] = useState<RepPortal[]>([]);
+  const [isLoadingPortals, setIsLoadingPortals] = useState(true);
+  const [showAllClients, setShowAllClients] = useState(false);
+  const [showAllReps, setShowAllReps] = useState(false);
+
+  useEffect(() => {
+    const loadPortals = async () => {
+      try {
+        const [clientsRes, repsRes] = await Promise.all([
+          fetch('/api/admin/clients'),
+          fetch('/api/admin/reps')
+        ]);
+        const clientsData = await clientsRes.json();
+        const repsData = await repsRes.json();
+        if (clientsData.success) setClients(clientsData.data || []);
+        if (repsData.success) setReps(repsData.data || []);
+      } catch (error) {
+        console.error('Failed to load portals:', error);
+      } finally {
+        setIsLoadingPortals(false);
+      }
+    };
+    loadPortals();
+  }, []);
+
+  const getSupportPlanBadge = (tier: string | null, status: string | null) => {
+    if (!tier || tier === 'none') return null;
+    const colors: Record<string, string> = {
+      essential: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      professional: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      premium: 'bg-green-500/20 text-green-400 border-green-500/30'
+    };
+    return (
+      <span className={`px-2 py-0.5 text-xs rounded border ${colors[tier] || 'bg-gray-500/20 text-gray-400'}`}>
+        {tier.charAt(0).toUpperCase() + tier.slice(1)}
+        {status === 'paused' && <span className="ml-1 text-yellow-400">(Paused)</span>}
+      </span>
+    );
+  };
+
+  const displayedClients = showAllClients ? clients : clients.slice(0, 5);
+  const displayedReps = showAllReps ? reps : reps.slice(0, 5);
+
   return (
     <>
+      {/* Cumulative Portal Overview */}
+      <section className="admin-card p-6" aria-labelledby="portal-overview-heading">
+        <div className="flex items-center justify-between mb-6">
+          <h2 id="portal-overview-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
+            <Users className="w-5 h-5 text-amber-400" aria-hidden="true" />
+            Portal Overview
+          </h2>
+          <div className="flex gap-2">
+            <span className="px-2 py-1 text-xs bg-blue-500/20 text-blue-400 rounded">
+              {clients.filter(c => c.portal_enabled).length} Active Clients
+            </span>
+            <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded">
+              {reps.filter(r => r.portal_enabled).length} Active Reps
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Client Portals List */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Client Portals
+              </h3>
+              <button
+                onClick={() => onNavigateToTab('clients')}
+                className="text-xs text-amber-400 hover:text-amber-300"
+              >
+                Manage All
+              </button>
+            </div>
+
+            {isLoadingPortals ? (
+              <div className="animate-pulse space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 bg-gray-800 rounded-lg" />
+                ))}
+              </div>
+            ) : clients.length === 0 ? (
+              <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
+                <Building2 className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No clients yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {displayedClients.map(client => (
+                  <div
+                    key={client.id}
+                    className="flex items-center justify-between p-3 bg-gray-900/30 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'
+                      }`} />
+                      <div className="min-w-0">
+                        <p className="text-white font-medium truncate">{client.company || client.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          {client.slug && (
+                            <span className="flex items-center gap-1">
+                              <Link2 className="w-3 h-3" />
+                              /portal/{client.slug}
+                            </span>
+                          )}
+                          {getSupportPlanBadge(client.support_plan_tier, client.support_plan_status)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {client.slug && client.portal_enabled && (
+                        <a
+                          href={`/#/portal/${client.slug}/dashboard`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
+                          title="Open Portal"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </div>
+                  </div>
+                ))}
+
+                {clients.length > 5 && (
+                  <button
+                    onClick={() => setShowAllClients(!showAllClients)}
+                    className="w-full py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    {showAllClients ? 'Show Less' : `Show ${clients.length - 5} More`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Rep Portals List */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Rep Portals
+              </h3>
+              <button
+                onClick={() => onNavigateToTab('reps')}
+                className="text-xs text-amber-400 hover:text-amber-300"
+              >
+                Manage All
+              </button>
+            </div>
+
+            {isLoadingPortals ? (
+              <div className="animate-pulse space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 bg-gray-800 rounded-lg" />
+                ))}
+              </div>
+            ) : reps.length === 0 ? (
+              <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
+                <Briefcase className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No reps yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {displayedReps.map(rep => (
+                  <div
+                    key={rep.id}
+                    className="flex items-center justify-between p-3 bg-gray-900/30 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        rep.status === 'active' && rep.portal_enabled ? 'bg-green-500' :
+                        rep.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
+                      }`} />
+                      <div className="min-w-0">
+                        <p className="text-white font-medium truncate">{rep.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          {rep.territory && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {rep.territory}
+                            </span>
+                          )}
+                          {rep.slug && (
+                            <span className="flex items-center gap-1">
+                              <Link2 className="w-3 h-3" />
+                              /rep/{rep.slug}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 text-xs rounded ${
+                        rep.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                        rep.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {rep.status}
+                      </span>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {rep.slug && rep.portal_enabled && (
+                          <a
+                            href={`/#/rep/${rep.slug}/dashboard`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
+                            title="Open Portal"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-gray-600" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {reps.length > 5 && (
+                  <button
+                    onClick={() => setShowAllReps(!showAllReps)}
+                    className="w-full py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    {showAllReps ? 'Show Less' : `Show ${reps.length - 5} More`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Analytics Overview */}
       <section className="admin-card p-6" aria-labelledby="analytics-heading">
         <div className="flex items-center justify-between mb-6">

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
-  AlertTriangle, PlayCircle
+  AlertTriangle, PlayCircle, X, Maximize2, Minimize2, RefreshCw
 } from 'lucide-react';
 
 interface ToolsDemoProps {
@@ -11,14 +11,106 @@ interface ToolsDemoProps {
   onOpenRepPortalDemo: () => void;
 }
 
+type EmbeddedPreview = 'quote' | 'menu' | 'client' | 'rep' | null;
+
 const ToolsDemo: React.FC<ToolsDemoProps> = ({
   onOpenQuoteBuilder,
   onOpenMenuBuilder,
   onOpenClientPortalDemo,
   onOpenRepPortalDemo
 }) => {
+  const [embeddedPreview, setEmbeddedPreview] = useState<EmbeddedPreview>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+
+  const previewUrls: Record<Exclude<EmbeddedPreview, null>, string> = {
+    quote: '/#/quote-builder?demo=true',
+    menu: '/#/menu-builder?demo=true',
+    client: '/#/portal/demo-seafood-shack/dashboard?demo=true',
+    rep: '/#/rep/demo-rep/dashboard?demo=true'
+  };
+
+  const previewTitles: Record<Exclude<EmbeddedPreview, null>, string> = {
+    quote: 'Quote Builder Demo',
+    menu: 'Menu Builder Demo',
+    client: 'Client Portal Demo',
+    rep: 'Rep Portal Demo'
+  };
+
+  const refreshPreview = () => setIframeKey(prev => prev + 1);
+
   return (
     <div className="space-y-6">
+      {/* Embedded Preview Modal */}
+      {embeddedPreview && (
+        <div className={`fixed z-50 ${
+          isFullscreen
+            ? 'inset-0'
+            : 'inset-4 lg:inset-8'
+        } bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col`}>
+          {/* Preview Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/80">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+              </div>
+              <span className="text-white font-medium">
+                {previewTitles[embeddedPreview]}
+              </span>
+              <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400 rounded">
+                Demo Mode
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={refreshPreview}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                title="Refresh"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <a
+                href={previewUrls[embeddedPreview]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                title="Open in New Tab"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <button
+                onClick={() => {
+                  setEmbeddedPreview(null);
+                  setIsFullscreen(false);
+                }}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {/* Preview Iframe */}
+          <div className="flex-1 bg-white">
+            <iframe
+              key={iframeKey}
+              src={previewUrls[embeddedPreview]}
+              className="w-full h-full border-0"
+              title={previewTitles[embeddedPreview]}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
@@ -26,7 +118,7 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
           Demo Tools
         </h2>
         <p className="text-gray-400 text-sm mt-1">
-          Test all tools in demo mode - no data is saved to real clients
+          Test all tools in demo mode - preview inline or open in new window
         </p>
       </div>
 
@@ -68,22 +160,21 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
-              onClick={onOpenQuoteBuilder}
+              onClick={() => setEmbeddedPreview('quote')}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
             >
               <PlayCircle className="w-4 h-4" />
-              Launch Demo
+              Preview Inline
             </button>
-            <a
-              href="/#/quote-builder"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={onOpenQuoteBuilder}
               className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Open in New Tab"
             >
               <ExternalLink className="w-4 h-4" />
-            </a>
+            </button>
           </div>
         </div>
 
@@ -112,22 +203,21 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
-              onClick={onOpenMenuBuilder}
+              onClick={() => setEmbeddedPreview('menu')}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors"
             >
               <PlayCircle className="w-4 h-4" />
-              Launch Demo
+              Preview Inline
             </button>
-            <a
-              href="/#/menu-builder"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={onOpenMenuBuilder}
               className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Open in New Tab"
             >
               <ExternalLink className="w-4 h-4" />
-            </a>
+            </button>
           </div>
         </div>
 
@@ -156,13 +246,22 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onOpenClientPortalDemo}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
-          >
-            <PlayCircle className="w-4 h-4" />
-            Preview as Client
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEmbeddedPreview('client')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <PlayCircle className="w-4 h-4" />
+              Preview Inline
+            </button>
+            <button
+              onClick={onOpenClientPortalDemo}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Open in New Tab"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Rep Portal Demo */}
@@ -190,13 +289,22 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onOpenRepPortalDemo}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
-          >
-            <PlayCircle className="w-4 h-4" />
-            Preview as Rep
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEmbeddedPreview('rep')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <PlayCircle className="w-4 h-4" />
+              Preview Inline
+            </button>
+            <button
+              onClick={onOpenRepPortalDemo}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Open in New Tab"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

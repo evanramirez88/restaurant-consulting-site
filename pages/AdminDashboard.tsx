@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Loader2, LogOut, UtensilsCrossed, LayoutDashboard, Building2, Briefcase,
-  Wrench, FileText, Calendar, Settings
+  Wrench, FileText, Calendar, Settings, Users, Ticket
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
@@ -16,8 +16,10 @@ import ToolsDemo from '../src/components/admin/tools/ToolsDemo';
 import ToastHubManager from '../src/components/admin/toasthub/ToastHubManager';
 import AvailabilityManager from '../src/components/admin/availability/AvailabilityManager';
 import ConfigManager from '../src/components/admin/config/ConfigManager';
+import PortalManagement from '../src/components/admin/portals/PortalManagement';
+import TicketingDashboard from '../src/components/admin/tickets/TicketingDashboard';
 
-type TabType = 'overview' | 'clients' | 'reps' | 'tools' | 'toasthub' | 'availability' | 'config';
+type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'tools' | 'toasthub' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
 
@@ -277,8 +279,10 @@ const AdminDashboard: React.FC = () => {
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'portals', label: 'Portals', icon: <Users className="w-4 h-4" /> },
     { id: 'clients', label: 'Clients', icon: <Building2 className="w-4 h-4" /> },
     { id: 'reps', label: 'Reps', icon: <Briefcase className="w-4 h-4" /> },
+    { id: 'tickets', label: 'Tickets', icon: <Ticket className="w-4 h-4" /> },
     { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> },
     { id: 'toasthub', label: 'Toast Hub', icon: <FileText className="w-4 h-4" /> },
     { id: 'availability', label: 'Availability', icon: <Calendar className="w-4 h-4" /> },
@@ -352,6 +356,11 @@ const AdminDashboard: React.FC = () => {
           />
         )}
 
+        {/* Portals Tab */}
+        {activeTab === 'portals' && (
+          <PortalManagement />
+        )}
+
         {/* Clients Tab */}
         {activeTab === 'clients' && (
           <>
@@ -394,6 +403,11 @@ const AdminDashboard: React.FC = () => {
               />
             )}
           </>
+        )}
+
+        {/* Tickets Tab */}
+        {activeTab === 'tickets' && (
+          <TicketingDashboard />
         )}
 
         {/* Tools Tab */}

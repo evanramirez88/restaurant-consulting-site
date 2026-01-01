@@ -12,10 +12,20 @@ import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '..
 
 // Default feature flag values
 const DEFAULT_FLAGS = {
+  // Tool Feature Flags
   quote_builder_enabled: false,
   menu_builder_enabled: false,
   client_portal_enabled: false,
-  maintenance_mode: false
+  rep_portal_enabled: false,
+  toast_hub_enabled: false,
+  // Mode Flags
+  maintenance_mode: false,
+  // "Coming Soon" Mode Flags - shows placeholder when feature is disabled
+  quote_builder_coming_soon: false,
+  menu_builder_coming_soon: false,
+  client_portal_coming_soon: false,
+  rep_portal_coming_soon: false,
+  toast_hub_coming_soon: false
 };
 
 // Allowed flag keys (whitelist for security)

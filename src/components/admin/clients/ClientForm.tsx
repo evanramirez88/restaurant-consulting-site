@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Save, Loader2, Building2, Mail, Phone, User, Globe, Shield,
-  FolderOpen, Link2, AlertCircle
+  FolderOpen, Link2, AlertCircle, Users, Briefcase, Plus, Trash2
 } from 'lucide-react';
+
+interface Rep {
+  id: string;
+  name: string;
+  email: string;
+  territory: string | null;
+  slug: string | null;
+  status: 'active' | 'inactive' | 'pending';
+}
 
 interface Client {
   id?: string;
@@ -61,13 +70,81 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
   const [error, setError] = useState<string | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
 
+  // Rep Assignment state
+  const [allReps, setAllReps] = useState<Rep[]>([]);
+  const [assignedRepIds, setAssignedRepIds] = useState<string[]>([]);
+  const [isLoadingReps, setIsLoadingReps] = useState(false);
+
   const isEditing = !!client?.id;
 
   useEffect(() => {
     if (client) {
       setFormData(client);
     }
+    loadReps();
+    if (client?.id) {
+      loadAssignedReps(client.id);
+    }
   }, [client]);
+
+  const loadReps = async () => {
+    setIsLoadingReps(true);
+    try {
+      const response = await fetch('/api/admin/reps');
+      const result = await response.json();
+      if (result.success) {
+        setAllReps(result.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load reps:', err);
+    } finally {
+      setIsLoadingReps(false);
+    }
+  };
+
+  const loadAssignedReps = async (clientId: string) => {
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}/reps`);
+      const result = await response.json();
+      if (result.success) {
+        setAssignedRepIds(result.data?.map((r: Rep) => r.id) || []);
+      }
+    } catch (err) {
+      console.error('Failed to load assigned reps:', err);
+    }
+  };
+
+  const assignRep = async (repId: string) => {
+    if (!client?.id) {
+      setAssignedRepIds(prev => [...prev, repId]);
+      return;
+    }
+    try {
+      await fetch(`/api/admin/clients/${client.id}/reps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rep_id: repId })
+      });
+      setAssignedRepIds(prev => [...prev, repId]);
+    } catch (err) {
+      console.error('Failed to assign rep:', err);
+    }
+  };
+
+  const unassignRep = async (repId: string) => {
+    if (!client?.id) {
+      setAssignedRepIds(prev => prev.filter(id => id !== repId));
+      return;
+    }
+    try {
+      await fetch(`/api/admin/clients/${client.id}/reps/${repId}`, {
+        method: 'DELETE'
+      });
+      setAssignedRepIds(prev => prev.filter(id => id !== repId));
+    } catch (err) {
+      console.error('Failed to unassign rep:', err);
+    }
+  };
 
   const generateSlug = (text: string) => {
     return text
@@ -320,6 +397,96 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
             />
             <p className="text-gray-500 text-xs mt-1">Client's dedicated Google Drive folder for file sharing</p>
           </div>
+        </div>
+
+        {/* Rep Assignment */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+            <Briefcase className="w-4 h-4" />
+            Assigned Sales Reps
+          </h3>
+
+          {/* Assigned Reps */}
+          {assignedRepIds.length > 0 ? (
+            <div className="space-y-2">
+              {assignedRepIds.map(repId => {
+                const rep = allReps.find(r => r.id === repId);
+                if (!rep) return null;
+                return (
+                  <div
+                    key={repId}
+                    className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <Briefcase className="w-4 h-4 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium text-sm">{rep.name}</p>
+                        <p className="text-gray-500 text-xs">{rep.territory || rep.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => unassignRep(repId)}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Remove rep"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-4 bg-gray-900/30 rounded-lg border border-gray-700 border-dashed">
+              <Users className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-500 text-sm">No reps assigned</p>
+            </div>
+          )}
+
+          {/* Add Rep Dropdown */}
+          {allReps.filter(r => !assignedRepIds.includes(r.id) && r.status === 'active').length > 0 && (
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Add Rep</label>
+              <div className="flex gap-2">
+                <select
+                  id="rep-select"
+                  defaultValue=""
+                  className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="" disabled>Select a rep to assign...</option>
+                  {allReps
+                    .filter(r => !assignedRepIds.includes(r.id) && r.status === 'active')
+                    .map(rep => (
+                      <option key={rep.id} value={rep.id}>
+                        {rep.name} {rep.territory ? `(${rep.territory})` : ''}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const select = document.getElementById('rep-select') as HTMLSelectElement;
+                    if (select.value) {
+                      assignRep(select.value);
+                      select.value = '';
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Assign
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isLoadingReps && (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+            </div>
+          )}
         </div>
 
         {/* Notes */}
