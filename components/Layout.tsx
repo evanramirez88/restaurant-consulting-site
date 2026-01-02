@@ -10,14 +10,13 @@ interface LayoutProps {
 }
 
 // Navigation items for the main nav - ORDERED for user flow
+// Note: Support Plans merged into Services, Contact merged into About
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'Services', path: '/services' },
-  { name: 'Support Plans', path: '/support-plans' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'Menu Builder', path: '/menu-builder' },
-  { name: 'About', path: '/about' },
-  { name: 'Contact', path: '/contact' },
+  { name: 'About & Contact', path: '/about' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {

@@ -502,8 +502,8 @@ a:not([class]):hover {
 
 /* CTA button with orange styling - high contrast and legibility */
 .cta-primary {
-  background-color: var(--color-cta);
-  color: var(--color-white);
+  background-color: var(--color-cta) !important;
+  color: var(--color-white) !important;
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
@@ -516,15 +516,22 @@ a:not([class]):hover {
 }
 
 .cta-primary:hover {
-  background-color: var(--color-cta-hover);
+  background-color: var(--color-cta-hover) !important;
+  color: var(--color-white) !important;
   box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45), 0 0 40px rgba(234, 88, 12, 0.2);
   transform: translateY(-2px);
 }
 
+/* Glow-pulse buttons default to orange CTA colors to prevent white-on-white */
+.glow-pulse:not(.cta-secondary):not(.cta-secondary-dark):not([class*="bg-white"]):not([class*="bg-gray"]) {
+  background-color: #ea580c;
+  color: #ffffff;
+}
+
 /* Secondary button - improved legibility */
 .cta-secondary {
-  background-color: var(--color-white);
-  color: var(--color-primary-dark);
+  background-color: var(--color-white) !important;
+  color: var(--color-primary-dark) !important;
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
@@ -537,30 +544,30 @@ a:not([class]):hover {
 }
 
 .cta-secondary:hover {
-  background-color: var(--color-primary-dark);
-  color: var(--color-white);
+  background-color: var(--color-primary-dark) !important;
+  color: var(--color-white) !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Secondary button on dark backgrounds - HIGH CONTRAST */
 .cta-secondary-dark {
-  background-color: transparent;
-  color: var(--color-white);
+  background-color: transparent !important;
+  color: var(--color-white) !important;
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--text-base);
   letter-spacing: 0.01em;
   padding: 1rem 2rem;
   border-radius: 0.5rem;
-  border: 2px solid var(--color-white);
+  border: 2px solid var(--color-white) !important;
   transition: all 0.3s ease;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .cta-secondary-dark:hover {
-  background-color: var(--color-white);
-  color: var(--color-primary-dark);
+  background-color: var(--color-white) !important;
+  color: var(--color-primary-dark) !important;
   transform: translateY(-2px);
 }
 
