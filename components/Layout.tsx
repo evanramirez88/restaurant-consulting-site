@@ -13,7 +13,7 @@ interface LayoutProps {
 // Note: Support Plans merged into Services, Contact merged into About
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
-  { name: 'Services', path: '/services' },
+  { name: 'Services & Support Plans', path: '/services' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'Menu Builder', path: '/menu-builder' },
   { name: 'About & Contact', path: '/about' },
