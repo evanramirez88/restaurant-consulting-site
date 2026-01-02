@@ -43,13 +43,13 @@ const Home: React.FC = () => {
     <div className="flex flex-col">
       {/* Hero Section - Full viewport */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-primary-dark grain-overlay">
-        {/* Parallax decorative elements */}
+        {/* Parallax decorative elements - hidden on mobile to prevent overflow */}
         <div
-          className="parallax-element parallax-orb w-[600px] h-[600px] -top-[200px] -right-[200px]"
+          className="parallax-element parallax-orb hidden sm:block w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px] -top-[100px] md:-top-[150px] lg:-top-[200px] -right-[100px] md:-right-[150px] lg:-right-[200px]"
           style={{ transform: `translateY(${parallaxOffset * 0.5}px)` }}
         />
         <div
-          className="parallax-element parallax-orb w-[400px] h-[400px] bottom-[10%] -left-[100px]"
+          className="parallax-element parallax-orb hidden sm:block w-[200px] h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] bottom-[10%] -left-[50px] md:-left-[75px] lg:-left-[100px]"
           style={{ transform: `translateY(${parallaxOffset * 0.3}px)` }}
         />
 

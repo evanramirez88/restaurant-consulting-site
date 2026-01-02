@@ -288,7 +288,7 @@ const Services: React.FC = () => {
                 key={plan.name}
                 className={`rounded-xl shadow-xl border-2 overflow-hidden flex flex-col animate-on-scroll ${
                   plan.highlighted
-                    ? 'border-amber-500 transform md:scale-105 relative'
+                    ? 'border-amber-500 lg:scale-105 relative z-10'
                     : 'border-gray-200'
                 }`}
                 style={{ animationDelay: `${idx * 100}ms` }}

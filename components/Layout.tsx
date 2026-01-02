@@ -273,12 +273,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ul className="space-y-2.5 text-sm">
                 <li>
                   <Link to="/services" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    Services
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/support-plans" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    Support Plans
+                    Services & Support Plans
                   </Link>
                 </li>
                 <li>
@@ -293,12 +288,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
                 <li>
                   <Link to="/about" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    Contact
+                    About & Contact
                   </Link>
                 </li>
                 <li>

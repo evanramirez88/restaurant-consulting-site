@@ -417,23 +417,23 @@ a:not([class]):hover {
 
 .hero-fade-in {
   opacity: 0;
-  animation: fade-in-up 0.8s ease-out forwards;
+  animation: fade-in-up 0.6s ease-out forwards;
 }
 
 .hero-fade-in-delay-1 {
-  animation-delay: 0.6s;
+  animation-delay: 0.2s;
 }
 
 .hero-fade-in-delay-2 {
-  animation-delay: 0.9s;
+  animation-delay: 0.4s;
 }
 
 .hero-fade-in-delay-3 {
-  animation-delay: 1.2s;
+  animation-delay: 0.6s;
 }
 
 .hero-fade-in-delay-4 {
-  animation-delay: 1.5s;
+  animation-delay: 0.8s;
 }
 
 /* Scroll indicator animation */
@@ -842,8 +842,8 @@ a:not([class]):hover {
 /* Base state for scroll-triggered elements */
 .animate-on-scroll {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
 .animate-on-scroll.is-visible {
@@ -854,8 +854,8 @@ a:not([class]):hover {
 /* Stagger children animation */
 .stagger-child {
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transform: translateY(15px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }
 
 .stagger-child.is-visible {
@@ -869,7 +869,7 @@ a:not([class]):hover {
 }
 
 .animate-on-scroll.slide-left {
-  transform: translateX(-30px);
+  transform: translateX(-25px);
 }
 
 .animate-on-scroll.slide-left.is-visible {
@@ -877,7 +877,7 @@ a:not([class]):hover {
 }
 
 .animate-on-scroll.slide-right {
-  transform: translateX(30px);
+  transform: translateX(25px);
 }
 
 .animate-on-scroll.slide-right.is-visible {
