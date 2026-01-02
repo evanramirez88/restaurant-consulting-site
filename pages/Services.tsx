@@ -257,21 +257,23 @@ const Services: React.FC = () => {
             <div className="inline-flex items-center gap-2 sm:gap-4 bg-white rounded-xl shadow-lg border border-gray-200 p-2">
               <button
                 onClick={() => setBillingPeriod('monthly')}
-                className={`px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
-                  billingPeriod === 'monthly'
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className="px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all text-sm sm:text-base"
+                style={{
+                  backgroundColor: billingPeriod === 'monthly' ? '#f59e0b' : 'transparent',
+                  color: billingPeriod === 'monthly' ? '#ffffff' : '#4b5563',
+                  boxShadow: billingPeriod === 'monthly' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+                }}
               >
                 Monthly
               </button>
               <button
                 onClick={() => setBillingPeriod('annual')}
-                className={`px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm sm:text-base ${
-                  billingPeriod === 'annual'
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className="px-4 sm:px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm sm:text-base"
+                style={{
+                  backgroundColor: billingPeriod === 'annual' ? '#f59e0b' : 'transparent',
+                  color: billingPeriod === 'annual' ? '#ffffff' : '#4b5563',
+                  boxShadow: billingPeriod === 'annual' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+                }}
               >
                 Annual
                 <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full whitespace-nowrap">
