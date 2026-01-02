@@ -166,7 +166,7 @@ const ComingSoonOverlay: React.FC = () => {
             href={ACUITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all glow-pulse shadow-lg btn-hover"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 shadow-lg hover:opacity-90"
             style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
             <Calendar size={20} />
@@ -174,7 +174,7 @@ const ComingSoonOverlay: React.FC = () => {
           </a>
           <Link
             to="/contact"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all btn-hover cta-secondary-dark"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 cta-secondary-dark"
           >
             Get Notified at Launch
           </Link>
@@ -946,7 +946,7 @@ const MenuBuilderTool: React.FC = () => {
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
                     uploadedFiles.length === 0 || (ocrStatus !== 'idle' && ocrStatus !== 'complete' && ocrStatus !== 'error')
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-orange-600 text-white hover:bg-orange-700 glow-pulse shadow-lg'
+                      : 'bg-orange-600 text-white hover:bg-orange-700 hover:opacity-90 shadow-lg'
                   }`}
                 >
                   {ocrStatus === 'idle' || ocrStatus === 'complete' || ocrStatus === 'error'

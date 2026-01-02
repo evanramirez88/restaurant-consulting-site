@@ -523,83 +523,12 @@ a:not([class]):hover {
 }
 
 /* ========================
-   BUTTON DEFAULT COLORS - BULLETPROOF FIX
-   Prevents white-on-white buttons FOREVER
+   BUTTON ANIMATIONS ONLY
+   Colors handled by inline styles or Tailwind classes
    ======================== */
 
-/*
- * ANY element with glow-pulse or btn-hover classes MUST have visible colors.
- * This rule provides default orange CTA colors that can be overridden by:
- * - Inline styles (style={{ backgroundColor: '...' }})
- * - Explicit Tailwind bg-* classes
- * - Other specific CSS classes like .cta-secondary
- */
-
-/* Base default for glow-pulse - orange CTA */
-.glow-pulse {
-  background-color: #ea580c;
-  color: #ffffff;
-}
-
-/* Base default for btn-hover - orange CTA */
-.btn-hover {
-  background-color: #ea580c;
-  color: #ffffff;
-}
-
-/* Override: Allow white/light backgrounds when explicitly set */
-.glow-pulse.bg-white,
-.glow-pulse.bg-gray-50,
-.glow-pulse.bg-gray-100,
-.glow-pulse[class*="bg-white"],
-.btn-hover.bg-white,
-.btn-hover.bg-gray-50,
-.btn-hover.bg-gray-100,
-.btn-hover[class*="bg-white"] {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-/* Override: Allow gray backgrounds when explicitly set */
-.glow-pulse[class*="bg-gray-"],
-.btn-hover[class*="bg-gray-"] {
-  color: #ffffff;
-}
-
-/* Override: Allow primary-dark backgrounds */
-.glow-pulse.bg-primary-dark,
-.glow-pulse[class*="bg-primary"],
-.btn-hover.bg-primary-dark,
-.btn-hover[class*="bg-primary"] {
-  background-color: #0f172a;
-  color: #ffffff;
-}
-
-/* Override: Allow amber backgrounds */
-.glow-pulse[class*="bg-amber"],
-.btn-hover[class*="bg-amber"] {
-  color: #ffffff;
-}
-
-/* Override: Allow orange backgrounds */
-.glow-pulse[class*="bg-orange"],
-.btn-hover[class*="bg-orange"] {
-  color: #ffffff;
-}
-
-/* Override: Secondary button styles take precedence */
-.glow-pulse.cta-secondary,
-.btn-hover.cta-secondary {
-  background-color: var(--color-white) !important;
-  color: var(--color-primary-dark) !important;
-}
-
-.glow-pulse.cta-secondary-dark,
-.btn-hover.cta-secondary-dark {
-  background-color: transparent !important;
-  color: var(--color-white) !important;
-  border: 2px solid var(--color-white) !important;
-}
+/* glow-pulse: ONLY provides the glow animation, NO color overrides */
+/* btn-hover: ONLY provides hover scale effect, NO color overrides */
 
 /* Secondary button - improved legibility */
 .cta-secondary {

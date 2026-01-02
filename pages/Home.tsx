@@ -86,7 +86,7 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 hero-fade-in hero-fade-in-delay-3">
             <Link
               to="/quote"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg glow-pulse btn-hover"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               Get a Quote in 2 Minutes
@@ -94,7 +94,8 @@ const Home: React.FC = () => {
             </Link>
             <Link
               to="/schedule"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all btn-hover cta-secondary-dark"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all border-2 hover:bg-white hover:text-gray-900"
+              style={{ backgroundColor: 'transparent', color: '#ffffff', borderColor: '#ffffff' }}
             >
               Book a Free 15-Min Call
             </Link>
@@ -417,14 +418,14 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/quote"
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg btn-hover glow-pulse"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               Get Your Free Quote
             </Link>
             <a
               href="tel:5082474936"
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-hover glow-pulse"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               <Phone size={20} /> Call Now: (508) 247-4936

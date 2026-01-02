@@ -185,7 +185,7 @@ const PortalLanding: React.FC = () => {
 
           <Link
             to={`/portal/${slug}/login`}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-amber-500 text-white rounded-lg font-semibold text-lg hover:bg-amber-600 transition-colors shadow-lg glow-pulse"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-amber-500 text-white rounded-lg font-semibold text-lg hover:bg-amber-600 transition-colors shadow-lg hover:opacity-90"
           >
             Sign In to Your Portal
             <ArrowRight className="w-5 h-5" />

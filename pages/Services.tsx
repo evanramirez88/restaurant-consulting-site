@@ -216,14 +216,14 @@ const Services: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/schedule"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Schedule a Call
               </Link>
               <Link
                 to="/quote"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
                 style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
               >
                 Build Your Quote
@@ -330,12 +330,11 @@ const Services: React.FC = () => {
 
                   <Link
                     to="/schedule"
-                    className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover ${
-                      plan.highlighted
-                        ? 'text-white glow-pulse'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
-                    }`}
-                    style={plan.highlighted ? { backgroundColor: '#ea580c' } : {}}
+                    className="block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
+                    style={{
+                      backgroundColor: plan.highlighted ? '#ea580c' : '#1f2937',
+                      color: '#ffffff'
+                    }}
                   >
                     Schedule Consultation
                   </Link>
@@ -454,14 +453,15 @@ const Services: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/schedule"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90 text-sm sm:text-base"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Schedule Consultation
               </Link>
               <Link
                 to="/about"
-                className="inline-block px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md text-sm sm:text-base"
+                style={{ backgroundColor: '#ffffff', color: '#111827' }}
               >
                 Learn More About Us
               </Link>

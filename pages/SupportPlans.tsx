@@ -232,9 +232,9 @@ const SupportPlans: React.FC = () => {
 
                 <Link
                   to="/schedule"
-                  className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover ${
+                  className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90 ${
                     plan.highlighted
-                      ? 'text-white glow-pulse'
+                      ? 'text-white hover:opacity-90'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   }`}
                   style={plan.highlighted ? { backgroundColor: '#ea580c' } : {}}
@@ -355,14 +355,14 @@ const SupportPlans: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/schedule"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90 shadow-md hover:opacity-90 text-sm sm:text-base"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Schedule Consultation
               </Link>
               <Link
                 to="/contact"
-                className="inline-block px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-md hover:opacity-90 text-sm sm:text-base"
               >
                 Contact Us
               </Link>

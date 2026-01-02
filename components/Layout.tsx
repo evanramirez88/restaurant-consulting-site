@@ -143,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Get Quote CTA Button - Orange */}
               <Link
                 to="/quote"
-                className="px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg btn-hover"
+                className="px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg hover:opacity-90"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Get Quote
@@ -207,7 +207,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               to="/quote"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 shadow-lg btn-hover"
+              className="mt-8 px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 shadow-lg hover:opacity-90"
               style={{
                 backgroundColor: '#ea580c',
                 color: '#ffffff',

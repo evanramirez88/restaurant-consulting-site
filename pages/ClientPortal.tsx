@@ -189,14 +189,14 @@ const ComingSoonOverlay: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/contact"
-                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all glow-pulse shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90 shadow-md hover:opacity-90 text-sm sm:text-base"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 Request Early Access
               </Link>
               <Link
                 to="/support-plans"
-                className="inline-block px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all shadow-md btn-hover text-sm sm:text-base"
+                className="inline-block px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all shadow-md hover:opacity-90 text-sm sm:text-base"
               >
                 View Support Plans
               </Link>

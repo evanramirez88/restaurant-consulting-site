@@ -116,7 +116,7 @@ const ComingSoonOverlay: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/portal"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all shadow-md btn-hover"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               View Portal Overview
@@ -255,7 +255,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ client, isPreview =
                 Here's an overview of your restaurant tech status.
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-all btn-hover"
+            <button className="inline-flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-all hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               <Plus className="w-5 h-5" />

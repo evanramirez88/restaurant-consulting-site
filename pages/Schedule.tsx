@@ -90,7 +90,7 @@ const Schedule: React.FC = () => {
               </p>
               <a
                 href={`tel:${PHONE_NUMBER}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all btn-hover"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all hover:opacity-90"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
                 <Phone className="w-4 h-4" />
@@ -104,13 +104,13 @@ const Schedule: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   to="/quote"
-                  className="flex-1 px-4 py-2 bg-primary-dark text-white rounded-lg text-sm font-semibold hover:bg-primary transition-all text-center shadow-sm btn-hover"
+                  className="flex-1 px-4 py-2 bg-primary-dark text-white rounded-lg text-sm font-semibold hover:bg-primary transition-all text-center shadow-sm hover:opacity-90"
                 >
                   Build a Quote
                 </Link>
                 <Link
                   to="/contact"
-                  className="flex-1 px-4 py-2 bg-white border-2 border-primary-dark text-gray-900 rounded-lg text-sm font-semibold hover:bg-primary-dark hover:text-white transition-all text-center btn-hover"
+                  className="flex-1 px-4 py-2 bg-white border-2 border-primary-dark text-gray-900 rounded-lg text-sm font-semibold hover:bg-primary-dark hover:text-white transition-all text-center hover:opacity-90"
                 >
                   Send Message
                 </Link>
@@ -171,7 +171,7 @@ const Schedule: React.FC = () => {
           </p>
           <Link
             to="/services"
-            className="inline-flex items-center px-6 py-3 rounded-lg font-bold transition-all shadow-lg btn-hover"
+            className="inline-flex items-center px-6 py-3 rounded-lg font-bold transition-all shadow-lg hover:opacity-90"
             style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
             View Our Services

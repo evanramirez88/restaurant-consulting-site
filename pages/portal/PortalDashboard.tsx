@@ -242,7 +242,7 @@ const PortalDashboard: React.FC = () => {
           </div>
           <Link
             to={`/portal/${slug}/messages`}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-all btn-hover bg-amber-500 text-white hover:bg-amber-600"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-all hover:opacity-90 bg-amber-500 text-white hover:bg-amber-600"
           >
             <Plus className="w-5 h-5" />
             New Message

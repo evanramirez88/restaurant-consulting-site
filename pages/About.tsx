@@ -377,7 +377,7 @@ const About: React.FC = () => {
                 <button
                   type="submit"
                   disabled={status.type === 'loading'}
-                  className="w-full md:w-auto px-8 py-4 font-bold rounded-lg transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-pulse btn-hover"
+                  className="w-full md:w-auto px-8 py-4 font-bold rounded-lg transition-all shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:opacity-90"
                   style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
                 >
                   {status.type === 'loading' ? (
@@ -424,7 +424,7 @@ const About: React.FC = () => {
                 </div>
                 <Link
                   to="/schedule"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all w-fit glow-pulse btn-hover"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all w-fit hover:opacity-90"
                   style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
                 >
                   View Full Calendar
@@ -469,14 +469,15 @@ const About: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/services"
-              className="px-6 py-3 rounded-lg font-bold transition-colors glow-pulse"
+              className="px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
               View Services & Pricing
             </Link>
             <Link
               to="/schedule"
-              className="px-6 py-3 bg-white text-primary-dark rounded-lg font-bold hover:bg-gray-100 transition-all shadow-sm"
+              className="px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-sm"
+              style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
             >
               Schedule a Call
             </Link>
