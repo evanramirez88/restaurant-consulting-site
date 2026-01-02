@@ -145,7 +145,7 @@ const Services: React.FC = () => {
       {/* Header */}
       <div className="bg-primary-dark py-16 pt-8 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
-          <h1 className="font-display text-4xl font-bold text-white mb-4">Toast POS Installation &amp; Restaurant Technology Services</h1>
+          <h1 className="font-display text-4xl font-bold text-white mb-4">Services &amp; Support Plans</h1>
           <div className="brass-line-draw short mb-6" />
           <p className="text-gray-400 max-w-2xl mx-auto text-lg">
             Professional POS installation, menu configuration, and restaurant networking in Cape Cod. Systems built to survive the Friday night rush.
