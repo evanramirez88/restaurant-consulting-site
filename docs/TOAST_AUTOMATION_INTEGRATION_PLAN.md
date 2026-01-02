@@ -4,7 +4,9 @@
 
 This document outlines the complete integration plan for the Toast Back-Office Automation AI Agent into the existing restaurant-consulting-site codebase. The automation system uses browser automation (Playwright) with AI-powered visual perception to configure Toast POS back-office settings, deliberately bypassing Toast's API limitations.
 
-**Architecture Decision**: Hybrid system - Cloudflare Workers for web frontend/APIs, separate Docker server (Lenovo m720q) for browser automation.
+**Architecture Decision**: Hybrid system - Cloudflare Workers for web frontend/APIs, local automation server (Windows PC / Lenovo m720q) running Playwright natively.
+
+**Server Note**: The Lenovo m720q IS the current Windows development PC. Playwright runs directly on Windows without Docker for simplicity and direct browser control.
 
 ---
 
@@ -36,24 +38,23 @@ This document outlines the complete integration plan for the Toast Back-Office A
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    AUTOMATION SERVER (Lenovo m720q / Docker)                 │
+│              AUTOMATION SERVER (Windows PC / Lenovo m720q - Native)          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                    Windmill (Workflow Orchestration)                 │   │
-│  │  - Job Queue Management                                              │   │
-│  │  - Retry Logic                                                       │   │
-│  │  - Scheduling                                                        │   │
+│  │                    Node.js Automation Service                        │   │
+│  │  - Job Queue (polling Cloudflare D1 via API)                        │   │
+│  │  - Retry Logic (built-in)                                           │   │
+│  │  - Windows Task Scheduler for background runs                       │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 │  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐   │
-│  │ Playwright Scripts │  │    Observer AI     │  │   Letta/MemGPT     │   │
-│  │ (Browser Control)  │  │ (Visual Perception)│  │ (Agent Memory)     │   │
+│  │ Playwright Scripts │  │    Observer AI     │  │   Claude/Ollama    │   │
+│  │ (Browser Control)  │  │ (Visual Perception)│  │   (AI Reasoning)   │   │
 │  └────────────────────┘  └────────────────────┘  └────────────────────┘   │
 │                                                                              │
-│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐   │
-│  │       Qdrant       │  │       Ollama       │  │   Redis (Queue)    │   │
-│  │  (Vector Search)   │  │   (Local LLM)      │  │                    │   │
-│  └────────────────────┘  └────────────────────┘  └────────────────────┘   │
+│  Storage: D:\AI_WORKSPACE\PROJECTS\toast-automation\                        │
+│  Screenshots: D:\AI_WORKSPACE\PROJECTS\toast-automation\screenshots\        │
+│  Logs: D:\AI_WORKSPACE\PROJECTS\toast-automation\logs\                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -355,101 +356,88 @@ Add to MenuBuilder export section:
 
 ---
 
-## Automation Server Setup (Docker)
+## Automation Server Setup (Windows Native)
 
-### docker-compose.yml
+The automation runs directly on the Windows PC (Lenovo m720q) without Docker for simplicity.
 
-```yaml
-version: '3.8'
+### Directory Structure
 
-services:
-  windmill:
-    image: ghcr.io/windmill-labs/windmill:main
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgres://windmill:windmill@postgres/windmill
-      - BASE_URL=http://localhost:8000
-    depends_on:
-      - postgres
-    volumes:
-      - ./windmill-data:/root
-
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: windmill
-      POSTGRES_PASSWORD: windmill
-      POSTGRES_DB: windmill
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-  playwright:
-    build:
-      context: ./automation
-      dockerfile: Dockerfile.playwright
-    environment:
-      - CLOUDFLARE_API_URL=https://ccrestaurantconsulting.com
-      - AUTOMATION_SERVER_SECRET=${AUTOMATION_SERVER_SECRET}
-    volumes:
-      - ./automation/scripts:/app/scripts
-      - ./automation/screenshots:/app/screenshots
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-
-  qdrant:
-    image: qdrant/qdrant
-    ports:
-      - "6333:6333"
-    volumes:
-      - qdrant-data:/qdrant/storage
-
-  letta:
-    image: letta/letta:latest
-    ports:
-      - "8283:8283"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    depends_on:
-      - qdrant
-
-volumes:
-  postgres-data:
-  ollama-data:
-  qdrant-data:
+```
+D:\AI_WORKSPACE\PROJECTS\toast-automation\
+├── package.json           # Node.js project config
+├── .env                   # Environment variables
+├── src/
+│   ├── index.ts          # Main entry point / job runner
+│   ├── worker.ts         # Job processing loop
+│   ├── toast/
+│   │   ├── login.ts      # Toast login automation
+│   │   ├── menuUpload.ts # Menu item creation
+│   │   ├── kdsConfig.ts  # KDS routing setup
+│   │   ├── printerSetup.ts
+│   │   └── selectors.ts  # DOM selectors (self-healing)
+│   ├── utils/
+│   │   ├── api.ts        # Cloudflare API communication
+│   │   ├── screenshot.ts # Screenshot capture
+│   │   └── logger.ts     # Logging utility
+│   └── observer/
+│       ├── visual.ts     # Visual element detection
+│       └── healing.ts    # Self-healing logic
+├── screenshots/           # Step screenshots
+├── logs/                  # Automation logs
+└── config/
+    └── selectors.json     # Toast DOM selectors backup
 ```
 
-### Playwright Container (Dockerfile.playwright)
+### Installation
 
-```dockerfile
-FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+```powershell
+# Navigate to project directory
+cd D:\AI_WORKSPACE\PROJECTS\toast-automation
 
-WORKDIR /app
+# Initialize project
+npm init -y
+npm install playwright typescript ts-node @types/node dotenv
 
-COPY package*.json ./
-RUN npm ci
+# Install Playwright browsers
+npx playwright install chromium
 
-COPY scripts/ ./scripts/
-COPY observer/ ./observer/
+# Create .env file
+echo "CLOUDFLARE_API_URL=https://ccrestaurantconsulting.com" > .env
+echo "AUTOMATION_SERVER_SECRET=your-secret-here" >> .env
+echo "ADMIN_JWT_SECRET=your-jwt-secret" >> .env
+```
 
-CMD ["node", "scripts/worker.js"]
+### Running the Automation Service
+
+```powershell
+# Development mode (watch for changes)
+npx ts-node src/index.ts
+
+# Or use Windows Task Scheduler for background execution
+# Create task: "Toast Automation Worker"
+# Trigger: At startup / Every 5 minutes
+# Action: powershell.exe -File "D:\AI_WORKSPACE\PROJECTS\toast-automation\run.ps1"
+```
+
+### run.ps1 (Windows Startup Script)
+
+```powershell
+$ErrorActionPreference = "Stop"
+Set-Location "D:\AI_WORKSPACE\PROJECTS\toast-automation"
+$env:NODE_ENV = "production"
+npx ts-node src/index.ts 2>&1 | Tee-Object -FilePath "logs\worker-$(Get-Date -Format 'yyyy-MM-dd').log" -Append
+```
+
+### Optional: Ollama for Local LLM (if needed)
+
+```powershell
+# Install Ollama for Windows
+winget install Ollama.Ollama
+
+# Pull a model for visual analysis
+ollama pull llava:7b
+
+# Ollama will run as a Windows service on localhost:11434
 ```
 
 ---
@@ -460,12 +448,12 @@ CMD ["node", "scripts/worker.js"]
 
 **Goal**: Basic automation pipeline with manual triggering
 
-- [ ] Add database schema (migration 0004_automation.sql)
-- [ ] Create `/api/automation/` endpoints in Cloudflare Workers
-- [ ] Build AutomationDashboard component in admin portal
-- [ ] Set up Docker environment on Lenovo m720q
+- [x] Add database schema (migration 0004_automation.sql) ✅ DONE
+- [x] Create `/api/automation/` endpoints in Cloudflare Workers ✅ DONE
+- [x] Build AutomationDashboard component in admin portal ✅ DONE (partial)
+- [ ] Set up Windows automation project at D:\AI_WORKSPACE\PROJECTS\toast-automation
 - [ ] Create basic Playwright scripts for Toast login
-- [ ] Implement job queue with status callbacks
+- [ ] Implement job queue polling and status callbacks
 
 **Deliverable**: Admin can manually trigger menu upload job for a client
 
@@ -546,30 +534,31 @@ CMD ["node", "scripts/worker.js"]
 
 ## Human Tasks (Add to HUMAN_TASKS.md)
 
-### 14. Set Up Automation Server (Lenovo m720q)
+### 14. Set Up Windows Automation Project
 **Status**: PENDING
 **Impact**: Required for browser automation
 
 **Steps**:
-1. Install Docker and Docker Compose on Lenovo m720q
-2. Clone automation repository
-3. Configure environment variables
-4. Start Docker stack
-5. Verify Windmill is accessible
+1. Create directory: `D:\AI_WORKSPACE\PROJECTS\toast-automation`
+2. Initialize Node.js project with Playwright
+3. Configure environment variables in .env
+4. Install Playwright browsers
+5. Test basic script execution
 
 ### 15. Create Automation Server Secret
 **Status**: PENDING
 **Impact**: Secure communication between systems
 
 **Steps**:
-```bash
-# Generate a secure secret
-openssl rand -base64 32
+```powershell
+# Generate a secure secret (PowerShell)
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])
 
 # Add to Cloudflare
 npx wrangler pages secret put AUTOMATION_SERVER_SECRET
 
 # Add to automation server .env
+# AUTOMATION_SERVER_SECRET=your-generated-secret
 ```
 
 ### 16. Configure Toast Test Account
@@ -577,10 +566,10 @@ npx wrangler pages secret put AUTOMATION_SERVER_SECRET
 **Impact**: Required for development/testing
 
 **Steps**:
-1. Create or identify a Toast sandbox account
-2. Document login credentials securely
-3. Add initial test credentials to system
-4. Verify automation login works
+1. Use YOUR Toast login (you toggle between client back-offices)
+2. Document your login credentials securely in .env
+3. Test login automation with your account
+4. Verify you can switch between client GUIDs
 
 ---
 
@@ -659,21 +648,25 @@ automation/
 
 ---
 
-## Estimated Resource Requirements
+## Estimated Resource Requirements (Windows Native)
 
 | Component | RAM | CPU | Storage | Notes |
 |-----------|-----|-----|---------|-------|
-| Windmill | 2GB | 2 cores | 10GB | Workflow orchestration |
-| Playwright | 4GB | 2 cores | 5GB | Per browser instance |
-| Postgres | 1GB | 1 core | 20GB | Windmill database |
-| Ollama | 8GB+ | 4 cores | 30GB | Local LLM (optional) |
-| Qdrant | 2GB | 2 cores | 10GB | Vector search |
-| Letta | 2GB | 2 cores | 5GB | Agent memory |
+| Node.js Worker | 512MB | 1 core | 100MB | Job processor service |
+| Playwright Browser | 2-4GB | 2 cores | 2GB | Per Chromium instance |
+| Ollama (optional) | 8GB+ | 4 cores | 30GB | Local LLM for visual AI |
+| Screenshots/Logs | - | - | 10GB | 30-day retention |
 
-**Minimum Server Spec**: 16GB RAM, 8 cores, 100GB SSD
+**Your PC Spec**: This Windows PC is suitable for running 2-3 concurrent browser sessions.
+
+**Storage Locations**:
+- Automation project: `D:\AI_WORKSPACE\PROJECTS\toast-automation\`
+- Screenshots: `D:\AI_WORKSPACE\PROJECTS\toast-automation\screenshots\`
+- Logs: `D:\AI_WORKSPACE\PROJECTS\toast-automation\logs\`
 
 ---
 
-*Document Version: 1.0*
-*Created: January 2, 2026*
+*Document Version: 1.1*
+*Updated: January 2, 2026*
+*Change: Converted from Docker to Windows-native setup*
 *For: R&G Consulting / Cape Cod Restaurant Consulting*
