@@ -15,7 +15,7 @@ import {
   listDocuments,
   mapDocumentStatus
 } from '../_shared/pandadoc.js';
-import { verifyAuth, unauthorizedResponse, corsHeaders } from '../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, corsHeaders } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const { request, env } = context;

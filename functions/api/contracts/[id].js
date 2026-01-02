@@ -14,7 +14,7 @@ import {
   getSigningLink,
   downloadDocument
 } from '../_shared/pandadoc.js';
-import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders } from '../_shared/auth.js';
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const { request, env, params } = context;
