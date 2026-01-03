@@ -217,11 +217,11 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Check required bindings
-    if (!env.DB || !env.R2_BUCKET) {
+    // Check required bindings (only DB is required; R2 can use demo mode)
+    if (!env.DB) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Required services not configured'
+        error: 'Database not configured'
       }), {
         status: 503,
         headers: corsHeaders
