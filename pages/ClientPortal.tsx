@@ -229,9 +229,32 @@ const ClientPortal: React.FC = () => {
   const [isFeatureEnabled, setIsFeatureEnabled] = useState(!SHOW_COMING_SOON);
 
   // Check feature flag from API on load
+  // Admin users and demo mode (?demo=true) always have access
   useEffect(() => {
     const checkFeatureFlag = async () => {
       try {
+        // Check if demo mode is enabled via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemoMode = urlParams.get('demo') === 'true';
+
+        // Check if user is authenticated as admin
+        let isAdmin = false;
+        try {
+          const authResponse = await fetch('/api/auth/verify');
+          const authData = await authResponse.json();
+          isAdmin = authData.authenticated === true;
+        } catch {
+          // Not authenticated, continue with feature flag check
+        }
+
+        // Admin and demo mode always have access
+        if (isDemoMode || isAdmin) {
+          setIsFeatureEnabled(true);
+          setFeatureFlagLoading(false);
+          return;
+        }
+
+        // Check feature flag for regular users
         const response = await fetch('/api/admin/feature-flags');
         const result = await response.json();
         if (result.success && result.data?.flags) {

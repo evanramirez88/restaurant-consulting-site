@@ -5,8 +5,9 @@ import { useSEO } from '../src/components/SEO';
 
 // ============================================
 // COMING SOON FLAG - Set to false when ready to launch
+// Admin users and demo mode (?demo=true) bypass this flag
 // ============================================
-const SHOW_COMING_SOON = true;
+const SHOW_COMING_SOON_DEFAULT = true;
 
 interface LoginStatus {
   type: 'idle' | 'loading' | 'error' | 'success';
@@ -18,8 +19,8 @@ type AuthMode = 'password' | 'magic-link';
 // ============================================
 // COMING SOON WRAPPER
 // ============================================
-const ComingSoonWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  if (!SHOW_COMING_SOON) return <>{children}</>;
+const ComingSoonWrapper: React.FC<{ children: React.ReactNode; showComingSoon: boolean }> = ({ children, showComingSoon }) => {
+  if (!showComingSoon) return <>{children}</>;
 
   return (
     <div className="relative">
@@ -74,14 +75,40 @@ const ClientLogin: React.FC = () => {
     message: ''
   });
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(SHOW_COMING_SOON_DEFAULT);
+  const [accessCheckDone, setAccessCheckDone] = useState(false);
+
+  // Check if demo mode or admin - bypass coming soon
+  useEffect(() => {
+    const checkAccess = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDemoMode = urlParams.get('demo') === 'true';
+
+      let isAdmin = false;
+      try {
+        const authResponse = await fetch('/api/auth/verify');
+        const authData = await authResponse.json();
+        isAdmin = authData.authenticated === true;
+      } catch {
+        // Not admin
+      }
+
+      if (isDemoMode || isAdmin) {
+        setShowComingSoon(false);
+      }
+      setAccessCheckDone(true);
+    };
+    checkAccess();
+  }, []);
 
   // Check for magic link token in URL
   useEffect(() => {
+    if (!accessCheckDone) return;
     const token = searchParams.get('token');
-    if (token && !SHOW_COMING_SOON) {
+    if (token && !showComingSoon) {
       verifyMagicLinkToken(token);
     }
-  }, [searchParams]);
+  }, [searchParams, showComingSoon, accessCheckDone]);
 
   // Verify magic link token
   const verifyMagicLinkToken = async (token: string) => {
@@ -121,7 +148,7 @@ const ClientLogin: React.FC = () => {
 
   // Check if already authenticated
   useEffect(() => {
-    if (SHOW_COMING_SOON) return;
+    if (!accessCheckDone || showComingSoon) return;
     if (searchParams.get('token')) return; // Skip if verifying token
 
     const checkAuth = async () => {
@@ -472,7 +499,16 @@ const ClientLogin: React.FC = () => {
     </div>
   );
 
-  return <ComingSoonWrapper>{loginForm}</ComingSoonWrapper>;
+  // Show loading while checking access
+  if (!accessCheckDone) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-dark via-gray-900 to-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+      </div>
+    );
+  }
+
+  return <ComingSoonWrapper showComingSoon={showComingSoon}>{loginForm}</ComingSoonWrapper>;
 };
 
 export default ClientLogin;

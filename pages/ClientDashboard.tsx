@@ -24,8 +24,9 @@ import { useSEO } from '../src/components/SEO';
 
 // ============================================
 // COMING SOON FLAG - Set to false when ready to launch
+// Admin users and demo mode (?demo=true) bypass this flag
 // ============================================
-const SHOW_COMING_SOON = true;
+const SHOW_COMING_SOON_DEFAULT = true;
 
 // ============================================
 // TYPE DEFINITIONS
@@ -469,10 +470,37 @@ const ClientDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [client, setClient] = useState<ClientData | null>(null);
+  const [showComingSoon, setShowComingSoon] = useState(SHOW_COMING_SOON_DEFAULT);
+  const [accessCheckDone, setAccessCheckDone] = useState(false);
+
+  // Check if demo mode or admin - bypass coming soon
+  useEffect(() => {
+    const checkAccess = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDemoMode = urlParams.get('demo') === 'true';
+
+      let isAdmin = false;
+      try {
+        const authResponse = await fetch('/api/auth/verify');
+        const authData = await authResponse.json();
+        isAdmin = authData.authenticated === true;
+      } catch {
+        // Not admin
+      }
+
+      if (isDemoMode || isAdmin) {
+        setShowComingSoon(false);
+      }
+      setAccessCheckDone(true);
+    };
+    checkAccess();
+  }, []);
 
   // Check authentication
   useEffect(() => {
-    if (SHOW_COMING_SOON) {
+    if (!accessCheckDone) return;
+
+    if (showComingSoon) {
       setIsLoading(false);
       return;
     }
@@ -497,10 +525,19 @@ const ClientDashboard: React.FC = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, accessCheckDone, showComingSoon]);
+
+  // Show loading while checking access
+  if (!accessCheckDone) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-primary-dark to-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+      </div>
+    );
+  }
 
   // Show Coming Soon overlay
-  if (SHOW_COMING_SOON) {
+  if (showComingSoon) {
     return <ComingSoonOverlay />;
   }
 
