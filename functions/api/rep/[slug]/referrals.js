@@ -1,7 +1,39 @@
 // Rep Referrals API - Get and create referrals for a rep
+// Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+// Demo referrals data
+const DEMO_REFERRALS = [
+  {
+    id: 'demo-referral-001',
+    rep_id: 'demo-rep-001',
+    referral_name: 'Jane Doe',
+    referral_company: 'Seaside Grill',
+    referral_email: 'jane@seasidegrill.com',
+    referral_phone: '508-555-9999',
+    notes: 'Interested in Toast POS system',
+    status: 'pending',
+    commission_amount: 500,
+    created_at: Date.now() - 5 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 5 * 24 * 60 * 60 * 1000
+  },
+  {
+    id: 'demo-referral-002',
+    rep_id: 'demo-rep-001',
+    referral_name: 'Bob Johnson',
+    referral_company: 'Harbor Cafe',
+    referral_email: 'bob@harborcafe.com',
+    referral_phone: '508-555-8888',
+    notes: 'Converting from Square',
+    status: 'paid',
+    commission_amount: 750,
+    paid_at: Date.now() - 10 * 24 * 60 * 60 * 1000,
+    created_at: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 10 * 24 * 60 * 60 * 1000
+  }
+];
 
 function parseCookies(cookieHeader) {
   const cookies = {};
@@ -50,6 +82,19 @@ export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
     const { slug } = context.params;
+
+    // Check for demo mode - slug starts with "demo-"
+    const url = new URL(context.request.url);
+    const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+    if (isDemoMode) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: DEMO_REFERRALS
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Verify authentication
     const auth = await verifyRepAuth(context.request, context.env, slug);

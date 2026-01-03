@@ -1,4 +1,19 @@
 // Rep Info API - Get rep information by slug
+// Supports demo mode for slugs starting with "demo-"
+
+// Demo rep data for testing
+const DEMO_REPS = {
+  'demo-rep': {
+    id: 'demo-rep-001',
+    name: 'Demo Sales Rep',
+    email: 'demo-rep@example.com',
+    territory: 'Cape Cod',
+    slug: 'demo-rep',
+    avatar_url: null,
+    portal_enabled: true
+  }
+};
+
 export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
@@ -10,6 +25,19 @@ export async function onRequestGet(context) {
         error: 'Rep slug is required'
       }), {
         status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check for demo mode - slug starts with "demo-"
+    const url = new URL(context.request.url);
+    const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+    if (isDemoMode && DEMO_REPS[slug]) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: DEMO_REPS[slug]
+      }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }

@@ -5,6 +5,7 @@
  *
  * Returns client information by slug for portal display.
  * This is a public endpoint for loading portal landing pages.
+ * Supports demo mode for slugs starting with "demo-".
  */
 
 const corsHeaders = {
@@ -14,8 +15,26 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
+// Demo client data for testing
+const DEMO_CLIENTS = {
+  'demo-seafood-shack': {
+    id: 'demo-client-001',
+    name: 'Demo User',
+    company: 'Demo Seafood Shack',
+    email: 'demo@example.com',
+    slug: 'demo-seafood-shack',
+    avatar_url: null,
+    portal_enabled: true,
+    support_plan_tier: 'professional',
+    support_plan_status: 'active',
+    support_plan_started: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    support_plan_renews: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    timezone: 'America/New_York'
+  }
+};
+
 export async function onRequestGet(context) {
-  const { params, env } = context;
+  const { params, env, request } = context;
   const { slug } = params;
 
   if (!slug) {
@@ -24,6 +43,20 @@ export async function onRequestGet(context) {
       error: 'Missing client slug'
     }), {
       status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  // Check for demo mode - slug starts with "demo-" or has demo query param
+  const url = new URL(request.url);
+  const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+  if (isDemoMode && DEMO_CLIENTS[slug]) {
+    return new Response(JSON.stringify({
+      success: true,
+      data: DEMO_CLIENTS[slug]
+    }), {
+      status: 200,
       headers: corsHeaders
     });
   }

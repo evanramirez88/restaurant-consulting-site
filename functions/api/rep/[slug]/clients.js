@@ -1,7 +1,50 @@
 // Rep Clients API - Get assigned clients for a rep
+// Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+// Demo clients data
+const DEMO_CLIENTS = [
+  {
+    id: 'demo-client-001',
+    name: 'Demo User',
+    company: 'Demo Seafood Shack',
+    email: 'demo@example.com',
+    phone: '508-555-1234',
+    slug: 'demo-seafood-shack',
+    portal_enabled: true,
+    support_plan_tier: 'professional',
+    support_plan_status: 'active',
+    avatar_url: null,
+    timezone: 'America/New_York',
+    updated_at: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    assignment_role: 'primary',
+    commission_rate: 0.10,
+    assigned_at: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    city: 'Provincetown',
+    state: 'MA'
+  },
+  {
+    id: 'demo-client-002',
+    name: 'John Smith',
+    company: 'Cape Cod Bistro',
+    email: 'john@capebistro.com',
+    phone: '508-555-5678',
+    slug: 'cape-cod-bistro',
+    portal_enabled: true,
+    support_plan_tier: 'basic',
+    support_plan_status: 'active',
+    avatar_url: null,
+    timezone: 'America/New_York',
+    updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    assignment_role: 'secondary',
+    commission_rate: 0.05,
+    assigned_at: Date.now() - 60 * 24 * 60 * 60 * 1000,
+    city: 'Hyannis',
+    state: 'MA'
+  }
+];
 
 function parseCookies(cookieHeader) {
   const cookies = {};
@@ -50,6 +93,19 @@ export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
     const { slug } = context.params;
+
+    // Check for demo mode - slug starts with "demo-"
+    const url = new URL(context.request.url);
+    const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+    if (isDemoMode) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: DEMO_CLIENTS
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Verify authentication
     const auth = await verifyRepAuth(context.request, context.env, slug);

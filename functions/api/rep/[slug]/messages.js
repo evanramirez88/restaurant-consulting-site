@@ -1,7 +1,34 @@
 // Rep Messages API - Get and send private messages between rep and admin
+// Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+// Demo messages data
+const DEMO_MESSAGES = [
+  {
+    id: 'demo-msg-001',
+    thread_id: 'demo-thread-001',
+    sender_type: 'admin',
+    sender_id: 'admin',
+    subject: null,
+    body: 'Welcome to the rep portal! Let us know if you have any questions.',
+    is_private: true,
+    read_at: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000
+  },
+  {
+    id: 'demo-msg-002',
+    thread_id: 'demo-thread-001',
+    sender_type: 'rep',
+    sender_id: 'demo-rep-001',
+    subject: null,
+    body: 'Thanks! I have a question about commission rates.',
+    is_private: true,
+    read_at: null,
+    created_at: Date.now() - 5 * 24 * 60 * 60 * 1000
+  }
+];
 
 function parseCookies(cookieHeader) {
   const cookies = {};
@@ -50,6 +77,20 @@ export async function onRequestGet(context) {
   try {
     const db = context.env.DB;
     const { slug } = context.params;
+
+    // Check for demo mode - slug starts with "demo-"
+    const url = new URL(context.request.url);
+    const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+    if (isDemoMode) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: DEMO_MESSAGES,
+        threadId: 'demo-thread-001'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Verify authentication
     const auth = await verifyRepAuth(context.request, context.env, slug);

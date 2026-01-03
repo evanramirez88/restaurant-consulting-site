@@ -5,11 +5,36 @@
  * POST /api/portal/[slug]/messages - Create a new message thread
  *
  * Requires client authentication.
+ * Supports demo mode for slugs starting with "demo-".
  */
 
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const COOKIE_NAME = 'ccrc_client_token';
+
+// Demo messages data
+const DEMO_MESSAGES = [
+  {
+    id: 'demo-thread-001',
+    title: 'Toast Setup Question',
+    thread_type: 'support',
+    status: 'open',
+    priority: 'normal',
+    last_message_at: Date.now() - 2 * 60 * 60 * 1000,
+    created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    unread_count: 1
+  },
+  {
+    id: 'demo-thread-002',
+    title: 'Menu Update Request',
+    thread_type: 'request',
+    status: 'resolved',
+    priority: 'low',
+    last_message_at: Date.now() - 5 * 24 * 60 * 60 * 1000,
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    unread_count: 0
+  }
+];
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +119,20 @@ export async function onRequestGet(context) {
       error: 'Missing client slug'
     }), {
       status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  // Check for demo mode - slug starts with "demo-"
+  const url = new URL(request.url);
+  const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+  if (isDemoMode) {
+    return new Response(JSON.stringify({
+      success: true,
+      data: DEMO_MESSAGES
+    }), {
+      status: 200,
       headers: corsHeaders
     });
   }

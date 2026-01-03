@@ -5,11 +5,45 @@
  *
  * Returns projects for the authenticated client.
  * Requires client authentication.
+ * Supports demo mode for slugs starting with "demo-".
  */
 
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const COOKIE_NAME = 'ccrc_client_token';
+
+// Demo projects data
+const DEMO_PROJECTS = [
+  {
+    id: 'demo-project-001',
+    name: 'Toast POS Installation',
+    description: 'Complete Toast POS system installation including hardware setup and staff training.',
+    status: 'in_progress',
+    progress_percentage: 65,
+    start_date: Date.now() - 14 * 24 * 60 * 60 * 1000,
+    due_date: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    milestone_json: JSON.stringify([
+      { name: 'Hardware Delivery', completed: true },
+      { name: 'System Configuration', completed: true },
+      { name: 'Menu Setup', completed: false },
+      { name: 'Staff Training', completed: false }
+    ]),
+    created_at: Date.now() - 14 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 1 * 24 * 60 * 60 * 1000
+  },
+  {
+    id: 'demo-project-002',
+    name: 'Menu Digitization',
+    description: 'Converting paper menus to digital format for Toast POS.',
+    status: 'pending',
+    progress_percentage: 0,
+    start_date: null,
+    due_date: Date.now() + 21 * 24 * 60 * 60 * 1000,
+    milestone_json: null,
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000
+  }
+];
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +121,20 @@ export async function onRequestGet(context) {
       error: 'Missing client slug'
     }), {
       status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  // Check for demo mode - slug starts with "demo-"
+  const url = new URL(request.url);
+  const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
+
+  if (isDemoMode) {
+    return new Response(JSON.stringify({
+      success: true,
+      data: DEMO_PROJECTS
+    }), {
+      status: 200,
       headers: corsHeaders
     });
   }
