@@ -27,7 +27,7 @@ const FAQ_DATA = [
   },
   {
     question: "How much do Toast support plans cost?",
-    answer: "Toast Guardian plans start at $125/month for Essential tier (2 hours included, 48-hour response), $250/month for Professional tier (4 hours, 24-hour response), and $400/month for Premium tier (8 hours, same-day response)."
+    answer: "Toast Guardian plans start at $350/month for Core tier (1.5 hours included, 24-48hr response), $500/month for Professional tier (3 hours, 4-hour SLA, includes GMB management), and $800/month for Premium tier (5 hours, 2-hour SLA, includes website hosting and emergency support). Annual prepay saves one month free."
   },
   {
     question: "Do you offer emergency Toast POS support?",
@@ -38,7 +38,7 @@ const FAQ_DATA = [
 const Services: React.FC = () => {
   useSEO({
     title: 'Toast POS Installation & Support Plans | Cape Cod Restaurant Consulting',
-    description: 'Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Toast Guardian support starting at $125/month. Cape Cod & SE Massachusetts.',
+    description: 'Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Toast Guardian support starting at $350/month with quarterly billing. Cape Cod & nationwide remote support.',
     canonical: 'https://ccrestaurantconsulting.com/#/services',
   });
 
@@ -76,68 +76,73 @@ const Services: React.FC = () => {
 
   const plans = [
     {
-      name: 'Essential',
-      monthlyPrice: 125,
-      annualPrice: 1200,
-      annualSavings: 300,
-      description: 'Perfect for single-location restaurants with basic support needs',
+      name: 'Core',
+      monthlyPrice: 350,
+      quarterlyPrice: 1050,
+      annualPrice: 3850,
+      annualSavings: 350,
+      description: 'Essential coverage for single-location restaurants with straightforward needs',
       features: [
-        '2 hours per month included',
-        '48-hour response time',
+        '1.5 hours per month included',
+        '24-48 hour response time',
         'Email support',
-        'Monthly plan reviews',
-        'Basic menu guidance'
+        'Basic monitoring alerts',
+        'Quarterly system health check',
+        'Knowledge base access'
       ],
       highlighted: false
     },
     {
       name: 'Professional',
-      monthlyPrice: 250,
-      annualPrice: 2400,
-      annualSavings: 600,
-      description: 'For busy restaurants that need faster response times',
+      monthlyPrice: 500,
+      quarterlyPrice: 1500,
+      annualPrice: 5500,
+      annualSavings: 500,
+      description: 'Comprehensive support with faster response and proactive management',
       features: [
-        '4 hours per month included',
-        '24-hour response time',
-        'Priority email & phone support',
-        'Weekly optimization consultations',
-        'Menu engineering & analysis',
-        'Staff training resources'
+        '3 hours per month included',
+        '4-hour response SLA',
+        'Phone & email support',
+        'Google Business Profile management',
+        'Monthly system review',
+        '1 on-site visit per quarter'
       ],
       highlighted: true
     },
     {
       name: 'Premium',
-      monthlyPrice: 400,
-      annualPrice: 3600,
-      annualSavings: 1200,
-      description: 'Maximum coverage for high-volume operations',
+      monthlyPrice: 800,
+      quarterlyPrice: 2400,
+      annualPrice: 8800,
+      annualSavings: 800,
+      description: 'Full-service partnership for high-volume and complex operations',
       features: [
-        '8 hours per month included',
-        'Same-day response time',
-        'Dedicated account manager',
-        'Daily POS monitoring & alerts',
-        'Advanced menu optimization',
-        'Full staff training & onboarding',
-        'Quarterly business reviews'
+        '5 hours per month included',
+        '2-hour response SLA',
+        'Emergency after-hours included',
+        'Website hosting & maintenance',
+        'Third-party coordination (Loman, DoorDash)',
+        '2 on-site visits per quarter',
+        'Monthly strategy call',
+        'Dedicated Slack channel'
       ],
       highlighted: false
     }
   ];
 
   const allFeatures = [
-    { name: 'Monthly hours included', essential: '2', professional: '4', premium: '8' },
-    { name: 'Response time', essential: '48-hour', professional: '24-hour', premium: 'Same-day' },
-    { name: 'Email support', essential: true, professional: true, premium: true },
-    { name: 'Phone support', essential: false, professional: true, premium: true },
-    { name: 'Priority support', essential: false, professional: true, premium: true },
-    { name: 'Plan reviews', essential: 'Monthly', professional: 'Weekly', premium: 'Daily monitoring' },
-    { name: 'Menu guidance', essential: 'Basic', professional: 'Engineering & analysis', premium: 'Advanced optimization' },
-    { name: 'Staff training resources', essential: false, professional: true, premium: true },
-    { name: 'Dedicated account manager', essential: false, professional: false, premium: true },
-    { name: 'POS monitoring & alerts', essential: false, professional: false, premium: true },
-    { name: 'Staff onboarding', essential: false, professional: false, premium: true },
-    { name: 'Business reviews', essential: false, professional: false, premium: 'Quarterly' }
+    { name: 'Monthly hours included', core: '1.5', professional: '3', premium: '5' },
+    { name: 'Response SLA', core: '24-48 hour', professional: '4-hour', premium: '2-hour' },
+    { name: 'Email support', core: true, professional: true, premium: true },
+    { name: 'Phone support', core: false, professional: true, premium: true },
+    { name: 'Emergency after-hours', core: false, professional: false, premium: true },
+    { name: 'System monitoring', core: 'Basic alerts', professional: 'Full monitoring', premium: 'Proactive optimization' },
+    { name: 'Google Business Profile', core: false, professional: true, premium: 'Full management' },
+    { name: 'Website hosting', core: false, professional: false, premium: true },
+    { name: 'Third-party coordination', core: false, professional: false, premium: true },
+    { name: 'On-site visits', core: false, professional: '1/quarter', premium: '2/quarter' },
+    { name: 'Strategy calls', core: false, professional: false, premium: 'Monthly' },
+    { name: 'Dedicated Slack channel', core: false, professional: false, premium: true }
   ];
 
   return (
@@ -275,12 +280,22 @@ const Services: React.FC = () => {
                   boxShadow: billingPeriod === 'annual' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
                 }}
               >
-                Annual
+                Annual Prepay
                 <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full whitespace-nowrap">
-                  Save up to $1,200
+                  1 Month Free
                 </span>
               </button>
             </div>
+          </div>
+
+          {/* Quarterly Billing Note */}
+          <div className="text-center mb-8 animate-on-scroll">
+            <p className="text-gray-600 text-sm">
+              All plans billed <strong className="text-gray-900">quarterly</strong> ($
+              {billingPeriod === 'monthly' ? '1,050-2,400' : '3,850-8,800'}/
+              {billingPeriod === 'monthly' ? 'quarter' : 'year'}).
+              {billingPeriod === 'annual' && ' Annual prepay saves one month free.'}
+            </p>
           </div>
 
           {/* Pricing Cards */}
@@ -358,7 +373,7 @@ const Services: React.FC = () => {
                 <thead>
                   <tr className="bg-gray-50 border-b-2 border-gray-200">
                     <th className="text-left p-4 font-semibold text-gray-900">Feature</th>
-                    <th className="text-center p-4 font-semibold text-gray-900">Essential</th>
+                    <th className="text-center p-4 font-semibold text-gray-900">Core</th>
                     <th className="text-center p-4 font-semibold text-amber-600 bg-amber-50">Professional</th>
                     <th className="text-center p-4 font-semibold text-gray-900">Premium</th>
                   </tr>
@@ -370,14 +385,14 @@ const Services: React.FC = () => {
                         {feature.name}
                       </td>
                       <td className="p-4 text-center border-b border-gray-200">
-                        {typeof feature.essential === 'boolean' ? (
-                          feature.essential ? (
+                        {typeof feature.core === 'boolean' ? (
+                          feature.core ? (
                             <Check className="w-5 h-5 text-green-500 mx-auto" />
                           ) : (
                             <X className="w-5 h-5 text-gray-300 mx-auto" />
                           )
                         ) : (
-                          <span className="text-gray-700 text-sm">{feature.essential}</span>
+                          <span className="text-gray-700 text-sm">{feature.core}</span>
                         )}
                       </td>
                       <td className="p-4 text-center bg-amber-50 border-b border-amber-100">
@@ -417,7 +432,7 @@ const Services: React.FC = () => {
                   </div>
                   <div className="p-4 space-y-3">
                     {allFeatures.map((feature, idx) => {
-                      const value = plan.name === 'Essential' ? feature.essential :
+                      const value = plan.name === 'Core' ? feature.core :
                                     plan.name === 'Professional' ? feature.professional :
                                     feature.premium;
                       return (
