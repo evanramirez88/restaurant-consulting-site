@@ -11,6 +11,8 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Edit3,
   MapPin,
@@ -22,7 +24,13 @@ import {
   Wrench,
   Loader2,
   Undo2,
-  Redo2
+  Redo2,
+  X,
+  PanelLeftClose,
+  PanelRightClose,
+  GripVertical,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 // ============================================
@@ -173,6 +181,57 @@ function classifyAddress(addr: string): Partial<TravelSettings> {
 }
 
 // ============================================
+// COLLAPSIBLE PANEL COMPONENT
+// ============================================
+interface CollapsiblePanelProps {
+  title: string;
+  icon?: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  badge?: string | number;
+  maxHeight?: string;
+}
+
+const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children,
+  badge,
+  maxHeight = '300px'
+}) => (
+  <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden transition-all duration-200">
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center gap-2 px-4 py-3 hover:bg-slate-700/30 transition-colors text-left"
+    >
+      {icon && <span className="text-slate-400">{icon}</span>}
+      <span className="text-xs font-semibold uppercase tracking-wider text-slate-200 flex-1">{title}</span>
+      {badge !== undefined && (
+        <span className="px-2 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded-full">{badge}</span>
+      )}
+      <span className="text-slate-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+        <ChevronDown size={16} />
+      </span>
+    </button>
+    <div
+      className="transition-all duration-200 ease-in-out"
+      style={{
+        maxHeight: isOpen ? maxHeight : '0px',
+        opacity: isOpen ? 1 : 0,
+        overflow: 'hidden'
+      }}
+    >
+      <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: `calc(${maxHeight} - 16px)` }}>
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -255,6 +314,29 @@ const QuoteBuilder: React.FC = () => {
   const [emailForm, setEmailForm] = useState({ name: '', email: '', restaurantName: '', phone: '' });
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+
+  // Panel collapse states for left sidebar
+  const [leftPanels, setLeftPanels] = usePersistentState(LS_KEY + ":leftPanels", {
+    stations: true,
+    templates: true,
+    hardware: false,
+    objects: false
+  });
+
+  // Panel collapse states for right sidebar
+  const [rightPanels, setRightPanels] = usePersistentState(LS_KEY + ":rightPanels", {
+    integrations: true,
+    travel: true,
+    summary: true
+  });
+
+  // Toggle panel helper
+  const toggleLeftPanel = (panel: keyof typeof leftPanels) => {
+    setLeftPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
+  const toggleRightPanel = (panel: keyof typeof rightPanels) => {
+    setRightPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
 
   // Undo/Redo history
   const [history, setHistory] = useState<Location[][]>([]);
@@ -1028,74 +1110,134 @@ const QuoteBuilder: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-900 min-h-screen relative -mt-[72px] pt-[72px]">
-      {/* Header Toolbar */}
-      <header className="sticky top-[72px] z-30 border-b border-slate-700 bg-slate-900/95 backdrop-blur">
-        <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
-          <h1 className="text-white font-serif font-semibold text-sm mr-4">Quote Builder - POS + Networking</h1>
+    <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col overflow-hidden">
+      {/* Header Toolbar - Compact */}
+      <header className="flex-shrink-0 border-b border-slate-700 bg-slate-900/95 backdrop-blur z-20">
+        <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto">
+          {/* Back button and title */}
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mr-2 flex-shrink-0"
+          >
+            <X size={18} />
+          </Link>
+          <h1 className="text-white font-serif font-semibold text-sm mr-4 flex-shrink-0">Quote Builder</h1>
+
+          <div className="w-px h-6 bg-slate-700 mx-1 flex-shrink-0" />
 
           {/* Location selector */}
-          <select
-            className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white"
-            value={locId}
-            onChange={e => setLocId(e.target.value)}
-          >
-            {locations.map(l => (
-              <option key={l.id} value={l.id}>{l.name}</option>
-            ))}
-          </select>
-          <button onClick={addLocation} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-            <Plus size={14} /> Location
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Building2 size={14} className="text-slate-400" />
+            <select
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white"
+              value={locId}
+              onChange={e => setLocId(e.target.value)}
+            >
+              {locations.map(l => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+            <button onClick={addLocation} className="bg-slate-700 hover:bg-slate-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Location">
+              <Plus size={12} />
+            </button>
+          </div>
 
           {/* Address input */}
           <input
-            className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white w-64"
-            placeholder="Location Address (auto-detects zone)"
+            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white w-48 flex-shrink-0"
+            placeholder="Address (auto-detects zone)"
             value={currentLocation?.address || ''}
             onChange={e => setAddress(e.target.value)}
           />
 
+          <div className="w-px h-6 bg-slate-700 mx-1 flex-shrink-0" />
+
           {/* Floor selector */}
-          <select
-            className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white"
-            value={floorId}
-            onChange={e => setFloorId(e.target.value)}
-          >
-            {currentLocation?.floors.map(f => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
-          <button onClick={addFloor} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-            <Plus size={14} /> Floor
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Layers size={14} className="text-slate-400" />
+            <select
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white"
+              value={floorId}
+              onChange={e => setFloorId(e.target.value)}
+            >
+              {currentLocation?.floors.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+            <button onClick={addFloor} className="bg-slate-700 hover:bg-slate-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Floor">
+              <Plus size={12} />
+            </button>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Undo/Redo */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canUndo ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={14} />
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canRedo ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={14} />
+            </button>
+          </div>
+
+          {/* Sidebar toggles */}
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <button
+              onClick={() => setLeftOpen(!leftOpen)}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${leftOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
+              title={leftOpen ? "Hide left panel" : "Show left panel"}
+            >
+              <PanelLeftClose size={14} />
+            </button>
+            <button
+              onClick={() => setRightOpen(!rightOpen)}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${rightOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
+              title={rightOpen ? "Hide right panel" : "Show right panel"}
+            >
+              <PanelRightClose size={14} />
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="flex relative" style={{ height: 'calc(100vh - 120px)' }}>
+      {/* Main Content Area */}
+      <div className="flex flex-1 relative overflow-hidden">
         {/* Left Sidebar */}
-        {leftOpen && (
-          <aside className="w-80 border-r border-slate-700 bg-slate-900/95 overflow-y-auto p-4 space-y-4">
-            <button
-              onClick={() => setLeftOpen(false)}
-              className="absolute top-2 right-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              aria-label="Close left sidebar"
+        <aside
+          className={`flex-shrink-0 border-r border-slate-700 bg-slate-900/95 flex flex-col transition-all duration-300 ease-in-out ${leftOpen ? 'w-72' : 'w-0'}`}
+          style={{ overflow: leftOpen ? 'visible' : 'hidden' }}
+        >
+          <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ display: leftOpen ? 'block' : 'none' }}>
+            {/* Add Station Panel */}
+            <CollapsiblePanel
+              title="Add Station"
+              icon={<Plus size={14} />}
+              isOpen={leftPanels.stations}
+              onToggle={() => toggleLeftPanel('stations')}
+              badge={currentFloor?.stations.length || 0}
+              maxHeight="200px"
             >
-              <ChevronLeft size={18} />
-            </button>
-
-            {/* Blank Station */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Add Station</h3>
-              <div className="flex gap-2 flex-wrap">
+              <div className="space-y-2">
                 <button
                   onClick={() => addStation('Blank Station')}
-                  className="bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   + Blank Station
                 </button>
                 <select
-                  className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white flex-1"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white"
                   onChange={e => { if (e.target.value) addStation(e.target.value); e.target.value = ''; }}
                   defaultValue=""
                 >
@@ -1105,12 +1247,17 @@ const QuoteBuilder: React.FC = () => {
                   ))}
                 </select>
               </div>
-            </div>
+            </CollapsiblePanel>
 
-            {/* Templates */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Station Templates</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+            {/* Templates Panel */}
+            <CollapsiblePanel
+              title="Station Templates"
+              icon={<Layers size={14} />}
+              isOpen={leftPanels.templates}
+              onToggle={() => toggleLeftPanel('templates')}
+              maxHeight="280px"
+            >
+              <div className="space-y-1.5">
                 {STATION_TEMPLATES.map(t => (
                   <button
                     key={t.id}
@@ -1119,100 +1266,105 @@ const QuoteBuilder: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium" style={{ color: t.color }}>{t.label}</span>
-                      <span className="text-xs text-slate-200">{t.ttiMin} min</span>
+                      <span className="text-xs text-slate-400">{t.ttiMin}m</span>
                     </div>
                   </button>
                 ))}
               </div>
-            </div>
+            </CollapsiblePanel>
 
-            {/* Hardware Catalog */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Hardware (Labor Only)</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {hardwareCatalog.map(hw => (
-                  <div key={hw.id} className="border border-slate-600 rounded-lg px-3 py-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div>
-                        <div className="font-medium text-white">{hw.name}</div>
-                        <div className="text-xs text-slate-200">{hw.category} - TTI: {hw.ttiMin} min</div>
-                      </div>
-                    </div>
-                    {selected.kind === 'station' && (
-                      <button
-                        onClick={() => addHardwareToStation(selected.id!, hw.id)}
-                        className="mt-2 w-full bg-slate-700 hover:bg-slate-600 rounded px-2 py-1 text-xs text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                      >
-                        Add to: {currentFloor?.stations.find(s => s.id === selected.id)?.name || "Station"}
-                      </button>
-                    )}
+            {/* Hardware Catalog Panel */}
+            <CollapsiblePanel
+              title="Hardware Catalog"
+              icon={<Wrench size={14} />}
+              isOpen={leftPanels.hardware}
+              onToggle={() => toggleLeftPanel('hardware')}
+              badge={selected.kind === 'station' ? '!' : undefined}
+              maxHeight="320px"
+            >
+              <div className="space-y-1.5">
+                {selected.kind === 'station' && (
+                  <div className="text-xs text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2 mb-2 border border-amber-500/30">
+                    Click hardware to add to: <strong>{currentFloor?.stations.find(s => s.id === selected.id)?.name}</strong>
                   </div>
+                )}
+                {hardwareCatalog.map(hw => (
+                  <button
+                    key={hw.id}
+                    onClick={() => selected.kind === 'station' ? addHardwareToStation(selected.id!, hw.id) : null}
+                    disabled={selected.kind !== 'station'}
+                    className={`w-full text-left border border-slate-600 rounded-lg px-3 py-2 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
+                      selected.kind === 'station' ? 'hover:bg-slate-700/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="text-sm font-medium text-white">{hw.name}</div>
+                    <div className="text-xs text-slate-400">{hw.category} • {hw.ttiMin}m</div>
+                  </button>
                 ))}
               </div>
-            </div>
+            </CollapsiblePanel>
 
-            {/* FOH/BOH Objects */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Objects</h3>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Objects Panel */}
+            <CollapsiblePanel
+              title="Floor Objects"
+              icon={<MapPin size={14} />}
+              isOpen={leftPanels.objects}
+              onToggle={() => toggleLeftPanel('objects')}
+              maxHeight="400px"
+            >
+              <div className="space-y-3">
                 <div>
-                  <div className="text-xs text-slate-200 mb-1">FOH</div>
-                  {FOH_OBJECTS.map(o => (
-                    <button
-                      key={o.type}
-                      onClick={() => addObject(o)}
-                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    >
-                      {o.type}
-                    </button>
-                  ))}
+                  <div className="text-xs text-amber-400 font-medium mb-1.5">FOH</div>
+                  <div className="flex flex-wrap gap-1">
+                    {FOH_OBJECTS.map(o => (
+                      <button
+                        key={o.type}
+                        onClick={() => addObject(o)}
+                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                      >
+                        {o.type}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-200 mb-1">BOH</div>
-                  {BOH_OBJECTS.map(o => (
+                  <div className="text-xs text-emerald-400 font-medium mb-1.5">BOH</div>
+                  <div className="flex flex-wrap gap-1">
+                    {BOH_OBJECTS.map(o => (
+                      <button
+                        key={o.type}
+                        onClick={() => addObject(o)}
+                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                      >
+                        {o.type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-700">
+                  <div className="text-xs text-slate-400 font-medium mb-1.5">Structure</div>
+                  <div className="flex flex-wrap gap-1">
+                    {STRUCTURE_OBJECTS.map(o => (
+                      <button
+                        key={o.type}
+                        onClick={() => addObject(o)}
+                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                      >
+                        {o.type}
+                      </button>
+                    ))}
                     <button
-                      key={o.type}
-                      onClick={() => addObject(o)}
-                      className="w-full text-left px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 mb-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      onClick={addLabel}
+                      className="px-2 py-1 text-xs border border-cyan-600 bg-cyan-600/20 rounded hover:bg-cyan-600/40 text-cyan-300 focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
                     >
-                      {o.type}
+                      + Label
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-slate-700">
-                <div className="text-xs text-slate-200 mb-1">Structure</div>
-                <div className="flex flex-wrap gap-1">
-                  {STRUCTURE_OBJECTS.map(o => (
-                    <button
-                      key={o.type}
-                      onClick={() => addObject(o)}
-                      className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    >
-                      {o.type}
-                    </button>
-                  ))}
-                  <button
-                    onClick={addLabel}
-                    className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  >
-                    + Label
-                  </button>
-                </div>
-              </div>
-            </div>
-          </aside>
-        )}
-
-        {!leftOpen && (
-          <button
-            onClick={() => setLeftOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-r-lg p-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            aria-label="Open left sidebar"
-          >
-            <ChevronRight size={18} />
-          </button>
-        )}
+            </CollapsiblePanel>
+          </div>
+        </aside>
 
         {/* Canvas Area */}
         <div
@@ -1427,71 +1579,62 @@ const QuoteBuilder: React.FC = () => {
             </div>
           </div>
 
-          {/* Zoom controls */}
-          <div className="absolute right-4 bottom-4 flex items-center gap-2 bg-slate-800/90 rounded-lg px-3 py-2 border border-slate-600">
-            <button onClick={() => setZoom(z => Math.min(2.5, +(z + 0.1).toFixed(2)))} className="text-white hover:text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Zoom in">
-              <ZoomIn size={18} />
-            </button>
-            <span className="text-sm text-white">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))} className="text-white hover:text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Zoom out">
-              <ZoomOut size={18} />
-            </button>
-            <div className="w-px h-4 bg-slate-600 mx-1" />
-            <button onClick={() => { setZoom(1); resetPan(); }} className="text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Reset view">
-              <RefreshCw size={16} />
-            </button>
-          </div>
-
           {/* Pan hint */}
           <div className="absolute left-4 bottom-4 text-xs bg-slate-800/90 rounded-lg px-3 py-2 border border-slate-600 text-slate-300">
-            <span className="text-slate-400">Hold</span> Space <span className="text-slate-400">+ drag to pan • Scroll to pan • Ctrl+scroll to zoom</span>
+            <span className="text-slate-400">Hold</span> Space <span className="text-slate-400">+ drag to pan • Scroll to zoom</span>
           </div>
 
           {/* Scale chip */}
-          <div className="absolute right-4 bottom-16 text-xs bg-slate-800/90 rounded-full px-3 py-1 border border-slate-600 text-white">
-            Grid: 1 ft squares - 1 ft = {currentFloor?.scalePxPerFt || 16} px
+          <div className="absolute right-4 bottom-4 text-xs bg-slate-800/90 rounded-full px-3 py-1 border border-slate-600 text-white">
+            1 ft = {currentFloor?.scalePxPerFt || 16} px
           </div>
         </div>
 
         {/* Right Sidebar */}
-        {rightOpen && (
-          <aside className="w-96 border-l border-slate-700 bg-slate-900/95 overflow-y-auto p-4 space-y-4">
-            <button
-              onClick={() => setRightOpen(false)}
-              className="absolute top-2 left-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              aria-label="Close right sidebar"
+        <aside
+          className={`flex-shrink-0 border-l border-slate-700 bg-slate-900/95 flex flex-col transition-all duration-300 ease-in-out ${rightOpen ? 'w-80' : 'w-0'}`}
+          style={{ overflow: rightOpen ? 'visible' : 'hidden' }}
+        >
+          <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ display: rightOpen ? 'block' : 'none' }}>
+            {/* Integrations Panel */}
+            <CollapsiblePanel
+              title="Integrations"
+              icon={<Cable size={14} />}
+              isOpen={rightPanels.integrations}
+              onToggle={() => toggleRightPanel('integrations')}
+              badge={currentLocation?.integrationIds.length || 0}
+              maxHeight="220px"
             >
-              <ChevronRight size={18} />
-            </button>
-
-            {/* Integrations */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Location Integrations</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-1.5">
                 {integrations.map(integ => (
-                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-slate-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-700/50 focus-within:ring-2 focus-within:ring-amber-500">
+                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-slate-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-700/50 transition-colors">
                     <div>
-                      <div className="font-medium text-white">{integ.name}</div>
-                      <div className="text-[10px] text-slate-200">TTI: {integ.ttiMin} min</div>
+                      <div className="font-medium text-white text-xs">{integ.name}</div>
+                      <div className="text-[10px] text-slate-400">{integ.ttiMin}m</div>
                     </div>
                     <input
                       type="checkbox"
                       checked={currentLocation?.integrationIds.includes(integ.id) || false}
                       onChange={() => toggleIntegration(integ.id)}
-                      className="accent-emerald-500"
+                      className="accent-emerald-500 w-4 h-4"
                     />
                   </label>
                 ))}
               </div>
-            </div>
+            </CollapsiblePanel>
 
-            {/* Travel & Support */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">Travel & Support Plan</h3>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
+            {/* Travel & Support Panel */}
+            <CollapsiblePanel
+              title="Travel & Support"
+              icon={<MapPin size={14} />}
+              isOpen={rightPanels.travel}
+              onToggle={() => toggleRightPanel('travel')}
+              maxHeight="350px"
+            >
+              <div className="space-y-4">
+                {/* Travel Zone */}
                 <div>
-                  <label className="text-xs text-slate-200 mb-1 block">Travel Zone</label>
+                  <label className="text-xs text-slate-400 mb-1.5 block">Travel Zone</label>
                   <select
                     className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
                     value={currentLocation?.travel?.zone || 'cape'}
@@ -1506,8 +1649,10 @@ const QuoteBuilder: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2 text-xs text-white">
+
+                {/* Travel Options */}
+                <div className="flex flex-wrap gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
                     <input
                       type="checkbox"
                       checked={!!currentLocation?.travel?.remote}
@@ -1521,7 +1666,7 @@ const QuoteBuilder: React.FC = () => {
                   </label>
                   {currentLocation?.travel?.zone === 'island' && !currentLocation?.travel?.remote && (
                     <>
-                      <label className="flex items-center gap-2 text-xs text-white">
+                      <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
                         <input
                           type="checkbox"
                           checked={!!currentLocation?.travel?.islandVehicle}
@@ -1531,9 +1676,9 @@ const QuoteBuilder: React.FC = () => {
                           })}
                           className="accent-emerald-500"
                         />
-                        Vehicle ferry
+                        Vehicle Ferry
                       </label>
-                      <label className="flex items-center gap-2 text-xs text-white">
+                      <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
                         <input
                           type="checkbox"
                           checked={!!currentLocation?.travel?.lodging}
@@ -1548,139 +1693,110 @@ const QuoteBuilder: React.FC = () => {
                     </>
                   )}
                 </div>
-              </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-700">
-                <div className="text-xs text-slate-200 mb-2">Support Plan Tiers</div>
-                <div className="grid grid-cols-4 gap-2">
-                  {SUPPORT_TIERS.map(pct => (
-                    <button
-                      key={pct}
-                      className={`py-2 text-center rounded-lg border text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-slate-600 text-slate-200 hover:bg-slate-700/50'}`}
-                      onClick={() => setSupportTier(pct)}
-                    >
-                      {pct === 0 ? 'None' : `${pct}%`}
-                    </button>
-                  ))}
+                {/* Support Tiers */}
+                <div className="pt-3 border-t border-slate-700">
+                  <div className="text-xs text-slate-400 mb-2">Support Plan</div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {SUPPORT_TIERS.map(pct => (
+                      <button
+                        key={pct}
+                        className={`py-1.5 text-center rounded-lg border text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-slate-600 text-slate-300 hover:bg-slate-700/50'}`}
+                        onClick={() => setSupportTier(pct)}
+                      >
+                        {pct === 0 ? 'None' : `${pct}%`}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex items-center gap-3 text-xs">
+                    <label className="flex items-center gap-1.5 text-white cursor-pointer">
+                      <input
+                        type="radio"
+                        name="period"
+                        checked={supportPeriod === 'monthly'}
+                        onChange={() => setSupportPeriod('monthly')}
+                        className="accent-emerald-500"
+                      />
+                      Monthly
+                    </label>
+                    <label className="flex items-center gap-1.5 text-white cursor-pointer">
+                      <input
+                        type="radio"
+                        name="period"
+                        checked={supportPeriod === 'annual'}
+                        onChange={() => setSupportPeriod('annual')}
+                        className="accent-emerald-500"
+                      />
+                      Annual
+                    </label>
+                  </div>
                 </div>
-                <div className="mt-3 flex items-center gap-4 text-xs">
-                  <label className="flex items-center gap-2 text-white">
-                    <input
-                      type="radio"
-                      name="period"
-                      checked={supportPeriod === 'monthly'}
-                      onChange={() => setSupportPeriod('monthly')}
-                      className="accent-emerald-500"
-                    />
-                    Monthly
-                  </label>
-                  <label className="flex items-center gap-2 text-white">
-                    <input
-                      type="radio"
-                      name="period"
-                      checked={supportPeriod === 'annual'}
-                      onChange={() => setSupportPeriod('annual')}
-                      className="accent-emerald-500"
-                    />
-                    Annual (5% off)
-                  </label>
+              </div>
+            </CollapsiblePanel>
+
+            {/* Quote Summary Panel */}
+            <CollapsiblePanel
+              title="Quote Summary"
+              icon={<Download size={14} />}
+              isOpen={rightPanels.summary}
+              onToggle={() => toggleRightPanel('summary')}
+              badge={quoteLoading ? '...' : `$${Math.round(estimate.combinedFirst)}`}
+              maxHeight="400px"
+            >
+              <div className="space-y-3">
+                <div className="space-y-1.5 text-xs">
+                  <SummaryRow label="Hardware labor" dollars={serverQuote?.summary.hardwareCost || 0} />
+                  <SummaryRow label="Station overhead" dollars={serverQuote?.summary.overheadCost || 0} />
+                  <SummaryRow label="Integrations" dollars={serverQuote?.summary.integrationsCost || 0} />
+                  <SummaryRow label="Networking & cabling" dollars={serverQuote?.summary.cablingCost || 0} />
+                  <SummaryRow label="Travel" dollars={estimate.travelCost} />
+                  <div className="h-px bg-slate-700 my-2" />
+                  <SummaryRow
+                    label="Est. install time"
+                    raw={serverQuote?.timeEstimate ? `${serverQuote.timeEstimate.minHours}-${serverQuote.timeEstimate.maxHours} hrs` : '--'}
+                  />
+                  <SummaryRow label="Install cost" dollars={estimate.installCost} />
+                  <SummaryRow
+                    label={`Support (${supportPeriod === 'monthly' ? 'Mo' : 'Yr'})`}
+                    dollars={supportPeriod === 'monthly' ? estimate.supportMonthly : estimate.supportAnnual}
+                  />
+                  <div className="h-px bg-slate-700 my-2" />
+                  <SummaryRow label="Install + Travel" dollars={estimate.installCost + estimate.travelCost} strong />
+                  <SummaryRow
+                    label={`Total (first ${supportPeriod === 'monthly' ? 'mo' : 'yr'})`}
+                    dollars={estimate.combinedFirst}
+                    strong
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-slate-700 space-y-2">
+                  <button
+                    onClick={() => setShowEmailModal(true)}
+                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  >
+                    <Mail size={14} /> Email Quote
+                  </button>
+                  <button
+                    onClick={exportJSON}
+                    className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  >
+                    <Download size={14} /> Export JSON
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Payment Summary */}
-            <div className="bg-brand-dark rounded-xl p-4 border border-slate-600">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">
-                Payment Summary
-                {quoteLoading && <span className="ml-2 text-amber-400 animate-pulse">Calculating...</span>}
-              </h3>
-
-              <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
-                <SummaryRow label="Hardware labor" dollars={serverQuote?.summary.hardwareCost || 0} />
-                <SummaryRow label="Station overhead" dollars={serverQuote?.summary.overheadCost || 0} />
-                <SummaryRow label="Integrations" dollars={serverQuote?.summary.integrationsCost || 0} />
-                <SummaryRow label="Networking & cabling" dollars={serverQuote?.summary.cablingCost || 0} />
-                <SummaryRow label="Travel" dollars={estimate.travelCost} />
-                <div className="h-px bg-slate-600 my-2" />
-                <SummaryRow
-                  label="Est. install time"
-                  raw={serverQuote?.timeEstimate ? `${serverQuote.timeEstimate.minHours}-${serverQuote.timeEstimate.maxHours} hours` : '--'}
-                />
-                <SummaryRow label="Install cost" dollars={estimate.installCost} />
-                <SummaryRow
-                  label={`Support Plan (${supportPeriod === 'monthly' ? 'Monthly' : 'Annual'})`}
-                  dollars={supportPeriod === 'monthly' ? estimate.supportMonthly : estimate.supportAnnual}
-                />
-                <div className="h-px bg-slate-600 my-2" />
-                <SummaryRow label="Install + Travel" dollars={estimate.installCost + estimate.travelCost} strong />
-                <SummaryRow
-                  label={`Total (incl. first ${supportPeriod === 'monthly' ? 'month' : 'year'})`}
-                  dollars={estimate.combinedFirst}
-                  strong
-                />
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-600 space-y-2">
-                <button
-                  onClick={() => setShowEmailModal(true)}
-                  className="w-full py-2.5 bg-brand-accent text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                >
-                  <Mail size={16} /> Email Quote
-                </button>
-                <button
-                  onClick={exportJSON}
-                  className="w-full py-2.5 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                >
-                  <Download size={16} /> Export JSON
-                </button>
-              </div>
-            </div>
-          </aside>
-        )}
-
-        {!rightOpen && (
-          <button
-            onClick={() => setRightOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-slate-800 border border-slate-600 rounded-l-lg p-2 text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            aria-label="Open right sidebar"
-          >
-            <ChevronLeft size={18} />
-          </button>
-        )}
+            </CollapsiblePanel>
+          </div>
+        </aside>
       </div>
 
-      {/* Bottom Toolbar */}
-      <footer className="sticky bottom-0 z-30 border-t border-slate-700 bg-slate-900/95 backdrop-blur">
-        <div className="px-4 py-2 flex items-center gap-3 flex-wrap">
-          {/* Undo/Redo buttons */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className={`p-2 rounded-lg border transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canUndo ? 'bg-slate-800 border-slate-600 text-white hover:bg-slate-700' : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed'}`}
-              aria-label="Undo (Ctrl+Z)"
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 size={16} />
-            </button>
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className={`p-2 rounded-lg border transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canRedo ? 'bg-slate-800 border-slate-600 text-white hover:bg-slate-700' : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed'}`}
-              aria-label="Redo (Ctrl+Y)"
-              title="Redo (Ctrl+Y)"
-            >
-              <Redo2 size={16} />
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-slate-700" />
-
+      {/* Bottom Toolbar - Compact */}
+      <footer className="flex-shrink-0 border-t border-slate-700 bg-slate-900/95 backdrop-blur z-20">
+        <div className="px-4 py-1.5 flex items-center gap-2 overflow-x-auto">
           {/* Layer controls */}
-          <div className="flex items-center gap-2">
-            <Layers size={14} className="text-slate-200" />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <Layers size={12} className="text-slate-400" />
             <select
-              className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white"
               value={activeLayerId}
               onChange={e => setActiveLayerId(e.target.value)}
             >
@@ -1688,46 +1804,50 @@ const QuoteBuilder: React.FC = () => {
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
-            <button onClick={addLayer} className="bg-slate-800 border border-slate-600 hover:bg-slate-700 rounded-lg px-2 py-1.5 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-              + Layer
+            <button onClick={addLayer} className="bg-slate-700 hover:bg-slate-600 rounded p-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Layer">
+              <Plus size={12} />
             </button>
           </div>
 
+          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+
           {/* Layer visibility toggles */}
-          <div className="flex items-center gap-3 text-xs text-slate-200">
+          <div className="flex items-center gap-2 text-xs flex-shrink-0">
             {currentFloor?.layers.map(l => (
-              <label key={l.id} className="flex items-center gap-1 cursor-pointer">
+              <label key={l.id} className="flex items-center gap-1 cursor-pointer text-slate-300 hover:text-white transition-colors">
                 <input
                   type="checkbox"
                   checked={l.visible}
                   onChange={() => toggleLayerVisibility(l.id)}
-                  className="accent-emerald-500"
+                  className="accent-emerald-500 w-3 h-3"
                 />
-                <span className="text-white">{l.name}</span>
+                <span className="text-[11px]">{l.name}</span>
               </label>
             ))}
           </div>
 
+          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+
           {/* Cable run button */}
           {activeLayer?.type === 'network' && (
             <button
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-slate-800 border border-slate-600 text-white hover:bg-slate-700'}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors flex-shrink-0 ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'}`}
               onClick={() => {
                 setMode(mode === 'addCable' ? 'idle' : 'addCable');
                 setPendingCableStart(null);
               }}
             >
-              <Cable size={14} />
-              {mode === 'addCable' ? 'Click start/end on map...' : '+ Add Cable Run'}
+              <Cable size={12} />
+              {mode === 'addCable' ? 'Click map...' : 'Cable'}
             </button>
           )}
 
           {/* Scale control */}
-          <div className="flex items-center gap-2 ml-4">
-            <span className="text-xs text-slate-200">Scale</span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-[10px] text-slate-400">Scale</span>
             <input
               type="number"
-              className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-sm text-white w-20"
+              className="bg-slate-800 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-white w-12"
               value={currentFloor?.scalePxPerFt || 16}
               onChange={e => updateCurrentLocation(loc => {
                 const f = loc.floors.find(fl => fl.id === currentFloor?.id);
@@ -1735,17 +1855,47 @@ const QuoteBuilder: React.FC = () => {
                 return loc;
               })}
             />
-            <span className="text-xs text-slate-200">px/ft</span>
+            <span className="text-[10px] text-slate-400">px/ft</span>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Zoom controls in footer */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
-              onClick={resetFloor}
-              className="bg-red-900/50 border border-red-700 hover:bg-red-800/50 rounded-lg px-3 py-1.5 text-sm text-red-300 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))}
+              className="p-1 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              title="Zoom out"
             >
-              Reset Floor
+              <ZoomOut size={12} />
+            </button>
+            <span className="text-[10px] text-slate-300 w-8 text-center">{Math.round(zoom * 100)}%</span>
+            <button
+              onClick={() => setZoom(z => Math.min(2.5, +(z + 0.1).toFixed(2)))}
+              className="p-1 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              title="Zoom in"
+            >
+              <ZoomIn size={12} />
+            </button>
+            <button
+              onClick={() => { setZoom(1); resetPan(); }}
+              className="p-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              title="Reset view"
+            >
+              <RefreshCw size={12} />
             </button>
           </div>
+
+          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+
+          {/* Reset button */}
+          <button
+            onClick={resetFloor}
+            className="px-2 py-1 text-xs bg-red-900/50 border border-red-700 hover:bg-red-800/50 rounded text-red-300 flex-shrink-0 focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+          >
+            Reset
+          </button>
         </div>
       </footer>
 
