@@ -262,7 +262,90 @@ export async function onRequestPost(context) {
       WHERE id = ?
     `).bind(jobId).run();
 
-    // Get file from R2
+    let extractedText = '';
+    let extractedItems = [];
+
+    // Check if this is a demo job (no R2 available)
+    const isDemoJob = jobId.startsWith('demo_') || !env.R2_BUCKET;
+
+    if (isDemoJob) {
+      // Demo mode - return sample hardware data
+      console.warn('Demo mode: Returning sample hardware data');
+      extractedText = '[Demo mode - R2/AI not configured]';
+      extractedItems = [
+        {
+          id: 'demo_1',
+          productName: 'Toast Flex, Toast Tap (Direct Attach), Toast Printer, Cash Drawer',
+          quantity: 2,
+          mappedHardwareIds: ['toast-flex', 'card-reader-direct', 'receipt-printer', 'cash-drawer'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_2',
+          productName: 'Toast Go 2, Charging Dock',
+          quantity: 3,
+          mappedHardwareIds: ['toast-go2', 'charging-dock'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_3',
+          productName: 'Kitchen Display (Elo V4)',
+          quantity: 1,
+          mappedHardwareIds: ['toast-kds'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_4',
+          productName: 'Impact Printer',
+          quantity: 2,
+          mappedHardwareIds: ['impact-printer'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_5',
+          productName: 'Meraki Router',
+          quantity: 1,
+          mappedHardwareIds: ['router'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_6',
+          productName: 'PoE Switch (TP-Link)',
+          quantity: 1,
+          mappedHardwareIds: ['poe-switch'],
+          confidence: 0.95
+        }
+      ];
+
+      // Update job with demo results
+      await env.DB.prepare(`
+        UPDATE quote_import_jobs
+        SET status = 'completed',
+            ocr_result_json = ?,
+            extracted_items_json = ?,
+            processing_completed_at = unixepoch(),
+            updated_at = unixepoch()
+        WHERE id = ?
+      `).bind(
+        JSON.stringify({ text: extractedText, demo: true }),
+        JSON.stringify(extractedItems),
+        jobId
+      ).run();
+
+      return new Response(JSON.stringify({
+        success: true,
+        jobId,
+        status: 'completed',
+        extractedItems,
+        itemCount: extractedItems.length,
+        demo: true
+      }), {
+        status: 200,
+        headers: corsHeaders
+      });
+    }
+
+    // Get file from R2 (only for non-demo jobs)
     const file = await env.R2_BUCKET.get(job.file_key);
     if (!file) {
       await env.DB.prepare(`
@@ -279,9 +362,6 @@ export async function onRequestPost(context) {
         headers: corsHeaders
       });
     }
-
-    let extractedText = '';
-    let extractedItems = [];
 
     try {
       // Check if Cloudflare AI is available

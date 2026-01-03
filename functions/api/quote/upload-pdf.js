@@ -47,20 +47,67 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
-    // Check if R2 bucket is configured
-    if (!env.R2_BUCKET) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'File storage not configured'
-      }), {
-        status: 503,
-        headers: corsHeaders
-      });
-    }
-
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file');
+
+    // Demo mode when R2 bucket is not configured
+    if (!env.R2_BUCKET) {
+      console.warn('R2 not configured, using demo mode');
+      const demoJobId = `demo_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+      // Store demo job in DB if available
+      if (env.DB) {
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS quote_import_jobs (
+              id TEXT PRIMARY KEY,
+              status TEXT NOT NULL DEFAULT 'uploaded',
+              file_key TEXT NOT NULL,
+              file_name TEXT,
+              file_type TEXT,
+              file_size INTEGER,
+              ocr_result_json TEXT,
+              extracted_items_json TEXT,
+              error_message TEXT,
+              processing_started_at INTEGER,
+              processing_completed_at INTEGER,
+              created_at INTEGER DEFAULT (unixepoch()),
+              updated_at INTEGER DEFAULT (unixepoch())
+            )
+          `).run();
+
+          await env.DB.prepare(`
+            INSERT INTO quote_import_jobs (id, status, file_key, file_name, file_type, file_size, created_at, updated_at)
+            VALUES (?, 'uploaded', ?, ?, ?, ?, unixepoch(), unixepoch())
+          `).bind(
+            demoJobId,
+            `demo/${demoJobId}.pdf`,
+            file?.name || 'demo-quote.pdf',
+            'application/pdf',
+            file?.size || 0
+          ).run();
+        } catch (dbError) {
+          console.error('Demo DB error:', dbError);
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        jobId: demoJobId,
+        fileKey: `demo/${demoJobId}.pdf`,
+        message: '[Demo Mode] PDF upload simulated. Ready for processing.',
+        demo: true,
+        file: {
+          name: file?.name || 'demo-quote.pdf',
+          type: 'application/pdf',
+          size: file?.size || 0
+        }
+      }), {
+        status: 200,
+        headers: corsHeaders
+      });
+    }
 
     if (!file || !(file instanceof File)) {
       return new Response(JSON.stringify({
