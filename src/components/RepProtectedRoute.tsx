@@ -8,6 +8,7 @@ interface RepProtectedRouteProps {
 /**
  * Route protection component for rep portal.
  * Verifies rep authentication before rendering protected content.
+ * Allows bypass for demo mode (?demo=true) and admin users.
  */
 const RepProtectedRoute: React.FC<RepProtectedRouteProps> = ({ children }) => {
   const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
@@ -21,6 +22,28 @@ const RepProtectedRoute: React.FC<RepProtectedRouteProps> = ({ children }) => {
         return;
       }
 
+      // Check for demo mode (supports hash routing: /#/path?demo=true)
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+      const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
+
+      // Check if user is authenticated as admin
+      let isAdmin = false;
+      try {
+        const adminResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+        const adminData = await adminResponse.json();
+        isAdmin = adminData.authenticated === true;
+      } catch {
+        // Not an admin, continue with rep auth check
+      }
+
+      // Admin or demo mode bypasses rep auth
+      if (isDemoMode || isAdmin) {
+        setAuthState('authenticated');
+        return;
+      }
+
+      // Normal rep auth verification
       try {
         const response = await fetch(`/api/rep/${slug}/auth/verify`, {
           method: 'GET',

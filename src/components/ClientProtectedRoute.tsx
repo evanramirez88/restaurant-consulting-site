@@ -9,6 +9,7 @@ interface ClientProtectedRouteProps {
 /**
  * Route protection component for client portal.
  * Verifies client authentication before rendering protected content.
+ * Allows bypass for demo mode (?demo=true) and admin users.
  */
 const ClientProtectedRoute: React.FC<ClientProtectedRouteProps> = ({
   children,
@@ -19,6 +20,28 @@ const ClientProtectedRoute: React.FC<ClientProtectedRouteProps> = ({
 
   useEffect(() => {
     const verifyAuth = async () => {
+      // Check for demo mode (supports hash routing: /#/path?demo=true)
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+      const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
+
+      // Check if user is authenticated as admin
+      let isAdmin = false;
+      try {
+        const adminResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+        const adminData = await adminResponse.json();
+        isAdmin = adminData.authenticated === true;
+      } catch {
+        // Not an admin, continue with client auth check
+      }
+
+      // Admin or demo mode bypasses client auth
+      if (isDemoMode || isAdmin) {
+        setAuthState('authenticated');
+        return;
+      }
+
+      // Normal client auth verification
       try {
         const response = await fetch('/api/client/auth/verify', {
           method: 'GET',

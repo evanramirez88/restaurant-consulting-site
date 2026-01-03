@@ -73,8 +73,41 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
         return;
       }
 
+      // Check for demo mode (supports hash routing: /#/path?demo=true)
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+      const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
+
+      // Check if user is authenticated as admin
+      let isAdmin = false;
       try {
-        // Verify client authentication
+        const adminResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+        const adminData = await adminResponse.json();
+        isAdmin = adminData.authenticated === true;
+      } catch {
+        // Not an admin, continue with client auth check
+      }
+
+      try {
+        // Load client info by slug first
+        const clientResponse = await fetch(`/api/portal/${slug}/info`);
+        const clientData = await clientResponse.json();
+
+        if (!clientData.success) {
+          setError(clientData.error || 'Client not found');
+          setIsLoading(false);
+          return;
+        }
+
+        // Admin or demo mode bypasses auth check
+        if (isDemoMode || isAdmin) {
+          setClientInfo(clientData.data);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Normal client auth verification
         const authResponse = await fetch('/api/client/auth/verify', {
           credentials: 'include'
         });
@@ -87,16 +120,6 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
         const authData = await authResponse.json();
         if (!authData.authenticated) {
           navigate(`/portal/${slug}/login`);
-          return;
-        }
-
-        // Load client info by slug
-        const clientResponse = await fetch(`/api/portal/${slug}/info`);
-        const clientData = await clientResponse.json();
-
-        if (!clientData.success) {
-          setError(clientData.error || 'Client not found');
-          setIsLoading(false);
           return;
         }
 

@@ -1,12 +1,13 @@
 /*
   # Security Headers - A+ Grade Target
-  X-Frame-Options: DENY
+  X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
   # Content Security Policy - Balanced for functionality
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.acuityscheduling.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.hubspot.com https://api.resend.com https://*.cloudflare.com; frame-src https://app.acuityscheduling.com https://embed.acuityscheduling.com; frame-ancestors 'none';
+  # frame-ancestors 'self' allows same-origin iframes (admin portal tool previews)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.acuityscheduling.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.hubspot.com https://api.resend.com https://*.cloudflare.com; frame-src https://app.acuityscheduling.com https://embed.acuityscheduling.com; frame-ancestors 'self';
 
 # Cache static assets aggressively
 /assets/*

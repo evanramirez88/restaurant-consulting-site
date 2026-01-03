@@ -54,13 +54,30 @@ const RepMessages: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Verify authentication
-        const authRes = await fetch(`/api/rep/${slug}/auth/verify`);
-        const authData = await authRes.json();
+        // Check for demo mode (supports hash routing: /#/path?demo=true)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
 
-        if (!authData.authenticated) {
-          navigate(`/rep/${slug}/login`);
-          return;
+        // Check if user is authenticated as admin
+        let isAdmin = false;
+        try {
+          const adminResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+          const adminData = await adminResponse.json();
+          isAdmin = adminData.authenticated === true;
+        } catch {
+          // Not an admin
+        }
+
+        // Only verify rep auth if not in demo mode and not admin
+        if (!isDemoMode && !isAdmin) {
+          const authRes = await fetch(`/api/rep/${slug}/auth/verify`);
+          const authData = await authRes.json();
+
+          if (!authData.authenticated) {
+            navigate(`/rep/${slug}/login`);
+            return;
+          }
         }
 
         // Load rep info

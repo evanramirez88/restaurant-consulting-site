@@ -257,6 +257,10 @@ const AdminDashboard: React.FC = () => {
     window.open('/#/menu-builder?demo=true', '_blank');
   };
 
+  const handleOpenToastAutomate = () => {
+    window.open('/#/toast-automate?demo=true', '_blank');
+  };
+
   const handleOpenClientPortalDemo = () => {
     window.open('/#/portal/demo-seafood-shack/dashboard?demo=true', '_blank');
   };
@@ -415,6 +419,7 @@ const AdminDashboard: React.FC = () => {
           <ToolsDemo
             onOpenQuoteBuilder={handleOpenQuoteBuilder}
             onOpenMenuBuilder={handleOpenMenuBuilder}
+            onOpenToastAutomate={handleOpenToastAutomate}
             onOpenClientPortalDemo={handleOpenClientPortalDemo}
             onOpenRepPortalDemo={handleOpenRepPortalDemo}
           />

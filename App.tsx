@@ -9,6 +9,7 @@ const Services = lazy(() => import('./pages/Services'));
 const QuoteTeaser = lazy(() => import('./pages/QuoteTeaser'));
 const QuoteBuilder = lazy(() => import('./pages/QuoteBuilder'));
 const MenuBuilder = lazy(() => import('./pages/MenuBuilder'));
+const ToastAutomate = lazy(() => import('./pages/ToastAutomate'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 
 // Admin pages (lazy - only loaded when visiting admin routes)
@@ -158,6 +159,7 @@ const App: React.FC = () => {
           <Route path="/quote" element={<PublicLayout><QuoteTeaser /></PublicLayout>} />
           <Route path="/quote-builder" element={<PublicLayout><QuoteBuilder /></PublicLayout>} />
           <Route path="/menu-builder" element={<PublicLayout><MenuBuilder /></PublicLayout>} />
+          <Route path="/toast-automate" element={<PublicLayout><ToastAutomate /></PublicLayout>} />
           <Route path="/schedule" element={<PublicLayout><Schedule /></PublicLayout>} />
 
           {/* Redirects for merged pages */}

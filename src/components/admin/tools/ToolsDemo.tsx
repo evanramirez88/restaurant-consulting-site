@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
-  AlertTriangle, PlayCircle, X, Maximize2, Minimize2, RefreshCw
+  AlertTriangle, PlayCircle, X, Maximize2, Minimize2, RefreshCw, Zap
 } from 'lucide-react';
 
 interface ToolsDemoProps {
   onOpenQuoteBuilder: () => void;
   onOpenMenuBuilder: () => void;
+  onOpenToastAutomate: () => void;
   onOpenClientPortalDemo: () => void;
   onOpenRepPortalDemo: () => void;
 }
 
-type EmbeddedPreview = 'quote' | 'menu' | 'client' | 'rep' | null;
+type EmbeddedPreview = 'quote' | 'menu' | 'automate' | 'client' | 'rep' | null;
 
 const ToolsDemo: React.FC<ToolsDemoProps> = ({
   onOpenQuoteBuilder,
   onOpenMenuBuilder,
+  onOpenToastAutomate,
   onOpenClientPortalDemo,
   onOpenRepPortalDemo
 }) => {
@@ -26,6 +28,7 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
   const previewUrls: Record<Exclude<EmbeddedPreview, null>, string> = {
     quote: '/#/quote-builder?demo=true',
     menu: '/#/menu-builder?demo=true',
+    automate: '/#/toast-automate?demo=true',
     client: '/#/portal/demo-seafood-shack/dashboard?demo=true',
     rep: '/#/rep/demo-rep/dashboard?demo=true'
   };
@@ -33,6 +36,7 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
   const previewTitles: Record<Exclude<EmbeddedPreview, null>, string> = {
     quote: 'Quote Builder Demo',
     menu: 'Menu Builder Demo',
+    automate: 'Toast Back-office Automate Demo',
     client: 'Client Portal Demo',
     rep: 'Rep Portal Demo'
   };
@@ -213,6 +217,49 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             </button>
             <button
               onClick={onOpenMenuBuilder}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Open in New Tab"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Toast Back-office Automate */}
+        <div className="admin-card p-6">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center">
+              <Zap className="w-7 h-7 text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white">Toast Back-office Automate</h3>
+              <p className="text-gray-400 text-sm">
+                Configure automation rules for reporting, inventory, menu sync, and more
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Features</span>
+              <span className="text-white">Scheduling, Alerts, Sync</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">Categories</span>
+              <span className="text-white">Reports, Inventory, Labor</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEmbeddedPreview('automate')}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <PlayCircle className="w-4 h-4" />
+              Preview Inline
+            </button>
+            <button
+              onClick={onOpenToastAutomate}
               className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               title="Open in New Tab"
             >
