@@ -1145,13 +1145,15 @@ const MenuBuilder: React.FC = () => {
     const checkFeatureFlag = async () => {
       try {
         // Check if demo mode is enabled via URL parameter
+        // Support both ?demo=true and #/path?demo=true (hash routing)
         const urlParams = new URLSearchParams(window.location.search);
-        const isDemoMode = urlParams.get('demo') === 'true';
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
 
         // Check if user is authenticated as admin
         let isAdmin = false;
         try {
-          const authResponse = await fetch('/api/auth/verify');
+          const authResponse = await fetch('/api/auth/verify', { credentials: 'include' });
           const authData = await authResponse.json();
           isAdmin = authData.authenticated === true;
         } catch {
