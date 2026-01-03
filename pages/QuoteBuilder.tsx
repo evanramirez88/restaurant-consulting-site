@@ -198,17 +198,28 @@ const QuoteBuilder: React.FC = () => {
         const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
         const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
 
+        console.log('[QuoteBuilder] Access check:', {
+          hash: window.location.hash,
+          search: window.location.search,
+          isDemoMode,
+          hashParamDemo: hashParams.get('demo'),
+          urlParamDemo: urlParams.get('demo')
+        });
+
         // Check if user is authenticated as admin
         let isAdmin = false;
         try {
           const authResponse = await fetch('/api/auth/verify', { credentials: 'include' });
           const authData = await authResponse.json();
           isAdmin = authData.authenticated === true;
-        } catch {
+          console.log('[QuoteBuilder] Admin auth check:', authData);
+        } catch (e) {
+          console.log('[QuoteBuilder] Admin auth error:', e);
           // Not authenticated, continue with feature flag check
         }
 
         // Admin and demo mode always have access
+        console.log('[QuoteBuilder] Access result:', { isDemoMode, isAdmin, willEnable: isDemoMode || isAdmin });
         if (isDemoMode || isAdmin) {
           setIsFeatureEnabled(true);
           setFeatureFlagLoading(false);
