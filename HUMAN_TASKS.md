@@ -1,6 +1,6 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** January 2, 2026
+**Last Updated:** January 3, 2026
 **Goal:** $400K by May 1, 2026 (119 days remaining)
 
 ---
@@ -11,31 +11,30 @@
 
 **Location:** https://dash.cloudflare.com → Pages → restaurant-consulting-site → Settings → Functions
 
-#### D1 Database Binding
-1. Go to **Settings > Functions > D1 database bindings**
-2. Click **Add binding**
-3. Configure:
-   - **Variable name:** `DB`
-   - **D1 database:** `rg-consulting-db` (database_id: `c2fdafac-bc84-4ad7-974e-312dceb28263`)
+#### D1 Database Binding - ✅ AUTOMATED
+Configured via API:
+- **Variable name:** `DB`
+- **D1 database:** `rg-consulting-forms` (ID: `eb39c9a2-24ed-426e-9260-a1fb55d899cb`)
 
-#### KV Namespace Binding
-1. Go to **Settings > Functions > KV namespace bindings**
-2. Click **Add binding**
-3. Configure:
-   - **Variable name:** `RATE_LIMIT_KV`
-   - **KV namespace:** `rg-consulting-sessions` (id: `a922ece9ad7c42e08a3c1fe88e81db7b`)
+#### KV Namespace Binding - ✅ AUTOMATED
+Configured via API:
+- **Variable name:** `RATE_LIMIT_KV`
+- **KV namespace:** `rg-consulting-sessions` (ID: `57fda5bf0515423db01df17ed5b335e6`)
 
-#### Environment Variables
-1. Go to **Settings > Environment variables**
-2. Add the following (for Production):
+#### Environment Variables - PARTIALLY AUTOMATED
 
-| Variable | Value | Notes |
-|----------|-------|-------|
-| `ADMIN_PASSWORD_HASH` | *SHA-256 hash* | Generate with: `echo -n "YOUR_PASSWORD" \| openssl dgst -sha256` |
-| `SQUARE_ACCESS_TOKEN` | *From Square Dashboard* | developer.squareup.com |
-| `SQUARE_ENVIRONMENT` | `production` | |
-| `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` | Local Cape Cod |
-| `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` | National/Remote |
+**✅ Already Set (via API):**
+| Variable | Value |
+|----------|-------|
+| `SQUARE_ENVIRONMENT` | `production` |
+| `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` |
+| `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` |
+
+**⚠️ STILL NEED TO SET (requires secrets):**
+| Variable | How to Get |
+|----------|------------|
+| `ADMIN_PASSWORD_HASH` | Run: `echo -n "YOUR_PASSWORD" \| openssl dgst -sha256` |
+| `SQUARE_ACCESS_TOKEN` | From https://developer.squareup.com → Applications → Credentials |
 
 ---
 
