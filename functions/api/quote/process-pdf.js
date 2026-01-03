@@ -217,13 +217,63 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Check required bindings (only DB is required; R2 can use demo mode)
+    // Full demo mode when DB is not configured
     if (!env.DB) {
+      console.warn('DB not configured, using full demo mode');
+      const demoItems = [
+        {
+          id: 'demo_1',
+          productName: 'Toast Flex, Toast Tap (Direct Attach), Toast Printer, Cash Drawer',
+          quantity: 2,
+          mappedHardwareIds: ['toast-flex', 'card-reader-direct', 'receipt-printer', 'cash-drawer'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_2',
+          productName: 'Toast Go 2, Charging Dock',
+          quantity: 3,
+          mappedHardwareIds: ['toast-go2', 'charging-dock'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_3',
+          productName: 'Kitchen Display (Elo V4)',
+          quantity: 1,
+          mappedHardwareIds: ['toast-kds'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_4',
+          productName: 'Impact Printer',
+          quantity: 2,
+          mappedHardwareIds: ['impact-printer'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_5',
+          productName: 'Meraki Router',
+          quantity: 1,
+          mappedHardwareIds: ['router'],
+          confidence: 0.95
+        },
+        {
+          id: 'demo_6',
+          productName: 'PoE Switch (TP-Link)',
+          quantity: 1,
+          mappedHardwareIds: ['poe-switch'],
+          confidence: 0.95
+        }
+      ];
+
       return new Response(JSON.stringify({
-        success: false,
-        error: 'Database not configured'
+        success: true,
+        jobId,
+        status: 'completed',
+        extractedItems: demoItems,
+        itemCount: demoItems.length,
+        demo: true
       }), {
-        status: 503,
+        status: 200,
         headers: corsHeaders
       });
     }
