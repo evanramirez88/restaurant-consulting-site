@@ -157,7 +157,7 @@ const App: React.FC = () => {
           <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
           <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
           <Route path="/quote" element={<PublicLayout><QuoteTeaser /></PublicLayout>} />
-          <Route path="/quote-builder" element={<PublicLayout><QuoteBuilder /></PublicLayout>} />
+          <Route path="/quote-builder" element={<QuoteBuilder />} />
           <Route path="/menu-builder" element={<PublicLayout><MenuBuilder /></PublicLayout>} />
           <Route path="/toast-automate" element={<PublicLayout><ToastAutomate /></PublicLayout>} />
           <Route path="/schedule" element={<PublicLayout><Schedule /></PublicLayout>} />
