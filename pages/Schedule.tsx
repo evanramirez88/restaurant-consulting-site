@@ -4,9 +4,13 @@ import { Calendar, Clock, CheckCircle2, Phone } from 'lucide-react';
 import { PHONE_NUMBER } from '../constants';
 import { useSEO } from '../src/components/SEO';
 
-// Acuity Scheduling configuration
-const ACUITY_OWNER_ID = '34242148';
-const ACUITY_EMBED_URL = `https://app.acuityscheduling.com/schedule.php?owner=${ACUITY_OWNER_ID}`;
+// Cal.com Scheduling configuration
+const CALCOM_USERNAME = 'r-g-consulting';
+const CALCOM_EMBED_URL = `https://cal.com/${CALCOM_USERNAME}`;
+
+// Legacy Acuity (kept for reference)
+// const ACUITY_OWNER_ID = '34242148';
+// const ACUITY_EMBED_URL = `https://app.acuityscheduling.com/schedule.php?owner=${ACUITY_OWNER_ID}`;
 
 const Schedule: React.FC = () => {
   useSEO({
@@ -47,22 +51,22 @@ const Schedule: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="text-amber-500 w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-gray-900">Discovery Call (15-30 min)</p>
-                    <p className="text-sm text-gray-600">Quick intro to discuss your challenges and see if we're a good fit.</p>
+                    <p className="font-semibold text-gray-900">Discovery Call (15 min)</p>
+                    <p className="text-sm text-gray-600">Quick intro to discuss your restaurant technology challenges and see if we're a good fit.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="text-amber-500 w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-gray-900">Project Consultation (45-60 min)</p>
-                    <p className="text-sm text-gray-600">Deep dive into your setup, goals, and a roadmap for your project.</p>
+                    <p className="font-semibold text-gray-900">Toast POS Support (30 min)</p>
+                    <p className="text-sm text-gray-600">Troubleshooting session for menu updates, configuration questions, or technical issues.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="text-amber-500 w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-gray-900">Site Visit (Scheduled Separately)</p>
-                    <p className="text-sm text-gray-600">On-location assessment for complex installations.</p>
+                    <p className="font-semibold text-gray-900">Project Consultation (45 min)</p>
+                    <p className="text-sm text-gray-600">In-depth discussion of your project goals, current setup, and roadmap for success.</p>
                   </div>
                 </div>
               </div>
@@ -126,16 +130,16 @@ const Schedule: React.FC = () => {
                 <p className="text-sm text-gray-600">Choose an appointment type and pick a slot that works for you.</p>
               </div>
 
-              {/* Acuity Scheduling iframe embed */}
-              <div className="acuity-embed-container bg-white">
+              {/* Cal.com Scheduling iframe embed */}
+              <div className="calcom-embed-container bg-white">
                 <iframe
-                  src={ACUITY_EMBED_URL}
+                  src={CALCOM_EMBED_URL}
                   title="Schedule Appointment"
                   width="100%"
                   height="800"
                   frameBorder="0"
                   className="w-full"
-                  style={{ minHeight: '800px' }}
+                  style={{ minHeight: '800px', border: 'none' }}
                 ></iframe>
               </div>
 
@@ -144,7 +148,7 @@ const Schedule: React.FC = () => {
                 <p className="text-sm text-gray-600">
                   Calendar not loading?{' '}
                   <a
-                    href={ACUITY_EMBED_URL}
+                    href={CALCOM_EMBED_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-amber-500 hover:underline transition-colors font-medium"
