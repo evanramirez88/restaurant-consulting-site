@@ -18,6 +18,39 @@ const corsHeaders = {
  * Parse extracted text into menu structure
  * Enhanced parsing with multiple price formats and category detection
  */
+/**
+ * Get AI config from database
+ * Returns config with model, max_tokens, and prompt
+ */
+async function getAIConfig(db, service) {
+  try {
+    const config = await db.prepare(
+      'SELECT config_json FROM api_configs WHERE service = ? AND is_active = 1'
+    ).bind(service).first();
+
+    if (config?.config_json) {
+      return JSON.parse(config.config_json);
+    }
+  } catch (e) {
+    console.error('Error loading AI config:', e);
+  }
+
+  // Fallback defaults
+  if (service === 'menu_ocr') {
+    return {
+      model: '@cf/llava-hf/llava-1.5-7b-hf',
+      max_tokens: 2048,
+      prompt: 'Extract all text from this menu image. List each menu item with its name, description, and price. Format: "Item Name - Description... $Price"'
+    };
+  }
+
+  return {
+    model: '@cf/meta/llama-3.2-11b-vision-instruct',
+    max_tokens: 2048,
+    prompt: 'Extract all text from this document.'
+  };
+}
+
 function parseMenuText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
   const items = [];
@@ -286,25 +319,29 @@ export async function onRequestPost(context) {
     try {
       // Check if Cloudflare AI is available
       if (env.AI) {
+        // Get AI config from database (uses configurable model/prompt)
+        const aiConfig = await getAIConfig(env.DB, 'menu_ocr');
+        console.log('Using AI config:', { model: aiConfig.model, max_tokens: aiConfig.max_tokens });
+
         // Use Cloudflare AI for OCR
         const imageData = await file.arrayBuffer();
 
         if (job.file_type.startsWith('image/')) {
-          // Image OCR using AI
-          const response = await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', {
+          // Image OCR using configurable AI model
+          const response = await env.AI.run(aiConfig.model, {
             image: [...new Uint8Array(imageData)],
-            prompt: 'Extract all text from this menu image. List each menu item with its name, description, and price. Format: "Item Name - Description... $Price"',
-            max_tokens: 2048
+            prompt: aiConfig.prompt,
+            max_tokens: aiConfig.max_tokens
           });
 
           extractedText = response.response || '';
         } else if (job.file_type === 'application/pdf') {
           // PDF - use vision model with first page as image
           // Note: This is simplified - full PDF support would need pdf-to-image conversion
-          const response = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+          const response = await env.AI.run(aiConfig.model, {
             image: [...new Uint8Array(imageData)],
-            prompt: 'Extract all menu items from this document. List each item with name, description, and price.',
-            max_tokens: 2048
+            prompt: aiConfig.prompt,
+            max_tokens: aiConfig.max_tokens
           });
 
           extractedText = response.response || '';

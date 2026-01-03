@@ -30,7 +30,11 @@ import {
   PanelRightClose,
   GripVertical,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Upload,
+  FileText,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 
 // ============================================
@@ -55,7 +59,9 @@ import {
   ObjectDefinition,
   HardwareAssociation,
   CableRun,
-  TravelSettings
+  TravelSettings,
+  ExtractedHardware,
+  ImportStatus
 } from '../types';
 import {
   HARDWARE_CATALOG,
@@ -315,6 +321,14 @@ const QuoteBuilder: React.FC = () => {
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
 
+  // PDF Import Modal State
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
+  const [importJobId, setImportJobId] = useState<string | null>(null);
+  const [extractedItems, setExtractedItems] = useState<ExtractedHardware[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
+
   // Panel collapse states for left sidebar
   const [leftPanels, setLeftPanels] = usePersistentState(LS_KEY + ":leftPanels", {
     stations: true,
@@ -483,6 +497,125 @@ const QuoteBuilder: React.FC = () => {
       }
       return loc;
     });
+  };
+
+  // ============================================
+  // PDF IMPORT FUNCTIONS
+  // ============================================
+
+  const handleImportPdf = async (file: File) => {
+    if (!file || file.type !== 'application/pdf') {
+      setImportError('Please select a PDF file');
+      return;
+    }
+
+    setImportStatus('uploading');
+    setImportError(null);
+    setExtractedItems([]);
+
+    try {
+      // Upload the PDF
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uploadRes = await fetch('/api/quote/upload-pdf', {
+        method: 'POST',
+        body: formData
+      });
+
+      const uploadData = await uploadRes.json();
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Upload failed');
+      }
+
+      setImportJobId(uploadData.jobId);
+      setImportStatus('processing');
+
+      // Process the PDF
+      const processRes = await fetch('/api/quote/process-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: uploadData.jobId })
+      });
+
+      const processData = await processRes.json();
+      if (!processData.success) {
+        throw new Error(processData.error || 'Processing failed');
+      }
+
+      setExtractedItems(processData.extractedItems || []);
+      setImportStatus('complete');
+
+    } catch (error) {
+      console.error('Import error:', error);
+      setImportError(error instanceof Error ? error.message : 'Import failed');
+      setImportStatus('error');
+    }
+  };
+
+  const importExtractedHardware = () => {
+    if (extractedItems.length === 0) return;
+
+    // Create a new "Imported Hardware" station with the extracted items
+    const importedStation: AdvancedStation = {
+      id: uid(),
+      name: 'Imported Hardware',
+      type: 'Imported',
+      color: '#8b5cf6', // Purple to distinguish
+      x: 100,
+      y: 100,
+      w: 300,
+      h: 200,
+      nickname: 'From Toast PDF',
+      notes: `Imported ${new Date().toLocaleDateString()}`,
+      dept: 'FOH',
+      flags: { existing: false, replace: false },
+      hardware: []
+    };
+
+    // Add each extracted item with proper quantities
+    for (const item of extractedItems) {
+      for (let i = 0; i < item.quantity; i++) {
+        for (const hid of item.mappedHardwareIds) {
+          importedStation.hardware.push({
+            hid,
+            nickname: item.productName.substring(0, 30),
+            notes: '',
+            flags: { existing: false, replace: false }
+          });
+        }
+      }
+    }
+
+    // Add station to current floor
+    updateCurrentLocation(loc => {
+      const floor = loc.floors.find(f => f.id === currentFloor?.id);
+      if (floor) {
+        floor.stations.push(importedStation);
+      }
+      return loc;
+    });
+
+    // Select the new station
+    setSelected({ kind: 'station', id: importedStation.id });
+
+    // Close modal and reset state
+    setShowImportModal(false);
+    setExtractedItems([]);
+    setImportStatus('idle');
+    setImportJobId(null);
+    setImportError(null);
+  };
+
+  const resetImportModal = () => {
+    setShowImportModal(false);
+    setExtractedItems([]);
+    setImportStatus('idle');
+    setImportJobId(null);
+    setImportError(null);
+    if (importFileRef.current) {
+      importFileRef.current.value = '';
+    }
   };
 
   // Station operations
@@ -1189,6 +1322,18 @@ const QuoteBuilder: React.FC = () => {
               title="Redo (Ctrl+Y)"
             >
               <Redo2 size={14} />
+            </button>
+          </div>
+
+          {/* Import PDF Button */}
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded transition-colors focus:ring-2 focus:ring-purple-400 focus:outline-none"
+              title="Import Toast PDF"
+            >
+              <Upload size={14} />
+              <span className="hidden sm:inline">Import PDF</span>
             </button>
           </div>
 
@@ -2054,6 +2199,132 @@ const QuoteBuilder: React.FC = () => {
                     </button>
                   </div>
                 </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Import PDF Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl border border-slate-600">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+                <Upload className="w-5 h-5 text-purple-400" />
+                Import Toast PDF
+              </h3>
+              <button
+                onClick={resetImportModal}
+                className="p-1 hover:bg-slate-700 rounded transition-colors"
+              >
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+
+            {importStatus === 'idle' && (
+              <>
+                <p className="text-slate-300 text-sm mb-4">
+                  Upload a Toast quote or order PDF to automatically extract hardware items.
+                </p>
+                <div
+                  className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                  onClick={() => importFileRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-purple-500', 'bg-purple-500/10'); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-purple-500', 'bg-purple-500/10'); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-purple-500', 'bg-purple-500/10');
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleImportPdf(file);
+                  }}
+                >
+                  <FileText className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                  <p className="text-white font-medium mb-1">Drop PDF here or click to browse</p>
+                  <p className="text-slate-400 text-xs">Accepts Toast quote PDFs (max 10MB)</p>
+                </div>
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImportPdf(file);
+                  }}
+                />
+              </>
+            )}
+
+            {(importStatus === 'uploading' || importStatus === 'processing') && (
+              <div className="py-8 text-center">
+                <Loader2 className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-spin" />
+                <p className="text-white font-medium">
+                  {importStatus === 'uploading' ? 'Uploading PDF...' : 'Extracting hardware items...'}
+                </p>
+                <p className="text-slate-400 text-sm mt-1">This may take a few seconds</p>
+              </div>
+            )}
+
+            {importStatus === 'error' && (
+              <div className="py-6 text-center">
+                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                <p className="text-white font-medium mb-2">Import Failed</p>
+                <p className="text-red-300 text-sm mb-4">{importError}</p>
+                <button
+                  onClick={resetImportModal}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {importStatus === 'complete' && (
+              <>
+                <div className="flex items-center gap-2 text-green-400 mb-4">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Extracted {extractedItems.length} items</span>
+                </div>
+
+                {/* Preview extracted items */}
+                <div className="max-h-64 overflow-y-auto mb-4 space-y-2">
+                  {extractedItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{item.productName}</p>
+                        <p className="text-slate-400 text-xs">
+                          {item.mappedHardwareIds.length > 0
+                            ? `Maps to: ${item.mappedHardwareIds.join(', ')}`
+                            : 'Unknown hardware type'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-purple-400 font-medium text-sm">×{item.quantity}</span>
+                        <span className={`w-2 h-2 rounded-full ${item.confidence > 0.7 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      </div>
+                    </div>
+                  ))}
+                  {extractedItems.length === 0 && (
+                    <p className="text-slate-400 text-center py-4">No hardware items found in the PDF</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetImportModal}
+                    className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={importExtractedHardware}
+                    disabled={extractedItems.length === 0}
+                    className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Import to Builder
+                  </button>
+                </div>
               </>
             )}
           </div>

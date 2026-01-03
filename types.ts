@@ -219,3 +219,41 @@ export interface Selection {
   kind: 'station' | 'object' | 'label' | null;
   id: string | null;
 }
+
+// ============================================
+// QUOTE BUILDER PDF IMPORT TYPES
+// ============================================
+
+/**
+ * Hardware item extracted from Toast PDF via OCR
+ */
+export interface ExtractedHardware {
+  id: string;
+  productName: string;
+  quantity: number;
+  mappedHardwareIds: string[];  // Maps to HARDWARE_CATALOG ids
+  confidence: number;           // OCR confidence score (0-1)
+}
+
+/**
+ * Status of a PDF import job
+ */
+export type ImportStatus = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
+
+/**
+ * Response from the import-status API
+ */
+export interface ImportStatusResponse {
+  success: boolean;
+  jobId: string;
+  status: 'uploaded' | 'processing' | 'completed' | 'failed';
+  fileName?: string;
+  extractedItems: ExtractedHardware[];
+  itemCount: number;
+  error?: string;
+  timing?: {
+    createdAt: number;
+    processingStartedAt: number | null;
+    processingCompletedAt: number | null;
+  };
+}

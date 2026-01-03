@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings, Phone, Mail, Clock, DollarSign, Car, Shield, ToggleLeft, ToggleRight,
   Save, Loader2, RefreshCw, CheckCircle, AlertCircle, Monitor, MapPin, Sliders,
-  AlertTriangle, FileText, Cpu, ChevronDown, ChevronUp
+  AlertTriangle, FileText, Cpu, ChevronDown, ChevronUp, Brain, Sparkles
 } from 'lucide-react';
 
 interface ConfigData {
@@ -64,7 +64,31 @@ interface SiteContent {
   updated_at: number;
 }
 
-type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'content';
+interface AIModelConfig {
+  model: string;
+  max_tokens: number;
+  prompt: string;
+  fallback_model?: string;
+  temperature?: number;
+}
+
+interface AIConfigEntry {
+  id: string;
+  service: string;
+  provider: string;
+  display_name: string;
+  config_json: string;
+  is_active: boolean;
+}
+
+// Available Cloudflare AI Vision models
+const AI_VISION_MODELS = [
+  { id: '@cf/llava-hf/llava-1.5-7b-hf', name: 'LLaVA 1.5 7B', desc: 'Best for menu images', recommended: true },
+  { id: '@cf/meta/llama-3.2-11b-vision-instruct', name: 'Llama 3.2 11B Vision', desc: 'Best for PDF documents' },
+  { id: '@cf/unum/uform-gen2-qwen-500m', name: 'UForm Gen2', desc: 'Fast, lightweight' }
+];
+
+type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'ai' | 'content';
 
 const ConfigManager: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionType>('contact');
@@ -129,6 +153,20 @@ const ConfigManager: React.FC = () => {
   const [showAddContent, setShowAddContent] = useState(false);
   const [newContent, setNewContent] = useState({ page: '', section: '', content_key: '', content_value: '', content_type: 'text' as const });
 
+  // AI Model Configs
+  const [menuOcrConfig, setMenuOcrConfig] = useState<AIModelConfig>({
+    model: '@cf/llava-hf/llava-1.5-7b-hf',
+    max_tokens: 2048,
+    prompt: 'Extract all text from this menu image. List each menu item with its name, description, and price. Format: "Item Name - Description... $Price"'
+  });
+  const [quoteOcrConfig, setQuoteOcrConfig] = useState<AIModelConfig>({
+    model: '@cf/meta/llama-3.2-11b-vision-instruct',
+    max_tokens: 2048,
+    prompt: 'Extract hardware items from this Toast POS quote PDF. Focus on the HARDWARE section table. For each item, extract: Product Name, Quantity (QTY column). Return as JSON array: [{"name": "...", "qty": 1}, ...]'
+  });
+  const [aiConfigSaveStatus, setAiConfigSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [aiConfigsLoaded, setAiConfigsLoaded] = useState(false);
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -141,7 +179,8 @@ const ConfigManager: React.FC = () => {
         loadRates(),
         loadFeatureFlags(),
         loadApiConfigs(),
-        loadSiteContent()
+        loadSiteContent(),
+        loadAIConfigs()
       ]);
     } finally {
       setIsLoading(false);
@@ -206,6 +245,84 @@ const ConfigManager: React.FC = () => {
       }
     } catch (error) {
       console.error('Load site content error:', error);
+    }
+  };
+
+  const loadAIConfigs = async () => {
+    try {
+      const response = await fetch('/api/admin/api-configs');
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Find menu_ocr and quote_ocr configs
+        const menuConfig = result.data.find((c: AIConfigEntry) => c.service === 'menu_ocr');
+        const quoteConfig = result.data.find((c: AIConfigEntry) => c.service === 'quote_ocr');
+
+        if (menuConfig?.config_json) {
+          try {
+            const parsed = JSON.parse(menuConfig.config_json);
+            setMenuOcrConfig(prev => ({ ...prev, ...parsed }));
+          } catch (e) {
+            console.error('Parse menu OCR config error:', e);
+          }
+        }
+
+        if (quoteConfig?.config_json) {
+          try {
+            const parsed = JSON.parse(quoteConfig.config_json);
+            setQuoteOcrConfig(prev => ({ ...prev, ...parsed }));
+          } catch (e) {
+            console.error('Parse quote OCR config error:', e);
+          }
+        }
+
+        setAiConfigsLoaded(true);
+      }
+    } catch (error) {
+      console.error('Load AI configs error:', error);
+    }
+  };
+
+  const saveAIConfigs = async () => {
+    setAiConfigSaveStatus('saving');
+    try {
+      // Save menu OCR config
+      const menuResponse = await fetch('/api/admin/api-configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'menu_ocr',
+          provider: 'cloudflare_ai',
+          display_name: 'Menu Builder OCR',
+          config_json: JSON.stringify(menuOcrConfig),
+          is_active: true
+        })
+      });
+
+      // Save quote OCR config
+      const quoteResponse = await fetch('/api/admin/api-configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'quote_ocr',
+          provider: 'cloudflare_ai',
+          display_name: 'Quote Builder PDF OCR',
+          config_json: JSON.stringify(quoteOcrConfig),
+          is_active: true
+        })
+      });
+
+      const menuResult = await menuResponse.json();
+      const quoteResult = await quoteResponse.json();
+
+      if (menuResult.success && quoteResult.success) {
+        setAiConfigSaveStatus('success');
+        setTimeout(() => setAiConfigSaveStatus('idle'), 3000);
+      } else {
+        setAiConfigSaveStatus('error');
+      }
+    } catch (error) {
+      console.error('Save AI configs error:', error);
+      setAiConfigSaveStatus('error');
     }
   };
 
@@ -320,6 +437,7 @@ const ConfigManager: React.FC = () => {
     { id: 'contact', label: 'Contact Info', icon: <Phone className="w-4 h-4" /> },
     { id: 'rates', label: 'Business Rates', icon: <DollarSign className="w-4 h-4" /> },
     { id: 'flags', label: 'Feature Flags', icon: <ToggleRight className="w-4 h-4" /> },
+    { id: 'ai', label: 'AI Models', icon: <Brain className="w-4 h-4" /> },
     { id: 'api', label: 'API Settings', icon: <Cpu className="w-4 h-4" /> },
     { id: 'content', label: 'Site Content', icon: <FileText className="w-4 h-4" /> }
   ];
@@ -712,6 +830,160 @@ const ConfigManager: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* AI Models Section */}
+      {activeSection === 'ai' && (
+        <section className="space-y-6">
+          {/* Menu Builder OCR */}
+          <div className="admin-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Sparkles className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Menu Builder OCR</h3>
+                <p className="text-gray-400 text-sm">AI model for extracting menu items from images</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Model Selection */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">AI Model</label>
+                <select
+                  value={menuOcrConfig.model}
+                  onChange={(e) => setMenuOcrConfig(prev => ({ ...prev, model: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500"
+                >
+                  {AI_VISION_MODELS.map(model => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} {model.recommended ? '(Recommended)' : ''} - {model.desc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Max Tokens */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Max Tokens</label>
+                <input
+                  type="number"
+                  value={menuOcrConfig.max_tokens}
+                  onChange={(e) => setMenuOcrConfig(prev => ({ ...prev, max_tokens: parseInt(e.target.value) || 2048 }))}
+                  min={256}
+                  max={8192}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Recommended: 2048. Higher values allow longer responses.</p>
+              </div>
+
+              {/* Custom Prompt */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Extraction Prompt</label>
+                <textarea
+                  value={menuOcrConfig.prompt}
+                  onChange={(e) => setMenuOcrConfig(prev => ({ ...prev, prompt: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white resize-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Instructions for the AI to extract menu data..."
+                />
+                <p className="text-xs text-gray-500 mt-1">The prompt sent to the AI for menu extraction.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quote Builder PDF OCR */}
+          <div className="admin-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <FileText className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Quote Builder PDF OCR</h3>
+                <p className="text-gray-400 text-sm">AI model for extracting hardware from Toast PDFs</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Model Selection */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">AI Model</label>
+                <select
+                  value={quoteOcrConfig.model}
+                  onChange={(e) => setQuoteOcrConfig(prev => ({ ...prev, model: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500"
+                >
+                  {AI_VISION_MODELS.map(model => (
+                    <option key={model.id} value={model.id}>
+                      {model.name} - {model.desc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Max Tokens */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Max Tokens</label>
+                <input
+                  type="number"
+                  value={quoteOcrConfig.max_tokens}
+                  onChange={(e) => setQuoteOcrConfig(prev => ({ ...prev, max_tokens: parseInt(e.target.value) || 2048 }))}
+                  min={256}
+                  max={8192}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Recommended: 2048. Higher values allow longer responses.</p>
+              </div>
+
+              {/* Custom Prompt */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Extraction Prompt</label>
+                <textarea
+                  value={quoteOcrConfig.prompt}
+                  onChange={(e) => setQuoteOcrConfig(prev => ({ ...prev, prompt: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white resize-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="Instructions for the AI to extract hardware data from Toast PDFs..."
+                />
+                <p className="text-xs text-gray-500 mt-1">The prompt sent to the AI for PDF hardware extraction.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="admin-card p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                <p>Changes will apply to new OCR jobs. Existing jobs are not affected.</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {aiConfigSaveStatus === 'success' && (
+                  <span className="text-green-400 text-sm flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Saved!
+                  </span>
+                )}
+                {aiConfigSaveStatus === 'error' && (
+                  <span className="text-red-400 text-sm flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" /> Error saving
+                  </span>
+                )}
+                <button
+                  onClick={saveAIConfigs}
+                  disabled={aiConfigSaveStatus === 'saving'}
+                  className="flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                >
+                  {aiConfigSaveStatus === 'saving' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save AI Settings
+                </button>
+              </div>
             </div>
           </div>
         </section>

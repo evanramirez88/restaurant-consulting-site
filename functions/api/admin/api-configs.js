@@ -33,6 +33,45 @@ export async function onRequestGet(context) {
       )
     `).run();
 
+    // Seed default AI configs if they don't exist
+    const defaultAIConfigs = [
+      {
+        id: 'ai_menu_ocr',
+        service: 'menu_ocr',
+        provider: 'cloudflare_ai',
+        display_name: 'Menu Builder OCR',
+        config_json: JSON.stringify({
+          model: '@cf/llava-hf/llava-1.5-7b-hf',
+          max_tokens: 2048,
+          prompt: 'Extract all text from this menu image. List each menu item with its name, description, and price. Format: "Item Name - Description... $Price"'
+        })
+      },
+      {
+        id: 'ai_quote_ocr',
+        service: 'quote_ocr',
+        provider: 'cloudflare_ai',
+        display_name: 'Quote Builder PDF OCR',
+        config_json: JSON.stringify({
+          model: '@cf/meta/llama-3.2-11b-vision-instruct',
+          max_tokens: 2048,
+          prompt: 'Extract hardware items from this Toast POS quote PDF. Focus on the HARDWARE section table. For each item, extract: Product Name, Quantity (QTY column). Return as JSON array: [{"name": "...", "qty": 1}, ...]'
+        })
+      }
+    ];
+
+    for (const config of defaultAIConfigs) {
+      await db.prepare(`
+        INSERT OR IGNORE INTO api_configs (id, service, provider, display_name, config_json, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, 1, unixepoch())
+      `).bind(
+        config.id,
+        config.service,
+        config.provider,
+        config.display_name,
+        config.config_json
+      ).run();
+    }
+
     const { results } = await db.prepare(`
       SELECT * FROM api_configs
       ORDER BY service ASC
