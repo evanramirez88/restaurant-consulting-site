@@ -13,7 +13,7 @@
   "dependencies": {
     "@tsndr/cloudflare-worker-jwt": "^3.2.0",
     "lucide-react": "^0.555.0",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "^4.4.168",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-router-dom": "^7.10.1"
