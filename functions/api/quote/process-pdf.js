@@ -87,7 +87,7 @@ async function getAIConfig(db, service) {
 
   // Fallback defaults for quote OCR
   return {
-    model: '@cf/meta/llama-3.2-11b-vision-instruct',
+    model: '@cf/llava-hf/llava-1.5-7b-hf',
     max_tokens: 2048,
     prompt: 'Extract hardware items from this Toast POS quote PDF. Focus on the HARDWARE section table. For each item, extract: Product Name, Quantity (QTY column). Return as JSON array: [{"name": "...", "qty": 1}, ...]'
   };
