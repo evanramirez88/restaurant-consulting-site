@@ -1,44 +1,103 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** January 3, 2026
-**Goal:** $400K by May 1, 2026 (119 days remaining)
+**Last Updated:** January 5, 2026
+**Goal:** $400K by May 1, 2026 (117 days remaining)
+
+---
+
+## ONE-TIME CLOUDFLARE SETUP (Do This Once, Never Again)
+
+**Purpose:** Configure ALL Cloudflare services so Claude Code can build ANY feature without stopping.
+
+**Location:** https://dash.cloudflare.com
+
+---
+
+### STEP 1: Create R2 Bucket (File Storage)
+
+**Location:** R2 Object Storage → Create bucket
+
+1. Click "Create bucket"
+2. Bucket name: `ccrc-uploads`
+3. Location: Automatic
+4. Click "Create bucket"
+
+**Why needed:** PDF uploads, menu images, contract storage, any file handling
+
+---
+
+### STEP 2: Configure Pages Bindings
+
+**Location:** Pages → restaurant-consulting-site → Settings → Functions → Bindings
+
+| Binding Type | Variable Name | Resource |
+|--------------|---------------|----------|
+| D1 Database | `DB` | `rg-consulting-forms` |
+| KV Namespace | `RATE_LIMIT_KV` | `rg-consulting-sessions` (ID: `57fda5bf0515423db01df17ed5b335e6`) |
+| R2 Bucket | `R2_BUCKET` | `ccrc-uploads` |
+| Workers AI | `AI` | (just enable it) |
+
+**How to add each:**
+1. Click "Add binding"
+2. Select type (D1, KV, R2, or AI)
+3. Enter variable name exactly as shown
+4. Select resource from dropdown
+5. Save
+
+---
+
+### STEP 3: Environment Variables (Secrets)
+
+**Location:** Pages → restaurant-consulting-site → Settings → Environment Variables
+
+**Required for Production:**
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `ADMIN_PASSWORD_HASH` | SHA-256 hash | Run: `echo -n "YOUR_PASSWORD" \| shasum -a 256` |
+| `SQUARE_ACCESS_TOKEN` | Your token | https://developer.squareup.com → Applications → Credentials |
+| `SQUARE_ENVIRONMENT` | `production` | Literal string |
+| `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` | Cape Cod location |
+| `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` | National location |
+
+**Optional (for future features):**
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `PANDADOC_API_KEY` | Your key | https://app.pandadoc.com/a/#/settings/api |
+| `HUBSPOT_ACCESS_TOKEN` | Your token | https://app.hubspot.com/private-apps/243379742 |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Webhook key | Square Dashboard → Webhooks |
+
+---
+
+### STEP 4: Run Database Migration
+
+After deploying, run this command to set up the quote import tables:
+
+```bash
+npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0005_quote_import.sql
+```
+
+---
+
+### What This Enables
+
+Once configured, Claude Code can build:
+- PDF import/export features (R2)
+- AI-powered text extraction (Workers AI)
+- Rate limiting & sessions (KV)
+- All database features (D1)
+- Payment processing (Square)
+- Contract generation (PandaDoc)
+- CRM automation (HubSpot)
+
+**You should NEVER need to configure Cloudflare bindings again.**
 
 ---
 
 ## CRITICAL: Week 1 Tasks (Jan 1-7)
 
-### 1. Cloudflare Dashboard Configuration
-
-**Location:** https://dash.cloudflare.com → Pages → restaurant-consulting-site → Settings → Functions
-
-#### D1 Database Binding - ✅ AUTOMATED
-Configured via API:
-- **Variable name:** `DB`
-- **D1 database:** `rg-consulting-forms` (ID: `eb39c9a2-24ed-426e-9260-a1fb55d899cb`)
-
-#### KV Namespace Binding - ✅ AUTOMATED
-Configured via API:
-- **Variable name:** `RATE_LIMIT_KV`
-- **KV namespace:** `rg-consulting-sessions` (ID: `57fda5bf0515423db01df17ed5b335e6`)
-
-#### Environment Variables - PARTIALLY AUTOMATED
-
-**✅ Already Set (via API):**
-| Variable | Value |
-|----------|-------|
-| `SQUARE_ENVIRONMENT` | `production` |
-| `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` |
-| `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` |
-
-**⚠️ STILL NEED TO SET (requires secrets):**
-| Variable | How to Get |
-|----------|------------|
-| `ADMIN_PASSWORD_HASH` | Run: `echo -n "YOUR_PASSWORD" \| openssl dgst -sha256` |
-| `SQUARE_ACCESS_TOKEN` | From https://developer.squareup.com → Applications → Credentials |
-
----
-
-### 2. HubSpot Email Sequences
+### 1. HubSpot Email Sequences
 
 **Location:** https://app.hubspot.com/sequences/243379742
 
@@ -76,7 +135,7 @@ Create 6 email sequences for Operation Breakout:
 
 ---
 
-### 3. Import First Lead Batch
+### 2. Import First Lead Batch
 
 **Ready files in:** `G:\My Drive\RG OPS\70_LEADS_BUILTWITH\71_LEADS_ARCHIVE\`
 
@@ -105,7 +164,7 @@ Create 6 email sequences for Operation Breakout:
 
 ---
 
-### 4. Cal.com Availability Fine-Tuning
+### 3. Cal.com Availability Fine-Tuning
 
 **Location:** https://app.cal.com/settings/my-account/availability
 
@@ -117,7 +176,7 @@ The schedule has been created (ID: 1148640) with base 9am-5pm Mon-Fri hours. Fin
 
 ---
 
-### 5. Square Catalog Products (Support Plans)
+### 4. Square Catalog Products (Support Plans)
 
 **Location:** https://squareup.com/dashboard/catalog
 
@@ -169,8 +228,9 @@ Create catalog items for support plans:
 | Square Lane B (National) | LB8GE5HYZJYB7 |
 | Cal.com Username | r-g-consulting |
 | Cal.com Schedule ID | 1148640 |
-| Cloudflare D1 | c2fdafac-bc84-4ad7-974e-312dceb28263 |
-| Cloudflare KV | a922ece9ad7c42e08a3c1fe88e81db7b |
+| Cloudflare D1 | eb39c9a2-24ed-426e-9260-a1fb55d899cb |
+| Cloudflare KV | 57fda5bf0515423db01df17ed5b335e6 |
+| Cloudflare R2 Bucket | ccrc-uploads |
 
 ---
 
