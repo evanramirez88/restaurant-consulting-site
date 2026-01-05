@@ -1,9 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+import { extractText } from 'unpdf';
 import {
   Plus,
   Trash2,
@@ -518,22 +515,13 @@ const QuoteBuilder: React.FC = () => {
     setExtractedItems([]);
 
     try {
-      // Read PDF and extract text using PDF.js
+      // Read PDF and extract text using unpdf
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
       setImportStatus('processing');
 
-      // Extract text from all pages
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
-      }
+      // Extract text using unpdf (no worker configuration needed)
+      const { text: fullText } = await extractText(new Uint8Array(arrayBuffer));
 
       console.log('Extracted', fullText.length, 'characters from PDF');
 
