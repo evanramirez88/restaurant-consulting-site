@@ -59,6 +59,7 @@ export const STATION_CONFIGS: Record<StationType, StationConfig> = {
 export const NAVIGATION = [
   { name: 'Home', path: '/' },
   { name: 'Services', path: '/services' },
+  { name: 'Local Networking', path: '/local-networking' },
   { name: 'About', path: '/about' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'Menu Builder', path: '/menu-builder' },
