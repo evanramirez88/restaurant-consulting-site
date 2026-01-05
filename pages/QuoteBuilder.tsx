@@ -42,7 +42,7 @@ import {
 // COMING SOON FLAG - Set to false when ready to launch
 // This is the local fallback. The API flag takes precedence.
 // ============================================
-const SHOW_COMING_SOON = true;
+const SHOW_COMING_SOON = false;
 import { useSEO } from '../src/components/SEO';
 import {
   AdvancedStation,
@@ -516,15 +516,28 @@ const QuoteBuilder: React.FC = () => {
 
     try {
       // Read PDF and extract text using unpdf
+      console.log('[PDF Import] Starting import for:', file.name, 'Size:', file.size);
       const arrayBuffer = await file.arrayBuffer();
+      console.log('[PDF Import] ArrayBuffer size:', arrayBuffer.byteLength);
 
       setImportStatus('processing');
 
       // Create document proxy and extract text with pages merged
+      console.log('[PDF Import] Creating document proxy...');
       const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer));
-      const { text: fullText } = await extractText(pdf, { mergePages: true });
+      console.log('[PDF Import] Document proxy created, numPages:', pdf.numPages);
 
-      console.log('Extracted', fullText.length, 'characters from PDF');
+      console.log('[PDF Import] Extracting text with mergePages: true...');
+      const result = await extractText(pdf, { mergePages: true });
+      console.log('[PDF Import] extractText result:', typeof result, 'keys:', Object.keys(result));
+
+      const { totalPages, text: fullText } = result;
+      console.log('[PDF Import] totalPages:', totalPages, 'text type:', typeof fullText, 'text length:', fullText?.length);
+
+      // Validate extraction result
+      if (!fullText || typeof fullText !== 'string' || fullText.trim().length === 0) {
+        throw new Error('Could not extract text from PDF. The file may be scanned/image-based or corrupted.');
+      }
 
       // Send extracted text to API for parsing
       const parseRes = await fetch('/api/quote/parse-text', {

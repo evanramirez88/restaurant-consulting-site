@@ -13,7 +13,7 @@ import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '..
 // Default feature flag values
 const DEFAULT_FLAGS = {
   // Tool Feature Flags
-  quote_builder_enabled: false,
+  quote_builder_enabled: true,
   menu_builder_enabled: false,
   client_portal_enabled: false,
   rep_portal_enabled: false,
