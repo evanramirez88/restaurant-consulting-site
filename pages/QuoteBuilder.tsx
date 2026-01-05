@@ -1,5 +1,9 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
 import {
   Plus,
   Trash2,
@@ -514,36 +518,41 @@ const QuoteBuilder: React.FC = () => {
     setExtractedItems([]);
 
     try {
-      // Upload the PDF
-      const formData = new FormData();
-      formData.append('file', file);
+      // Read PDF and extract text using PDF.js
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-      const uploadRes = await fetch('/api/quote/upload-pdf', {
-        method: 'POST',
-        body: formData
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadData.success) {
-        throw new Error(uploadData.error || 'Upload failed');
-      }
-
-      setImportJobId(uploadData.jobId);
       setImportStatus('processing');
 
-      // Process the PDF
-      const processRes = await fetch('/api/quote/process-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: uploadData.jobId })
-      });
-
-      const processData = await processRes.json();
-      if (!processData.success) {
-        throw new Error(processData.error || 'Processing failed');
+      // Extract text from all pages
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
       }
 
-      setExtractedItems(processData.extractedItems || []);
+      console.log('Extracted', fullText.length, 'characters from PDF');
+
+      // Send extracted text to API for parsing
+      const parseRes = await fetch('/api/quote/parse-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: fullText,
+          fileName: file.name
+        })
+      });
+
+      const parseData = await parseRes.json();
+      if (!parseData.success) {
+        throw new Error(parseData.error || 'Parsing failed');
+      }
+
+      setExtractedItems(parseData.extractedItems || []);
       setImportStatus('complete');
 
     } catch (error) {
