@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.530/build/pdf.worker.min.mjs';
 import {
   Plus,
   Trash2,
