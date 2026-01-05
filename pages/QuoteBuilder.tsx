@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { extractText } from 'unpdf';
+import { extractText, getDocumentProxy } from 'unpdf';
 import {
   Plus,
   Trash2,
@@ -520,8 +520,9 @@ const QuoteBuilder: React.FC = () => {
 
       setImportStatus('processing');
 
-      // Extract text using unpdf (no worker configuration needed)
-      const { text: fullText } = await extractText(new Uint8Array(arrayBuffer));
+      // Create document proxy and extract text with pages merged
+      const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer));
+      const { text: fullText } = await extractText(pdf, { mergePages: true });
 
       console.log('Extracted', fullText.length, 'characters from PDF');
 
