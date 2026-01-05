@@ -72,24 +72,3 @@ CREATE TABLE IF NOT EXISTS quote_import_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_quote_items_job ON quote_import_items(job_id);
-
--- ============================================
--- AI CONFIG FOR QUOTE OCR
--- Stores configurable AI model settings
--- ============================================
--- Insert default quote OCR config if not exists
-INSERT OR IGNORE INTO api_configs (
-  id,
-  service,
-  config_json,
-  is_active,
-  created_at,
-  updated_at
-) VALUES (
-  'quote_ocr_default',
-  'quote_ocr',
-  json('{"model":"@cf/meta/llama-3.2-11b-vision-instruct","max_tokens":2048,"prompt":"Extract hardware items from this Toast POS quote PDF. Focus on the HARDWARE section table. For each item, extract: Product Name, Quantity (QTY column). Return as JSON array: [{\"name\": \"...\", \"qty\": 1}, ...]"}'),
-  1,
-  unixepoch(),
-  unixepoch()
-);
