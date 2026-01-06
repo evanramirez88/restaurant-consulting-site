@@ -124,7 +124,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const getSupportPlanBadge = (tier: string | null, status: string | null) => {
     if (!tier || tier === 'none') return null;
     const colors: Record<string, string> = {
-      essential: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      core: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       professional: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
       premium: 'bg-green-500/20 text-green-400 border-green-500/30'
     };

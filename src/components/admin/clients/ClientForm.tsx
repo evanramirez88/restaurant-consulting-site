@@ -35,11 +35,12 @@ interface ClientFormProps {
   onCancel: () => void;
 }
 
+// MUST match website pricing in pages/Services.tsx
 const SUPPORT_TIERS = [
   { value: 'none', label: 'No Support Plan' },
-  { value: 'essential', label: 'Essential', description: 'Email support, 48hr response' },
-  { value: 'professional', label: 'Professional', description: 'Priority support, 24hr response' },
-  { value: 'premium', label: 'Premium', description: 'Phone + priority, 4hr response' }
+  { value: 'core', label: 'Core ($350/mo)', description: '1.5hr/mo, 24-48hr response' },
+  { value: 'professional', label: 'Professional ($500/mo)', description: '3hr/mo, 4-hour SLA' },
+  { value: 'premium', label: 'Premium ($800/mo)', description: '5hr/mo, 2-hour SLA' }
 ];
 
 const TIMEZONES = [

@@ -31,7 +31,7 @@ const FAQ_DATA = [
   },
   {
     question: "Do you offer emergency Toast POS support?",
-    answer: "Yes, our Premium plan includes same-day emergency response. For Essential and Professional plans, emergency support is available at our hourly rate. We understand that POS issues during service can be critical."
+    answer: "Yes, our Premium plan includes same-day emergency response. For Core and Professional plans, emergency support is available at our hourly rate. We understand that POS issues during service can be critical."
   }
 ];
 

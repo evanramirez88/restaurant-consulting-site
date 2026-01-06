@@ -58,51 +58,51 @@ interface PlanFeature {
   limit?: string;
 }
 
-// Plan definitions
+// Plan definitions - MUST match website pricing in pages/Services.tsx
 const SUPPORT_PLANS = {
-  essential: {
-    name: 'Essential',
-    price: 99,
-    hours: 2,
-    description: 'Basic support for small restaurants',
+  core: {
+    name: 'Core',
+    price: 350,
+    hours: 1.5,
+    description: 'Essential coverage for single-location restaurants',
     features: [
       { name: 'Email Support', included: true },
-      { name: 'Phone Support', included: true, limit: 'Business hours' },
+      { name: 'Response Time', included: true, limit: '24-48 hour' },
       { name: 'Remote Troubleshooting', included: true },
-      { name: 'Monthly Support Hours', included: true, limit: '2 hours' },
-      { name: 'Priority Response', included: false },
+      { name: 'Monthly Support Hours', included: true, limit: '1.5 hours' },
+      { name: 'System Monitoring', included: true, limit: 'Basic alerts' },
+      { name: 'Phone Support', included: false },
       { name: 'On-Site Support', included: false },
-      { name: 'Training Sessions', included: false },
     ]
   },
   professional: {
     name: 'Professional',
-    price: 199,
-    hours: 5,
-    description: 'Enhanced support for growing businesses',
+    price: 500,
+    hours: 3,
+    description: 'Comprehensive support with faster response',
     features: [
       { name: 'Email Support', included: true },
-      { name: 'Phone Support', included: true, limit: 'Extended hours' },
-      { name: 'Remote Troubleshooting', included: true },
-      { name: 'Monthly Support Hours', included: true, limit: '5 hours' },
-      { name: 'Priority Response', included: true, limit: '4 hour SLA' },
+      { name: 'Phone Support', included: true },
+      { name: 'Response Time', included: true, limit: '4-hour SLA' },
+      { name: 'Monthly Support Hours', included: true, limit: '3 hours' },
+      { name: 'Google Business Profile', included: true },
       { name: 'On-Site Support', included: true, limit: '1 visit/quarter' },
-      { name: 'Training Sessions', included: true, limit: '1 session/month' },
+      { name: 'System Monitoring', included: true, limit: 'Full monitoring' },
     ]
   },
   premium: {
     name: 'Premium',
-    price: 399,
-    hours: 12,
-    description: 'Comprehensive support for multi-location restaurants',
+    price: 800,
+    hours: 5,
+    description: 'Full-service partnership for high-volume operations',
     features: [
       { name: 'Email Support', included: true },
       { name: 'Phone Support', included: true, limit: '24/7 access' },
-      { name: 'Remote Troubleshooting', included: true },
-      { name: 'Monthly Support Hours', included: true, limit: '12 hours' },
-      { name: 'Priority Response', included: true, limit: '1 hour SLA' },
-      { name: 'On-Site Support', included: true, limit: 'Unlimited' },
-      { name: 'Training Sessions', included: true, limit: 'Unlimited' },
+      { name: 'Response Time', included: true, limit: '2-hour SLA' },
+      { name: 'Monthly Support Hours', included: true, limit: '5 hours' },
+      { name: 'Emergency After-Hours', included: true },
+      { name: 'Website Hosting', included: true },
+      { name: 'On-Site Support', included: true, limit: '2 visits/quarter' },
     ]
   }
 };

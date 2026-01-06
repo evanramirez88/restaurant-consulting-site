@@ -260,8 +260,9 @@ export async function cancelInvoice(env, invoiceId, version) {
 // ============================================
 
 // Support Plan catalog item IDs (must be created in Square Dashboard)
+// Tier names MUST match website pricing in pages/Services.tsx
 export const SUPPORT_PLAN_CATALOG_IDS = {
-  essential: null,    // Set after creating in Square Catalog
+  core: null,         // Set after creating in Square Catalog
   professional: null,
   premium: null
 };

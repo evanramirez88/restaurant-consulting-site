@@ -19,16 +19,31 @@ import {
 } from '../_shared/square.js';
 
 // Support plan pricing (in cents for Square)
+// MUST match website pricing in pages/Services.tsx
 const SUPPORT_PLAN_PRICES = {
-  essential: 9900,     // $99/month
-  professional: 19900, // $199/month
-  premium: 39900       // $399/month
+  core: 35000,         // $350/month
+  professional: 50000, // $500/month
+  premium: 80000       // $800/month
+};
+
+// Quarterly prices (for reference)
+const SUPPORT_PLAN_QUARTERLY = {
+  core: 105000,        // $1,050/quarter
+  professional: 150000, // $1,500/quarter
+  premium: 240000      // $2,400/quarter
+};
+
+// Annual prepay (11 months - 1 month free)
+const SUPPORT_PLAN_ANNUAL = {
+  core: 385000,        // $3,850/year (saves $350)
+  professional: 550000, // $5,500/year (saves $500)
+  premium: 880000      // $8,800/year (saves $800)
 };
 
 const SUPPORT_PLAN_HOURS = {
-  essential: 2,
-  professional: 5,
-  premium: 12
+  core: 1.5,
+  professional: 3,
+  premium: 5
 };
 
 /**
@@ -166,10 +181,10 @@ export async function onRequestPost(context) {
       });
     }
 
-    if (!['essential', 'professional', 'premium'].includes(tier)) {
+    if (!['core', 'professional', 'premium'].includes(tier)) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Invalid tier. Must be: essential, professional, or premium'
+        error: 'Invalid tier. Must be: core, professional, or premium'
       }), {
         status: 400,
         headers: corsHeaders

@@ -200,7 +200,7 @@ Use similar structure but focus on:
 - Auto-renewal terms
 
 ### Key Sections:
-1. Support Plan Tier (Essential/Professional/Premium)
+1. Support Plan Tier (Core/Professional/Premium)
 2. Response Time Guarantees
 3. Covered Services List
 4. Monthly/Annual Pricing

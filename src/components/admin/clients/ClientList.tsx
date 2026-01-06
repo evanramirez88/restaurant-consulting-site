@@ -75,7 +75,7 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
   const getSupportBadge = (tier: string | null, status: string | null) => {
     if (!tier || status !== 'active') return null;
     const colors: Record<string, string> = {
-      essential: 'bg-blue-500/20 text-blue-400 border-blue-500/50',
+      core: 'bg-blue-500/20 text-blue-400 border-blue-500/50',
       professional: 'bg-amber-500/20 text-amber-400 border-amber-500/50',
       premium: 'bg-green-500/20 text-green-400 border-green-500/50'
     };

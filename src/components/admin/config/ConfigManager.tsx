@@ -628,7 +628,7 @@ const ConfigManager: React.FC = () => {
             </h4>
             <div className="grid grid-cols-3 gap-4">
               {[
-                { key: 'support_tier_1_percent', label: 'Essential', color: 'text-blue-400' },
+                { key: 'support_tier_1_percent', label: 'Core', color: 'text-blue-400' },
                 { key: 'support_tier_2_percent', label: 'Professional', color: 'text-amber-400' },
                 { key: 'support_tier_3_percent', label: 'Premium', color: 'text-green-400' }
               ].map(({ key, label, color }) => (
