@@ -1142,12 +1142,13 @@ const QuoteBuilder: React.FC = () => {
     const onMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale;
       const dy = (ev.clientY - startY) / scale;
+      // Snap to 2px grid, no boundaries - canvas is infinite
       const nx = Math.round((startPos.x + dx) / 2) * 2;
       const ny = Math.round((startPos.y + dy) / 2) * 2;
 
-      if (kind === 'station') updateStation(id, { x: clamp(nx, 0, 4000), y: clamp(ny, 0, 3000) });
-      if (kind === 'object') updateObject(id, { x: clamp(nx, 0, 4000), y: clamp(ny, 0, 3000) });
-      if (kind === 'label') updateLabel(id, { x: clamp(nx, 0, 4000), y: clamp(ny, 0, 3000) });
+      if (kind === 'station') updateStation(id, { x: nx, y: ny });
+      if (kind === 'object') updateObject(id, { x: nx, y: ny });
+      if (kind === 'label') updateLabel(id, { x: nx, y: ny });
     };
 
     const onUp = () => {
@@ -1667,7 +1668,69 @@ const QuoteBuilder: React.FC = () => {
               userSelect: isPanning ? 'none' : 'auto'
             }}
           >
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', minWidth: '2000px', minHeight: '1500px', position: 'relative' }}>
+            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', minWidth: '10000px', minHeight: '8000px', position: 'relative' }}>
+              {/* Scale Grid Background - 1ft squares */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(100, 116, 139, 0.15) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(100, 116, 139, 0.15) 1px, transparent 1px),
+                    linear-gradient(to right, rgba(100, 116, 139, 0.3) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(100, 116, 139, 0.3) 1px, transparent 1px)
+                  `,
+                  backgroundSize: `
+                    ${currentFloor?.scalePxPerFt || 16}px ${currentFloor?.scalePxPerFt || 16}px,
+                    ${currentFloor?.scalePxPerFt || 16}px ${currentFloor?.scalePxPerFt || 16}px,
+                    ${(currentFloor?.scalePxPerFt || 16) * 10}px ${(currentFloor?.scalePxPerFt || 16) * 10}px,
+                    ${(currentFloor?.scalePxPerFt || 16) * 10}px ${(currentFloor?.scalePxPerFt || 16) * 10}px
+                  `
+                }}
+              />
+
+              {/* Scale Ruler - Top */}
+              <div className="absolute top-0 left-0 right-0 h-6 bg-slate-800/90 border-b border-slate-600 flex items-end pointer-events-none z-10">
+                {Array.from({ length: 100 }).map((_, i) => {
+                  const isMajor = i % 10 === 0;
+                  const ftPos = i * (currentFloor?.scalePxPerFt || 16);
+                  return (
+                    <div key={i} className="absolute flex flex-col items-center" style={{ left: ftPos }}>
+                      <div
+                        className={`${isMajor ? 'bg-amber-400' : 'bg-slate-500'}`}
+                        style={{ width: 1, height: isMajor ? 12 : 6 }}
+                      />
+                      {isMajor && (
+                        <span className="text-[8px] text-amber-400 mt-0.5">{i}ft</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Scale Ruler - Left */}
+              <div className="absolute top-6 left-0 bottom-0 w-6 bg-slate-800/90 border-r border-slate-600 flex flex-col items-end pointer-events-none z-10">
+                {Array.from({ length: 100 }).map((_, i) => {
+                  const isMajor = i % 10 === 0;
+                  const ftPos = i * (currentFloor?.scalePxPerFt || 16);
+                  return (
+                    <div key={i} className="absolute flex items-center" style={{ top: ftPos }}>
+                      <div
+                        className={`${isMajor ? 'bg-amber-400' : 'bg-slate-500'}`}
+                        style={{ height: 1, width: isMajor ? 12 : 6 }}
+                      />
+                      {isMajor && (
+                        <span className="text-[8px] text-amber-400 ml-0.5 -rotate-90 origin-left translate-x-3">{i}ft</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Scale Origin Marker */}
+              <div className="absolute top-0 left-0 w-6 h-6 bg-slate-900 border-r border-b border-slate-600 flex items-center justify-center z-20 pointer-events-none">
+                <span className="text-[7px] text-slate-400">ft</span>
+              </div>
+
               {/* Objects */}
               {currentFloor?.objects.map(o => (
                 <div
