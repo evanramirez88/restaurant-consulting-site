@@ -5,6 +5,28 @@
 
 ---
 
+## CRITICAL: Enable GitHub Auto-Deployments
+
+**Current Issue:** Auto-deployments are NOT configured. Manual wrangler deploys are required.
+
+**Location:** https://dash.cloudflare.com → Pages → restaurant-consulting-site → Settings → Builds & deployments
+
+**To Enable:**
+1. Go to **Settings → Builds & deployments**
+2. Click **Connect to Git**
+3. Select **GitHub** and authorize Cloudflare
+4. Select repository: `evanramirez88/restaurant-consulting-site`
+5. Configure build settings:
+   - **Production branch:** `main`
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - **Root directory:** `/` (leave empty)
+6. Click **Save and Deploy**
+
+**Result:** Every push to `main` will automatically trigger a deployment.
+
+---
+
 ## ONE-TIME CLOUDFLARE SETUP (Do This Once, Never Again)
 
 **Purpose:** Configure ALL Cloudflare services so Claude Code can build ANY feature without stopping.
