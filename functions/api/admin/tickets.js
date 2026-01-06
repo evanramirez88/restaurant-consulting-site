@@ -45,7 +45,22 @@ export async function onRequestGet(context) {
       params.push(priority);
     }
 
-    query += ' ORDER BY CASE t.priority WHEN \'urgent\' THEN 0 WHEN \'high\' THEN 1 WHEN \'normal\' THEN 2 ELSE 3 END, t.created_at DESC';
+    // Sorting logic
+    const sortBy = url.searchParams.get('sort_by') || 'priority';
+    const sortOrder = url.searchParams.get('sort_order') || 'asc';
+
+    if (sortBy === 'client') {
+      query += ` ORDER BY c.company ${sortOrder === 'desc' ? 'DESC' : 'ASC'}, c.name ${sortOrder === 'desc' ? 'DESC' : 'ASC'}, t.created_at DESC`;
+    } else if (sortBy === 'due_date') {
+      query += ` ORDER BY CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, t.due_date ${sortOrder === 'desc' ? 'DESC' : 'ASC'}, t.created_at DESC`;
+    } else if (sortBy === 'target_date') {
+      query += ` ORDER BY CASE WHEN t.target_date IS NULL THEN 1 ELSE 0 END, t.target_date ${sortOrder === 'desc' ? 'DESC' : 'ASC'}, t.created_at DESC`;
+    } else if (sortBy === 'created_at') {
+      query += ` ORDER BY t.created_at ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
+    } else {
+      // Default: priority-based sorting
+      query += ' ORDER BY CASE t.priority WHEN \'urgent\' THEN 0 WHEN \'high\' THEN 1 WHEN \'normal\' THEN 2 ELSE 3 END, t.created_at DESC';
+    }
 
     const stmt = env.DB.prepare(query);
     const result = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
@@ -88,7 +103,7 @@ export async function onRequestPost(context) {
     }
 
     const body = await request.json();
-    const { client_id, project_id, subject, description, priority = 'normal', category, assigned_to } = body;
+    const { client_id, project_id, subject, description, priority = 'normal', category, assigned_to, due_date, target_date, target_date_label } = body;
 
     if (!client_id || !subject) {
       return new Response(JSON.stringify({
@@ -100,11 +115,15 @@ export async function onRequestPost(context) {
       });
     }
 
+    // Convert date strings to unix timestamps if provided
+    const dueDateTimestamp = due_date ? Math.floor(new Date(due_date).getTime() / 1000) : null;
+    const targetDateTimestamp = target_date ? Math.floor(new Date(target_date).getTime() / 1000) : null;
+
     const id = crypto.randomUUID();
     await env.DB.prepare(`
-      INSERT INTO tickets (id, client_id, project_id, subject, description, priority, category, assigned_to, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', unixepoch(), unixepoch())
-    `).bind(id, client_id, project_id || null, subject, description || null, priority, category || null, assigned_to || null).run();
+      INSERT INTO tickets (id, client_id, project_id, subject, description, priority, category, assigned_to, due_date, target_date, target_date_label, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', unixepoch(), unixepoch())
+    `).bind(id, client_id, project_id || null, subject, description || null, priority, category || null, assigned_to || null, dueDateTimestamp, targetDateTimestamp, target_date_label || null).run();
 
     return new Response(JSON.stringify({
       success: true,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Ticket, Plus, Search, Filter, RefreshCw, Loader2, ChevronRight,
   AlertCircle, Clock, CheckCircle, X, Building2, Flag, Tag,
-  MessageSquare, Save, Trash2
+  MessageSquare, Save, Trash2, Calendar, ArrowUpDown, Target
 } from 'lucide-react';
 
 interface Ticket {
@@ -17,6 +17,9 @@ interface Ticket {
   status: 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed';
   category: string | null;
   assigned_to: string | null;
+  due_date: number | null;
+  target_date: number | null;
+  target_date_label: string | null;
   resolved_at: number | null;
   created_at: number;
   updated_at: number;
@@ -57,6 +60,8 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [sortBy, setSortBy] = useState('priority');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -67,13 +72,16 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
     subject: '',
     description: '',
     priority: 'normal' as const,
-    category: ''
+    category: '',
+    due_date: '',
+    target_date: '',
+    target_date_label: ''
   });
 
   useEffect(() => {
     loadTickets();
     if (!propClients) loadClients();
-  }, [filterStatus, filterPriority]);
+  }, [filterStatus, filterPriority, sortBy, sortOrder]);
 
   const loadTickets = async () => {
     setIsLoading(true);
@@ -81,6 +89,8 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
       const params = new URLSearchParams();
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterPriority !== 'all') params.append('priority', filterPriority);
+      params.append('sort_by', sortBy);
+      params.append('sort_order', sortOrder);
 
       const response = await fetch(`/api/admin/tickets?${params}`);
       const result = await response.json();
@@ -119,7 +129,7 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
       const result = await response.json();
       if (result.success) {
         setShowCreateModal(false);
-        setNewTicket({ client_id: '', subject: '', description: '', priority: 'normal', category: '' });
+        setNewTicket({ client_id: '', subject: '', description: '', priority: 'normal', category: '', due_date: '', target_date: '', target_date_label: '' });
         loadTickets();
       }
     } catch (error) {
@@ -166,6 +176,33 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
     });
+  };
+
+  const formatDateOnly = (timestamp: number | null) => {
+    if (!timestamp) return null;
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  };
+
+  const timestampToInputDate = (timestamp: number | null) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const isOverdue = (dueDate: number | null) => {
+    if (!dueDate) return false;
+    return dueDate * 1000 < Date.now();
   };
 
   const totalOpen = (statusCounts.open || 0) + (statusCounts.in_progress || 0) + (statusCounts.waiting || 0);
@@ -244,6 +281,27 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
               <option key={key} value={key}>{config.label}</option>
             ))}
           </select>
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-4 h-4 text-gray-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => handleSort(e.target.value)}
+              className="px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="priority">Sort by Priority</option>
+              <option value="client">Sort by Client</option>
+              <option value="due_date">Sort by Due Date</option>
+              <option value="target_date">Sort by Target Date</option>
+              <option value="created_at">Sort by Created</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -298,7 +356,7 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
                       )}
                     </div>
                     <h3 className="text-white font-semibold truncate">{ticket.subject}</h3>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400 flex-wrap">
                       <span className="flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
                         {ticket.client_company || ticket.client_name}
@@ -307,6 +365,19 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
                         <Clock className="w-3 h-3" />
                         {formatDate(ticket.created_at)}
                       </span>
+                      {ticket.due_date && (
+                        <span className={`flex items-center gap-1 ${isOverdue(ticket.due_date) && ticket.status !== 'resolved' && ticket.status !== 'closed' ? 'text-red-400' : ''}`}>
+                          <Calendar className="w-3 h-3" />
+                          Due: {formatDateOnly(ticket.due_date)}
+                          {isOverdue(ticket.due_date) && ticket.status !== 'resolved' && ticket.status !== 'closed' && ' (Overdue)'}
+                        </span>
+                      )}
+                      {ticket.target_date && (
+                        <span className="flex items-center gap-1 text-amber-400">
+                          <Target className="w-3 h-3" />
+                          {ticket.target_date_label || 'Target'}: {formatDateOnly(ticket.target_date)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-500 flex-shrink-0" />
@@ -388,6 +459,44 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
                   </select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    <Calendar className="w-3 h-3 inline mr-1" />
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newTicket.due_date}
+                    onChange={(e) => setNewTicket(prev => ({ ...prev, due_date: e.target.value }))}
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    <Target className="w-3 h-3 inline mr-1" />
+                    Target Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newTicket.target_date}
+                    onChange={(e) => setNewTicket(prev => ({ ...prev, target_date: e.target.value }))}
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+              </div>
+              {newTicket.target_date && (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Target Date Label</label>
+                  <input
+                    type="text"
+                    value={newTicket.target_date_label}
+                    onChange={(e) => setNewTicket(prev => ({ ...prev, target_date_label: e.target.value }))}
+                    placeholder="e.g., Ready By, Test By, Launch By..."
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+              )}
             </div>
             <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
               <button
@@ -447,6 +556,98 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
                   <p className="text-xs text-gray-500 mb-1">Last Updated</p>
                   <p className="text-white">{formatDate(selectedTicket.updated_at)}</p>
                 </div>
+              </div>
+
+              {/* Date Fields */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                    <Calendar className="w-3 h-3" />
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={timestampToInputDate(selectedTicket.due_date)}
+                    onChange={async (e) => {
+                      const newDueDate = e.target.value;
+                      try {
+                        await fetch(`/api/admin/tickets/${selectedTicket.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ due_date: newDueDate || null })
+                        });
+                        setSelectedTicket(prev => prev ? {
+                          ...prev,
+                          due_date: newDueDate ? Math.floor(new Date(newDueDate).getTime() / 1000) : null
+                        } : null);
+                        loadTickets();
+                      } catch (error) {
+                        console.error('Failed to update due date:', error);
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-gray-800 border rounded-lg text-white text-sm ${
+                      isOverdue(selectedTicket.due_date) && selectedTicket.status !== 'resolved' && selectedTicket.status !== 'closed'
+                        ? 'border-red-500 text-red-400'
+                        : 'border-gray-600'
+                    }`}
+                  />
+                  {isOverdue(selectedTicket.due_date) && selectedTicket.status !== 'resolved' && selectedTicket.status !== 'closed' && (
+                    <p className="text-red-400 text-xs mt-1">Overdue</p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                    <Target className="w-3 h-3" />
+                    Target Date
+                  </label>
+                  <input
+                    type="date"
+                    value={timestampToInputDate(selectedTicket.target_date)}
+                    onChange={async (e) => {
+                      const newTargetDate = e.target.value;
+                      try {
+                        await fetch(`/api/admin/tickets/${selectedTicket.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ target_date: newTargetDate || null })
+                        });
+                        setSelectedTicket(prev => prev ? {
+                          ...prev,
+                          target_date: newTargetDate ? Math.floor(new Date(newTargetDate).getTime() / 1000) : null
+                        } : null);
+                        loadTickets();
+                      } catch (error) {
+                        console.error('Failed to update target date:', error);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
+                  />
+                </div>
+                {(selectedTicket.target_date || timestampToInputDate(selectedTicket.target_date)) && (
+                  <div className="col-span-2">
+                    <label className="text-xs text-gray-500 mb-2 block">Target Date Label</label>
+                    <input
+                      type="text"
+                      value={selectedTicket.target_date_label || ''}
+                      onChange={async (e) => {
+                        const newLabel = e.target.value;
+                        try {
+                          await fetch(`/api/admin/tickets/${selectedTicket.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target_date_label: newLabel || null })
+                          });
+                          setSelectedTicket(prev => prev ? { ...prev, target_date_label: newLabel || null } : null);
+                          loadTickets();
+                        } catch (error) {
+                          console.error('Failed to update target date label:', error);
+                        }
+                      }}
+                      placeholder="e.g., Ready By, Test By, Launch By..."
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
+                    />
+                  </div>
+                )}
               </div>
 
               {selectedTicket.description && (

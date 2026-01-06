@@ -70,12 +70,31 @@ export async function onRequestPut(context) {
     const updates = [];
     const values = [];
 
-    const allowedFields = ['subject', 'description', 'priority', 'status', 'category', 'assigned_to', 'project_id'];
+    const allowedFields = ['subject', 'description', 'priority', 'status', 'category', 'assigned_to', 'project_id', 'target_date_label'];
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updates.push(`${field} = ?`);
         values.push(body[field]);
+      }
+    }
+
+    // Handle date fields - convert date strings to unix timestamps
+    if (body.due_date !== undefined) {
+      if (body.due_date === null || body.due_date === '') {
+        updates.push('due_date = NULL');
+      } else {
+        updates.push('due_date = ?');
+        values.push(Math.floor(new Date(body.due_date).getTime() / 1000));
+      }
+    }
+
+    if (body.target_date !== undefined) {
+      if (body.target_date === null || body.target_date === '') {
+        updates.push('target_date = NULL');
+      } else {
+        updates.push('target_date = ?');
+        values.push(Math.floor(new Date(body.target_date).getTime() / 1000));
       }
     }
 

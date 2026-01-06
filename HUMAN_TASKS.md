@@ -219,6 +219,16 @@ Create catalog items for support plans:
 
 ---
 
+## Domain Transfer Tasks
+
+### capecodcablecontractors.com Transfer
+- [ ] Complete domain transfer from existing registrar
+- [ ] Add domain to Cloudflare DNS
+- [ ] Configure 301 redirect to ccrestaurantconsulting.com/#/local-networking
+- **Status:** In progress - transfer takes time
+
+---
+
 ## Quick Reference: System IDs
 
 | System | ID |
