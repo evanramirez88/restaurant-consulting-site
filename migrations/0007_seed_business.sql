@@ -72,7 +72,7 @@ INSERT OR IGNORE INTO client_rep_assignments (
   rep_id,
   role,
   commission_rate,
-  created_at,
+  assigned_at,
   updated_at
 ) VALUES (
   'rg-adam-assignment',

@@ -75,15 +75,13 @@
 After deploying, run these commands to set up all tables:
 
 ```bash
-# Core schema
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0002_full_schema.sql
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0003_multi_tenant_system.sql
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0004_automation_system.sql
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0005_quote_import.sql
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0006_ticket_dates.sql
+# COMPLETED - All migrations have been run successfully on 2026-01-06
 
-# Seed initial business data (R&G Consulting + Adam Holmes rep)
-npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0007_seed_business.sql
+# If you need to re-run or on a fresh database, use this order:
+# 1. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0004_automation_system.sql
+# 2. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0005_quote_import.sql
+# 3. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0008_missing_tables.sql
+# 4. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0007_seed_business.sql
 ```
 
 ---
