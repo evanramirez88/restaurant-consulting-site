@@ -54,3 +54,7 @@ binding = "AI"
 #
 # HUBSPOT:
 #   HUBSPOT_ACCESS_TOKEN   - From https://app.hubspot.com/private-apps/243379742
+#
+# RESEND (Email):
+#   RESEND_API_KEY         - From https://resend.com/api-keys
+#                            Used for contact forms, quote emails, magic link auth

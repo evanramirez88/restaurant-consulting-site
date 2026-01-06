@@ -108,7 +108,10 @@ export const HARDWARE_CATALOG: HardwareItem[] = [
   { id: "ups", name: "UPS Battery Backup", category: "Power", ttiMin: 0 },
   { id: "cash-drawer", name: "Cash Drawer", category: "Accessories", ttiMin: 0 },
   { id: "barcode", name: "Barcode Scanner", category: "Retail", ttiMin: 0 },
-  { id: "scale", name: "By-Weight Scale", category: "Retail", ttiMin: 0 }
+  { id: "scale", name: "By-Weight Scale", category: "Retail", ttiMin: 0 },
+  { id: "charging-dock", name: "Charging Dock", category: "Accessories", ttiMin: 0 },
+  { id: "stand", name: "Tablet Stand", category: "Accessories", ttiMin: 0 },
+  { id: "toast-tap", name: "Toast Tap (Payment Device)", category: "Card", ttiMin: 0 }
 ];
 
 // SECURITY: Integration TTI values are calculated server-side only

@@ -74,6 +74,12 @@ GitHub Actions workflow is deployed with secrets configured:
 | `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` | Cape Cod location |
 | `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` | National location |
 
+**Email Service (Required for forms to send emails):**
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `RESEND_API_KEY` | Your API key | https://resend.com/api-keys → Create new key |
+
 **Optional (for future features):**
 
 | Variable | Value | How to Get |
