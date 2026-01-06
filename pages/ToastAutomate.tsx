@@ -222,13 +222,13 @@ const ComingSoonOverlay: React.FC = () => {
 
         {/* Headline */}
         <h1 className="hero-fade-in hero-fade-in-delay-1 font-display text-5xl md:text-6xl font-bold text-amber-400 mb-4">
-          Toast Back-office Automate
+          Toast Auto-Back-Office
         </h1>
 
         {/* Subheadline */}
         <div className="hero-fade-in hero-fade-in-delay-1 mb-10">
           <p className="text-2xl md:text-3xl text-white font-display mb-3">
-            Workflow Automation for Toast POS
+            Intelligent Browser Automation for Toast POS
           </p>
           <div className="brass-underline mx-auto"></div>
         </div>
@@ -236,9 +236,9 @@ const ComingSoonOverlay: React.FC = () => {
         {/* Body Copy */}
         <div className="hero-fade-in hero-fade-in-delay-2 mb-12 max-w-2xl mx-auto">
           <p className="text-lg text-gray-300 leading-relaxed mb-6">
-            Configure powerful automation rules for your Toast back-office operations.
-            Schedule reports, monitor inventory, sync menus across locations, and
-            receive intelligent alerts - all without manual intervention.
+            Toast ABO uses intelligent browser automation to handle the tedious back-office work for you.
+            From menu builds and configuration to ongoing maintenance and audits—our system works directly
+            in the Toast portal, performing data entry and updates as if a human operator was at the keyboard.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-400 mt-8">
             <div className="flex items-center justify-center gap-2">
@@ -403,8 +403,8 @@ const RuleCard: React.FC<{
 // ============================================================
 const ToastAutomate: React.FC = () => {
   useSEO({
-    title: 'Toast Back-office Automate | Cape Cod Restaurant Consulting',
-    description: 'Configure powerful automation rules for your Toast POS back-office operations.',
+    title: 'Toast Auto-Back-Office (Toast ABO) | Cape Cod Restaurant Consulting',
+    description: 'Intelligent browser automation for Toast POS back-office operations. Menu builds, configuration, maintenance, and audits handled automatically.',
     canonical: 'https://ccrestaurantconsulting.com/#/toast-automate',
   });
 
@@ -504,9 +504,9 @@ const ToastAutomate: React.FC = () => {
             <div>
               <h1 className="text-xl font-display font-bold text-white flex items-center gap-2">
                 <Zap className="w-5 h-5 text-amber-400" />
-                Toast Back-office Automate
+                Toast Auto-Back-Office
               </h1>
-              <p className="text-sm text-gray-400">Configure automation rules for your Toast POS</p>
+              <p className="text-sm text-gray-400">Browser automation for Toast POS configuration</p>
             </div>
           </div>
           <button

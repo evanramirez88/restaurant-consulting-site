@@ -37,8 +37,8 @@ const LocalNetworking: React.FC = () => {
           "name": "Cape Cod Restaurant Consulting",
           "description": "Restaurant-focused network installation and IT services for commercial kitchens in Cape Cod, MA and Southeastern New England.",
           "url": "https://ccrestaurantconsulting.com",
-          "telephone": "(508) 247-4936",
-          "email": "evanramirez@ccrestaurantconsulting.com",
+          "telephone": "(774) 408-0083",
+          "email": "ramirezconsulting.rg@gmail.com",
           "areaServed": [
             {
               "@type": "GeoCircle",
@@ -267,10 +267,10 @@ const LocalNetworking: React.FC = () => {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a
-              href="tel:+15082474936"
+              href="tel:+17744080083"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all"
             >
-              (508) 247-4936
+              (774) 408-0083
             </a>
           </div>
         </div>

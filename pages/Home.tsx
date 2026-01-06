@@ -19,7 +19,7 @@ const Home: React.FC = () => {
 
   useSEO({
     title: 'Toast POS Consultant Cape Cod | R&G Consulting LLC',
-    description: 'Expert Toast POS installation, menu configuration, and restaurant networking in Cape Cod, MA. Get your free quote today! Call (508) 247-4936.',
+    description: 'Expert Toast POS installation, menu configuration, and restaurant networking in Cape Cod, MA. Get your free quote today! Call (774) 408-0083.',
     canonical: 'https://ccrestaurantconsulting.com/',
   });
 
@@ -424,11 +424,11 @@ const Home: React.FC = () => {
               Get Your Free Quote
             </Link>
             <a
-              href="tel:5082474936"
+              href="tel:+17744080083"
               className="px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg flex items-center justify-center gap-2 hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
-              <Phone size={20} /> Call Now: (508) 247-4936
+              <Phone size={20} /> Call Now: (774) 408-0083
             </a>
           </div>
         </div>

@@ -22,7 +22,7 @@ interface FormStatus {
 const About: React.FC = () => {
   useSEO({
     title: 'About & Contact | Toast POS Consultant Cape Cod',
-    description: 'Meet Evan Ramirez, Cape Cod\'s trusted Toast POS consultant with real restaurant experience. Contact us for POS installation, menu configuration, or networking. Call (508) 247-4936.',
+    description: 'Meet Evan Ramirez, Cape Cod\'s trusted Toast POS consultant with real restaurant experience. Contact us for POS installation, menu configuration, or networking. Call (774) 408-0083.',
     canonical: 'https://ccrestaurantconsulting.com/#/about',
   });
 
@@ -182,7 +182,7 @@ const About: React.FC = () => {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Get In Touch</h2>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 max-w-2xl mx-auto">
-              POS down? Call <a href="tel:5082474936" className="text-amber-600 font-semibold hover:text-amber-700 transition-colors">(508) 247-4936</a> immediately. For everything else, fill out the form below.
+              POS down? Call <a href="tel:+17744080083" className="text-amber-600 font-semibold hover:text-amber-700 transition-colors">(774) 408-0083</a> immediately. For everything else, fill out the form below.
             </p>
           </div>
 

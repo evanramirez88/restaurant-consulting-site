@@ -11,8 +11,8 @@ import {
 
 export const COMPANY_NAME = "Cape Cod Restaurant Consulting";
 export const OWNER_NAME = "Evan Ramirez";
-export const PHONE_NUMBER = "(508) 247-4936";
-export const EMAIL_ADDRESS = "evanramirez@ccrestaurantconsulting.com";
+export const PHONE_NUMBER = "(774) 408-0083";
+export const EMAIL_ADDRESS = "ramirezconsulting.rg@gmail.com";
 
 // SECURITY: Actual pricing is calculated server-side via /api/quote/calculate
 // These values are placeholders for UI display only

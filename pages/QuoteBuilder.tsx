@@ -812,10 +812,7 @@ const QuoteBuilder: React.FC = () => {
       const f = loc.floors.find(fl => fl.id === currentFloor?.id);
       if (f) {
         f.stations = f.stations.filter(s => s.id !== id);
-        // Ensure at least one networking area exists
-        if (!f.stations.some(s => s.type === "Networking Area")) {
-          f.stations.unshift(createNetworkingStation(60, 60));
-        }
+        // Note: Networking area is now fully removable - users can add it back from templates if needed
       }
       return loc;
     });
@@ -1384,18 +1381,28 @@ const QuoteBuilder: React.FC = () => {
 
           <div className="w-px h-6 bg-slate-700 mx-1 flex-shrink-0" />
 
-          {/* Location selector */}
+          {/* Location name - editable */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <Building2 size={14} className="text-slate-400" />
-            <select
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white"
-              value={locId}
-              onChange={e => setLocId(e.target.value)}
-            >
-              {locations.map(l => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+            <input
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white w-40"
+              placeholder="Restaurant Name"
+              value={currentLocation?.name || ''}
+              onChange={e => updateCurrentLocation(loc => ({ ...loc, name: e.target.value }))}
+              title="Edit restaurant name"
+            />
+            {locations.length > 1 && (
+              <select
+                className="bg-slate-800 border border-slate-600 rounded px-1 py-1.5 text-xs text-white w-8"
+                value={locId}
+                onChange={e => setLocId(e.target.value)}
+                title="Switch location"
+              >
+                {locations.map(l => (
+                  <option key={l.id} value={l.id}>{l.name || 'Unnamed'}</option>
+                ))}
+              </select>
+            )}
             <button onClick={addLocation} className="bg-slate-700 hover:bg-slate-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Location">
               <Plus size={12} />
             </button>
