@@ -62,7 +62,12 @@ import {
   CableRun,
   TravelSettings,
   ExtractedHardware,
-  ImportStatus
+  ImportStatus,
+  StationGroup,
+  ExtractedClientInfo,
+  ExtractedSoftware,
+  ExtractedAdminData,
+  ParseTextResponse
 } from '../types';
 import {
   HARDWARE_CATALOG,
@@ -327,6 +332,11 @@ const QuoteBuilder: React.FC = () => {
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importJobId, setImportJobId] = useState<string | null>(null);
   const [extractedItems, setExtractedItems] = useState<ExtractedHardware[]>([]);
+  const [stationGroups, setStationGroups] = useState<StationGroup[]>([]);
+  const [ungroupedItems, setUngroupedItems] = useState<ExtractedHardware[]>([]);
+  const [extractedClientInfo, setExtractedClientInfo] = useState<ExtractedClientInfo | null>(null);
+  const [extractedSoftware, setExtractedSoftware] = useState<ExtractedSoftware[]>([]);
+  const [extractedAdminData, setExtractedAdminData] = useState<ExtractedAdminData | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
 
@@ -513,6 +523,11 @@ const QuoteBuilder: React.FC = () => {
     setImportStatus('uploading');
     setImportError(null);
     setExtractedItems([]);
+    setStationGroups([]);
+    setUngroupedItems([]);
+    setExtractedClientInfo(null);
+    setExtractedSoftware([]);
+    setExtractedAdminData(null);
 
     try {
       // Read PDF and extract text using unpdf
@@ -549,12 +564,47 @@ const QuoteBuilder: React.FC = () => {
         })
       });
 
-      const parseData = await parseRes.json();
+      const parseData: ParseTextResponse = await parseRes.json();
       if (!parseData.success) {
         throw new Error(parseData.error || 'Parsing failed');
       }
 
+      // Store all extracted data
       setExtractedItems(parseData.extractedItems || []);
+      setStationGroups(parseData.stationGroups || []);
+      setUngroupedItems(parseData.ungroupedItems || []);
+      setExtractedClientInfo(parseData.clientInfo || null);
+      setExtractedSoftware(parseData.software || []);
+      setExtractedAdminData(parseData.adminData || null);
+
+      // If client info has a business name, update the location name
+      if (parseData.clientInfo?.businessName) {
+        updateCurrentLocation(loc => ({
+          ...loc,
+          name: parseData.clientInfo.businessName || loc.name,
+          address: parseData.clientInfo.address
+            ? `${parseData.clientInfo.address}${parseData.clientInfo.city ? ', ' + parseData.clientInfo.city : ''}${parseData.clientInfo.state ? ' ' + parseData.clientInfo.state : ''}${parseData.clientInfo.zip ? ' ' + parseData.clientInfo.zip : ''}`
+            : loc.address
+        }));
+      }
+
+      // Auto-enable detected software integrations
+      if (parseData.software && parseData.software.length > 0) {
+        updateCurrentLocation(loc => ({
+          ...loc,
+          integrationIds: [
+            ...new Set([...loc.integrationIds, ...parseData.software.map(s => s.id)])
+          ]
+        }));
+      }
+
+      console.log('[PDF Import] Extracted:', {
+        stationGroups: parseData.stationGroups?.length || 0,
+        ungroupedItems: parseData.ungroupedItems?.length || 0,
+        software: parseData.software?.length || 0,
+        hasClientInfo: !!parseData.clientInfo?.businessName
+      });
+
       setImportStatus('complete');
 
     } catch (error) {
@@ -565,62 +615,126 @@ const QuoteBuilder: React.FC = () => {
   };
 
   const importExtractedHardware = () => {
-    if (extractedItems.length === 0) return;
+    const hasGroupedItems = stationGroups.length > 0;
+    const hasUngroupedItems = ungroupedItems.length > 0;
 
-    // Create a new "Imported Hardware" station with the extracted items
-    const importedStation: AdvancedStation = {
-      id: uid(),
-      name: 'Imported Hardware',
-      type: 'Imported',
-      color: '#8b5cf6', // Purple to distinguish
-      x: 100,
-      y: 100,
-      w: 300,
-      h: 200,
-      nickname: 'From Toast PDF',
-      notes: `Imported ${new Date().toLocaleDateString()}`,
-      dept: 'FOH',
-      flags: { existing: false, replace: false },
-      hardware: []
-    };
+    if (!hasGroupedItems && !hasUngroupedItems && extractedItems.length === 0) return;
 
-    // Add each extracted item with proper quantities
-    for (const item of extractedItems) {
-      for (let i = 0; i < item.quantity; i++) {
-        for (const hid of item.mappedHardwareIds) {
-          importedStation.hardware.push({
-            hid,
-            nickname: item.productName.substring(0, 30),
-            notes: '',
-            flags: { existing: false, replace: false }
-          });
+    const newStations: AdvancedStation[] = [];
+    const stationColors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+    let colorIndex = 0;
+    let xOffset = 100;
+    let yOffset = 100;
+
+    // Create stations from station groups
+    for (const group of stationGroups) {
+      // Create multiple stations if group.quantity > 1
+      for (let stationNum = 0; stationNum < group.quantity; stationNum++) {
+        const station: AdvancedStation = {
+          id: uid(),
+          name: group.quantity > 1 ? `${group.name} ${stationNum + 1}` : group.name,
+          type: group.name,
+          color: stationColors[colorIndex % stationColors.length],
+          x: xOffset,
+          y: yOffset,
+          w: 280,
+          h: 180,
+          nickname: '',
+          notes: `Imported from Toast PDF - ${new Date().toLocaleDateString()}`,
+          dept: group.name.toLowerCase().includes('kitchen') || group.name.toLowerCase().includes('expo') ? 'BOH' : 'FOH',
+          flags: { existing: false, replace: false },
+          hardware: []
+        };
+
+        // Add hardware items to this station
+        for (const item of group.items) {
+          for (let i = 0; i < item.quantity; i++) {
+            for (const hid of item.mappedHardwareIds) {
+              station.hardware.push({
+                hid,
+                nickname: '',
+                notes: '',
+                flags: { existing: false, replace: false }
+              });
+            }
+          }
         }
+
+        newStations.push(station);
+
+        // Offset next station position
+        xOffset += 320;
+        if (xOffset > 900) {
+          xOffset = 100;
+          yOffset += 220;
+        }
+      }
+      colorIndex++;
+    }
+
+    // Create a station for ungrouped items
+    if (hasUngroupedItems || (extractedItems.length > 0 && !hasGroupedItems)) {
+      const itemsToUse = hasUngroupedItems ? ungroupedItems : extractedItems;
+      const ungroupedStation: AdvancedStation = {
+        id: uid(),
+        name: 'Imported Hardware',
+        type: 'Imported',
+        color: '#6b7280', // Gray for ungrouped
+        x: xOffset,
+        y: yOffset,
+        w: 300,
+        h: 200,
+        nickname: 'From Toast PDF',
+        notes: `Imported ${new Date().toLocaleDateString()} - Review and organize into stations`,
+        dept: 'FOH',
+        flags: { existing: false, replace: false },
+        hardware: []
+      };
+
+      for (const item of itemsToUse) {
+        for (let i = 0; i < item.quantity; i++) {
+          for (const hid of item.mappedHardwareIds) {
+            ungroupedStation.hardware.push({
+              hid,
+              nickname: item.productName.substring(0, 30),
+              notes: '',
+              flags: { existing: false, replace: false }
+            });
+          }
+        }
+      }
+
+      if (ungroupedStation.hardware.length > 0) {
+        newStations.push(ungroupedStation);
       }
     }
 
-    // Add station to current floor
+    // Add all new stations to current floor
     updateCurrentLocation(loc => {
       const floor = loc.floors.find(f => f.id === currentFloor?.id);
       if (floor) {
-        floor.stations.push(importedStation);
+        floor.stations.push(...newStations);
       }
       return loc;
     });
 
-    // Select the new station
-    setSelected({ kind: 'station', id: importedStation.id });
+    // Select the first new station
+    if (newStations.length > 0) {
+      setSelected({ kind: 'station', id: newStations[0].id });
+    }
 
-    // Close modal and reset state
-    setShowImportModal(false);
-    setExtractedItems([]);
-    setImportStatus('idle');
-    setImportJobId(null);
-    setImportError(null);
+    // Close modal and reset all state
+    resetImportModal();
   };
 
   const resetImportModal = () => {
     setShowImportModal(false);
     setExtractedItems([]);
+    setStationGroups([]);
+    setUngroupedItems([]);
+    setExtractedClientInfo(null);
+    setExtractedSoftware([]);
+    setExtractedAdminData(null);
     setImportStatus('idle');
     setImportJobId(null);
     setImportError(null);
@@ -2295,28 +2409,89 @@ const QuoteBuilder: React.FC = () => {
               <>
                 <div className="flex items-center gap-2 text-green-400 mb-4">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="font-medium">Extracted {extractedItems.length} items</span>
+                  <span className="font-medium">
+                    Extracted {stationGroups.length} station{stationGroups.length !== 1 ? 's' : ''}, {ungroupedItems.length + extractedItems.length} item{ungroupedItems.length + extractedItems.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
 
-                {/* Preview extracted items */}
-                <div className="max-h-64 overflow-y-auto mb-4 space-y-2">
-                  {extractedItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{item.productName}</p>
-                        <p className="text-slate-400 text-xs">
-                          {item.mappedHardwareIds.length > 0
-                            ? `Maps to: ${item.mappedHardwareIds.join(', ')}`
-                            : 'Unknown hardware type'}
-                        </p>
+                {/* Client Info (if extracted) */}
+                {extractedClientInfo?.businessName && (
+                  <div className="mb-3 p-2 bg-blue-900/30 border border-blue-700/50 rounded-lg">
+                    <p className="text-blue-300 text-xs font-medium mb-1">Client Detected</p>
+                    <p className="text-white text-sm font-medium">{extractedClientInfo.businessName}</p>
+                    {extractedClientInfo.address && (
+                      <p className="text-slate-400 text-xs">{extractedClientInfo.address}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Software/Integrations (if detected) */}
+                {extractedSoftware.length > 0 && (
+                  <div className="mb-3 p-2 bg-purple-900/30 border border-purple-700/50 rounded-lg">
+                    <p className="text-purple-300 text-xs font-medium mb-1">Software Detected</p>
+                    <div className="flex flex-wrap gap-1">
+                      {extractedSoftware.map((sw, idx) => (
+                        <span key={idx} className="px-2 py-0.5 text-xs bg-purple-600/50 text-purple-200 rounded">
+                          {sw.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview extracted items - grouped */}
+                <div className="max-h-64 overflow-y-auto mb-4 space-y-3">
+                  {/* Station Groups */}
+                  {stationGroups.map((group, gIdx) => (
+                    <div key={gIdx} className="border border-slate-600 rounded-lg overflow-hidden">
+                      <div className="bg-slate-700/70 px-3 py-2 flex items-center justify-between">
+                        <span className="text-white text-sm font-medium">{group.name}</span>
+                        <span className="text-purple-400 text-xs">
+                          {group.quantity > 1 ? `×${group.quantity} stations` : `${group.items.length} items`}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 ml-2">
-                        <span className="text-purple-400 font-medium text-sm">×{item.quantity}</span>
-                        <span className={`w-2 h-2 rounded-full ${item.confidence > 0.7 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      <div className="p-2 space-y-1">
+                        {group.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-slate-200 text-xs truncate">{item.productName}</p>
+                            </div>
+                            <div className="flex items-center gap-2 ml-2">
+                              <span className="text-purple-400 text-xs">×{item.quantity}</span>
+                              <span className={`w-1.5 h-1.5 rounded-full ${item.mappedHardwareIds.length > 0 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
-                  {extractedItems.length === 0 && (
+
+                  {/* Ungrouped Items */}
+                  {(ungroupedItems.length > 0 || (extractedItems.length > 0 && stationGroups.length === 0)) && (
+                    <div className="border border-slate-600 rounded-lg overflow-hidden">
+                      <div className="bg-slate-700/70 px-3 py-2">
+                        <span className="text-slate-300 text-sm font-medium">Other Hardware</span>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {(ungroupedItems.length > 0 ? ungroupedItems : extractedItems).map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-slate-200 text-xs truncate">{item.productName}</p>
+                              <p className="text-slate-500 text-[10px]">
+                                {item.mappedHardwareIds.length > 0 ? item.mappedHardwareIds.join(', ') : 'Needs mapping'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 ml-2">
+                              <span className="text-purple-400 text-xs">×{item.quantity}</span>
+                              <span className={`w-1.5 h-1.5 rounded-full ${item.mappedHardwareIds.length > 0 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {stationGroups.length === 0 && ungroupedItems.length === 0 && extractedItems.length === 0 && (
                     <p className="text-slate-400 text-center py-4">No hardware items found in the PDF</p>
                   )}
                 </div>
@@ -2330,7 +2505,7 @@ const QuoteBuilder: React.FC = () => {
                   </button>
                   <button
                     onClick={importExtractedHardware}
-                    disabled={extractedItems.length === 0}
+                    disabled={stationGroups.length === 0 && ungroupedItems.length === 0 && extractedItems.length === 0}
                     className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Import to Builder

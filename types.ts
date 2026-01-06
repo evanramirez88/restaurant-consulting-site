@@ -236,9 +236,86 @@ export interface ExtractedHardware {
 }
 
 /**
+ * A group of hardware items that should be imported as a station
+ */
+export interface StationGroup {
+  name: string;                 // Station name (e.g., "Bar Station")
+  quantity: number;             // How many of this station type (e.g., 5 bar stations)
+  items: ExtractedHardware[];   // Hardware items in this station
+}
+
+/**
+ * Client information extracted from Toast quote
+ */
+export interface ExtractedClientInfo {
+  businessName: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  phone: string | null;
+  email: string | null;
+  contactName: string | null;
+}
+
+/**
+ * Software/integration detected in the quote
+ */
+export interface ExtractedSoftware {
+  id: string;                   // Maps to INTEGRATIONS ids
+  name: string;
+  monthlyCost: number | null;   // Monthly cost if detected
+  detected: boolean;
+}
+
+/**
+ * Admin-only data extracted from quote (rates, charges, rep info)
+ */
+export interface ExtractedAdminData {
+  processingRates: {
+    cardPresent: string | null;
+    cardNotPresent: string | null;
+    perTransaction: string | null;
+  };
+  recurringCharges: Array<{
+    description: string;
+    amount: number;
+    period: 'monthly' | 'annual';
+  }>;
+  oneTimeCharges: Array<{
+    description: string;
+    amount: number;
+  }>;
+  promotions: string[];
+  repInfo: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+}
+
+/**
  * Status of a PDF import job
  */
 export type ImportStatus = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
+
+/**
+ * Response from the parse-text API (enhanced)
+ */
+export interface ParseTextResponse {
+  success: boolean;
+  // New structured format
+  stationGroups: StationGroup[];
+  ungroupedItems: ExtractedHardware[];
+  clientInfo: ExtractedClientInfo;
+  software: ExtractedSoftware[];
+  adminData: ExtractedAdminData;
+  // Backward compatible
+  extractedItems: ExtractedHardware[];
+  itemCount: number;
+  method: 'ai' | 'pattern';
+  error?: string;
+}
 
 /**
  * Response from the import-status API
