@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileText, Plus, Search, Edit3, Trash2, Eye, EyeOff, Calendar,
-  Tag, Loader2, RefreshCw, Star, MoreVertical, ExternalLink
+  Tag, Loader2, RefreshCw, Star, ExternalLink, ToggleLeft, ToggleRight,
+  Monitor, X, Globe, Check, AlertCircle, Save
 } from 'lucide-react';
 
 interface Post {
@@ -39,6 +40,10 @@ const ToastHubManager: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showEditor, setShowEditor] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewPost, setPreviewPost] = useState<Post | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -88,6 +93,74 @@ const ToastHubManager: React.FC = () => {
     } catch (error) {
       console.error('Failed to update post:', error);
     }
+  };
+
+  const togglePublished = async (post: Post) => {
+    const newStatus = post.status === 'published' ? 'draft' : 'published';
+    try {
+      const response = await fetch(`/api/admin/posts/${post.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          published_at: newStatus === 'published' ? Math.floor(Date.now() / 1000) : null
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setPosts(prev => prev.map(p =>
+          p.id === post.id
+            ? { ...p, status: newStatus, published_at: newStatus === 'published' ? Math.floor(Date.now() / 1000) : null }
+            : p
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to toggle publish status:', error);
+    }
+  };
+
+  const savePost = async () => {
+    if (!editingPost) return;
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const isNew = !editingPost.id;
+      const response = await fetch(
+        isNew ? '/api/admin/posts' : `/api/admin/posts/${editingPost.id}`,
+        {
+          method: isNew ? 'POST' : 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingPost)
+        }
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setSaveMessage({ type: 'success', text: isNew ? 'Post created successfully!' : 'Post saved successfully!' });
+        if (isNew) {
+          setPosts(prev => [result.data, ...prev]);
+        } else {
+          setPosts(prev => prev.map(p => p.id === editingPost.id ? result.data : p));
+        }
+        setTimeout(() => {
+          setShowEditor(false);
+          setEditingPost(null);
+          setSaveMessage(null);
+        }, 1500);
+      } else {
+        setSaveMessage({ type: 'error', text: result.error || 'Failed to save post' });
+      }
+    } catch (error) {
+      setSaveMessage({ type: 'error', text: 'Failed to save post' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openPreview = (post: Post) => {
+    setPreviewPost(post);
+    setShowPreview(true);
   };
 
   const filteredPosts = posts.filter(post => {
@@ -164,6 +237,16 @@ const ToastHubManager: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/#/toast-hub"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-sm"
+            title="View public Toast Hub page"
+          >
+            <Globe className="w-4 h-4" />
+            <span className="hidden sm:inline">View Public Page</span>
+          </a>
           <button
             onClick={loadData}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
@@ -225,7 +308,9 @@ const ToastHubManager: React.FC = () => {
         {filteredPosts.map((post) => (
           <div
             key={post.id}
-            className="admin-card p-4 hover:border-gray-600 transition-all"
+            className={`admin-card p-4 hover:border-gray-600 transition-all ${
+              post.status === 'published' ? 'border-l-2 border-l-green-500' : ''
+            }`}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -263,7 +348,31 @@ const ToastHubManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {/* Publish Toggle */}
+                <button
+                  onClick={() => togglePublished(post)}
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    post.status === 'published'
+                      ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-white'
+                  }`}
+                  title={post.status === 'published' ? 'Click to unpublish' : 'Click to publish'}
+                >
+                  {post.status === 'published' ? (
+                    <>
+                      <ToggleRight className="w-4 h-4" />
+                      <span className="hidden sm:inline">Live</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-4 h-4" />
+                      <span className="hidden sm:inline">Draft</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Featured Toggle */}
                 <button
                   onClick={() => toggleFeatured(post)}
                   className={`p-2 rounded-lg transition-colors ${
@@ -275,6 +384,17 @@ const ToastHubManager: React.FC = () => {
                 >
                   <Star className={`w-4 h-4 ${post.featured ? 'fill-current' : ''}`} />
                 </button>
+
+                {/* Preview */}
+                <button
+                  onClick={() => openPreview(post)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Preview"
+                >
+                  <Monitor className="w-4 h-4" />
+                </button>
+
+                {/* Edit */}
                 <button
                   onClick={() => {
                     setEditingPost(post);
@@ -285,6 +405,8 @@ const ToastHubManager: React.FC = () => {
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
+
+                {/* View Live */}
                 {post.status === 'published' && (
                   <a
                     href={`/#/toast-hub/${post.slug}`}
@@ -296,6 +418,8 @@ const ToastHubManager: React.FC = () => {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
+
+                {/* Delete */}
                 <button
                   onClick={() => deletePost(post.id)}
                   className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
@@ -363,7 +487,7 @@ const ToastHubManager: React.FC = () => {
         </div>
       </section>
 
-      {/* Post Editor Modal (simplified) */}
+      {/* Post Editor Modal */}
       {showEditor && editingPost && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
@@ -375,43 +499,63 @@ const ToastHubManager: React.FC = () => {
                 onClick={() => {
                   setShowEditor(false);
                   setEditingPost(null);
+                  setSaveMessage(null);
                 }}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white text-2xl leading-none"
               >
-                ×
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
+              {/* Save Message */}
+              {saveMessage && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  saveMessage.type === 'success'
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                    : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                }`}>
+                  {saveMessage.type === 'success' ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4" />
+                  )}
+                  {saveMessage.text}
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Title</label>
+                <label className="block text-sm text-gray-400 mb-2">Title *</label>
                 <input
                   type="text"
                   value={editingPost.title}
                   onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="Post title"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Slug</label>
-                <input
-                  type="text"
-                  value={editingPost.slug}
-                  onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm"
-                  placeholder="post-url-slug"
-                />
+                <label className="block text-sm text-gray-400 mb-2">Slug (URL path)</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">/toast-hub/</span>
+                  <input
+                    type="text"
+                    value={editingPost.slug}
+                    onChange={(e) => setEditingPost({ ...editingPost, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    placeholder="post-url-slug"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Excerpt</label>
+                <label className="block text-sm text-gray-400 mb-2">Excerpt (for cards and SEO)</label>
                 <textarea
                   value={editingPost.excerpt || ''}
                   onChange={(e) => setEditingPost({ ...editingPost, excerpt: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white resize-none"
-                  placeholder="Brief description..."
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white resize-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="Brief description for search results and cards..."
                 />
               </div>
 
@@ -420,8 +564,8 @@ const ToastHubManager: React.FC = () => {
                 <textarea
                   value={editingPost.content || ''}
                   onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                  rows={10}
-                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm resize-none"
+                  rows={12}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm resize-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="Write your content in markdown..."
                 />
               </div>
@@ -432,7 +576,7 @@ const ToastHubManager: React.FC = () => {
                   <select
                     value={editingPost.category || ''}
                     onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value || null })}
-                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="">No category</option>
                     {categories.map(cat => (
@@ -445,7 +589,7 @@ const ToastHubManager: React.FC = () => {
                   <select
                     value={editingPost.status}
                     onChange={(e) => setEditingPost({ ...editingPost, status: e.target.value as any })}
-                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="draft">Draft</option>
                     <option value="scheduled">Scheduled</option>
@@ -454,23 +598,182 @@ const ToastHubManager: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Toggle Options */}
+              <div className="flex items-center gap-6 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPost({ ...editingPost, featured: !editingPost.featured })}
+                    className={`w-10 h-6 rounded-full transition-colors ${
+                      editingPost.featured ? 'bg-amber-500' : 'bg-gray-600'
+                    }`}
+                  >
+                    <span className={`block w-4 h-4 bg-white rounded-full transition-transform mx-1 ${
+                      editingPost.featured ? 'translate-x-4' : 'translate-x-0'
+                    }`} />
+                  </button>
+                  <span className="text-sm text-gray-300">Featured post</span>
+                </label>
+              </div>
             </div>
 
-            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+            <div className="p-6 border-t border-gray-700 flex items-center justify-between">
+              <button
+                onClick={() => openPreview(editingPost)}
+                className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Monitor className="w-4 h-4" />
+                Preview
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowEditor(false);
+                    setEditingPost(null);
+                    setSaveMessage(null);
+                  }}
+                  className="px-4 py-2 text-gray-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={savePost}
+                  disabled={isSaving || !editingPost.title}
+                  className="flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Post
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreview && previewPost && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Preview Header */}
+            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Monitor className="w-5 h-5 text-gray-600" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Preview Mode</h3>
+                  <p className="text-xs text-gray-500">
+                    This is how the post will appear on the public Toast Hub
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => {
-                  setShowEditor(false);
-                  setEditingPost(null);
+                  setShowPreview(false);
+                  setPreviewPost(null);
                 }}
-                className="px-4 py-2 text-gray-400 hover:text-white"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                Cancel
+                <X className="w-5 h-5" />
               </button>
-              <button
-                className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg"
-              >
-                Save Post
-              </button>
+            </div>
+
+            {/* Preview Content */}
+            <div className="flex-1 overflow-y-auto p-8">
+              <article className="max-w-3xl mx-auto">
+                {/* Category Badge */}
+                {previewPost.category && (
+                  <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold uppercase tracking-wider rounded-full mb-4">
+                    {categories.find(c => c.slug === previewPost.category)?.name || previewPost.category}
+                  </span>
+                )}
+
+                {/* Title */}
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                  {previewPost.title || 'Untitled Post'}
+                </h1>
+
+                {/* Meta */}
+                <div className="flex items-center gap-4 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-200">
+                  {previewPost.published_at && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {formatDate(previewPost.published_at)}
+                    </span>
+                  )}
+                  {previewPost.view_count > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      {previewPost.view_count} views
+                    </span>
+                  )}
+                  {previewPost.featured && (
+                    <span className="flex items-center gap-1 text-amber-500">
+                      <Star className="w-4 h-4 fill-current" />
+                      Featured
+                    </span>
+                  )}
+                </div>
+
+                {/* Excerpt */}
+                {previewPost.excerpt && (
+                  <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                    {previewPost.excerpt}
+                  </p>
+                )}
+
+                {/* Content */}
+                <div className="prose prose-lg max-w-none">
+                  {previewPost.content ? (
+                    <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                      {previewPost.content}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 italic">No content yet...</p>
+                  )}
+                </div>
+              </article>
+            </div>
+
+            {/* Preview Footer */}
+            <div className="bg-gray-100 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Status: <span className={`font-medium ${
+                  previewPost.status === 'published' ? 'text-green-600' :
+                  previewPost.status === 'draft' ? 'text-gray-600' :
+                  'text-amber-600'
+                }`}>{previewPost.status}</span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPreview(false);
+                    setPreviewPost(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Close Preview
+                </button>
+                {previewPost.status === 'published' && previewPost.slug && (
+                  <a
+                    href={`/#/toast-hub/${previewPost.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View Live
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>

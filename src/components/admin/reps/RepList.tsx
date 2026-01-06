@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search, Plus, Briefcase, MapPin, ExternalLink, ChevronRight,
-  Loader2, RefreshCw, Users, Mail, Phone, DollarSign
+  Loader2, RefreshCw, Users, Mail, Phone, DollarSign, Grid3X3, List, Eye
 } from 'lucide-react';
 
 interface Rep {
@@ -10,6 +10,7 @@ interface Rep {
   name: string;
   territory: string | null;
   slug: string | null;
+  phone?: string;
   portal_enabled: boolean;
   status: 'active' | 'inactive' | 'pending';
   avatar_url: string | null;
@@ -18,6 +19,8 @@ interface Rep {
   client_count?: number;
   total_commission?: number;
 }
+
+type ViewMode = 'cards' | 'table';
 
 interface RepListProps {
   onSelectRep: (rep: Rep) => void;
@@ -29,6 +32,7 @@ const RepList: React.FC<RepListProps> = ({ onSelectRep, onCreateRep }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
 
   useEffect(() => {
     loadReps();
@@ -136,83 +140,239 @@ const RepList: React.FC<RepListProps> = ({ onSelectRep, onCreateRep }) => {
             <option value="inactive">Inactive</option>
             <option value="pending">Pending</option>
           </select>
+          <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded transition-colors ${viewMode === 'table' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white'}`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`p-2 rounded transition-colors ${viewMode === 'cards' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white'}`}
+              title="Card View"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Rep Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredReps.map((rep) => (
-          <div
-            key={rep.id}
-            className="admin-card p-4 hover:border-amber-500/50 transition-all cursor-pointer group"
-            onClick={() => onSelectRep(rep)}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700">
-                  {rep.avatar_url ? (
-                    <img src={rep.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
-                  ) : (
-                    <Briefcase className="w-6 h-6 text-gray-500" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold group-hover:text-amber-400 transition-colors">
-                    {rep.name}
-                  </h3>
-                  {rep.territory && (
-                    <p className="text-gray-400 text-sm flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {rep.territory}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
-            </div>
+      {/* Table View */}
+      {viewMode === 'table' && filteredReps.length > 0 && (
+        <div className="admin-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700 bg-gray-800/50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Territory</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Portal</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Clients</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Commission</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700/50">
+                {filteredReps.map((rep) => (
+                  <tr
+                    key={rep.id}
+                    className="hover:bg-gray-800/30 transition-colors cursor-pointer"
+                    onClick={() => onSelectRep(rep)}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700 flex-shrink-0">
+                          {rep.avatar_url ? (
+                            <img src={rep.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                          ) : (
+                            <Briefcase className="w-4 h-4 text-gray-500" />
+                          )}
+                        </div>
+                        <span className="text-white font-medium">{rep.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <a
+                        href={`mailto:${rep.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-blue-400 hover:text-blue-300 text-sm"
+                      >
+                        {rep.email}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-sm">{rep.phone || '-'}</td>
+                    <td className="px-4 py-3">
+                      {rep.territory ? (
+                        <span className="flex items-center gap-1 text-gray-300 text-sm">
+                          <MapPin className="w-3 h-3 text-gray-500" />
+                          {rep.territory}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${rep.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                        {rep.portal_enabled && rep.slug ? (
+                          <a
+                            href={`/#/rep/${rep.slug}/dashboard`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs text-amber-400 hover:text-amber-300 font-mono"
+                          >
+                            /{rep.slug}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-500">Disabled</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(rep.status)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {rep.client_count !== undefined ? (
+                        <span className="flex items-center gap-1 text-gray-300 text-sm">
+                          <Users className="w-3 h-3 text-gray-500" />
+                          {rep.client_count}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">0</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {rep.total_commission !== undefined && rep.total_commission > 0 ? (
+                        <span className="flex items-center gap-1 text-green-400 text-sm font-medium">
+                          <DollarSign className="w-3 h-3" />
+                          {rep.total_commission.toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">$0</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {rep.portal_enabled && rep.slug && (
+                          <a
+                            href={`/#/rep/${rep.slug}/dashboard?demo=true`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
+                            title="Preview Portal"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectRep(rep);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                          title="Edit Rep"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-            <div className="space-y-2 text-sm">
-              {rep.slug && (
+      {/* Card View */}
+      {viewMode === 'cards' && filteredReps.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredReps.map((rep) => (
+            <div
+              key={rep.id}
+              className="admin-card p-4 hover:border-amber-500/50 transition-all cursor-pointer group"
+              onClick={() => onSelectRep(rep)}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700">
+                    {rep.avatar_url ? (
+                      <img src={rep.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      <Briefcase className="w-6 h-6 text-gray-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold group-hover:text-amber-400 transition-colors">
+                      {rep.name}
+                    </h3>
+                    {rep.territory && (
+                      <p className="text-gray-400 text-sm flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {rep.territory}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {rep.slug && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <ExternalLink className="w-3 h-3" />
+                    <span className="font-mono text-xs">/rep/{rep.slug}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-gray-400">
-                  <ExternalLink className="w-3 h-3" />
-                  <span className="font-mono text-xs">/rep/{rep.slug}</span>
+                  <Mail className="w-3 h-3" />
+                  <span className="truncate">{rep.email}</span>
+                </div>
+                {rep.phone && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Phone className="w-3 h-3" />
+                    <span>{rep.phone}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-700">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${rep.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                  <span className="text-xs text-gray-400">
+                    {rep.portal_enabled ? 'Portal Active' : 'Portal Inactive'}
+                  </span>
+                </div>
+                {getStatusBadge(rep.status)}
+              </div>
+
+              {(rep.client_count !== undefined || rep.total_commission !== undefined) && (
+                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                  {rep.client_count !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {rep.client_count} client{rep.client_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {rep.total_commission !== undefined && rep.total_commission > 0 && (
+                    <span className="flex items-center gap-1 text-green-400">
+                      <DollarSign className="w-3 h-3" />
+                      ${rep.total_commission.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-400">
-                <Mail className="w-3 h-3" />
-                <span className="truncate">{rep.email}</span>
-              </div>
             </div>
-
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-700">
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${rep.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
-                <span className="text-xs text-gray-400">
-                  {rep.portal_enabled ? 'Portal Active' : 'Portal Inactive'}
-                </span>
-              </div>
-              {getStatusBadge(rep.status)}
-            </div>
-
-            {(rep.client_count !== undefined || rep.total_commission !== undefined) && (
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                {rep.client_count !== undefined && (
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    {rep.client_count} client{rep.client_count !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {rep.total_commission !== undefined && rep.total_commission > 0 && (
-                  <span className="flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
-                    ${rep.total_commission.toLocaleString()}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredReps.length === 0 && (
         <div className="admin-card p-12 text-center">

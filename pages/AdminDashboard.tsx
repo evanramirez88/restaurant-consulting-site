@@ -52,37 +52,6 @@ interface Rep {
   notes: string | null;
 }
 
-interface AnalyticsData {
-  visits: number;
-  pageViews: number;
-  conversions: number;
-  leads: number;
-  visitsTrend: number;
-  conversionsTrend: number;
-}
-
-interface AuditLogEntry {
-  id: string;
-  action: string;
-  details: string;
-  timestamp: number;
-}
-
-// Mock data
-const MOCK_ANALYTICS: AnalyticsData = {
-  visits: 1247,
-  pageViews: 3892,
-  conversions: 34,
-  leads: 18,
-  visitsTrend: 12.5,
-  conversionsTrend: 8.3,
-};
-
-const MOCK_AUDIT_LOG: AuditLogEntry[] = [
-  { id: '1', action: 'Login', details: 'Admin logged in successfully', timestamp: Date.now() - 1000 * 60 * 5 },
-  { id: '2', action: 'Availability Update', details: 'Changed status to Available', timestamp: Date.now() - 1000 * 60 * 30 },
-  { id: '3', action: 'Config Update', details: 'Updated business hours', timestamp: Date.now() - 1000 * 60 * 60 * 2 },
-];
 
 const AdminDashboard: React.FC = () => {
   useSEO({
@@ -350,9 +319,7 @@ const AdminDashboard: React.FC = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <AdminOverview
-            analytics={MOCK_ANALYTICS}
             availability={availability}
-            auditLog={MOCK_AUDIT_LOG}
             clientCount={clientCount}
             repCount={repCount}
             onNavigateToTab={(tab) => setActiveTab(tab as TabType)}

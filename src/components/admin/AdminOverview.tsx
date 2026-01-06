@@ -2,17 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
   Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
-  ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle
+  ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity
 } from 'lucide-react';
-
-interface AnalyticsData {
-  visits: number;
-  pageViews: number;
-  conversions: number;
-  leads: number;
-  visitsTrend: number;
-  conversionsTrend: number;
-}
 
 interface AvailabilityData {
   status: 'available' | 'busy' | 'offline';
@@ -20,21 +11,18 @@ interface AvailabilityData {
   town: string | null;
 }
 
-interface AuditLogEntry {
-  id: string;
-  action: string;
-  details: string;
-  timestamp: number;
-}
-
 interface ClientPortal {
   id: string;
   name: string;
   company: string;
+  email: string;
   slug: string | null;
+  phone?: string;
   portal_enabled: boolean;
   support_plan_tier: string | null;
   support_plan_status: string | null;
+  google_drive_folder_id: string | null;
+  timezone?: string;
   created_at?: number;
   last_activity?: number;
 }
@@ -42,17 +30,19 @@ interface ClientPortal {
 interface RepPortal {
   id: string;
   name: string;
+  email: string;
+  phone?: string;
   territory: string | null;
   slug: string | null;
   portal_enabled: boolean;
   status: 'active' | 'inactive' | 'pending';
   client_count?: number;
+  total_commission?: number;
+  created_at?: number;
 }
 
 interface AdminOverviewProps {
-  analytics: AnalyticsData;
   availability: AvailabilityData;
-  auditLog: AuditLogEntry[];
   clientCount: number;
   repCount: number;
   onNavigateToTab: (tab: string) => void;
@@ -60,9 +50,7 @@ interface AdminOverviewProps {
 }
 
 const AdminOverview: React.FC<AdminOverviewProps> = ({
-  analytics,
   availability,
-  auditLog,
   clientCount,
   repCount,
   onNavigateToTab,
@@ -307,56 +295,21 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </section>
 
-      {/* Analytics Overview */}
+      {/* Analytics Overview - Empty State */}
       <section className="admin-card p-6" aria-labelledby="analytics-heading">
         <div className="flex items-center justify-between mb-6">
           <h2 id="analytics-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-amber-400" aria-hidden="true" />
             Site Analytics
           </h2>
-          <span className="text-xs text-gray-500">Last 30 days</span>
+          <span className="text-xs text-gray-500">Coming Soon</span>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="admin-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-blue-400" aria-hidden="true" />
-              </div>
-              <span className="text-gray-400 text-sm">Visits</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{analytics.visits.toLocaleString()}</p>
-            <p className="text-xs text-green-400 mt-1">+{analytics.visitsTrend}% from last month</p>
-          </div>
-          <div className="admin-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <MousePointer className="w-5 h-5 text-purple-400" aria-hidden="true" />
-              </div>
-              <span className="text-gray-400 text-sm">Page Views</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{analytics.pageViews.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">~3.1 pages/visit</p>
-          </div>
-          <div className="admin-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-400" aria-hidden="true" />
-              </div>
-              <span className="text-gray-400 text-sm">Conversions</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{analytics.conversions}</p>
-            <p className="text-xs text-green-400 mt-1">+{analytics.conversionsTrend}% from last month</p>
-          </div>
-          <div className="admin-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                <UserPlus className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              </div>
-              <span className="text-gray-400 text-sm">Leads</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{analytics.leads}</p>
-            <p className="text-xs text-gray-500 mt-1">2.7% conversion rate</p>
-          </div>
+        <div className="text-center py-8 bg-gray-900/30 rounded-lg border border-gray-700">
+          <BarChart3 className="w-12 h-12 text-gray-600 mx-auto mb-3" aria-hidden="true" />
+          <h3 className="text-white font-semibold mb-2">Analytics Not Configured</h3>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            Site analytics will be available once connected to your analytics provider (e.g., Cloudflare Web Analytics, Google Analytics).
+          </p>
         </div>
       </section>
 
@@ -473,32 +426,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
       </section>
 
-      {/* Recent Activity Preview */}
+      {/* Recent Activity - Empty State */}
       <section className="admin-card p-6" aria-labelledby="recent-activity-heading">
         <div className="flex items-center justify-between mb-4">
-          <h2 id="recent-activity-heading" className="text-xl font-display font-bold text-white">Recent Activity</h2>
-          <button
-            onClick={() => onNavigateToTab('config')}
-            className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
-          >
-            View All
-          </button>
+          <h2 id="recent-activity-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
+            <Activity className="w-5 h-5 text-amber-400" aria-hidden="true" />
+            Recent Activity
+          </h2>
         </div>
-        <div className="space-y-3">
-          {auditLog.slice(0, 3).map((entry) => (
-            <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-900/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-gray-400" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">{entry.action}</p>
-                  <p className="text-gray-500 text-xs">{entry.details}</p>
-                </div>
-              </div>
-              <span className="text-gray-500 text-xs">{formatTimeAgo(entry.timestamp)}</span>
-            </div>
-          ))}
+        <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
+          <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" aria-hidden="true" />
+          <h3 className="text-white font-semibold mb-2">No Recent Activity</h3>
+          <p className="text-gray-500 text-sm">
+            Activity logs will appear here as you manage clients, reps, and settings.
+          </p>
         </div>
       </section>
     </>

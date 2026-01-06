@@ -14,8 +14,8 @@ interface LayoutProps {
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'Services & Support Plans', path: '/services' },
+  { name: 'Toast Hub', path: '/toast-hub' },
   { name: 'Quote Builder', path: '/quote' },
-  { name: 'Menu Builder', path: '/menu-builder' },
   { name: 'About & Contact', path: '/about' },
 ];
 
@@ -277,13 +277,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/quote" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    Quote Builder
+                  <Link to="/toast-hub" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
+                    Toast Hub
                   </Link>
                 </li>
                 <li>
-                  <Link to="/menu-builder" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
-                    Menu Builder
+                  <Link to="/quote" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
+                    Quote Builder
                   </Link>
                 </li>
                 <li>

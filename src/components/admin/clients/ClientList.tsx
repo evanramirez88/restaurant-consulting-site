@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search, Plus, Building2, MapPin, Shield, ExternalLink, ChevronRight,
-  Loader2, RefreshCw, Users, Mail, Phone, FolderOpen, MoreVertical
+  Loader2, RefreshCw, Users, Mail, Phone, FolderOpen, MoreVertical,
+  Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle
 } from 'lucide-react';
 
 interface Client {
@@ -10,16 +11,20 @@ interface Client {
   name: string;
   company: string;
   slug: string | null;
+  phone?: string;
   portal_enabled: boolean;
   support_plan_tier: string | null;
   support_plan_status: string | null;
   google_drive_folder_id: string | null;
   avatar_url: string | null;
   notes: string | null;
+  timezone?: string;
   created_at: number;
   restaurant_count?: number;
   rep_count?: number;
 }
+
+type ViewMode = 'cards' | 'table';
 
 interface ClientListProps {
   onSelectClient: (client: Client) => void;
@@ -31,6 +36,7 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
 
   useEffect(() => {
     loadClients();
@@ -142,78 +148,221 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
             <option value="inactive">Portal Inactive</option>
             <option value="support">With Support Plan</option>
           </select>
+          <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded transition-colors ${viewMode === 'table' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white'}`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`p-2 rounded transition-colors ${viewMode === 'cards' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white'}`}
+              title="Card View"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Client Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredClients.map((client) => (
-          <div
-            key={client.id}
-            className="admin-card p-4 hover:border-amber-500/50 transition-all cursor-pointer group"
-            onClick={() => onSelectClient(client)}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700">
-                  {client.avatar_url ? (
-                    <img src={client.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
-                  ) : (
-                    <Building2 className="w-6 h-6 text-gray-500" />
+      {/* Table View */}
+      {viewMode === 'table' && filteredClients.length > 0 && (
+        <div className="admin-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700 bg-gray-800/50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Portal</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Support Plan</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Timezone</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700/50">
+                {filteredClients.map((client) => (
+                  <tr
+                    key={client.id}
+                    className="hover:bg-gray-800/30 transition-colors cursor-pointer"
+                    onClick={() => onSelectClient(client)}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700 flex-shrink-0">
+                          {client.avatar_url ? (
+                            <img src={client.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                          ) : (
+                            <Building2 className="w-4 h-4 text-gray-500" />
+                          )}
+                        </div>
+                        <span className="text-white font-medium">{client.company || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">{client.name}</td>
+                    <td className="px-4 py-3">
+                      <a
+                        href={`mailto:${client.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-blue-400 hover:text-blue-300 text-sm"
+                      >
+                        {client.email}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-sm">{client.phone || '-'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                        {client.portal_enabled && client.slug ? (
+                          <a
+                            href={`/#/portal/${client.slug}/dashboard`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs text-amber-400 hover:text-amber-300 font-mono"
+                          >
+                            /{client.slug}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-500">Disabled</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {getSupportBadge(client.support_plan_tier, client.support_plan_status) || (
+                        <span className="text-xs text-gray-500">None</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-sm">
+                      {client.timezone ? client.timezone.replace('America/', '').replace('_', ' ') : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {client.portal_enabled && client.slug && (
+                          <a
+                            href={`/#/portal/${client.slug}/dashboard?demo=true`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
+                            title="Preview Portal"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectClient(client);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                          title="Edit Client"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Card View */}
+      {viewMode === 'cards' && filteredClients.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClients.map((client) => (
+            <div
+              key={client.id}
+              className="admin-card p-4 hover:border-amber-500/50 transition-all cursor-pointer group"
+              onClick={() => onSelectClient(client)}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700">
+                    {client.avatar_url ? (
+                      <img src={client.avatar_url} alt="" className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      <Building2 className="w-6 h-6 text-gray-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold group-hover:text-amber-400 transition-colors">
+                      {client.company || client.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm">{client.name}</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {client.slug && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <ExternalLink className="w-3 h-3" />
+                    <span className="font-mono text-xs">/portal/{client.slug}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Mail className="w-3 h-3" />
+                  <span className="truncate">{client.email}</span>
+                </div>
+                {client.phone && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Phone className="w-3 h-3" />
+                    <span>{client.phone}</span>
+                  </div>
+                )}
+                {client.timezone && (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Globe className="w-3 h-3" />
+                    <span className="text-xs">{client.timezone.replace('America/', '').replace('_', ' ')}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-700">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                  <span className="text-xs text-gray-400">
+                    {client.portal_enabled ? 'Portal Active' : 'Portal Inactive'}
+                  </span>
+                </div>
+                {getSupportBadge(client.support_plan_tier, client.support_plan_status)}
+              </div>
+
+              {(client.restaurant_count || client.rep_count || client.google_drive_folder_id) && (
+                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                  {client.restaurant_count && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {client.restaurant_count} location{client.restaurant_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {client.rep_count && (
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {client.rep_count} rep{client.rep_count !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {client.google_drive_folder_id && (
+                    <span className="flex items-center gap-1 text-blue-400">
+                      <FolderOpen className="w-3 h-3" />
+                      Drive
+                    </span>
                   )}
                 </div>
-                <div>
-                  <h3 className="text-white font-semibold group-hover:text-amber-400 transition-colors">
-                    {client.company || client.name}
-                  </h3>
-                  <p className="text-gray-400 text-sm">{client.name}</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
-            </div>
-
-            <div className="space-y-2 text-sm">
-              {client.slug && (
-                <div className="flex items-center gap-2 text-gray-400">
-                  <ExternalLink className="w-3 h-3" />
-                  <span className="font-mono text-xs">/portal/{client.slug}</span>
-                </div>
               )}
-              <div className="flex items-center gap-2 text-gray-400">
-                <Mail className="w-3 h-3" />
-                <span className="truncate">{client.email}</span>
-              </div>
             </div>
-
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-700">
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
-                <span className="text-xs text-gray-400">
-                  {client.portal_enabled ? 'Portal Active' : 'Portal Inactive'}
-                </span>
-              </div>
-              {getSupportBadge(client.support_plan_tier, client.support_plan_status)}
-            </div>
-
-            {(client.restaurant_count || client.rep_count) && (
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                {client.restaurant_count && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {client.restaurant_count} location{client.restaurant_count !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {client.rep_count && (
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    {client.rep_count} rep{client.rep_count !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredClients.length === 0 && (
         <div className="admin-card p-12 text-center">
