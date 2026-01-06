@@ -7,23 +7,24 @@
 
 ## CRITICAL: Enable GitHub Auto-Deployments
 
-**Current Issue:** Auto-deployments are NOT configured. Manual wrangler deploys are required.
+**Status:** GitHub Actions workflow created - needs secrets configured.
 
-**Location:** https://dash.cloudflare.com → Pages → restaurant-consulting-site → Settings → Builds & deployments
+**Location:** https://github.com/evanramirez88/restaurant-consulting-site/settings/secrets/actions
 
-**To Enable:**
-1. Go to **Settings → Builds & deployments**
-2. Click **Connect to Git**
-3. Select **GitHub** and authorize Cloudflare
-4. Select repository: `evanramirez88/restaurant-consulting-site`
-5. Configure build settings:
-   - **Production branch:** `main`
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-   - **Root directory:** `/` (leave empty)
-6. Click **Save and Deploy**
+**Add these secrets:**
 
-**Result:** Every push to `main` will automatically trigger a deployment.
+| Secret Name | Value | How to Get |
+|-------------|-------|------------|
+| `CLOUDFLARE_API_TOKEN` | Your API token | https://dash.cloudflare.com/profile/api-tokens → Create Token → "Edit Cloudflare Workers" template |
+| `CLOUDFLARE_ACCOUNT_ID` | `373a6cef1f9ccf5d26bfd9687a91c0a6` | Already known from wrangler |
+
+**To add secrets:**
+1. Go to repository Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Add `CLOUDFLARE_API_TOKEN` with your token
+4. Add `CLOUDFLARE_ACCOUNT_ID` with `373a6cef1f9ccf5d26bfd9687a91c0a6`
+
+**Result:** Every push to `main` will automatically build and deploy via GitHub Actions.
 
 ---
 
