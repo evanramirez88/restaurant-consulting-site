@@ -58,3 +58,26 @@ binding = "AI"
 # RESEND (Email):
 #   RESEND_API_KEY         - From https://resend.com/api-keys
 #                            Used for contact forms, quote emails, magic link auth
+#   RESEND_WEBHOOK_SECRET  - For webhook signature verification
+
+# ============================================
+# CRON TRIGGERS
+# Scheduled jobs for automated tasks
+# ============================================
+[triggers]
+crons = ["*/5 * * * *"]  # Every 5 minutes - email sequence dispatcher
+
+# ============================================
+# QUEUE BINDINGS
+# For rate-limited email dispatch
+# ============================================
+[[queues.producers]]
+binding = "EMAIL_QUEUE"
+queue = "email-dispatch-queue"
+
+[[queues.consumers]]
+queue = "email-dispatch-queue"
+max_batch_size = 2       # Matches Resend's 2 emails/second limit
+max_batch_timeout = 5    # Wait up to 5 seconds to batch
+max_retries = 3
+dead_letter_queue = "email-dispatch-dlq"
