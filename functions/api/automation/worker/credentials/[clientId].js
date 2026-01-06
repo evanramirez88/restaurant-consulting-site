@@ -7,7 +7,7 @@
  * Returns encrypted password - worker decrypts locally with ENCRYPTION_KEY
  *
  * Query Parameters:
- * - platform: (optional) Filter by platform (toast, square, etc.)
+ * - platform: (optional) Currently only 'toast' is supported
  */
 
 import { verifyWorkerAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../../_shared/auth.js';
@@ -22,35 +22,25 @@ export async function onRequestGet(context) {
 
     const db = context.env.DB;
     const clientId = context.params.clientId;
-    const url = new URL(context.request.url);
-    const platform = url.searchParams.get('platform');
 
-    // Build query
-    let query = `
+    // Get Toast credentials for this client
+    const cred = await db.prepare(`
       SELECT
         id,
         client_id,
-        platform,
-        username,
-        password_encrypted,
-        restaurant_guid,
-        location_name,
-        is_active,
-        last_used_at,
+        restaurant_id,
+        toast_username_encrypted,
+        toast_password_encrypted,
+        toast_guid,
+        toast_location_id,
+        status,
+        last_login_at,
         created_at
-      FROM automation_credentials
-      WHERE client_id = ? AND is_active = 1
-    `;
-    let params = [clientId];
-
-    if (platform) {
-      query += ' AND platform = ?';
-      params.push(platform);
-    }
-
-    query += ' ORDER BY created_at DESC LIMIT 1';
-
-    const cred = await db.prepare(query).bind(...params).first();
+      FROM toast_credentials
+      WHERE client_id = ? AND status = 'active'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).bind(clientId).first();
 
     if (!cred) {
       return new Response(JSON.stringify({
@@ -62,28 +52,29 @@ export async function onRequestGet(context) {
       });
     }
 
-    // Update last_used_at
+    // Update last_login_at
     const now = Math.floor(Date.now() / 1000);
     await db.prepare(`
-      UPDATE automation_credentials
-      SET last_used_at = ?
+      UPDATE toast_credentials
+      SET last_login_at = ?, updated_at = ?
       WHERE id = ?
-    `).bind(now, cred.id).run();
+    `).bind(now, now, cred.id).run();
 
-    // Return credentials with encrypted password
+    // Return credentials with encrypted values
     // Worker will decrypt locally using ENCRYPTION_KEY
     return new Response(JSON.stringify({
       success: true,
       data: {
         id: cred.id,
         client_id: cred.client_id,
-        platform: cred.platform,
-        username: cred.username,
-        password_encrypted: cred.password_encrypted,
-        restaurant_guid: cred.restaurant_guid,
-        location_name: cred.location_name,
-        is_active: !!cred.is_active,
-        last_used_at: new Date(now * 1000).toISOString(),
+        restaurant_id: cred.restaurant_id,
+        platform: 'toast',
+        username: cred.toast_username_encrypted, // Note: encrypted, needs decryption
+        password_encrypted: cred.toast_password_encrypted,
+        restaurant_guid: cred.toast_guid,
+        location_id: cred.toast_location_id,
+        status: cred.status,
+        last_login_at: new Date(now * 1000).toISOString(),
         created_at: cred.created_at ? new Date(cred.created_at * 1000).toISOString() : null
       }
     }), {
