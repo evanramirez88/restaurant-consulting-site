@@ -56,7 +56,7 @@ const Home: React.FC = () => {
         {/* Main content container */}
         <div className="relative z-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Availability Badge */}
-          <div className="hero-fade-in hero-fade-in-delay-1 mb-8">
+          <div className="hero-fade-in hero-fade-in-delay-1 mb-12 md:mb-16">
             <span className="inline-flex items-center gap-2 bg-teal-600/90 text-white text-sm font-medium px-4 py-2 rounded-full">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               Available for New Projects

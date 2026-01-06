@@ -203,13 +203,13 @@ const About: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary-dark p-3 rounded-lg text-white">
-                    <Mail size={24} />
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary-dark p-2.5 rounded-lg text-white flex-shrink-0">
+                    <Mail size={20} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-bold text-gray-900">Email</p>
-                    <a href={`mailto:${EMAIL_ADDRESS}`} className="text-gray-600 hover:text-amber-500 transition-colors block">{EMAIL_ADDRESS}</a>
+                    <a href={`mailto:${EMAIL_ADDRESS}`} className="text-gray-600 hover:text-amber-500 transition-colors block text-sm break-all">{EMAIL_ADDRESS}</a>
                   </div>
                 </div>
 
