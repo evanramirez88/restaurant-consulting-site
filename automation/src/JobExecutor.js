@@ -74,8 +74,8 @@ export class JobExecutor {
     }
 
     try {
-      // Fetch next queued job from API
-      const response = await fetch(`${this.apiBaseUrl}/api/automation/jobs?status=queued&limit=1`, {
+      // Fetch next queued job from worker poll endpoint
+      const response = await fetch(`${this.apiBaseUrl}/api/automation/worker/poll`, {
         headers: {
           'Authorization': `Bearer ${this.workerApiKey}`,
           'Content-Type': 'application/json',
@@ -83,16 +83,20 @@ export class JobExecutor {
       });
 
       if (!response.ok) {
-        this.log('warn', `Failed to fetch jobs: ${response.status}`);
+        if (response.status === 401) {
+          this.log('error', 'Authentication failed - check WORKER_API_KEY');
+        } else {
+          this.log('warn', `Failed to fetch jobs: ${response.status}`);
+        }
         return;
       }
 
       const data = await response.json();
-      if (!data.success || !data.jobs?.length) {
+      if (!data.success || !data.data) {
         return; // No jobs available
       }
 
-      const job = data.jobs[0];
+      const job = data.data;
       this.log('info', `Processing job: ${job.id} (${job.job_type})`);
 
       // Process the job
@@ -110,17 +114,15 @@ export class JobExecutor {
     let client = null;
 
     try {
-      // Update job status to running
-      await this.updateJobStatus(jobId, 'running', { started_at: new Date().toISOString() });
-
+      // Job already marked as in_progress by poll endpoint
       // Get credentials for this job
-      const credentials = await this.getCredentials(job.client_id, job.restaurant_id);
+      const credentials = await this.getCredentials(job.client_id, 'toast');
       if (!credentials) {
         throw new Error('No valid credentials found for this job');
       }
 
       // Decrypt credentials
-      const decryptedPassword = this.decryptCredential(credentials.toast_password_encrypted);
+      const decryptedPassword = this.decryptCredential(credentials.password_encrypted);
 
       // Initialize browser client
       client = new ToastBrowserClient({ sessionId: jobId, logger: this.logger });
@@ -130,11 +132,13 @@ export class JobExecutor {
 
       // Login to Toast
       await this.updateJobProgress(jobId, 10, 'Logging in to Toast...');
-      await client.login(credentials.toast_username, decryptedPassword);
+      await client.login(credentials.username, decryptedPassword);
 
-      // Select restaurant
-      await this.updateJobProgress(jobId, 20, 'Selecting restaurant...');
-      await client.selectRestaurant(credentials.toast_guid);
+      // Select restaurant if GUID provided
+      if (credentials.restaurant_guid) {
+        await this.updateJobProgress(jobId, 20, 'Selecting restaurant...');
+        await client.selectRestaurant(credentials.restaurant_guid);
+      }
 
       // Execute job-specific handler
       const handler = JOB_HANDLERS[job.job_type];
@@ -142,13 +146,13 @@ export class JobExecutor {
         throw new Error(`Unknown job type: ${job.job_type}`);
       }
 
-      const payload = typeof job.payload_json === 'string' ? JSON.parse(job.payload_json) : job.payload_json;
+      // Job input is already parsed from API response
+      const payload = job.input || {};
       await handler(client, job, payload, this);
 
       // Job completed successfully
       await this.updateJobStatus(jobId, 'completed', {
-        completed_at: new Date().toISOString(),
-        result_json: JSON.stringify({ success: true }),
+        output: { success: true, message: 'Job completed successfully' },
       });
 
       this.log('info', `Job completed: ${jobId}`);
@@ -162,8 +166,7 @@ export class JobExecutor {
 
       // Update job status to failed
       await this.updateJobStatus(jobId, 'failed', {
-        error_message: error.message,
-        completed_at: new Date().toISOString(),
+        error: error.message,
       });
     } finally {
       // Cleanup
@@ -177,26 +180,28 @@ export class JobExecutor {
   /**
    * Get credentials for a client/restaurant
    */
-  async getCredentials(clientId, restaurantId) {
+  async getCredentials(clientId, platform = 'toast') {
     try {
-      const url = new URL(`${this.apiBaseUrl}/api/automation/credentials`);
-      if (clientId) url.searchParams.set('client_id', clientId);
-      if (restaurantId) url.searchParams.set('restaurant_id', restaurantId);
+      const url = `${this.apiBaseUrl}/api/automation/worker/credentials/${clientId}?platform=${platform}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${this.workerApiKey}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        if (response.status === 404) {
+          this.log('warn', `No credentials found for client ${clientId}`);
+        }
+        return null;
+      }
 
       const data = await response.json();
-      if (!data.success || !data.credentials?.length) return null;
+      if (!data.success || !data.data) return null;
 
-      // Return first active credential
-      return data.credentials.find(c => c.status === 'active') || data.credentials[0];
+      return data.data;
     } catch (error) {
       this.log('error', `Failed to get credentials: ${error.message}`);
       return null;
@@ -205,6 +210,10 @@ export class JobExecutor {
 
   /**
    * Decrypt a credential value
+   *
+   * Format: base64(iv + ciphertext + authTag)
+   * - iv: 12 bytes
+   * - authTag: 16 bytes (appended to ciphertext by AES-GCM)
    */
   decryptCredential(encryptedValue) {
     if (!config.encryptionKey) {
@@ -212,21 +221,26 @@ export class JobExecutor {
     }
 
     try {
-      // Format: iv:authTag:encryptedData (all base64)
-      const parts = encryptedValue.split(':');
-      if (parts.length !== 3) {
-        throw new Error('Invalid encrypted format');
-      }
+      // Decode base64 to get combined bytes
+      const combined = Buffer.from(encryptedValue, 'base64');
 
-      const iv = Buffer.from(parts[0], 'base64');
-      const authTag = Buffer.from(parts[1], 'base64');
-      const encrypted = Buffer.from(parts[2], 'base64');
+      // Extract IV (first 12 bytes)
+      const iv = combined.subarray(0, 12);
 
-      const key = crypto.scryptSync(config.encryptionKey, 'toast-abo-salt', 32);
+      // The rest is ciphertext + authTag (authTag is last 16 bytes)
+      const ciphertextWithTag = combined.subarray(12);
+      const authTag = ciphertextWithTag.subarray(-16);
+      const ciphertext = ciphertextWithTag.subarray(0, -16);
+
+      // Prepare key (pad or truncate to 32 bytes for AES-256)
+      const keyString = config.encryptionKey.slice(0, 32).padEnd(32, '0');
+      const key = Buffer.from(keyString, 'utf8');
+
+      // Decrypt
       const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
       decipher.setAuthTag(authTag);
 
-      let decrypted = decipher.update(encrypted, null, 'utf8');
+      let decrypted = decipher.update(ciphertext, null, 'utf8');
       decrypted += decipher.final('utf8');
 
       return decrypted;
@@ -241,13 +255,16 @@ export class JobExecutor {
    */
   async updateJobStatus(jobId, status, additionalData = {}) {
     try {
-      await fetch(`${this.apiBaseUrl}/api/automation/jobs/${jobId}`, {
-        method: 'PUT',
+      // Map status names (running -> in_progress)
+      const mappedStatus = status === 'running' ? 'in_progress' : status;
+
+      await fetch(`${this.apiBaseUrl}/api/automation/worker/jobs/${jobId}`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${this.workerApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status, ...additionalData }),
+        body: JSON.stringify({ status: mappedStatus, ...additionalData }),
       });
     } catch (error) {
       this.log('warn', `Failed to update job status: ${error.message}`);
@@ -259,9 +276,8 @@ export class JobExecutor {
    */
   async updateJobProgress(jobId, percentage, message) {
     this.log('info', `Job ${jobId}: ${percentage}% - ${message}`);
-    await this.updateJobStatus(jobId, 'running', {
-      progress_percentage: percentage,
-      // Could also update a progress_message field
+    await this.updateJobStatus(jobId, 'in_progress', {
+      progress: percentage,
     });
   }
 

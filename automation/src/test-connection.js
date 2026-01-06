@@ -16,9 +16,10 @@ import { ToastBrowserClient } from './ToastBrowserClient.js';
 async function testApiConnection() {
   console.log('Testing API connection...');
   console.log(`  URL: ${config.apiBaseUrl}`);
+  console.log(`  API Key: ${config.workerApiKey ? config.workerApiKey.substring(0, 8) + '...' : '(not set)'}`);
 
   try {
-    const response = await fetch(`${config.apiBaseUrl}/api/automation/status`, {
+    const response = await fetch(`${config.apiBaseUrl}/api/automation/worker/health`, {
       headers: {
         'Authorization': `Bearer ${config.workerApiKey}`,
         'Content-Type': 'application/json',
@@ -28,8 +29,13 @@ async function testApiConnection() {
     if (response.ok) {
       const data = await response.json();
       console.log('  ✓ API connection successful');
-      console.log(`  Server status:`, data);
+      console.log(`  Worker authenticated: ${data.data?.authenticated ? 'Yes' : 'No'}`);
+      console.log(`  Pending jobs: ${data.data?.jobs?.pending || 0}`);
+      console.log(`  Running jobs: ${data.data?.jobs?.running || 0}`);
       return true;
+    } else if (response.status === 401) {
+      console.log('  ✗ Authentication failed - check WORKER_API_KEY');
+      return false;
     } else {
       console.log(`  ✗ API returned ${response.status}: ${response.statusText}`);
       return false;

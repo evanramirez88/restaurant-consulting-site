@@ -171,12 +171,96 @@ export function unauthorizedResponse(error = 'Unauthorized') {
 }
 
 /**
+ * Verify worker API key authentication
+ *
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @returns {Promise<{authenticated: boolean, workerId?: string, error?: string}>}
+ */
+export async function verifyWorkerAuth(request, env) {
+  try {
+    // Get API key from Authorization header (Bearer token)
+    const authHeader = request.headers.get('Authorization');
+
+    if (!authHeader) {
+      return { authenticated: false, error: 'No authorization header' };
+    }
+
+    // Support both "Bearer <key>" and just "<key>"
+    let apiKey = authHeader;
+    if (authHeader.startsWith('Bearer ')) {
+      apiKey = authHeader.substring(7);
+    }
+
+    if (!apiKey || apiKey.trim() === '') {
+      return { authenticated: false, error: 'No API key provided' };
+    }
+
+    // Check against configured worker API key
+    const workerApiKey = env.WORKER_API_KEY;
+
+    if (!workerApiKey) {
+      console.error('WORKER_API_KEY not configured in environment');
+      return { authenticated: false, error: 'Server configuration error' };
+    }
+
+    // Constant-time comparison to prevent timing attacks
+    if (apiKey.length !== workerApiKey.length) {
+      return { authenticated: false, error: 'Invalid API key' };
+    }
+
+    let match = true;
+    for (let i = 0; i < apiKey.length; i++) {
+      if (apiKey[i] !== workerApiKey[i]) {
+        match = false;
+      }
+    }
+
+    if (!match) {
+      return { authenticated: false, error: 'Invalid API key' };
+    }
+
+    return { authenticated: true, workerId: 'abo-worker' };
+  } catch (error) {
+    console.error('Worker auth verification error:', error);
+    return { authenticated: false, error: 'Authentication failed' };
+  }
+}
+
+/**
+ * Verify either admin OR worker authentication
+ * Used for endpoints that can be accessed by both
+ *
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @returns {Promise<{authenticated: boolean, isWorker: boolean, error?: string}>}
+ */
+export async function verifyAuthOrWorker(request, env) {
+  // First try worker auth (Bearer token)
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader) {
+    const workerAuth = await verifyWorkerAuth(request, env);
+    if (workerAuth.authenticated) {
+      return { authenticated: true, isWorker: true, workerId: workerAuth.workerId };
+    }
+  }
+
+  // Fall back to admin auth (cookie)
+  const adminAuth = await verifyAuth(request, env);
+  if (adminAuth.authenticated) {
+    return { authenticated: true, isWorker: false, payload: adminAuth.payload };
+  }
+
+  return { authenticated: false, error: adminAuth.error || 'Unauthorized' };
+}
+
+/**
  * CORS headers helper
  */
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Content-Type': 'application/json'
 };
 
@@ -188,8 +272,8 @@ export function handleOptions() {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400'
     }
   });
