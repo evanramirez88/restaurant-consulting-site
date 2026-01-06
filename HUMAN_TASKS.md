@@ -1,9 +1,24 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** January 5, 2026
-**Goal:** $400K by May 1, 2026 (117 days remaining)
+**Last Updated:** January 6, 2026
+**Goal:** $400K by May 1, 2026 (116 days remaining)
 
 ---
+
+## BROKEN FEATURES - FIX IMMEDIATELY
+
+These features are broken because API keys are missing in Cloudflare:
+
+| Feature | Missing Variable | Status | How to Fix |
+|---------|------------------|--------|------------|
+| Contact Forms | `RESEND_API_KEY` | BROKEN | Get from https://resend.com/api-keys |
+| CRM Sync | `HUBSPOT_API_KEY` | BROKEN | Get from https://app.hubspot.com/private-apps/243379742 |
+| Billing/Invoices | `SQUARE_ACCESS_TOKEN` | BROKEN | Get from https://developer.squareup.com/apps |
+
+**Where to set these:** Cloudflare Dashboard -> Pages -> restaurant-consulting-site -> Settings -> Environment Variables
+
+---
+
 
 ## ✅ COMPLETED: GitHub Auto-Deployments
 
