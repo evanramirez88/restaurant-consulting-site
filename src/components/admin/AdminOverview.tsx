@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
   Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
-  ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity
+  ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity,
+  Zap, Play, Pause, Loader2
 } from 'lucide-react';
 
 interface AvailabilityData {
@@ -41,6 +42,20 @@ interface RepPortal {
   created_at?: number;
 }
 
+interface AutomationStatus {
+  isOnline: boolean;
+  currentSessions: number;
+  maxSessions: number;
+  queueDepth: number;
+  lastHeartbeat: string | null;
+  serverVersion: string | null;
+  stats: {
+    activeJobs: number;
+    queuedJobs: number;
+    totalJobsToday: number;
+  };
+}
+
 interface AdminOverviewProps {
   availability: AvailabilityData;
   clientCount: number;
@@ -61,6 +76,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const [isLoadingPortals, setIsLoadingPortals] = useState(true);
   const [showAllClients, setShowAllClients] = useState(false);
   const [showAllReps, setShowAllReps] = useState(false);
+  const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
+  const [isLoadingAutomation, setIsLoadingAutomation] = useState(true);
 
   useEffect(() => {
     const loadPortals = async () => {
@@ -80,6 +97,28 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       }
     };
     loadPortals();
+  }, []);
+
+  // Load automation status
+  useEffect(() => {
+    const loadAutomationStatus = async () => {
+      try {
+        const response = await fetch('/api/automation/status');
+        const data = await response.json();
+        if (data.success) {
+          setAutomationStatus(data.status);
+        }
+      } catch (error) {
+        console.error('Failed to load automation status:', error);
+      } finally {
+        setIsLoadingAutomation(false);
+      }
+    };
+    loadAutomationStatus();
+
+    // Refresh status every 30 seconds
+    const interval = setInterval(loadAutomationStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const getSupportPlanBadge = (tier: string | null, status: string | null) => {
@@ -293,6 +332,100 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             )}
           </div>
         </div>
+      </section>
+
+      {/* Toast ABO Status Widget */}
+      <section className="admin-card p-6" aria-labelledby="automation-heading">
+        <div className="flex items-center justify-between mb-6">
+          <h2 id="automation-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-amber-400" aria-hidden="true" />
+            Toast Auto-Back-Office
+          </h2>
+          <a
+            href="/#/toast-automate"
+            className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+          >
+            Open Dashboard <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        {isLoadingAutomation ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+          </div>
+        ) : automationStatus ? (
+          <div className="space-y-4">
+            {/* Status Header */}
+            <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className={`w-4 h-4 rounded-full ${
+                automationStatus.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+              }`} />
+              <div className="flex-1">
+                <p className="text-white font-medium">
+                  Automation Server: {automationStatus.isOnline ? 'Online' : 'Offline'}
+                </p>
+                {automationStatus.lastHeartbeat && (
+                  <p className="text-xs text-gray-500">
+                    Last heartbeat: {new Date(automationStatus.lastHeartbeat).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              {automationStatus.serverVersion && (
+                <span className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
+                  v{automationStatus.serverVersion}
+                </span>
+              )}
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                  <Play className="w-3 h-3 text-green-400" />
+                  Active Jobs
+                </div>
+                <p className="text-xl font-bold text-green-400">
+                  {automationStatus.stats.activeJobs}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                  <Pause className="w-3 h-3 text-yellow-400" />
+                  Queue
+                </div>
+                <p className="text-xl font-bold text-yellow-400">
+                  {automationStatus.queueDepth}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                  <Users className="w-3 h-3 text-blue-400" />
+                  Sessions
+                </div>
+                <p className="text-xl font-bold text-blue-400">
+                  {automationStatus.currentSessions}/{automationStatus.maxSessions}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                  <CheckCircle className="w-3 h-3 text-purple-400" />
+                  Today
+                </div>
+                <p className="text-xl font-bold text-purple-400">
+                  {automationStatus.stats.totalJobsToday}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
+            <Zap className="w-10 h-10 text-gray-600 mx-auto mb-3" aria-hidden="true" />
+            <h3 className="text-white font-semibold mb-2">Automation Server Not Connected</h3>
+            <p className="text-gray-500 text-sm max-w-md mx-auto">
+              The Toast ABO automation server is not currently running. Start the server to enable browser automation features.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Analytics Overview - Empty State */}
