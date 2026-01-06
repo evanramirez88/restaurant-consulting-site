@@ -1,0 +1,22 @@
+{
+  "name": "toast-abo-worker",
+  "version": "1.0.0",
+  "description": "Toast Auto-Back-Office Automation Worker - Browser automation for Toast POS configuration",
+  "main": "src/worker.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/worker.js",
+    "dev": "node --watch src/worker.js",
+    "test": "node src/test-connection.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.0.0",
+    "dotenv": "^16.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "R&G Consulting LLC",
+  "license": "UNLICENSED",
+  "private": true
+}
