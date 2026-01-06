@@ -133,7 +133,15 @@ const SOFTWARE_KEYWORDS = {
 
 /**
  * Split a bundled product line like "Toast Flex + Tap + Printer + Cash Drawer"
- * into individual hardware items, each getting the same quantity
+ * into individual hardware items.
+ *
+ * IMPORTANT: For bundled items representing a complete station setup,
+ * each item gets qty=1 (the station GROUP gets the multiplier).
+ * Example: "Toast Flex + Tap + Printer + Cash Drawer 5" becomes:
+ *   stationQuantity: 5
+ *   items: [{name: "Toast Flex", qty: 1}, {name: "Toast Tap", qty: 1}, ...]
+ *
+ * This is handled by returning isStationBundle=true when 3+ items are bundled.
  */
 function splitBundledItems(productName, quantity) {
   const items = [];
@@ -141,8 +149,13 @@ function splitBundledItems(productName, quantity) {
 
   // If no splits found, treat as single item
   if (parts.length <= 1) {
-    return [{ name: productName, qty: quantity }];
+    return { items: [{ name: productName, qty: quantity, catalogId: null }], isStationBundle: false, stationQuantity: 1 };
   }
+
+  // Multiple items bundled together - this represents a station configuration
+  // Each item in the bundle gets qty=1, but we track the station multiplier
+  const isStationBundle = parts.length >= 3; // 3+ items = likely a full station bundle
+  const itemQty = isStationBundle ? 1 : quantity;
 
   for (const part of parts) {
     // Check if this part contains a hardware keyword
@@ -153,7 +166,7 @@ function splitBundledItems(productName, quantity) {
       if (partLower.includes(keyword)) {
         items.push({
           name: part,
-          qty: quantity,
+          qty: itemQty,
           catalogId: catalogId
         });
         matched = true;
@@ -165,13 +178,17 @@ function splitBundledItems(productName, quantity) {
     if (!matched && part.length > 3) {
       items.push({
         name: part,
-        qty: quantity,
+        qty: itemQty,
         catalogId: null
       });
     }
   }
 
-  return items.length > 0 ? items : [{ name: productName, qty: quantity }];
+  return {
+    items: items.length > 0 ? items : [{ name: productName, qty: quantity, catalogId: null }],
+    isStationBundle: isStationBundle,
+    stationQuantity: isStationBundle ? quantity : 1
+  };
 }
 
 /**
@@ -453,23 +470,51 @@ function parseHardwareFromText(text) {
 
     if (name.length > 5) {
       // Split bundled items
-      const splitItems = splitBundledItems(name, qty);
+      const splitResult = splitBundledItems(name, qty);
+      const { items: splitItems, isStationBundle, stationQuantity } = splitResult;
 
-      for (const item of splitItems) {
-        const mappedIds = item.catalogId ? [item.catalogId] : mapProductToHardware(item.name);
-
-        const hwItem = {
-          id: 'extracted_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          productName: item.name,
-          quantity: item.qty,
-          mappedHardwareIds: mappedIds,
-          confidence: mappedIds.length > 0 ? 0.85 : 0.5
+      // If this is a station bundle (3+ items), create a new station group for it
+      if (isStationBundle && stationQuantity >= 1) {
+        // Create a new station group for this bundle
+        const bundleGroup = {
+          name: 'POS Station',
+          quantity: stationQuantity,
+          items: []
         };
 
-        if (currentGroup) {
-          currentGroup.items.push(hwItem);
-        } else {
-          ungroupedItems.push(hwItem);
+        for (const item of splitItems) {
+          const mappedIds = item.catalogId ? [item.catalogId] : mapProductToHardware(item.name);
+          bundleGroup.items.push({
+            id: 'extracted_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            productName: item.name,
+            quantity: item.qty,
+            mappedHardwareIds: mappedIds,
+            confidence: mappedIds.length > 0 ? 0.85 : 0.5
+          });
+        }
+
+        // Add as a new station group (bundles always create their own group)
+        if (bundleGroup.items.length > 0) {
+          stationGroups.push(bundleGroup);
+        }
+      } else {
+        // Not a station bundle - add items individually
+        for (const item of splitItems) {
+          const mappedIds = item.catalogId ? [item.catalogId] : mapProductToHardware(item.name);
+
+          const hwItem = {
+            id: 'extracted_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            productName: item.name,
+            quantity: item.qty,
+            mappedHardwareIds: mappedIds,
+            confidence: mappedIds.length > 0 ? 0.85 : 0.5
+          };
+
+          if (currentGroup) {
+            currentGroup.items.push(hwItem);
+          } else {
+            ungroupedItems.push(hwItem);
+          }
         }
       }
     }

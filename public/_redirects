@@ -1,1 +1,21 @@
+# Cape Cod Restaurant Consulting - Redirect Rules
+# Cloudflare Pages Redirects: https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Legacy URLs and aliases
+/support-plans /services 301
+/contact /about#contact 301
+/networking /local-networking 301
+/cabling /local-networking 301
+/cable /local-networking 301
+
+# Old portal paths
+/client-portal /portal 301
+/rep-portal /rep 301
+
+# Toast Hub aliases
+/blog /toast-hub 301
+/articles /toast-hub 301
+/resources /toast-hub 301
+
+# SPA catch-all (must be last)
 /* /index.html 200
