@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Phone, Mail, Calendar, MapPin, Clock, X, ChevronDown, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Phone, Mail, Calendar, MapPin, Clock, X, ChevronDown } from 'lucide-react';
 import { PHONE_NUMBER, EMAIL_ADDRESS } from '../../constants';
 
 type AvailabilityStatus = 'available' | 'busy' | 'offline';
@@ -100,10 +99,10 @@ const AvailabilityIndicator: React.FC = () => {
       label: 'Busy'
     },
     offline: {
-      color: 'bg-orange-500',
-      pulseColor: 'bg-orange-400',
-      textColor: 'text-orange-500',
-      label: 'Get Quote'
+      color: 'bg-gray-500',
+      pulseColor: 'bg-gray-400',
+      textColor: 'text-gray-400',
+      label: 'Offline'
     }
   };
 
@@ -125,40 +124,27 @@ const AvailabilityIndicator: React.FC = () => {
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Compact Badge Container */}
-      <div className="flex items-center gap-2">
-        {/* Status Badge (clickable) */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 min-h-[36px]"
-          aria-expanded={isExpanded}
-          aria-label={`Availability: ${compactLabel()}`}
-        >
-          {/* Status Dot with Pulse */}
-          <span className="relative flex h-2.5 w-2.5">
-            {availability.status === 'available' && (
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${config.pulseColor} opacity-75`} />
-            )}
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${config.color}`} />
-          </span>
+      {/* Compact Badge (clickable) */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 min-h-[36px]"
+        aria-expanded={isExpanded}
+        aria-label={`Availability: ${compactLabel()}`}
+      >
+        {/* Status Dot with Pulse */}
+        <span className="relative flex h-2.5 w-2.5">
+          {availability.status === 'available' && (
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${config.pulseColor} opacity-75`} />
+          )}
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${config.color}`} />
+        </span>
 
-          <span className={`text-sm font-medium ${config.textColor} dark:${config.textColor}`}>
-            {compactLabel()}
-          </span>
+        <span className={`text-sm font-medium ${config.textColor} dark:${config.textColor}`}>
+          {compactLabel()}
+        </span>
 
-          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-        </button>
-
-        {/* Always-visible mini Get Quote button */}
-        <Link
-          to="/quote"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors min-h-[32px] shadow-sm hover:shadow"
-          aria-label="Get a quote"
-        >
-          <FileText className="w-3 h-3" />
-          <span>Quote</span>
-        </Link>
-      </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
 
       {/* Expanded Panel */}
       {isExpanded && (
@@ -166,7 +152,7 @@ const AvailabilityIndicator: React.FC = () => {
           {/* Header */}
           <div className={`px-4 py-3 ${
             availability.status === 'available' ? 'bg-green-500' :
-            availability.status === 'busy' ? 'bg-yellow-500' : 'bg-orange-500'
+            availability.status === 'busy' ? 'bg-yellow-500' : 'bg-gray-600'
           } text-white`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -177,8 +163,8 @@ const AvailabilityIndicator: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-white" />
                 </span>
                 <span className="font-semibold">
-                  {availability.status === 'offline' ? 'Request a Quote' : config.label}
-                  {availability.town && availability.status !== 'offline' && ` in ${availability.town}`}
+                  {config.label}
+                  {availability.town && ` in ${availability.town}`}
                 </span>
               </div>
               <button
@@ -193,31 +179,13 @@ const AvailabilityIndicator: React.FC = () => {
 
           {/* Content */}
           <div className="p-4 space-y-4">
-            {/* Offline - Prominent Get Quote CTA */}
-            {availability.status === 'offline' && (
-              <Link
-                to="/quote"
-                onClick={() => setIsExpanded(false)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors min-h-[48px] shadow-md hover:shadow-lg"
-              >
-                <FileText className="w-4 h-4" />
-                Get Your Free Quote
-              </Link>
-            )}
-
             {/* Location Type */}
             <div className="flex items-center gap-3 text-sm">
               <MapPin className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <span className="text-gray-700 dark:text-gray-300">
-                {availability.status === 'offline' ? (
-                  'We respond to quotes within 24 hours'
-                ) : (
-                  <>
-                    {availability.locationType === 'remote' && 'Available for remote consultations'}
-                    {availability.locationType === 'onsite' && 'Available for on-site visits'}
-                    {availability.locationType === 'both' && 'Available remote or on-site'}
-                  </>
-                )}
+                {availability.locationType === 'remote' && 'Available for remote consultations'}
+                {availability.locationType === 'onsite' && 'Available for on-site visits'}
+                {availability.locationType === 'both' && 'Available remote or on-site'}
               </span>
             </div>
 
