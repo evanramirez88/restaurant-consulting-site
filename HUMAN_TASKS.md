@@ -70,12 +70,17 @@
 
 ---
 
-### STEP 4: Run Database Migration
+### STEP 4: Run Database Migrations
 
-After deploying, run this command to set up the quote import tables:
+After deploying, run these commands to set up all tables:
 
 ```bash
+# Core schema
+npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0002_full_schema.sql
+npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0003_multi_tenant_system.sql
+npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0004_automation_system.sql
 npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0005_quote_import.sql
+npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0006_ticket_dates.sql
 ```
 
 ---
