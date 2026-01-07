@@ -78,20 +78,18 @@
 
 ## ENVIRONMENT VARIABLES
 
-### Currently Set (Encrypted)
+### All Configured ✅ (Updated 2026-01-07)
 - ADMIN_PASSWORD_HASH ✅
 - JWT_SECRET ✅
 - CLIENT_JWT_SECRET ✅
 - CREDENTIAL_ENCRYPTION_KEY ✅
 - WORKER_API_KEY ✅
+- RESEND_API_KEY ✅ (Contact form emails)
+- HUBSPOT_API_KEY ✅ (CRM sync - Panicky-Monkey private app)
+- SQUARE_ACCESS_TOKEN ✅ (Billing)
+- SQUARE_APPLICATION_ID ✅ (Billing)
 
-### Need Valid Values (Features Broken)
-- RESEND_API_KEY - Contact form emails not sending
-- HUBSPOT_API_KEY - CRM sync not working
-- SQUARE_ACCESS_TOKEN - Billing features not working
-- SQUARE_APPLICATION_ID - Billing features not working
-
-**To fix:** Get valid API keys and update in Cloudflare Dashboard → Pages → Settings → Environment Variables
+**Note:** Square key format `sq0idp-*` is Application ID format. If billing features don't work, may need actual Access Token (`sq0atp-*` format) from Square Developer Portal.
 
 ---
 
