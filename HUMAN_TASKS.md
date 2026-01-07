@@ -97,6 +97,24 @@ All API keys have been set in Cloudflare Pages environment variables:
 
 ---
 
+## PENDING: Configure capecodcablecontractors.com Redirect (HIGH PRIORITY)
+
+The domain is active in Cloudflare but needs a redirect rule configured.
+
+**Location:** https://dash.cloudflare.com → capecodcablecontractors.com → Rules → Redirect Rules
+
+1. Create new Redirect Rule
+2. **When:** Hostname equals `capecodcablecontractors.com` OR `www.capecodcablecontractors.com`
+3. **Then:** Static redirect to `https://ccrestaurantconsulting.com/#/local-networking`
+4. **Status:** 301 (Permanent)
+5. **Preserve query string:** ON
+
+Also need DNS A record pointing to 192.0.2.1 (proxied) if not already configured.
+
+**See:** `CLOUDFLARE_REDIRECT_SETUP.md` for detailed instructions.
+
+---
+
 ## PENDING: Update Nameservers (Low Priority)
 
 These domains need NS updated at Squarespace:

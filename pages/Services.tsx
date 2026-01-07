@@ -187,6 +187,27 @@ const Services: React.FC = () => {
             ]}
           />
 
+          {/* Local Networking Callout */}
+          <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-on-scroll">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-gray-900">Cape Cod On-Site Cabling & WiFi</h3>
+                <p className="text-gray-600 text-sm">Dedicated networking services for Cape Cod, Plymouth, and Providence restaurants</p>
+              </div>
+            </div>
+            <Link
+              to="/local-networking"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:opacity-90 whitespace-nowrap"
+              style={{ backgroundColor: '#0d9488', color: '#ffffff' }}
+            >
+              View Local Services
+              <span className="text-lg">→</span>
+            </Link>
+          </div>
+
           <ServiceSection
             title="Operational Consulting"
             icon={BookOpen}

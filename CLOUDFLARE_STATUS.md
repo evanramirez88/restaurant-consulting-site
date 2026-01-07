@@ -105,6 +105,14 @@
 
 **Note:** CONTACT_PHONE and CONTACT_EMAIL have fallback defaults but should be configured in Cloudflare Pages environment variables for production use.
 
+#### Phone Number Usage (IMPORTANT)
+| Number | Purpose | Public/Private |
+|--------|---------|----------------|
+| (508) 247-4936 | **PUBLIC** business line - website, marketing, general inquiries | Public |
+| (774) 408-0083 | **PRIVATE** - Local Cape Cod clients only | Private |
+
+**DO NOT display 774-408-0083 on the website.** The website correctly uses (508) 247-4936.
+
 #### API Key Storage
 **Actual key values are stored securely in:**
 - Cloudflare Pages → Settings → Environment Variables (encrypted)
