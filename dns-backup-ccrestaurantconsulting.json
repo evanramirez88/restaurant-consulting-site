@@ -1,0 +1,44 @@
+{
+  "domain": "ccrestaurantconsulting.com",
+  "backup_date": "2026-01-06",
+  "records": [
+    {
+      "type": "CNAME",
+      "name": "@",
+      "content": "restaurant-consulting-site.pages.dev",
+      "proxied": true,
+      "comment": "Root domain - Points to Cloudflare Pages"
+    },
+    {
+      "type": "CNAME",
+      "name": "www",
+      "content": "restaurant-consulting-site.pages.dev",
+      "proxied": true,
+      "comment": "WWW subdomain - Points to Cloudflare Pages"
+    },
+    {
+      "type": "TXT",
+      "name": "@",
+      "content": "v=spf1 -all",
+      "comment": "SPF record - reject all email"
+    },
+    {
+      "type": "TXT",
+      "name": "@",
+      "content": "google-site-verification=m-J4dOl2fBNUniO5sNLYsLi7eCSoVmDnHTXj3_tAnYQ",
+      "comment": "Google Search Console verification"
+    },
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "content": "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s",
+      "comment": "DMARC policy"
+    },
+    {
+      "type": "TXT",
+      "name": "_domainkey",
+      "content": "v=DKIM1; p=",
+      "comment": "DKIM placeholder"
+    }
+  ]
+}
