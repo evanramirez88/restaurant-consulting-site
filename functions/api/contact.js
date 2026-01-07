@@ -67,7 +67,7 @@ export async function onRequestPost(context) {
           },
           body: JSON.stringify({
             from: 'Cape Cod Restaurant Consulting <onboarding@resend.dev>',
-            to: ['evanramirez88@gmail.com'],
+            to: ['ramirezconsulting.rg@gmail.com'],
             subject: `New Contact: ${data.name} - ${data.service || 'General Inquiry'}`,
             html: `
               <h2>New Contact Form Submission</h2>
@@ -132,8 +132,6 @@ export async function onRequestPost(context) {
               phone: data.phone || '',
               company: data.businessName || '',
               hs_lead_status: 'NEW',
-              message: data.message,
-              service_interest: data.service || 'General Inquiry',
               lifecyclestage: 'lead'
             }
           })
@@ -160,8 +158,6 @@ export async function onRequestPost(context) {
                     properties: {
                       phone: data.phone || '',
                       company: data.businessName || '',
-                      message: data.message,
-                      service_interest: data.service || 'General Inquiry'
                     }
                   })
                 }
