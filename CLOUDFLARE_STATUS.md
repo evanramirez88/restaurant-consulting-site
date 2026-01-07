@@ -1,88 +1,65 @@
 # Cloudflare Account & Domain Status
 
-**Last Updated:** 2026-01-06 21:00 EST
+**Last Updated:** 2026-01-06 23:20 EST
 **Target Account:** ramirezconsulting.rg@gmail.com (373a6cef1f9ccf5d26bfd9687a91c0a6)
 
 ---
 
-## CURRENT DOMAIN STATUS
+## DOMAIN STATUS SUMMARY
 
-| Domain | Account | Zone ID | Status | Action Needed |
-|--------|---------|---------|--------|---------------|
-| ccrestaurantconsulting.com | RG ✅ | 141091a76fe0026d42fb846391ad1851 | **pending** | UPDATE NAMESERVERS |
-| capecodcablecontractors.com | RG ✅ | 0f0349b4a1eb3d6b74afb9b9f81356e6 | pending | Update NS at Squarespace |
-| capecodrestaurantconsulting.com | RG ✅ | cded8b6b52a5a3ad9d1a1a0c4e1aa21a | pending | Update NS at Squarespace |
-| millstonecompound.com | evan88 | - | active | Personal - leave as is |
-
----
-
-## PROGRESS UPDATE (2026-01-06 21:00)
-
-### ✅ COMPLETED
-1. Added ccrestaurantconsulting.com to RG account via API
-2. Created DNS records on new zone:
-   - Root CNAME → restaurant-consulting-site.pages.dev (proxied)
-   - WWW CNAME → restaurant-consulting-site.pages.dev (proxied)
-   - SPF TXT record
-   - Google verification TXT record
-   - DMARC TXT record
-
-### ⏳ PENDING - NAMESERVER UPDATE REQUIRED
-
-The domain is added but **pending activation**. The nameservers must be updated:
-
-**Current NS (pointing to old account):**
-- kira.ns.cloudflare.com
-- rocco.ns.cloudflare.com
-
-**New NS (for RG account):**
-- devin.ns.cloudflare.com
-- linda.ns.cloudflare.com
-
-**Note:** The domain shows `original_registrar: cloudflare, inc.` - this means it may be registered WITH Cloudflare Registrar, in which case you need to update NS in the Cloudflare Registrar settings.
+| Domain | Zone ID | Status | Nameservers |
+|--------|---------|--------|-------------|
+| ccrestaurantconsulting.com | 141091a76fe0026d42fb846391ad1851 | **ACTIVE** ✅ | devin/linda |
+| capecodcablecontractors.com | 0f0349b4a1eb3d6b74afb9b9f81356e6 | **ACTIVE** ✅ | devin/linda |
+| capecodrestaurantconsulting.com | cded8b6b52a5a3ad9d1a1a0c4e1aa21a | pending | devin/linda |
+| thewanderinbartender.com | 911b9d3ba2e5d4ca71286b7cdae92583 | pending | **adel/simon** |
+| toastspecialist.com | deaa692543c037de789c6be5f48b4f43 | pending | **adel/simon** |
+| thewanderingardener.com | a9da2c0de0bea589a56bc130444191e8 | pending | **adel/simon** |
 
 ---
 
-## WHERE TO UPDATE NAMESERVERS
+## ACTION REQUIRED: Update Nameservers in Squarespace
 
-### If domain is at Cloudflare Registrar:
-1. Login to https://dash.cloudflare.com as **evanramirez88@gmail.com**
-2. Go to Domain Registration → ccrestaurantconsulting.com
-3. Change nameservers to:
-   - `devin.ns.cloudflare.com`
-   - `linda.ns.cloudflare.com`
+Three domains need their nameservers changed in Squarespace:
 
-### If domain is at Squarespace:
-1. Go to https://account.squarespace.com/domains
-2. Select ccrestaurantconsulting.com
-3. DNS Settings → Custom nameservers
-4. Change to:
-   - `devin.ns.cloudflare.com`
-   - `linda.ns.cloudflare.com`
+### thewanderinbartender.com
+- Change to: `adel.ns.cloudflare.com` and `simon.ns.cloudflare.com`
+
+### toastspecialist.com
+- Change to: `adel.ns.cloudflare.com` and `simon.ns.cloudflare.com`
+
+### thewanderingardener.com
+- Change to: `adel.ns.cloudflare.com` and `simon.ns.cloudflare.com`
+
+**Location:** https://account.squarespace.com/domains → Select domain → DNS → Nameservers
 
 ---
 
-## AFTER NAMESERVER UPDATE
+## COMPLETED ✅
 
-Once NS propagates (usually 5-30 minutes):
+1. All 6 domains added to RG Cloudflare account
+2. ccrestaurantconsulting.com - ACTIVE with DNS records pointing to Pages
+3. capecodcablecontractors.com - ACTIVE
+4. DNS records configured for main site
 
-1. The zone will change from "pending" to "active"
-2. Connect the domain to Pages project:
-   - Cloudflare Dashboard → Pages → restaurant-consulting-site → Custom domains
-   - Add: ccrestaurantconsulting.com
-   - Add: www.ccrestaurantconsulting.com
+---
+
+## NEXT STEPS (After NS Propagates)
+
+1. [ ] Connect ccrestaurantconsulting.com to Pages custom domains
+2. [ ] Configure DNS for other domains (redirects, etc.)
+3. [ ] Delete old zone from evanramirez88 account (cleanup)
 
 ---
 
 ## GITHUB & PAGES DEPLOYMENT
 
-| Setting | Current Value | Status |
-|---------|---------------|--------|
+| Setting | Value | Status |
+|---------|-------|--------|
 | Pages Project | restaurant-consulting-site | ✅ |
 | Cloudflare Account | ramirezconsulting.rg@gmail.com | ✅ |
 | GitHub Repo | evanramirez88/restaurant-consulting-site | ✅ |
 | Auto-deploy | Native GitHub integration | ✅ |
-| Latest Deploy | 809ffef | ✅ |
 
 ---
 
@@ -96,20 +73,8 @@ Account: ramirezconsulting.rg@gmail.com (373a6cef1f9ccf5d26bfd9687a91c0a6)
 
 ---
 
-## REMAINING TASKS
-
-1. [x] Add ccrestaurantconsulting.com to RG account
-2. [x] Add DNS records to new zone
-3. [ ] **NEXT:** Update nameservers (see instructions above)
-4. [ ] Connect domain to Pages project (after NS propagates)
-5. [ ] Update NS for capecodcablecontractors.com
-6. [ ] Update NS for capecodrestaurantconsulting.com
-7. [ ] Delete old zone from evanramirez88 account (optional cleanup)
-
----
-
 ## DEFERRED TASKS
 
-- Set RESEND_API_KEY in Cloudflare
-- Set HUBSPOT_API_KEY in Cloudflare
-- Set SQUARE_ACCESS_TOKEN in Cloudflare
+- Set RESEND_API_KEY in Cloudflare (contact form emails)
+- Set HUBSPOT_API_KEY in Cloudflare (CRM sync)
+- Set SQUARE_ACCESS_TOKEN in Cloudflare (billing)
