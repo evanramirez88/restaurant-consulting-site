@@ -1,272 +1,134 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** January 6, 2026
+**Last Updated:** 2026-01-06 23:30 EST
 **Goal:** $400K by May 1, 2026 (116 days remaining)
 
 ---
 
-## BROKEN FEATURES - FIX IMMEDIATELY
+## ✅ COMPLETED: Cloudflare Domain Migration (2026-01-06)
 
-These features are broken because API keys are missing in Cloudflare:
+All business domains consolidated to the correct Cloudflare account.
 
-| Feature | Missing Variable | Status | How to Fix |
-|---------|------------------|--------|------------|
-| Contact Forms | `RESEND_API_KEY` | BROKEN | Get from https://resend.com/api-keys |
-| CRM Sync | `HUBSPOT_API_KEY` | BROKEN | Get from https://app.hubspot.com/private-apps/243379742 |
-| Billing/Invoices | `SQUARE_ACCESS_TOKEN` | BROKEN | Get from https://developer.squareup.com/apps |
+| Task | Status |
+|------|--------|
+| Identify correct account (ramirezconsulting.rg@gmail.com) | ✅ Done |
+| Add ccrestaurantconsulting.com to RG account | ✅ Done |
+| Configure DNS records | ✅ Done |
+| Connect domain to Pages project | ✅ Done |
+| Verify GitHub auto-deploy | ✅ Done |
+| Add 5 additional domains to RG account | ✅ Done |
+| Activate capecodcablecontractors.com | ✅ Done |
 
-**Where to set these:** Cloudflare Dashboard -> Pages -> restaurant-consulting-site -> Settings -> Environment Variables
-
----
-
-
-## ✅ COMPLETED: GitHub Auto-Deployments
-
-**Status:** FULLY CONFIGURED AND WORKING (2026-01-06)
-
-GitHub Actions workflow is deployed with secrets configured:
-- `CLOUDFLARE_ACCOUNT_ID` ✓
-- `CLOUDFLARE_API_TOKEN` ✓
-
-**Result:** Every push to `main` automatically builds and deploys via GitHub Actions.
-
-**Workflow file:** `.github/workflows/deploy.yml`
+**Full details:** See `CLOUDFLARE_STATUS.md`
 
 ---
 
-## ONE-TIME CLOUDFLARE SETUP (Do This Once, Never Again)
+## ✅ COMPLETED: Infrastructure Setup (All Configured)
 
-**Purpose:** Configure ALL Cloudflare services so Claude Code can build ANY feature without stopping.
-
-**Location:** https://dash.cloudflare.com
-
----
-
-### STEP 1: Create R2 Bucket (File Storage)
-
-**Location:** R2 Object Storage → Create bucket
-
-1. Click "Create bucket"
-2. Bucket name: `ccrc-uploads`
-3. Location: Automatic
-4. Click "Create bucket"
-
-**Why needed:** PDF uploads, menu images, contract storage, any file handling
+| Item | Status | Details |
+|------|--------|---------|
+| D1 Database | ✅ | `rg-consulting-forms` - 40 tables |
+| KV Namespace | ✅ | `rg-consulting-sessions` |
+| R2 Bucket | ✅ | `ccrc-uploads` |
+| Workers AI | ✅ | Bound as `AI` |
+| GitHub Auto-Deploy | ✅ | Native Cloudflare Pages integration |
+| Database Migrations | ✅ | All migrations applied 2026-01-06 |
 
 ---
 
-### STEP 2: Configure Pages Bindings
+## ✅ COMPLETED: Domain Status
 
-**Location:** Pages → restaurant-consulting-site → Settings → Functions → Bindings
-
-| Binding Type | Variable Name | Resource |
-|--------------|---------------|----------|
-| D1 Database | `DB` | `rg-consulting-forms` |
-| KV Namespace | `RATE_LIMIT_KV` | `rg-consulting-sessions` (ID: `57fda5bf0515423db01df17ed5b335e6`) |
-| R2 Bucket | `R2_BUCKET` | `ccrc-uploads` |
-| Workers AI | `AI` | (just enable it) |
-
-**How to add each:**
-1. Click "Add binding"
-2. Select type (D1, KV, R2, or AI)
-3. Enter variable name exactly as shown
-4. Select resource from dropdown
-5. Save
+| Domain | Status | Account |
+|--------|--------|---------|
+| ccrestaurantconsulting.com | **ACTIVE** ✅ | RG (connected to Pages) |
+| capecodcablecontractors.com | **ACTIVE** ✅ | RG |
+| capecodrestaurantconsulting.com | Pending NS | RG (needs devin/linda) |
+| thewanderinbartender.com | Pending NS | RG (needs adel/simon) |
+| toastspecialist.com | Pending NS | RG (needs adel/simon) |
+| thewanderingardener.com | Pending NS | RG (needs adel/simon) |
 
 ---
 
-### STEP 3: Environment Variables (Secrets)
+## BROKEN FEATURES - Need Valid API Keys
 
-**Location:** Pages → restaurant-consulting-site → Settings → Environment Variables
+These features have placeholder values - need real API keys:
 
-**Required for Production:**
+| Feature | Variable | Status | How to Fix |
+|---------|----------|--------|------------|
+| Contact Form Emails | `RESEND_API_KEY` | BROKEN | https://resend.com/api-keys |
+| CRM Sync | `HUBSPOT_API_KEY` | BROKEN | https://app.hubspot.com/private-apps/243379742 |
+| Billing/Invoices | `SQUARE_ACCESS_TOKEN` | BROKEN | https://developer.squareup.com/apps |
 
-| Variable | Value | How to Get |
-|----------|-------|------------|
-| `ADMIN_PASSWORD_HASH` | SHA-256 hash | Run: `echo -n "YOUR_PASSWORD" \| shasum -a 256` |
-| `SQUARE_ACCESS_TOKEN` | Your token | https://developer.squareup.com → Applications → Credentials |
-| `SQUARE_ENVIRONMENT` | `production` | Literal string |
-| `SQUARE_LOCATION_ID_LANE_A` | `L6GGMPCHFM6WR` | Cape Cod location |
-| `SQUARE_LOCATION_ID_LANE_B` | `LB8GE5HYZJYB7` | National location |
-
-**Email Service (Required for forms to send emails):**
-
-| Variable | Value | How to Get |
-|----------|-------|------------|
-| `RESEND_API_KEY` | Your API key | https://resend.com/api-keys → Create new key |
-
-**Optional (for future features):**
-
-| Variable | Value | How to Get |
-|----------|-------|------------|
-| `PANDADOC_API_KEY` | Your key | https://app.pandadoc.com/a/#/settings/api |
-| `HUBSPOT_ACCESS_TOKEN` | Your token | https://app.hubspot.com/private-apps/243379742 |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Webhook key | Square Dashboard → Webhooks |
+**Where to set:** Cloudflare Dashboard → Pages → restaurant-consulting-site → Settings → Environment Variables
 
 ---
 
-### STEP 4: Run Database Migrations
+## PENDING: Update Nameservers (Low Priority)
 
-After deploying, run these commands to set up all tables:
+These domains need NS updated at Squarespace:
 
-```bash
-# COMPLETED - All migrations have been run successfully on 2026-01-06
+| Domain | Change NS To |
+|--------|--------------|
+| thewanderinbartender.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
+| toastspecialist.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
+| thewanderingardener.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
 
-# If you need to re-run or on a fresh database, use this order:
-# 1. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0004_automation_system.sql
-# 2. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0005_quote_import.sql
-# 3. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0008_missing_tables.sql
-# 4. npx wrangler d1 execute rg-consulting-forms --remote --file=migrations/0007_seed_business.sql
-```
+**Location:** https://account.squarespace.com/domains
 
 ---
 
-### What This Enables
-
-Once configured, Claude Code can build:
-- PDF import/export features (R2)
-- AI-powered text extraction (Workers AI)
-- Rate limiting & sessions (KV)
-- All database features (D1)
-- Payment processing (Square)
-- Contract generation (PandaDoc)
-- CRM automation (HubSpot)
-
-**You should NEVER need to configure Cloudflare bindings again.**
-
----
-
-## CRITICAL: Week 1 Tasks (Jan 1-7)
+## Week 1 Tasks (Jan 1-7) - LAUNCH
 
 ### 1. HubSpot Email Sequences
 
 **Location:** https://app.hubspot.com/sequences/243379742
 
-Create 6 email sequences for Operation Breakout:
-
-#### Sequence 1: Toast Upcoming Implementation
-- **Target:** Restaurants actively implementing Toast (1,615 leads)
-- **Angle:** "Need help with your Toast implementation?"
-- **Emails:** 3-email sequence over 7 days
-
-#### Sequence 2: Toast Existing User - Massachusetts
-- **Target:** MA Toast users needing support
-- **Angle:** Local expert, on-site available
-- **Emails:** 4-email sequence over 14 days
-
-#### Sequence 3: Toast Existing User - National
-- **Target:** Toast users outside MA
-- **Angle:** Remote support specialist
-- **Emails:** 4-email sequence over 14 days
-
-#### Sequence 4: Competitor POS Conversion
-- **Target:** Clover/Square/Upserve users
-- **Angle:** Toast referral opportunity
-- **Emails:** 3-email sequence over 10 days
-
-#### Sequence 5: Menu Build Specialist
-- **Target:** All Toast users
-- **Angle:** Menu optimization/cleanup
-- **Emails:** 3-email sequence over 7 days
-
-#### Sequence 6: Support Plan Nurture
-- **Target:** Past service clients
-- **Angle:** Ongoing support value
-- **Emails:** 2-email sequence over 5 days
-
----
+| Sequence | Target | Emails |
+|----------|--------|--------|
+| Toast Upcoming Implementation | Active implementers (1,615) | 3 over 7 days |
+| Toast Existing - Massachusetts | MA Toast users | 4 over 14 days |
+| Toast Existing - National | Non-MA Toast users | 4 over 14 days |
+| Competitor POS Conversion | Clover/Square/Upserve | 3 over 10 days |
+| Menu Build Specialist | All Toast users | 3 over 7 days |
+| Support Plan Nurture | Past clients | 2 over 5 days |
 
 ### 2. Import First Lead Batch
 
-**Ready files in:** `G:\My Drive\RG OPS\70_LEADS_BUILTWITH\71_LEADS_ARCHIVE\`
+**Files in:** `G:\My Drive\RG OPS\70_LEADS_BUILTWITH\71_LEADS_ARCHIVE\`
 
-#### Option A: Top 500 (Highest Probability)
-- **File:** `top500_contactable.csv`
-- **All leads scored 100** - best quality
-- **Columns ready for HubSpot import**
+- `top500_contactable.csv` - Best quality, all scored 100
+- `Toast-POS-websites-filter-Upcoming-implementations.csv` - 1,615 active leads
 
-#### Option B: Toast Upcoming Implementations
-- **File:** `Toast-POS-websites-filter-Upcoming-implementations.csv`
-- **1,615 leads** actively implementing Toast
-- **Needs column mapping** (raw BuiltWith format)
-
-#### Import Steps:
-1. Go to HubSpot → Contacts → Import
-2. Upload CSV file
-3. Map columns:
-   - `domain` → Website URL
-   - `Company` → Company name
-   - `primary_email` → Email
-   - `primary_phone` → Phone
-   - `City`, `state_norm`, `Zip` → Address fields
-   - `providers` → Custom property: Current POS
-   - `lead_score` → Custom property: Lead Score
-4. Assign to appropriate list for sequence enrollment
-
----
-
-### 3. Cal.com Availability Fine-Tuning
+### 3. Cal.com Availability
 
 **Location:** https://app.cal.com/settings/my-account/availability
 
-The schedule has been created (ID: 1148640) with base 9am-5pm Mon-Fri hours. Fine-tune to add:
+- Add evening hours (7pm-10pm)
+- Add weekend slots if desired
+- Configure buffer times
 
-- **Evening hours:** 7pm-10pm (restaurant owner friendly)
-- **Weekend slots:** Saturday mornings if desired
-- **Buffer times:** Between meetings
-
----
-
-### 4. Square Catalog Products (Support Plans)
+### 4. Square Catalog Products
 
 **Location:** https://squareup.com/dashboard/catalog
 
-Create catalog items for support plans:
-
-| Product | Price | Billing |
-|---------|-------|---------|
-| Toast Guardian Core - Quarterly | $1,050 | One-time |
-| Toast Guardian Core - Annual | $3,850 | One-time |
-| Toast Guardian Professional - Quarterly | $1,500 | One-time |
-| Toast Guardian Professional - Annual | $5,500 | One-time |
-| Toast Guardian Premium - Quarterly | $2,400 | One-time |
-| Toast Guardian Premium - Annual | $8,800 | One-time |
+| Product | Price |
+|---------|-------|
+| Toast Guardian Core - Quarterly | $1,050 |
+| Toast Guardian Core - Annual | $3,850 |
+| Toast Guardian Professional - Quarterly | $1,500 |
+| Toast Guardian Professional - Annual | $5,500 |
+| Toast Guardian Premium - Quarterly | $2,400 |
+| Toast Guardian Premium - Annual | $8,800 |
 
 ---
 
-## Week 2 Tasks (Jan 8-14)
+## Week 2 Tasks (Jan 8-14) - VOLUME
 
-### Phone Follow-Up Campaign
+- [ ] Send 500 outreach emails
 - [ ] Call non-responders after 7 days
-- [ ] Use discovery call script
-- [ ] Book via Cal.com
-
-### First Proposals
 - [ ] Create proposal template in PandaDoc
-- [ ] Target: 5+ proposals by end of week
-- [ ] Include quarterly billing options
-
----
-
-## Lead Prioritization Order
-
-1. **Adam Holmes referrals** (warm) - Immediate
-2. **Past/existing clients** (referral requests) - Week 1
-3. **Toast Upcoming Implementations** - Week 1-2
-4. **Massachusetts Toast users** - Week 1-2
-5. **Massachusetts competitor POS** - Week 2-3
-6. **Florida Toast users** (remote) - Week 3-4
-7. **National Toast users** - Ongoing
-
----
-
-## Domain Transfer Tasks
-
-### capecodcablecontractors.com Transfer
-- [ ] Complete domain transfer from existing registrar
-- [ ] Add domain to Cloudflare DNS
-- [ ] Configure 301 redirect to ccrestaurantconsulting.com/#/local-networking
-- **Status:** In progress - transfer takes time
+- [ ] Target: 5+ proposals
+- [ ] Close first support plan deals
 
 ---
 
@@ -274,14 +136,30 @@ Create catalog items for support plans:
 
 | System | ID |
 |--------|-----|
+| **Cloudflare Account** | **373a6cef1f9ccf5d26bfd9687a91c0a6** |
+| **Cloudflare API Token** | **24aujAQSZ8JEky8IFrnk7MeUhOrcn_Yj6MnsCCAk** |
+| Pages Project ID | bdb70a0d-367d-4f36-9363-d7dee4699f1b |
+| ccrestaurantconsulting.com Zone | 141091a76fe0026d42fb846391ad1851 |
+| Cloudflare D1 | eb39c9a2-24ed-426e-9260-a1fb55d899cb |
+| Cloudflare KV | 57fda5bf0515423db01df17ed5b335e6 |
+| Cloudflare R2 Bucket | ccrc-uploads |
 | HubSpot Portal | 243379742 |
 | Square Lane A (Local) | L6GGMPCHFM6WR |
 | Square Lane B (National) | LB8GE5HYZJYB7 |
 | Cal.com Username | r-g-consulting |
 | Cal.com Schedule ID | 1148640 |
-| Cloudflare D1 | eb39c9a2-24ed-426e-9260-a1fb55d899cb |
-| Cloudflare KV | 57fda5bf0515423db01df17ed5b335e6 |
-| Cloudflare R2 Bucket | ccrc-uploads |
+
+---
+
+## Lead Prioritization Order
+
+1. **Adam Holmes referrals** (warm) - Immediate
+2. **Past/existing clients** - Week 1
+3. **Toast Upcoming Implementations** - Week 1-2
+4. **Massachusetts Toast users** - Week 1-2
+5. **Massachusetts competitor POS** - Week 2-3
+6. **Florida Toast users** (remote) - Week 3-4
+7. **National Toast users** - Ongoing
 
 ---
 
