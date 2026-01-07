@@ -53,14 +53,14 @@ All business domains consolidated to the correct Cloudflare account.
 
 All API keys have been set in Cloudflare Pages environment variables:
 
-| Feature | Variable | Status |
-|---------|----------|--------|
-| Contact Form Emails | `RESEND_API_KEY` | ✅ ACTIVE |
-| CRM Sync | `HUBSPOT_API_KEY` | ✅ ACTIVE (Panicky-Monkey app) |
-| Billing/Invoices | `SQUARE_ACCESS_TOKEN` | ✅ ACTIVE |
-| Billing/Invoices | `SQUARE_APPLICATION_ID` | ✅ ACTIVE |
+| Feature | Variable | Status | Key Format |
+|---------|----------|--------|------------|
+| Contact Form Emails | `RESEND_API_KEY` | ✅ ACTIVE | `re_*` |
+| CRM Sync | `HUBSPOT_API_KEY` | ✅ ACTIVE | `pat-na2-*` (Panicky-Monkey app) |
+| Billing/Invoices | `SQUARE_ACCESS_TOKEN` | ✅ ACTIVE | `EAAA*` (OAuth token) |
+| Billing/Invoices | `SQUARE_APPLICATION_ID` | ✅ ACTIVE | `sq0idp-*` |
 
-**Note:** Square key (`sq0idp-*`) is Application ID format. If billing features don't work, may need actual Access Token (`sq0atp-*` format) from Square Developer Portal.
+**All features now operational.** Deployment `aee4ba74` includes all keys.
 
 ---
 
