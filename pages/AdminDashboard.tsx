@@ -18,13 +18,22 @@ import AvailabilityManager from '../src/components/admin/availability/Availabili
 import ConfigManager from '../src/components/admin/config/ConfigManager';
 import PortalManagement from '../src/components/admin/portals/PortalManagement';
 import TicketingDashboard from '../src/components/admin/tickets/TicketingDashboard';
-import { EmailCampaigns, EmailSubscribers, EmailAnalytics, SegmentBuilder } from '../src/components/admin/email';
-import { BarChart3, Filter } from 'lucide-react';
+import {
+  EmailCampaigns,
+  EmailSubscribers,
+  EmailAnalytics,
+  SegmentBuilder,
+  ABTestingPanel,
+  EnrollmentWizard,
+  ErrorRecovery,
+  SendTimeOptimizer
+} from '../src/components/admin/email';
+import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
 
 type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'tools' | 'toasthub' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
-type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics';
+type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics' | 'ab-testing' | 'enrollment' | 'errors' | 'schedule';
 
 interface Client {
   id?: string;
@@ -437,12 +446,60 @@ const AdminDashboard: React.FC = () => {
                 <BarChart3 className="w-4 h-4" />
                 Analytics
               </button>
+              <button
+                onClick={() => setEmailSubTab('ab-testing')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'ab-testing'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <FlaskConical className="w-4 h-4" />
+                A/B Tests
+              </button>
+              <button
+                onClick={() => setEmailSubTab('enrollment')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'enrollment'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <UserPlus className="w-4 h-4" />
+                Enrollment
+              </button>
+              <button
+                onClick={() => setEmailSubTab('errors')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'errors'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Errors
+              </button>
+              <button
+                onClick={() => setEmailSubTab('schedule')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'schedule'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                Schedule
+              </button>
             </div>
 
             {emailSubTab === 'campaigns' && <EmailCampaigns />}
             {emailSubTab === 'subscribers' && <EmailSubscribers />}
             {emailSubTab === 'segments' && <SegmentBuilder />}
             {emailSubTab === 'analytics' && <EmailAnalytics />}
+            {emailSubTab === 'ab-testing' && <ABTestingPanel />}
+            {emailSubTab === 'enrollment' && <EnrollmentWizard />}
+            {emailSubTab === 'errors' && <ErrorRecovery />}
+            {emailSubTab === 'schedule' && <SendTimeOptimizer />}
           </>
         )}
 

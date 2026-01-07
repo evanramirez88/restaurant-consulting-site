@@ -24,6 +24,26 @@ export { default as ConditionBuilder, createDefaultBranchConfig } from './Condit
 // Analytics Dashboard
 export { default as EmailAnalytics } from './EmailAnalytics';
 
+// A/B Testing (Day 3)
+export { default as ABTestingPanel } from './ABTestingPanel';
+export {
+  confidenceInterval,
+  calculateSignificance,
+  minimumSampleSize
+} from './ABTestingPanel';
+
+// Send Time Optimizer (Day 3)
+export { default as SendTimeOptimizer } from './SendTimeOptimizer';
+
+// Enrollment Wizard (Day 3)
+export { default as EnrollmentWizard } from './EnrollmentWizard';
+
+// Error Recovery (Day 3)
+export { default as ErrorRecovery } from './ErrorRecovery';
+
+// Sequence Flow Tester (Day 3)
+export { default as SequenceFlowTester } from './SequenceFlowTester';
+
 // Type exports
 export type { EmailSequence } from './EmailCampaigns';
 export type { EmailTemplate } from './EmailTemplateEditor';
@@ -52,3 +72,12 @@ export type {
   ConditionGroup,
   BranchConfig
 } from './ConditionBuilder';
+export type {
+  ABTestStatus,
+  TestType,
+  WinningMetric,
+  ABTest,
+  ABTestStats,
+  VariantStats,
+  SignificanceResult
+} from './ABTestingPanel';
