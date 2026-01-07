@@ -17,9 +17,11 @@ import {
   Utensils,
   DollarSign,
   Tag,
-  Layers
+  Layers,
+  FileUp
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
+import { extractText, getDocumentProxy } from 'unpdf';
 
 // ============================================================
 // FEATURE FLAG - Set to false to reveal the full tool
@@ -549,8 +551,51 @@ const MenuBuilderTool: React.FC = () => {
     }
   };
 
-  // Process a single file and return parsed menu
-  const processFile = async (file: File): Promise<ParsedMenu | null> => {
+  // Process a PDF file using client-side text extraction
+  const processPdfFile = async (file: File): Promise<ParsedMenu | null> => {
+    try {
+      console.log('[Menu Builder] Processing PDF:', file.name);
+
+      // Read PDF and extract text client-side using unpdf
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer));
+      const result = await extractText(pdf, { mergePages: true });
+
+      const { totalPages, text: fullText } = result;
+      console.log(`[Menu Builder] Extracted ${totalPages} pages, ${fullText.length} characters`);
+
+      if (!fullText || fullText.trim().length === 0) {
+        throw new Error('No text could be extracted from the PDF. The file may be image-based or scanned.');
+      }
+
+      // Send extracted text to parse-text API
+      const parseResponse = await fetch('/api/menu/parse-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: fullText,
+          totalPages,
+          fileName: file.name
+        })
+      });
+
+      const parseResult = await parseResponse.json();
+
+      if (!parseResult.success) {
+        throw new Error(parseResult.error || 'Text parsing failed');
+      }
+
+      console.log(`[Menu Builder] Parsed ${parseResult.parsedMenu.items.length} menu items`);
+      return parseResult.parsedMenu;
+
+    } catch (error) {
+      console.error('[Menu Builder] PDF processing error:', error);
+      throw error;
+    }
+  };
+
+  // Process an image file using server-side OCR
+  const processImageFile = async (file: File): Promise<ParsedMenu | null> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', 'Web Upload');
@@ -607,6 +652,15 @@ const MenuBuilderTool: React.FC = () => {
     };
 
     return pollForResult();
+  };
+
+  // Process a single file - routes to PDF or image handler
+  const processFile = async (file: File): Promise<ParsedMenu | null> => {
+    if (file.type === 'application/pdf') {
+      return processPdfFile(file);
+    } else {
+      return processImageFile(file);
+    }
   };
 
   // Merge multiple parsed menus into one
