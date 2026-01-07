@@ -1,0 +1,931 @@
+openapi: 3.0.3
+info:
+  title: Cape Cod Restaurant Consulting - Email Admin API
+  description: |
+    API for managing email templates, sequences, subscribers, and analytics
+    for the Cape Cod Restaurant Consulting admin dashboard.
+  version: 1.0.0
+  contact:
+    name: R&G Consulting LLC
+    email: ramirezconsulting.rg@gmail.com
+    url: https://ccrestaurantconsulting.com
+
+servers:
+  - url: https://ccrestaurantconsulting.com/api/admin/email
+    description: Production
+  - url: http://localhost:8788/api/admin/email
+    description: Local Development
+
+security:
+  - cookieAuth: []
+
+tags:
+  - name: Templates
+    description: Email template management
+  - name: Sequences
+    description: Automated email sequences
+  - name: Subscribers
+    description: Email subscriber management
+  - name: Segments
+    description: Subscriber segmentation
+  - name: Analytics
+    description: Email performance analytics
+  - name: A/B Tests
+    description: A/B testing for emails
+  - name: Errors
+    description: Email error management
+
+paths:
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List all email templates
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, draft, archived]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [transactional, marketing, sequence]
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+    post:
+      tags: [Templates]
+      summary: Create new email template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateCreate'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+
+  /templates/{id}:
+    get:
+      tags: [Templates]
+      summary: Get template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+    put:
+      tags: [Templates]
+      summary: Update template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdate'
+      responses:
+        '200':
+          description: Template updated
+    delete:
+      tags: [Templates]
+      summary: Delete template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template deleted
+
+  /templates/preview:
+    post:
+      tags: [Templates]
+      summary: Preview rendered template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                templateId:
+                  type: string
+                variables:
+                  type: object
+      responses:
+        '200':
+          description: Rendered HTML preview
+
+  /templates/send-test:
+    post:
+      tags: [Templates]
+      summary: Send test email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [templateId, toEmail]
+              properties:
+                templateId:
+                  type: string
+                toEmail:
+                  type: string
+                  format: email
+                variables:
+                  type: object
+      responses:
+        '200':
+          description: Test email sent
+
+  /sequences:
+    get:
+      tags: [Sequences]
+      summary: List email sequences
+      responses:
+        '200':
+          description: List of sequences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  sequences:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sequence'
+    post:
+      tags: [Sequences]
+      summary: Create email sequence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceCreate'
+      responses:
+        '201':
+          description: Sequence created
+
+  /sequences/{id}:
+    get:
+      tags: [Sequences]
+      summary: Get sequence details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sequence details
+    put:
+      tags: [Sequences]
+      summary: Update sequence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SequenceUpdate'
+      responses:
+        '200':
+          description: Sequence updated
+    delete:
+      tags: [Sequences]
+      summary: Delete sequence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sequence deleted
+
+  /sequences/{id}/pause:
+    post:
+      tags: [Sequences]
+      summary: Pause sequence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sequence paused
+
+  /sequences/{id}/resume:
+    post:
+      tags: [Sequences]
+      summary: Resume sequence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sequence resumed
+
+  /sequences/{id}/enroll:
+    post:
+      tags: [Sequences]
+      summary: Enroll subscriber in sequence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subscriberId]
+              properties:
+                subscriberId:
+                  type: string
+      responses:
+        '200':
+          description: Subscriber enrolled
+
+  /subscribers:
+    get:
+      tags: [Subscribers]
+      summary: List subscribers
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, unsubscribed, bounced]
+        - name: segmentId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of subscribers
+    post:
+      tags: [Subscribers]
+      summary: Add subscriber
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberCreate'
+      responses:
+        '201':
+          description: Subscriber added
+
+  /subscribers/{id}:
+    get:
+      tags: [Subscribers]
+      summary: Get subscriber details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscriber details
+    put:
+      tags: [Subscribers]
+      summary: Update subscriber
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberUpdate'
+      responses:
+        '200':
+          description: Subscriber updated
+    delete:
+      tags: [Subscribers]
+      summary: Delete subscriber
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscriber deleted
+
+  /subscribers/import:
+    post:
+      tags: [Subscribers]
+      summary: Bulk import subscribers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subscribers]
+              properties:
+                subscribers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SubscriberCreate'
+                skipDuplicates:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Import results
+
+  /subscribers/export:
+    get:
+      tags: [Subscribers]
+      summary: Export subscribers
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+        - name: segmentId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exported data
+
+  /segments:
+    get:
+      tags: [Segments]
+      summary: List segments
+      responses:
+        '200':
+          description: List of segments
+    post:
+      tags: [Segments]
+      summary: Create segment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentCreate'
+      responses:
+        '201':
+          description: Segment created
+
+  /segments/{id}:
+    get:
+      tags: [Segments]
+      summary: Get segment details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Segment details
+    put:
+      tags: [Segments]
+      summary: Update segment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentUpdate'
+      responses:
+        '200':
+          description: Segment updated
+    delete:
+      tags: [Segments]
+      summary: Delete segment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Segment deleted
+
+  /segments/{id}/members:
+    get:
+      tags: [Segments]
+      summary: Get segment members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of segment members
+
+  /analytics:
+    get:
+      tags: [Analytics]
+      summary: Get email analytics overview
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Analytics overview
+
+  /analytics/timeseries:
+    get:
+      tags: [Analytics]
+      summary: Get time series data
+      parameters:
+        - name: metric
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [sends, opens, clicks, bounces, unsubscribes]
+        - name: interval
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Time series data
+
+  /analytics/top-content:
+    get:
+      tags: [Analytics]
+      summary: Get top performing content
+      responses:
+        '200':
+          description: Top content list
+
+  /ab-tests:
+    get:
+      tags: [A/B Tests]
+      summary: List A/B tests
+      responses:
+        '200':
+          description: List of A/B tests
+    post:
+      tags: [A/B Tests]
+      summary: Create A/B test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ABTestCreate'
+      responses:
+        '201':
+          description: A/B test created
+
+  /ab-tests/{id}:
+    get:
+      tags: [A/B Tests]
+      summary: Get A/B test details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A/B test details
+
+  /ab-tests/{id}/start:
+    post:
+      tags: [A/B Tests]
+      summary: Start A/B test
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A/B test started
+
+  /ab-tests/{id}/stop:
+    post:
+      tags: [A/B Tests]
+      summary: Stop A/B test
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A/B test stopped
+
+  /ab-tests/{id}/declare-winner:
+    post:
+      tags: [A/B Tests]
+      summary: Declare A/B test winner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [variant]
+              properties:
+                variant:
+                  type: string
+                  enum: [A, B]
+      responses:
+        '200':
+          description: Winner declared
+
+  /errors:
+    get:
+      tags: [Errors]
+      summary: List email errors
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [bounce, complaint, failed]
+        - name: resolved
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of errors
+
+  /errors/{id}/retry:
+    post:
+      tags: [Errors]
+      summary: Retry failed email
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Retry initiated
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ccrc_admin_token
+
+  schemas:
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        subject:
+          type: string
+        htmlContent:
+          type: string
+        textContent:
+          type: string
+        type:
+          type: string
+          enum: [transactional, marketing, sequence]
+        status:
+          type: string
+          enum: [active, draft, archived]
+        variables:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TemplateCreate:
+      type: object
+      required: [name, subject, htmlContent]
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        htmlContent:
+          type: string
+        textContent:
+          type: string
+        type:
+          type: string
+          enum: [transactional, marketing, sequence]
+
+    TemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        htmlContent:
+          type: string
+        textContent:
+          type: string
+        status:
+          type: string
+          enum: [active, draft, archived]
+
+    Sequence:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        triggerType:
+          type: string
+          enum: [signup, tag, manual]
+        status:
+          type: string
+          enum: [active, paused, draft]
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/SequenceStep'
+        enrolledCount:
+          type: integer
+        completedCount:
+          type: integer
+
+    SequenceStep:
+      type: object
+      properties:
+        id:
+          type: string
+        templateId:
+          type: string
+        delayDays:
+          type: integer
+        delayHours:
+          type: integer
+        conditions:
+          type: object
+
+    SequenceCreate:
+      type: object
+      required: [name, triggerType]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        triggerType:
+          type: string
+          enum: [signup, tag, manual]
+
+    SequenceUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, draft]
+
+    Subscriber:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+          enum: [active, unsubscribed, bounced]
+        tags:
+          type: array
+          items:
+            type: string
+        customFields:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    SubscriberCreate:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        customFields:
+          type: object
+
+    SubscriberUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+          enum: [active, unsubscribed]
+        tags:
+          type: array
+          items:
+            type: string
+        customFields:
+          type: object
+
+    Segment:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentRule'
+        memberCount:
+          type: integer
+
+    SegmentRule:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          type: string
+          enum: [equals, not_equals, contains, not_contains, greater_than, less_than]
+        value:
+          type: string
+
+    SegmentCreate:
+      type: object
+      required: [name, rules]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentRule'
+
+    SegmentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentRule'
+
+    ABTestCreate:
+      type: object
+      required: [name, templateA, templateB]
+      properties:
+        name:
+          type: string
+        templateA:
+          type: string
+        templateB:
+          type: string
+        metric:
+          type: string
+          enum: [opens, clicks]
+          default: opens
+        sampleSize:
+          type: integer
+          default: 100

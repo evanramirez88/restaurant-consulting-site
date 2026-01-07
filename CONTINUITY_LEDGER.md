@@ -3,6 +3,90 @@
 
 ---
 
+## 2026-01-07 | Day 5 Security + Documentation + Deploy
+
+**Operator:** Claude-Opus-4.5 @ Anthropic
+**Time:** 06:00 EST
+
+### Work Completed
+
+#### 1. Security Audit & CORS Fix
+
+| Issue | Severity | Status |
+|-------|----------|--------|
+| Wildcard CORS (`'*'`) | CRITICAL | FIXED |
+| No rate limiting | CRITICAL | FIXED |
+| Error detail exposure | MEDIUM | Noted |
+
+**CORS Changes (`functions/_shared/auth.js`):**
+- Added `ALLOWED_ORIGINS` whitelist (production + dev domains)
+- Created `getCorsOrigin(request)` for dynamic origin validation
+- Created `getCorsHeaders(request)` for consistent CORS responses
+- Updated static `corsHeaders` to default to production domain
+- Updated `handleOptions()` to use dynamic origin
+
+**Files Updated for CORS:**
+- `functions/_shared/auth.js` - Core CORS utilities
+- `functions/api/contact.js` - Public contact form
+- `functions/api/quote/send-email.js` - Public quote form
+
+#### 2. Rate Limiting Implementation
+
+**New File:** `functions/_shared/rate-limit.js`
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| Contact Form | 5 requests | 5 minutes |
+| Quote Form | 10 requests | 5 minutes |
+| API Read | 100 requests | 1 minute |
+| API Write | 30 requests | 1 minute |
+| Auth Login | 5 attempts | 15 minutes |
+| Magic Link | 3 requests | 10 minutes |
+
+**Features:**
+- Sliding window rate limiting using KV store
+- IP-based tracking (CF-Connecting-IP header)
+- Fail-open design (allows requests if KV fails)
+- Standard rate limit headers in responses
+- `429 Too Many Requests` response with `Retry-After` header
+
+#### 3. Documentation
+
+**New Files Created:**
+- `docs/api/email-api.yaml` - OpenAPI 3.0 specification
+- `docs/EMAIL_ADMIN_GUIDE.md` - Admin user guide
+
+**OpenAPI Spec Covers:**
+- Templates (CRUD, preview, test)
+- Sequences (CRUD, pause/resume, enroll)
+- Subscribers (CRUD, import/export)
+- Segments (CRUD, member management)
+- Analytics (overview, timeseries, top content)
+- A/B Tests (CRUD, start/stop, declare winner)
+- Errors (list, retry, suppress)
+
+**Admin Guide Covers:**
+- Getting started
+- Template management and variables
+- Sequence creation and triggers
+- Subscriber management
+- Segmentation rules
+- Analytics interpretation
+- A/B testing best practices
+- Error handling procedures
+- Compliance guidelines (CAN-SPAM, GDPR)
+
+### Day 5 Progress - COMPLETE
+
+- [x] Security Audit ✅
+- [x] CORS Vulnerability Fixed ✅
+- [x] Rate Limiting Implemented ✅
+- [x] OpenAPI Documentation ✅
+- [x] Admin User Guide ✅
+- [x] Final Commit & Deploy ✅
+
+---
+
 ## 2026-01-07 | Local Networking Page Refinements + Cloudflare Redirect
 
 **Operator:** Claude-Opus-4.5 @ Anthropic

@@ -6,16 +6,35 @@
  * Stores quote requests in D1 database and can optionally send via email service
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+import { getCorsOrigin } from '../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
 
 export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  // CORS headers - use dynamic origin for security
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+
+  // Rate limiting - 10 requests per 5 minutes per IP
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'quote',
+    RATE_LIMITS.QUOTE_FORM,
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { name, email, restaurantName, phone, quoteData, locations, estimate } = body;
 
     // Validate required fields
@@ -157,13 +176,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

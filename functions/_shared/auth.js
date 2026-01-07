@@ -8,6 +8,46 @@ const COOKIE_NAME = 'ccrc_admin_token';
 const CLIENT_COOKIE_NAME = 'ccrc_client_token';
 
 /**
+ * Allowed origins for CORS
+ * Production domains and development environments
+ */
+const ALLOWED_ORIGINS = [
+  'https://ccrestaurantconsulting.com',
+  'https://www.ccrestaurantconsulting.com',
+  'https://restaurant-consulting-site.pages.dev',
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000'
+];
+
+/**
+ * Get valid CORS origin from request
+ * Returns the origin if it's in the allowed list, otherwise returns the primary domain
+ */
+export function getCorsOrigin(request) {
+  const origin = request?.headers?.get('Origin');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return origin;
+  }
+  // Default to primary production domain
+  return 'https://ccrestaurantconsulting.com';
+}
+
+/**
+ * Get CORS headers for a specific request
+ */
+export function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
  * Verify a JWT token using native Web Crypto API
  */
 async function verifyJWT(token, secret) {
@@ -157,7 +197,7 @@ export async function verifyClientAuth(request, env) {
 /**
  * Create an unauthorized response
  */
-export function unauthorizedResponse(error = 'Unauthorized') {
+export function unauthorizedResponse(error = 'Unauthorized', request = null) {
   return new Response(JSON.stringify({
     success: false,
     error
@@ -165,7 +205,8 @@ export function unauthorizedResponse(error = 'Unauthorized') {
     status: 401,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
+      'Access-Control-Allow-Credentials': 'true'
     }
   });
 }
@@ -255,25 +296,28 @@ export async function verifyAuthOrWorker(request, env) {
 }
 
 /**
- * CORS headers helper
+ * CORS headers helper (legacy - use getCorsHeaders(request) for dynamic origin)
+ * @deprecated Use getCorsHeaders(request) instead for proper CORS security
  */
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://ccrestaurantconsulting.com',
   'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
   'Content-Type': 'application/json'
 };
 
 /**
  * Handle CORS preflight
  */
-export function handleOptions() {
+export function handleOptions(request = null) {
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });
