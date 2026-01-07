@@ -32,3 +32,4 @@ dist-ssr
 # Temporary files
 generate-hash.ps1
 .wrangler/
+screenshots/
