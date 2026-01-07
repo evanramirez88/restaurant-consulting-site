@@ -221,29 +221,49 @@ export async function onRequestPost(context) {
       deliveryMethod: delivery_method
     });
 
-    // Auto-publish if requested
-    if (auto_publish && invoice.status === 'DRAFT') {
-      const publishedInvoice = await publishInvoice(env, invoice.id, invoice.version);
+    // Calculate total amount from line items
+    const totalAmount = line_items.reduce((sum, item) => {
+      return sum + (parseFloat(item.amount || item.price || 0) * (item.quantity || 1));
+    }, 0);
 
-      return new Response(JSON.stringify({
-        success: true,
-        data: {
-          id: publishedInvoice.id,
-          number: publishedInvoice.invoice_number,
-          status: mapInvoiceStatus(publishedInvoice.status),
-          public_url: publishedInvoice.public_url
-        }
-      }), {
-        headers: corsHeaders
-      });
+    // Auto-publish if requested
+    let finalInvoice = invoice;
+    if (auto_publish && invoice.status === 'DRAFT') {
+      finalInvoice = await publishInvoice(env, invoice.id, invoice.version);
+    }
+
+    // Store invoice in D1 for local reference
+    try {
+      await env.DB.prepare(`
+        INSERT INTO invoices (
+          id, client_id, square_invoice_id, invoice_number, title, description,
+          amount, currency, status, due_date, public_url, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?, unixepoch(), unixepoch())
+      `).bind(
+        crypto.randomUUID(),
+        client_id,
+        finalInvoice.id,
+        finalInvoice.invoice_number,
+        title || 'Invoice from Cape Cod Restaurant Consulting',
+        description || '',
+        totalAmount,
+        mapInvoiceStatus(finalInvoice.status),
+        invoiceDueDate,
+        finalInvoice.public_url || null
+      ).run();
+    } catch (dbError) {
+      // Log but don't fail - Square invoice was created successfully
+      console.error('Failed to store invoice in D1:', dbError);
     }
 
     return new Response(JSON.stringify({
       success: true,
       data: {
-        id: invoice.id,
-        number: invoice.invoice_number,
-        status: mapInvoiceStatus(invoice.status)
+        id: finalInvoice.id,
+        number: finalInvoice.invoice_number,
+        status: mapInvoiceStatus(finalInvoice.status),
+        public_url: finalInvoice.public_url,
+        amount: totalAmount
       }
     }), {
       headers: corsHeaders

@@ -114,6 +114,10 @@ export async function onRequestPost(context) {
     // Send confirmation email to customer if configured
     if (context.env.RESEND_API_KEY && emailSent) {
       try {
+        // Get contact info from environment variables with fallback defaults
+        const contactPhone = context.env.CONTACT_PHONE || '17744080083';
+        const contactEmail = context.env.CONTACT_EMAIL || 'ramirezconsulting.rg@gmail.com';
+
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -124,7 +128,7 @@ export async function onRequestPost(context) {
             from: 'R&G Consulting <noreply@ccrestaurantconsulting.com>',
             to: [email],
             subject: 'Your Quote Request - Cape Cod Restaurant Consulting',
-            html: generateCustomerConfirmationHtml(name, restaurantName, estimate)
+            html: generateCustomerConfirmationHtml(name, restaurantName, estimate, contactPhone, contactEmail)
           })
         });
       } catch (err) {
@@ -244,8 +248,12 @@ function generateQuoteEmailHtml(name, email, restaurantName, phone, estimate, lo
   `;
 }
 
-function generateCustomerConfirmationHtml(name, restaurantName, estimate) {
+function generateCustomerConfirmationHtml(name, restaurantName, estimate, contactPhone, contactEmail) {
   const totalFirst = estimate?.combinedFirst || 0;
+
+  // Format phone for display and tel link
+  const phoneDisplay = contactPhone.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
+  const phoneLink = `+${contactPhone}`;
 
   return `
     <!DOCTYPE html>
@@ -281,11 +289,11 @@ function generateCustomerConfirmationHtml(name, restaurantName, estimate) {
 
         <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
           <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Questions? We're here to help.</p>
-          <a href="tel:+15082474936"
+          <a href="tel:${phoneLink}"
              style="display: inline-block; background: #ea580c; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; margin-right: 8px;">
             Call Us
           </a>
-          <a href="mailto:evanramirez@ccrestaurantconsulting.com"
+          <a href="mailto:${contactEmail}"
              style="display: inline-block; background: #1e293b; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold;">
             Email Us
           </a>

@@ -97,6 +97,14 @@
 | SQUARE_ACCESS_TOKEN | ✅ | Billing/Invoices | `EAAA*` (OAuth token) |
 | SQUARE_APPLICATION_ID | ✅ | Billing/Invoices | `sq0idp-*` |
 
+#### Contact Information (Quote Emails)
+| Variable | Status | Notes | Default Value |
+|----------|--------|-------|---------------|
+| CONTACT_PHONE | NEEDS_CONFIG | Phone for quote confirmation emails | `17744080083` |
+| CONTACT_EMAIL | NEEDS_CONFIG | Email for quote confirmation emails | `ramirezconsulting.rg@gmail.com` |
+
+**Note:** CONTACT_PHONE and CONTACT_EMAIL have fallback defaults but should be configured in Cloudflare Pages environment variables for production use.
+
 #### API Key Storage
 **Actual key values are stored securely in:**
 - Cloudflare Pages → Settings → Environment Variables (encrypted)

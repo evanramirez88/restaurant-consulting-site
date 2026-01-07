@@ -4,7 +4,11 @@
  * GET /api/menu/status?jobId=xxx
  *
  * Returns the current status of a menu processing job.
+ *
+ * AUTHENTICATION: Requires admin or client JWT authentication
  */
+
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, handleOptions } from '../../_shared/auth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +21,24 @@ export async function onRequestGet(context) {
   const { request, env } = context;
 
   try {
+    // Verify authentication - require either admin or client session
+    const adminAuth = await verifyAuth(request, env);
+    let authenticatedUser = null;
+
+    if (adminAuth.authenticated) {
+      authenticatedUser = { type: 'admin', payload: adminAuth.payload };
+    } else {
+      // Try client authentication
+      const clientAuth = await verifyClientAuth(request, env);
+      if (clientAuth.authenticated) {
+        authenticatedUser = { type: 'client', clientId: clientAuth.clientId, payload: clientAuth.payload };
+      }
+    }
+
+    if (!authenticatedUser) {
+      return unauthorizedResponse('Authentication required to check menu job status');
+    }
+
     const url = new URL(request.url);
     const jobId = url.searchParams.get('jobId');
 
@@ -108,13 +130,5 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
-  });
+  return handleOptions();
 }

@@ -5,7 +5,11 @@
  *
  * Triggers OCR processing for a menu job.
  * Uses Cloudflare AI for text extraction and menu parsing.
+ *
+ * AUTHENTICATION: Requires admin or client JWT authentication
  */
+
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, handleOptions } from '../../_shared/auth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -237,6 +241,24 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
+    // Verify authentication - require either admin or client session
+    const adminAuth = await verifyAuth(request, env);
+    let authenticatedUser = null;
+
+    if (adminAuth.authenticated) {
+      authenticatedUser = { type: 'admin', payload: adminAuth.payload };
+    } else {
+      // Try client authentication
+      const clientAuth = await verifyClientAuth(request, env);
+      if (clientAuth.authenticated) {
+        authenticatedUser = { type: 'client', clientId: clientAuth.clientId, payload: clientAuth.payload };
+      }
+    }
+
+    if (!authenticatedUser) {
+      return unauthorizedResponse('Authentication required to process menu files');
+    }
+
     const body = await request.json();
     const { jobId } = body;
 
@@ -421,13 +443,5 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
-  });
+  return handleOptions();
 }

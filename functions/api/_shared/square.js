@@ -149,7 +149,47 @@ export async function getOrCreateCustomer(env, client) {
 // ============================================
 
 /**
+ * Create a Square order for use with invoices
+ * Required because Square Invoices need an order_id with line items
+ */
+export async function createOrder(env, {
+  locationId,
+  customerId,
+  lineItems
+}) {
+  const idempotencyKey = `order-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+  // Transform line items to Square format
+  const orderLineItems = lineItems.map(item => ({
+    name: item.name || item.description || 'Service',
+    quantity: String(item.quantity || 1),
+    base_price_money: {
+      amount: dollarsToCents(item.amount || item.price || 0),
+      currency: 'USD'
+    },
+    note: item.note || ''
+  }));
+
+  const result = await squareRequest(env, '/orders', {
+    method: 'POST',
+    body: JSON.stringify({
+      idempotency_key: idempotencyKey,
+      order: {
+        location_id: locationId,
+        customer_id: customerId,
+        line_items: orderLineItems,
+        state: 'OPEN'
+      }
+    })
+  });
+
+  return result.order;
+}
+
+/**
  * Create a Square invoice from a quote or billing item
+ * NOTE: This now properly creates an order first with line items,
+ * then creates the invoice referencing that order.
  */
 export async function createInvoice(env, {
   clientId,
@@ -161,6 +201,13 @@ export async function createInvoice(env, {
   dueDate,
   deliveryMethod = 'EMAIL'
 }) {
+  // First, create the order with line items
+  const order = await createOrder(env, {
+    locationId,
+    customerId,
+    lineItems
+  });
+
   const idempotencyKey = `inv-${clientId}-${Date.now()}`;
 
   const result = await squareRequest(env, '/invoices', {
@@ -169,7 +216,7 @@ export async function createInvoice(env, {
       idempotency_key: idempotencyKey,
       invoice: {
         location_id: locationId,
-        order_id: null, // Will be auto-created
+        order_id: order.id,
         primary_recipient: {
           customer_id: customerId
         },

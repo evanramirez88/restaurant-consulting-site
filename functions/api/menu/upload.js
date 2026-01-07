@@ -5,7 +5,11 @@
  *
  * Accepts menu files (PDF, PNG, JPG, HEIC), stores in R2,
  * creates a menu job record in D1 for processing.
+ *
+ * AUTHENTICATION: Requires admin or client JWT authentication
  */
+
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, handleOptions } from '../../_shared/auth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,6 +55,24 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
+    // Verify authentication - require either admin or client session
+    const adminAuth = await verifyAuth(request, env);
+    let authenticatedUser = null;
+
+    if (adminAuth.authenticated) {
+      authenticatedUser = { type: 'admin', payload: adminAuth.payload };
+    } else {
+      // Try client authentication
+      const clientAuth = await verifyClientAuth(request, env);
+      if (clientAuth.authenticated) {
+        authenticatedUser = { type: 'client', clientId: clientAuth.clientId, payload: clientAuth.payload };
+      }
+    }
+
+    if (!authenticatedUser) {
+      return unauthorizedResponse('Authentication required to upload menu files');
+    }
+
     // Check if R2 bucket is configured
     if (!env.R2_BUCKET) {
       return new Response(JSON.stringify({
@@ -158,13 +180,5 @@ export async function onRequestPost(context) {
 }
 
 export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
-  });
+  return handleOptions();
 }
