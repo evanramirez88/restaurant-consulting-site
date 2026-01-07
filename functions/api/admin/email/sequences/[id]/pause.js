@@ -1,0 +1,94 @@
+/**
+ * Email Sequence Pause API
+ *
+ * POST /api/admin/email/sequences/:id/pause - Pause an active sequence
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../../../_shared/auth.js';
+
+export async function onRequestPost(context) {
+  try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
+    const db = context.env.DB;
+    const { id } = context.params;
+    const now = Math.floor(Date.now() / 1000);
+
+    // Get the sequence
+    const sequence = await db.prepare(`
+      SELECT id, status FROM email_sequences WHERE id = ?
+    `).bind(id).first();
+
+    if (!sequence) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Sequence not found'
+      }), {
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+
+    // Check if sequence can be paused
+    if (sequence.status !== 'active') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Cannot pause a sequence with status '${sequence.status}'. Only active sequences can be paused.`
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    // Update status to paused
+    await db.prepare(`
+      UPDATE email_sequences
+      SET status = 'paused', updated_at = ?
+      WHERE id = ?
+    `).bind(now, id).run();
+
+    // Also pause any active subscriber sequences
+    await db.prepare(`
+      UPDATE subscriber_sequences
+      SET status = 'paused', updated_at = ?
+      WHERE sequence_id = ? AND status = 'active'
+    `).bind(now, id).run();
+
+    // Fetch updated sequence
+    const updated = await db.prepare(`
+      SELECT
+        es.*,
+        (SELECT COUNT(*) FROM subscriber_sequences ss WHERE ss.sequence_id = es.id) as subscriber_count,
+        (SELECT COALESCE(SUM(total_sent), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_sent,
+        (SELECT COALESCE(SUM(total_opened), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
+        (SELECT COALESCE(SUM(total_clicked), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_clicked
+      FROM email_sequences es
+      WHERE es.id = ?
+    `).bind(id).first();
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: updated,
+      message: 'Sequence paused successfully'
+    }), {
+      headers: corsHeaders
+    });
+  } catch (error) {
+    console.error('Sequence Pause error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
+}
