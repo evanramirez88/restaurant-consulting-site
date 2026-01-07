@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import TokenInserter, { EMAIL_TOKENS } from './TokenInserter';
+import TemplatePreview from './TemplatePreview';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -35,65 +36,6 @@ interface EmailTemplateEditorProps {
   onSelectTemplate?: (template: EmailTemplate) => void;
   showSelectButton?: boolean;
 }
-
-// Sample data for template preview
-const SAMPLE_DATA = {
-  first_name: 'John',
-  last_name: 'Smith',
-  company: 'The Seafood Shack',
-  email: 'john@seafoodshack.com',
-  phone: '508-555-1234',
-  unsubscribe_link: 'https://example.com/unsubscribe/abc123'
-};
-
-// ============================================
-// TEMPLATE PREVIEW COMPONENT
-// ============================================
-
-interface TemplatePreviewProps {
-  subject: string;
-  body: string;
-  isHtml: boolean;
-}
-
-const TemplatePreview: React.FC<TemplatePreviewProps> = ({ subject, body, isHtml }) => {
-  // Replace tokens with sample data
-  const renderWithTokens = (text: string) => {
-    let rendered = text;
-    Object.entries(SAMPLE_DATA).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      rendered = rendered.replace(regex, value);
-    });
-    return rendered;
-  };
-
-  const renderedSubject = renderWithTokens(subject || '');
-  const renderedBody = renderWithTokens(body || '');
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="p-3 bg-gray-800 border-b border-gray-700">
-        <div className="text-xs text-gray-400 mb-1">Subject:</div>
-        <div className="text-white font-medium">{renderedSubject || '(No subject)'}</div>
-      </div>
-      <div className="flex-1 p-4 overflow-auto bg-white">
-        {isHtml ? (
-          <div
-            className="prose prose-sm max-w-none text-gray-900"
-            dangerouslySetInnerHTML={{ __html: renderedBody }}
-          />
-        ) : (
-          <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans">
-            {renderedBody || '(No content)'}
-          </pre>
-        )}
-      </div>
-      <div className="p-2 bg-gray-800 border-t border-gray-700 text-center">
-        <span className="text-xs text-gray-500">Preview with sample data</span>
-      </div>
-    </div>
-  );
-};
 
 // ============================================
 // TEMPLATE FORM MODAL

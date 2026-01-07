@@ -1,7 +1,7 @@
 /**
  * Email Subscribers API - List and Create
  *
- * GET /api/admin/email/subscribers - List all subscribers with pagination and filters
+ * GET /api/admin/email/subscribers - List all subscribers with pagination and advanced filters
  * POST /api/admin/email/subscribers - Create a new subscriber
  */
 
@@ -26,13 +26,25 @@ export async function onRequestGet(context) {
     // Search
     const search = url.searchParams.get('search');
 
-    // Filters
-    const status = url.searchParams.get('status');
-    const posSystem = url.searchParams.get('pos_system');
-    const geographicTier = url.searchParams.get('geographic_tier');
+    // Advanced filters - support both single values and multi-value (comma-separated)
+    const statuses = url.searchParams.get('statuses'); // Multi-value: active,unsubscribed
+    const status = url.searchParams.get('status'); // Single value (backward compatible)
+    const posSystems = url.searchParams.get('pos_systems'); // Multi-value
+    const posSystem = url.searchParams.get('pos_system'); // Single value (backward compatible)
+    const geographicTiers = url.searchParams.get('geographic_tiers'); // Multi-value
+    const geographicTier = url.searchParams.get('geographic_tier'); // Single value (backward compatible)
+    const leadSources = url.searchParams.get('lead_sources'); // Multi-value
     const scoreMin = url.searchParams.get('score_min');
     const scoreMax = url.searchParams.get('score_max');
     const tags = url.searchParams.get('tags');
+    const createdAfter = url.searchParams.get('created_after');
+    const createdBefore = url.searchParams.get('created_before');
+
+    // Sorting
+    const sortBy = url.searchParams.get('sort_by') || 'created_at';
+    const sortOrder = url.searchParams.get('sort_order') || 'desc';
+    const validSortColumns = ['created_at', 'updated_at', 'email', 'engagement_score', 'last_email_sent_at'];
+    const validSortOrders = ['asc', 'desc'];
 
     // Build WHERE clause
     const conditions = [];
@@ -44,21 +56,56 @@ export async function onRequestGet(context) {
       params.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    if (status) {
+    // Handle status filter (multi-value or single)
+    if (statuses) {
+      const statusList = statuses.split(',').map(s => s.trim()).filter(s => s);
+      if (statusList.length > 0) {
+        const placeholders = statusList.map(() => '?').join(',');
+        conditions.push(`status IN (${placeholders})`);
+        params.push(...statusList);
+      }
+    } else if (status) {
       conditions.push('status = ?');
       params.push(status);
     }
 
-    if (posSystem) {
+    // Handle POS system filter (multi-value or single)
+    if (posSystems) {
+      const posList = posSystems.split(',').map(s => s.trim()).filter(s => s);
+      if (posList.length > 0) {
+        const placeholders = posList.map(() => '?').join(',');
+        conditions.push(`pos_system IN (${placeholders})`);
+        params.push(...posList);
+      }
+    } else if (posSystem) {
       conditions.push('pos_system = ?');
       params.push(posSystem);
     }
 
-    if (geographicTier) {
+    // Handle geographic tier filter (multi-value or single)
+    if (geographicTiers) {
+      const tierList = geographicTiers.split(',').map(s => s.trim()).filter(s => s);
+      if (tierList.length > 0) {
+        const placeholders = tierList.map(() => '?').join(',');
+        conditions.push(`geographic_tier IN (${placeholders})`);
+        params.push(...tierList);
+      }
+    } else if (geographicTier) {
       conditions.push('geographic_tier = ?');
       params.push(geographicTier);
     }
 
+    // Handle lead source filter (multi-value)
+    if (leadSources) {
+      const sourceList = leadSources.split(',').map(s => s.trim()).filter(s => s);
+      if (sourceList.length > 0) {
+        const placeholders = sourceList.map(() => '?').join(',');
+        conditions.push(`lead_source IN (${placeholders})`);
+        params.push(...sourceList);
+      }
+    }
+
+    // Score range filter
     if (scoreMin) {
       conditions.push('engagement_score >= ?');
       params.push(parseInt(scoreMin));
@@ -69,15 +116,42 @@ export async function onRequestGet(context) {
       params.push(parseInt(scoreMax));
     }
 
+    // Tags filter - search within JSON array
     if (tags) {
-      // Tags are stored as JSON array, search within
-      const tagList = tags.split(',');
-      const tagConditions = tagList.map(() => `tags LIKE ?`);
-      conditions.push(`(${tagConditions.join(' OR ')})`);
-      tagList.forEach(tag => params.push(`%"${tag.trim()}"%`));
+      const tagList = tags.split(',').map(t => t.trim()).filter(t => t);
+      if (tagList.length > 0) {
+        const tagConditions = tagList.map(() => `tags LIKE ?`);
+        conditions.push(`(${tagConditions.join(' OR ')})`);
+        tagList.forEach(tag => params.push(`%"${tag}"%`));
+      }
+    }
+
+    // Date range filters
+    if (createdAfter) {
+      // Convert date string to Unix timestamp
+      const timestamp = Math.floor(new Date(createdAfter).getTime() / 1000);
+      if (!isNaN(timestamp)) {
+        conditions.push('created_at >= ?');
+        params.push(timestamp);
+      }
+    }
+
+    if (createdBefore) {
+      // Convert date string to Unix timestamp (end of day)
+      const date = new Date(createdBefore);
+      date.setHours(23, 59, 59, 999);
+      const timestamp = Math.floor(date.getTime() / 1000);
+      if (!isNaN(timestamp)) {
+        conditions.push('created_at <= ?');
+        params.push(timestamp);
+      }
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Validate and apply sorting
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const sortDirection = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM email_subscribers ${whereClause}`;
@@ -93,7 +167,7 @@ export async function onRequestGet(context) {
         last_email_sent_at, last_email_opened_at, created_at, updated_at
       FROM email_subscribers
       ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY ${sortColumn} ${sortDirection}
       LIMIT ? OFFSET ?
     `;
 
@@ -103,9 +177,10 @@ export async function onRequestGet(context) {
     // Get unique values for filter dropdowns (only on first page to avoid extra queries)
     let meta = null;
     if (page === 1) {
-      const [posSystemsResult, tiersResult, tagsResult] = await Promise.all([
+      const [posSystemsResult, tiersResult, leadSourcesResult, tagsResult] = await Promise.all([
         db.prepare(`SELECT DISTINCT pos_system FROM email_subscribers WHERE pos_system IS NOT NULL AND pos_system != '' ORDER BY pos_system`).all(),
         db.prepare(`SELECT DISTINCT geographic_tier FROM email_subscribers WHERE geographic_tier IS NOT NULL AND geographic_tier != '' ORDER BY geographic_tier`).all(),
+        db.prepare(`SELECT DISTINCT lead_source FROM email_subscribers WHERE lead_source IS NOT NULL AND lead_source != '' ORDER BY lead_source`).all(),
         db.prepare(`SELECT tags FROM email_subscribers WHERE tags IS NOT NULL AND tags != '[]' LIMIT 1000`).all()
       ]);
 
@@ -123,6 +198,7 @@ export async function onRequestGet(context) {
       meta = {
         pos_systems: (posSystemsResult.results || []).map(r => r.pos_system),
         geographic_tiers: (tiersResult.results || []).map(r => r.geographic_tier),
+        lead_sources: (leadSourcesResult.results || []).map(r => r.lead_source),
         tags: Array.from(allTags).sort()
       };
     }

@@ -18,12 +18,13 @@ import AvailabilityManager from '../src/components/admin/availability/Availabili
 import ConfigManager from '../src/components/admin/config/ConfigManager';
 import PortalManagement from '../src/components/admin/portals/PortalManagement';
 import TicketingDashboard from '../src/components/admin/tickets/TicketingDashboard';
-import { EmailCampaigns, EmailSubscribers } from '../src/components/admin/email';
+import { EmailCampaigns, EmailSubscribers, EmailAnalytics, SegmentBuilder } from '../src/components/admin/email';
+import { BarChart3, Filter } from 'lucide-react';
 
 type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'tools' | 'toasthub' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
-type EmailSubTab = 'campaigns' | 'subscribers';
+type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics';
 
 interface Client {
   id?: string;
@@ -391,10 +392,10 @@ const AdminDashboard: React.FC = () => {
         {activeTab === 'email' && (
           <>
             {/* Email Sub-tabs */}
-            <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2">
+            <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
               <button
                 onClick={() => setEmailSubTab('campaigns')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
                   emailSubTab === 'campaigns'
                     ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
                     : 'text-gray-400 hover:text-white'
@@ -405,7 +406,7 @@ const AdminDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setEmailSubTab('subscribers')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
                   emailSubTab === 'subscribers'
                     ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
                     : 'text-gray-400 hover:text-white'
@@ -414,10 +415,34 @@ const AdminDashboard: React.FC = () => {
                 <Users className="w-4 h-4" />
                 Subscribers
               </button>
+              <button
+                onClick={() => setEmailSubTab('segments')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'segments'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                Segments
+              </button>
+              <button
+                onClick={() => setEmailSubTab('analytics')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'analytics'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </button>
             </div>
 
             {emailSubTab === 'campaigns' && <EmailCampaigns />}
             {emailSubTab === 'subscribers' && <EmailSubscribers />}
+            {emailSubTab === 'segments' && <SegmentBuilder />}
+            {emailSubTab === 'analytics' && <EmailAnalytics />}
           </>
         )}
 

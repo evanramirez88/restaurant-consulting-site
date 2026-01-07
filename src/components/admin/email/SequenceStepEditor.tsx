@@ -15,9 +15,12 @@ import {
   ArrowDown,
   Eye,
   EyeOff,
-  Beaker
+  Beaker,
+  Settings2
 } from 'lucide-react';
 import TokenInserter from './TokenInserter';
+import ConditionBuilder, { BranchConfig, createDefaultBranchConfig } from './ConditionBuilder';
+import TemplatePreview from './TemplatePreview';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -37,6 +40,7 @@ export interface SequenceStep {
   subject?: string;
   body?: string;
   from_name?: string;
+  is_html?: boolean;
   // A/B variant fields
   ab_variant_id?: string;
   ab_variant_subject?: string;
@@ -44,9 +48,12 @@ export interface SequenceStep {
   // Delay fields
   delay_amount?: number;
   delay_unit?: DelayUnit;
-  // Condition fields
+  // Condition fields (legacy - simple)
   condition_type?: ConditionType;
   condition_action?: ConditionAction;
+  // Condition fields (enhanced - rich branching)
+  branch_config?: BranchConfig;
+  use_advanced_conditions?: boolean;
   // Metadata
   created_at?: number;
   updated_at?: number;
@@ -117,6 +124,7 @@ const EmailStepEditor: React.FC<EmailStepEditorProps> = ({ step, onUpdate }) => 
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [showABVariant, setShowABVariant] = useState(!!step.ab_variant_subject || !!step.ab_variant_body);
+  const [showPreview, setShowPreview] = useState(false);
   const variantSubjectRef = useRef<HTMLInputElement>(null);
   const variantBodyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -158,11 +166,24 @@ const EmailStepEditor: React.FC<EmailStepEditorProps> = ({ step, onUpdate }) => 
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-xs font-medium text-gray-400">Email Body</label>
-          <TokenInserter
-            targetRef={bodyRef}
-            onInsert={() => {}}
-            size="sm"
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onUpdate({ is_html: !step.is_html })}
+              className={`px-2 py-1 text-xs rounded ${
+                step.is_html
+                  ? 'bg-amber-500/20 text-amber-400'
+                  : 'bg-gray-800 text-gray-400 hover:text-white'
+              }`}
+            >
+              {step.is_html ? 'HTML' : 'Plain Text'}
+            </button>
+            <TokenInserter
+              targetRef={bodyRef}
+              onInsert={() => {}}
+              size="sm"
+            />
+          </div>
         </div>
         <textarea
           ref={bodyRef}
@@ -170,12 +191,25 @@ const EmailStepEditor: React.FC<EmailStepEditorProps> = ({ step, onUpdate }) => 
           onChange={(e) => onUpdate({ body: e.target.value })}
           placeholder="Hello {{first_name}},&#10;&#10;I noticed you're using Toast POS at {{company}}..."
           rows={6}
-          className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y"
+          className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-y font-mono"
         />
       </div>
 
-      {/* A/B Variant Toggle */}
-      <div className="pt-2 border-t border-gray-700">
+      {/* Preview Toggle */}
+      <div className="flex items-center gap-2 pt-2 border-t border-gray-700">
+        <button
+          type="button"
+          onClick={() => setShowPreview(!showPreview)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+            showPreview
+              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+              : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'
+          }`}
+        >
+          <Eye className="w-4 h-4" />
+          {showPreview ? 'Hide Preview' : 'Show Preview'}
+        </button>
+
         <button
           type="button"
           onClick={() => {
@@ -195,56 +229,69 @@ const EmailStepEditor: React.FC<EmailStepEditorProps> = ({ step, onUpdate }) => 
           <Beaker className="w-4 h-4" />
           {showABVariant ? 'A/B Test Enabled' : 'Add A/B Variant'}
         </button>
-
-        {showABVariant && (
-          <div className="mt-4 p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg space-y-4">
-            <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
-              <Beaker className="w-4 h-4" />
-              Variant B
-            </div>
-
-            {/* Variant Subject */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-400">Subject Line (B)</label>
-                <TokenInserter
-                  targetRef={variantSubjectRef}
-                  onInsert={() => {}}
-                  size="sm"
-                />
-              </div>
-              <input
-                ref={variantSubjectRef}
-                type="text"
-                value={step.ab_variant_subject || ''}
-                onChange={(e) => onUpdate({ ab_variant_subject: e.target.value })}
-                placeholder="Alternative subject line..."
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            {/* Variant Body */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-400">Email Body (B)</label>
-                <TokenInserter
-                  targetRef={variantBodyRef}
-                  onInsert={() => {}}
-                  size="sm"
-                />
-              </div>
-              <textarea
-                ref={variantBodyRef}
-                value={step.ab_variant_body || ''}
-                onChange={(e) => onUpdate({ ab_variant_body: e.target.value })}
-                placeholder="Alternative email body..."
-                rows={4}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y"
-              />
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Inline Preview */}
+      {showPreview && (
+        <div className="h-96 border border-gray-700 rounded-lg overflow-hidden">
+          <TemplatePreview
+            subject={step.subject || ''}
+            body={step.body || ''}
+            isHtml={step.is_html}
+            showTestEmail={true}
+          />
+        </div>
+      )}
+
+      {/* A/B Variant */}
+      {showABVariant && (
+        <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg space-y-4">
+          <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
+            <Beaker className="w-4 h-4" />
+            Variant B
+          </div>
+
+          {/* Variant Subject */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-400">Subject Line (B)</label>
+              <TokenInserter
+                targetRef={variantSubjectRef}
+                onInsert={() => {}}
+                size="sm"
+              />
+            </div>
+            <input
+              ref={variantSubjectRef}
+              type="text"
+              value={step.ab_variant_subject || ''}
+              onChange={(e) => onUpdate({ ab_variant_subject: e.target.value })}
+              placeholder="Alternative subject line..."
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* Variant Body */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-400">Email Body (B)</label>
+              <TokenInserter
+                targetRef={variantBodyRef}
+                onInsert={() => {}}
+                size="sm"
+              />
+            </div>
+            <textarea
+              ref={variantBodyRef}
+              value={step.ab_variant_body || ''}
+              onChange={(e) => onUpdate({ ab_variant_body: e.target.value })}
+              placeholder="Alternative email body..."
+              rows={4}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -290,42 +337,104 @@ const DelayStepEditor: React.FC<DelayStepEditorProps> = ({ step, onUpdate }) => 
 };
 
 // ============================================
-// CONDITION STEP EDITOR
+// CONDITION STEP EDITOR (Enhanced with Simple/Advanced modes)
 // ============================================
 
 interface ConditionStepEditorProps {
   step: SequenceStep;
   onUpdate: (updates: Partial<SequenceStep>) => void;
+  totalSteps: number;
+  sequenceId: string;
 }
 
-const ConditionStepEditor: React.FC<ConditionStepEditorProps> = ({ step, onUpdate }) => {
+const ConditionStepEditor: React.FC<ConditionStepEditorProps> = ({ step, onUpdate, totalSteps, sequenceId }) => {
+  const useAdvanced = step.use_advanced_conditions || false;
+
+  // Initialize branch config if switching to advanced
+  const handleToggleAdvanced = () => {
+    if (!useAdvanced) {
+      onUpdate({
+        use_advanced_conditions: true,
+        branch_config: step.branch_config || createDefaultBranchConfig()
+      });
+    } else {
+      onUpdate({ use_advanced_conditions: false });
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-medium text-gray-400 mb-1">Condition</label>
-        <select
-          value={step.condition_type || 'opened_previous'}
-          onChange={(e) => onUpdate({ condition_type: e.target.value as ConditionType })}
-          className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+      {/* Mode Toggle */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-700">
+        <span className="text-sm text-gray-400">Condition Mode</span>
+        <button
+          type="button"
+          onClick={handleToggleAdvanced}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            useAdvanced
+              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+              : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'
+          }`}
         >
-          {CONDITION_TYPES.map((cond) => (
-            <option key={cond.value} value={cond.value}>{cond.label}</option>
-          ))}
-        </select>
+          <Settings2 className="w-4 h-4" />
+          {useAdvanced ? 'Advanced Mode' : 'Simple Mode'}
+        </button>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-400 mb-1">Then</label>
-        <select
-          value={step.condition_action || 'continue'}
-          onChange={(e) => onUpdate({ condition_action: e.target.value as ConditionAction })}
-          className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-        >
-          {CONDITION_ACTIONS.map((action) => (
-            <option key={action.value} value={action.value}>{action.label}</option>
-          ))}
-        </select>
-      </div>
+      {useAdvanced ? (
+        /* Advanced Condition Builder */
+        <ConditionBuilder
+          value={step.branch_config || createDefaultBranchConfig()}
+          onChange={(config) => onUpdate({ branch_config: config })}
+          totalSteps={totalSteps}
+          sequenceId={sequenceId}
+          stepId={step.id}
+        />
+      ) : (
+        /* Simple Condition (Legacy) */
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Condition</label>
+            <select
+              value={step.condition_type || 'opened_previous'}
+              onChange={(e) => onUpdate({ condition_type: e.target.value as ConditionType })}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              {CONDITION_TYPES.map((cond) => (
+                <option key={cond.value} value={cond.value}>{cond.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">Then</label>
+            <select
+              value={step.condition_action || 'continue'}
+              onChange={(e) => onUpdate({ condition_action: e.target.value as ConditionAction })}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              {CONDITION_ACTIONS.map((action) => (
+                <option key={action.value} value={action.value}>{action.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Upgrade Prompt */}
+          <div className="p-3 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+            <p className="text-xs text-gray-400">
+              Need more complex logic? Switch to{' '}
+              <button
+                type="button"
+                onClick={handleToggleAdvanced}
+                className="text-purple-400 hover:text-purple-300 underline"
+              >
+                Advanced Mode
+              </button>{' '}
+              for AND/OR conditions, multiple condition groups, and subscriber attribute checks.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -340,6 +449,7 @@ interface StepCardProps {
   totalSteps: number;
   isExpanded: boolean;
   isDragging: boolean;
+  sequenceId: string;
   onToggleExpand: () => void;
   onUpdate: (updates: Partial<SequenceStep>) => void;
   onDelete: () => void;
@@ -356,6 +466,7 @@ const StepCard: React.FC<StepCardProps> = ({
   totalSteps,
   isExpanded,
   isDragging,
+  sequenceId,
   onToggleExpand,
   onUpdate,
   onDelete,
@@ -470,7 +581,12 @@ const StepCard: React.FC<StepCardProps> = ({
                 <DelayStepEditor step={step} onUpdate={onUpdate} />
               )}
               {step.step_type === 'condition' && (
-                <ConditionStepEditor step={step} onUpdate={onUpdate} />
+                <ConditionStepEditor
+                  step={step}
+                  onUpdate={onUpdate}
+                  totalSteps={totalSteps}
+                  sequenceId={sequenceId}
+                />
               )}
             </div>
           </div>
@@ -728,6 +844,7 @@ const SequenceStepEditor: React.FC<SequenceStepEditorProps> = ({
               totalSteps={steps.length}
               isExpanded={expandedSteps.has(step.id)}
               isDragging={draggedIndex === index}
+              sequenceId={sequenceId}
               onToggleExpand={() => toggleExpand(step.id)}
               onUpdate={(updates) => updateStep(step.id, updates)}
               onDelete={() => deleteStep(step.id)}

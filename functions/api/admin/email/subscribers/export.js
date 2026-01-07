@@ -2,6 +2,8 @@
  * Email Subscribers Export API
  *
  * GET /api/admin/email/subscribers/export - Export subscribers as CSV
+ *
+ * Supports all advanced filter parameters from the list endpoint
  */
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../../_shared/auth.js';
@@ -17,14 +19,22 @@ export async function onRequestGet(context) {
     const db = context.env.DB;
     const url = new URL(context.request.url);
 
-    // Search and filters (same as list endpoint)
+    // Search
     const search = url.searchParams.get('search');
-    const status = url.searchParams.get('status');
-    const posSystem = url.searchParams.get('pos_system');
-    const geographicTier = url.searchParams.get('geographic_tier');
+
+    // Advanced filters - support both single values and multi-value (comma-separated)
+    const statuses = url.searchParams.get('statuses'); // Multi-value
+    const status = url.searchParams.get('status'); // Single value (backward compatible)
+    const posSystems = url.searchParams.get('pos_systems'); // Multi-value
+    const posSystem = url.searchParams.get('pos_system'); // Single value (backward compatible)
+    const geographicTiers = url.searchParams.get('geographic_tiers'); // Multi-value
+    const geographicTier = url.searchParams.get('geographic_tier'); // Single value (backward compatible)
+    const leadSources = url.searchParams.get('lead_sources'); // Multi-value
     const scoreMin = url.searchParams.get('score_min');
     const scoreMax = url.searchParams.get('score_max');
     const tags = url.searchParams.get('tags');
+    const createdAfter = url.searchParams.get('created_after');
+    const createdBefore = url.searchParams.get('created_before');
 
     // Build WHERE clause
     const conditions = [];
@@ -36,21 +46,56 @@ export async function onRequestGet(context) {
       params.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    if (status) {
+    // Handle status filter (multi-value or single)
+    if (statuses) {
+      const statusList = statuses.split(',').map(s => s.trim()).filter(s => s);
+      if (statusList.length > 0) {
+        const placeholders = statusList.map(() => '?').join(',');
+        conditions.push(`status IN (${placeholders})`);
+        params.push(...statusList);
+      }
+    } else if (status) {
       conditions.push('status = ?');
       params.push(status);
     }
 
-    if (posSystem) {
+    // Handle POS system filter (multi-value or single)
+    if (posSystems) {
+      const posList = posSystems.split(',').map(s => s.trim()).filter(s => s);
+      if (posList.length > 0) {
+        const placeholders = posList.map(() => '?').join(',');
+        conditions.push(`pos_system IN (${placeholders})`);
+        params.push(...posList);
+      }
+    } else if (posSystem) {
       conditions.push('pos_system = ?');
       params.push(posSystem);
     }
 
-    if (geographicTier) {
+    // Handle geographic tier filter (multi-value or single)
+    if (geographicTiers) {
+      const tierList = geographicTiers.split(',').map(s => s.trim()).filter(s => s);
+      if (tierList.length > 0) {
+        const placeholders = tierList.map(() => '?').join(',');
+        conditions.push(`geographic_tier IN (${placeholders})`);
+        params.push(...tierList);
+      }
+    } else if (geographicTier) {
       conditions.push('geographic_tier = ?');
       params.push(geographicTier);
     }
 
+    // Handle lead source filter (multi-value)
+    if (leadSources) {
+      const sourceList = leadSources.split(',').map(s => s.trim()).filter(s => s);
+      if (sourceList.length > 0) {
+        const placeholders = sourceList.map(() => '?').join(',');
+        conditions.push(`lead_source IN (${placeholders})`);
+        params.push(...sourceList);
+      }
+    }
+
+    // Score range filter
     if (scoreMin) {
       conditions.push('engagement_score >= ?');
       params.push(parseInt(scoreMin));
@@ -61,11 +106,33 @@ export async function onRequestGet(context) {
       params.push(parseInt(scoreMax));
     }
 
+    // Tags filter - search within JSON array
     if (tags) {
-      const tagList = tags.split(',');
-      const tagConditions = tagList.map(() => `tags LIKE ?`);
-      conditions.push(`(${tagConditions.join(' OR ')})`);
-      tagList.forEach(tag => params.push(`%"${tag.trim()}"%`));
+      const tagList = tags.split(',').map(t => t.trim()).filter(t => t);
+      if (tagList.length > 0) {
+        const tagConditions = tagList.map(() => `tags LIKE ?`);
+        conditions.push(`(${tagConditions.join(' OR ')})`);
+        tagList.forEach(tag => params.push(`%"${tag}"%`));
+      }
+    }
+
+    // Date range filters
+    if (createdAfter) {
+      const timestamp = Math.floor(new Date(createdAfter).getTime() / 1000);
+      if (!isNaN(timestamp)) {
+        conditions.push('created_at >= ?');
+        params.push(timestamp);
+      }
+    }
+
+    if (createdBefore) {
+      const date = new Date(createdBefore);
+      date.setHours(23, 59, 59, 999);
+      const timestamp = Math.floor(date.getTime() / 1000);
+      if (!isNaN(timestamp)) {
+        conditions.push('created_at <= ?');
+        params.push(timestamp);
+      }
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
