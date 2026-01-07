@@ -97,21 +97,26 @@ All API keys have been set in Cloudflare Pages environment variables:
 
 ---
 
-## PENDING: Configure capecodcablecontractors.com Redirect (HIGH PRIORITY)
+## ✅ COMPLETED: capecodcablecontractors.com Redirect (2026-01-07)
 
-The domain is active in Cloudflare but needs a redirect rule configured.
+**Configured via Cloudflare API:**
 
-**Location:** https://dash.cloudflare.com → capecodcablecontractors.com → Rules → Redirect Rules
+| Component | Status | Details |
+|-----------|--------|---------|
+| DNS A Record | ✅ | `capecodcablecontractors.com` → 192.0.2.1 (proxied) |
+| DNS CNAME Record | ✅ | `www.capecodcablecontractors.com` → root (proxied) |
+| Page Rule | ✅ | `*capecodcablecontractors.com/*` → `https://ccrestaurantconsulting.com/#/local-networking` (301) |
 
-1. Create new Redirect Rule
-2. **When:** Hostname equals `capecodcablecontractors.com` OR `www.capecodcablecontractors.com`
-3. **Then:** Static redirect to `https://ccrestaurantconsulting.com/#/local-networking`
-4. **Status:** 301 (Permanent)
-5. **Preserve query string:** ON
+**Verification:**
+```
+curl -I https://capecodcablecontractors.com
+HTTP/1.1 301 Moved Permanently
+Location: https://ccrestaurantconsulting.com/#/local-networking
 
-Also need DNS A record pointing to 192.0.2.1 (proxied) if not already configured.
-
-**See:** `CLOUDFLARE_REDIRECT_SETUP.md` for detailed instructions.
+curl -I https://www.capecodcablecontractors.com
+HTTP/1.1 301 Moved Permanently
+Location: https://ccrestaurantconsulting.com/#/local-networking
+```
 
 ---
 

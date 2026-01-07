@@ -26,7 +26,17 @@
 | Domain | Zone ID | Status | Purpose |
 |--------|---------|--------|---------|
 | ccrestaurantconsulting.com | 141091a76fe0026d42fb846391ad1851 | **ACTIVE** | Main business site |
-| capecodcablecontractors.com | 0f0349b4a1eb3d6b74afb9b9f81356e6 | **ACTIVE** | Local networking services |
+| capecodcablecontractors.com | 0f0349b4a1eb3d6b74afb9b9f81356e6 | **ACTIVE + REDIRECT** | Redirects to /local-networking |
+
+### capecodcablecontractors.com Configuration
+
+| Component | Details |
+|-----------|---------|
+| DNS A Record | `@` → 192.0.2.1 (proxied) |
+| DNS CNAME | `www` → capecodcablecontractors.com (proxied) |
+| Page Rule ID | c6eec127be822b9340cb581bd14eca4f |
+| Page Rule | `*capecodcablecontractors.com/*` → `https://ccrestaurantconsulting.com/#/local-networking` (301) |
+| Configured | 2026-01-07 via API |
 
 ### Pending Activation (NS Update Needed)
 
