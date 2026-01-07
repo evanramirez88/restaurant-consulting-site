@@ -23,6 +23,7 @@ import { EmailCampaigns, EmailSubscribers } from '../src/components/admin/email'
 type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'tools' | 'toasthub' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
+type EmailSubTab = 'campaigns' | 'subscribers';
 
 interface Client {
   id?: string;
@@ -74,6 +75,9 @@ const AdminDashboard: React.FC = () => {
   const [repView, setRepView] = useState<RepView>('list');
   const [selectedRep, setSelectedRep] = useState<Rep | null>(null);
   const [repCount, setRepCount] = useState(0);
+
+  // Email sub-tab state
+  const [emailSubTab, setEmailSubTab] = useState<EmailSubTab>('campaigns');
 
   // Availability state (for overview)
   const [availability, setAvailability] = useState({
@@ -383,9 +387,38 @@ const AdminDashboard: React.FC = () => {
           <TicketingDashboard />
         )}
 
-        {/* Email Campaigns Tab */}
+        {/* Email Tab */}
         {activeTab === 'email' && (
-          <EmailCampaigns />
+          <>
+            {/* Email Sub-tabs */}
+            <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2">
+              <button
+                onClick={() => setEmailSubTab('campaigns')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
+                  emailSubTab === 'campaigns'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                Campaigns
+              </button>
+              <button
+                onClick={() => setEmailSubTab('subscribers')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
+                  emailSubTab === 'subscribers'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                Subscribers
+              </button>
+            </div>
+
+            {emailSubTab === 'campaigns' && <EmailCampaigns />}
+            {emailSubTab === 'subscribers' && <EmailSubscribers />}
+          </>
         )}
 
         {/* Tools Tab */}
