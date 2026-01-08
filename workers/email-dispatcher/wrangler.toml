@@ -1,0 +1,49 @@
+# Email Dispatcher Worker - Cloudflare Worker for Cron & Direct Email
+# This worker handles scheduled email dispatch with KV-based rate limiting
+# Deployed separately from the main Pages project
+
+name = "rg-email-dispatcher"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Account configuration
+account_id = "373a6cef1f9ccf5d26bfd9687a91c0a6"
+
+# ============================================
+# CRON TRIGGERS
+# Runs every 5 minutes to check for pending emails
+# ============================================
+[triggers]
+crons = ["*/5 * * * *"]
+
+# ============================================
+# D1 DATABASE BINDING
+# Same database as the main Pages project
+# ============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "rg-consulting-forms"
+database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
+
+# ============================================
+# KV NAMESPACE BINDING
+# For rate limiting (2 emails/second limit)
+# ============================================
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "57fda5bf0515423db01df17ed5b335e6"
+
+# ============================================
+# ENVIRONMENT VARIABLES
+# Set in Cloudflare Dashboard or via wrangler secret
+# ============================================
+# Required secrets (set via `wrangler secret put`):
+#   RESEND_API_KEY - Email delivery API key
+
+[vars]
+ENVIRONMENT = "production"
+FROM_EMAIL = "notifications@ccrestaurantconsulting.com"
+FROM_NAME = "R&G Consulting"
+REPLY_TO = "ramirezconsulting.rg@gmail.com"
+# Rate limit: max emails per 5-minute cron window
+MAX_EMAILS_PER_RUN = "50"

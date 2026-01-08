@@ -1,0 +1,18 @@
+{
+  "name": "rg-email-dispatcher",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for email dispatch cron and queue processing",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "create-queue": "wrangler queues create rg-email-dispatch",
+    "create-dlq": "wrangler queues create rg-email-dispatch-dlq"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240529.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.57.0"
+  }
+}
