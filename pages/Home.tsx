@@ -41,7 +41,7 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col">
       {/* Hero Section - Full viewport */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-primary-dark grain-overlay">
+      <section className="relative min-h-screen flex flex-col items-center justify-start pt-32 overflow-hidden bg-primary-dark grain-overlay">
         {/* Parallax decorative elements - hidden on mobile to prevent overflow */}
         <div
           className="parallax-element parallax-orb hidden sm:block w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px] -top-[100px] md:-top-[150px] lg:-top-[200px] -right-[100px] md:-right-[150px] lg:-right-[200px]"
