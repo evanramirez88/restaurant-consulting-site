@@ -42,7 +42,7 @@ import {
 // COMING SOON FLAG - Set to false when ready to launch
 // This is the local fallback. The API flag takes precedence.
 // ============================================
-const SHOW_COMING_SOON = false;
+const SHOW_COMING_SOON = true;
 import { useSEO } from '../src/components/SEO';
 import {
   AdvancedStation,

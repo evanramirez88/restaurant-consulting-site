@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'Services & Support Plans', path: '/services' },
   { name: 'Toast Hub', path: '/toast-hub' },
+  { name: 'Menu Builder', path: '/menu-builder' },
   { name: 'Quote Builder', path: '/quote' },
   { name: 'About & Contact', path: '/about' },
 ];
@@ -264,6 +265,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <li>
                   <Link to="/toast-hub" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
                     Toast Hub
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/menu-builder" className="text-gray-400 hover:text-amber-400 transition-colors duration-200">
+                    Menu Builder
                   </Link>
                 </li>
                 <li>
