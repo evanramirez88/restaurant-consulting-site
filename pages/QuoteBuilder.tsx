@@ -2484,14 +2484,49 @@ const QuoteBuilder: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Client Info (if extracted) */}
-                {extractedClientInfo?.businessName && (
+                {/* Client Info - Editable (always show when import complete) */}
+                {(extractedClientInfo || importStatus === 'complete') && (
                   <div className="mb-3 p-2 bg-blue-900/30 border border-blue-700/50 rounded-lg">
-                    <p className="text-blue-300 text-xs font-medium mb-1">Client Detected</p>
-                    <p className="text-white text-sm font-medium">{extractedClientInfo.businessName}</p>
-                    {extractedClientInfo.address && (
-                      <p className="text-slate-400 text-xs">{extractedClientInfo.address}</p>
-                    )}
+                    <p className="text-blue-300 text-xs font-medium mb-2">Client Info (editable)</p>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Business Name"
+                        value={extractedClientInfo?.businessName || ''}
+                        onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), businessName: e.target.value } as ExtractedClientInfo))}
+                        className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Address"
+                        value={extractedClientInfo?.address || ''}
+                        onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), address: e.target.value } as ExtractedClientInfo))}
+                        className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          placeholder="City"
+                          value={extractedClientInfo?.city || ''}
+                          onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), city: e.target.value } as ExtractedClientInfo))}
+                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="State"
+                          value={extractedClientInfo?.state || ''}
+                          onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), state: e.target.value } as ExtractedClientInfo))}
+                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="ZIP"
+                          value={extractedClientInfo?.zip || ''}
+                          onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), zip: e.target.value } as ExtractedClientInfo))}
+                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
