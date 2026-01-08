@@ -118,8 +118,8 @@ export async function onRequestGet(context) {
     const stepStats = await db.prepare(`
       SELECT
         total_sent,
-        total_opened,
-        total_clicked
+        total_opens as total_opened,
+        total_clicks as total_clicked
       FROM sequence_steps
       WHERE id = ?
     `).bind(test.step_id).first();

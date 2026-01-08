@@ -24,8 +24,8 @@ export async function onRequestGet(context) {
         es.*,
         (SELECT COUNT(*) FROM subscriber_sequences ss WHERE ss.sequence_id = es.id) as subscriber_count,
         (SELECT COALESCE(SUM(total_sent), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_sent,
-        (SELECT COALESCE(SUM(total_opened), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
-        (SELECT COALESCE(SUM(total_clicked), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_clicked
+        (SELECT COALESCE(SUM(total_opens), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
+        (SELECT COALESCE(SUM(total_clicks), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_clicked
       FROM email_sequences es
       WHERE es.id = ?
     `).bind(id).first();
@@ -146,8 +146,8 @@ export async function onRequestPut(context) {
         es.*,
         (SELECT COUNT(*) FROM subscriber_sequences ss WHERE ss.sequence_id = es.id) as subscriber_count,
         (SELECT COALESCE(SUM(total_sent), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_sent,
-        (SELECT COALESCE(SUM(total_opened), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
-        (SELECT COALESCE(SUM(total_clicked), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_clicked
+        (SELECT COALESCE(SUM(total_opens), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
+        (SELECT COALESCE(SUM(total_clicks), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_clicked
       FROM email_sequences es
       WHERE es.id = ?
     `).bind(id).first();
