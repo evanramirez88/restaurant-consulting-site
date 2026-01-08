@@ -150,6 +150,22 @@ export async function verifyAuth(request, env) {
 }
 
 /**
+ * Verify admin token (wrapper for verifyAuth with compatible response format)
+ *
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @returns {Promise<{valid: boolean, error?: string, payload?: any}>}
+ */
+export async function verifyAdminToken(request, env) {
+  const result = await verifyAuth(request, env);
+  return {
+    valid: result.authenticated,
+    error: result.error,
+    payload: result.payload
+  };
+}
+
+/**
  * Verify client portal authentication from request
  *
  * @param {Request} request - The incoming request
