@@ -25,7 +25,16 @@ export async function onRequestGet(context) {
     // Build query with optional filters
     let query = `
       SELECT
-        es.*,
+        es.id,
+        es.name,
+        es.description,
+        es.sequence_type as type,
+        es.status,
+        es.trigger_type,
+        es.trigger_config,
+        es.settings,
+        es.created_at,
+        es.updated_at,
         (SELECT COUNT(*) FROM subscriber_sequences ss WHERE ss.sequence_id = es.id) as subscriber_count,
         (SELECT COALESCE(SUM(total_sent), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_sent,
         (SELECT COALESCE(SUM(total_opens), 0) FROM sequence_steps WHERE sequence_id = es.id) as total_opened,
@@ -42,7 +51,7 @@ export async function onRequestGet(context) {
     }
 
     if (type && type !== 'all') {
-      query += ' AND es.type = ?';
+      query += ' AND es.sequence_type = ?';
       params.push(type);
     }
 
