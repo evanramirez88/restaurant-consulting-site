@@ -3,6 +3,117 @@
 
 ---
 
+## 2026-01-07 | Email Dispatcher Deployed + Sitemap UI/UX Fixes (Evening Session)
+
+**Operator:** Claude-Opus-4.5 @ Anthropic
+**Time:** 20:00 EST
+
+### Work Completed
+
+#### 1. Email Dispatcher Worker Deployed
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| Worker deployed | ✅ | rg-email-dispatcher |
+| URL | ✅ | https://rg-email-dispatcher.ramirezconsulting-rg.workers.dev |
+| Health check | ✅ | /health returning OK |
+| RESEND_API_KEY | ✅ | Secret configured via wrangler |
+| Cron schedule | ✅ | */5 * * * * (every 5 minutes) |
+| D1 binding | ✅ | Connected to rg-consulting-forms |
+| KV binding | ✅ | Connected to rate limit KV |
+
+#### 2. Email Automation Feature Flags Enabled
+
+```sql
+email_automation_enabled = 1 (ACTIVE)
+email_engagement_scoring = 1 (ACTIVE)
+email_import_enabled = 1 (ACTIVE)
+email_ab_testing = 0 (ready when needed)
+email_send_time_optimization = 0 (ready when needed)
+```
+
+#### 3. API Key Storage Fixed (PERMANENTLY)
+
+Created `.secrets.local.md` (gitignored) with all API keys:
+- Primary: `C:\Users\evanr\projects\restaurant-consulting-site\.secrets.local.md`
+- Backup: `C:\Users\evanr\.claude\.secrets.local.md`
+- Master source: `C:\Users\evanr\OneDrive\Desktop\SAGENODE_SYSTEM\PROJECT_INFO\THis is a file and a list of variou.txt`
+
+Updated CLAUDE.md with references to all three locations.
+
+#### 4. Comprehensive Sitemap UI/UX Fixes (Commit 56f13f8)
+
+**Header Navigation:**
+- Removed "Get Quote" button from desktop and mobile
+- Made Availability Manager button permanent in header
+
+**Hero Section:**
+- Removed "Available for New Projects" bubble
+- Removed "Scroll to Explore" hovering text
+
+**Pronoun Changes (I → We):**
+- Updated all first-person singular to plural throughout site
+- Applied to Home, Services, Contact, Schedule, About pages
+
+**Contact Page Enhancements:**
+- Added Restaurant Address input field
+- Added Service Type dropdown (Remote/Local/Both)
+- Added "Support Plan" to Service Interest dropdown
+- Fixed Contact Info block layout
+
+**Schedule Page:**
+- Fixed "Need Urgent Support" block styling (white bg, shadow, orange border)
+
+**Footer:**
+- Updated copyright year to 2026
+
+### Git Activity
+
+| Commit | Description |
+|--------|-------------|
+| b95e7af | Lead scoring API + email dispatcher |
+| 2354117 | Continuity ledger update |
+| 56f13f8 | Sitemap UI/UX fixes (7 files) |
+
+### Production Status
+
+| System | Status | Notes |
+|--------|--------|-------|
+| Website | ✅ LIVE | Auto-deployed from GitHub |
+| Email Dispatcher | ✅ ACTIVE | Cron running every 5 min |
+| Email Automation | ✅ ENABLED | Ready for sequences |
+| Contact Form | ✅ WORKING | Resend + HubSpot |
+
+### Remaining Development Priorities
+
+1. **Quote Builder Improvements**
+   - PDF parsing to split bundled hardware lines
+   - Infinite canvas (remove invisible wall)
+   - Add scale system with visual indicators
+   - Allow editing imported data
+   - Make networking closet removable
+
+2. **Toast ABO Complete Redesign**
+   - NOT Toast API integration
+   - Puppeteer/Playwright automation
+   - Works with Menu Builder output
+   - Restaurant classification system
+
+3. **Portal Enhancements**
+   - Add Evan as test client and rep
+   - Admin back-office views
+   - Demo mode
+
+### Handoff Context
+
+- Email infrastructure COMPLETE and LIVE
+- Website UI/UX improvements deployed
+- API keys permanently stored (3 locations)
+- Ready for lead import and email sequences
+- Quote Builder and Toast ABO are next priorities
+
+---
+
 ## 2026-01-07 | Project Review + Lead Scoring & Email Dispatcher Commit
 
 **Operator:** Claude-Opus-4.5 @ Anthropic
