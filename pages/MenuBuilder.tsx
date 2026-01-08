@@ -18,8 +18,10 @@ import {
   DollarSign,
   Tag,
   Layers,
-  FileUp
+  FileUp,
+  Zap
 } from 'lucide-react';
+import DeployToToastModal from '../src/components/admin/automation/DeployToToastModal';
 import { useSEO } from '../src/components/SEO';
 import { extractText, getDocumentProxy } from 'unpdf';
 
@@ -429,6 +431,7 @@ const MenuBuilderTool: React.FC = () => {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [actualFiles, setActualFiles] = useState<File[]>([]);
+  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
 
   // Generate mock parsed data (simulated)
   const generateMockParsedData = (): ParsedMenu => {
@@ -1138,6 +1141,25 @@ const MenuBuilderTool: React.FC = () => {
                   </button>
                 </div>
 
+                {/* Deploy to Toast Button */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => setIsDeployModalOpen(true)}
+                    disabled={!parsedMenu}
+                    className={`w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-semibold transition-all ${
+                      parsedMenu
+                        ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    Deploy to Toast
+                  </button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Auto-apply modifier rules and deploy directly to Toast back-office
+                  </p>
+                </div>
+
                 {parsedMenu && (
                   <p className="text-xs text-gray-500 mt-4 text-center">
                     CSV export is formatted for direct Toast POS import
@@ -1175,6 +1197,15 @@ const MenuBuilderTool: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Deploy to Toast Modal */}
+      {parsedMenu && (
+        <DeployToToastModal
+          isOpen={isDeployModalOpen}
+          onClose={() => setIsDeployModalOpen(false)}
+          parsedMenu={parsedMenu}
+        />
+      )}
     </div>
   );
 };

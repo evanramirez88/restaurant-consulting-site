@@ -28,6 +28,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.secrets.local.md
 
 # Temporary files
 generate-hash.ps1
