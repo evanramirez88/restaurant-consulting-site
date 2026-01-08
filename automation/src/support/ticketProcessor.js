@@ -32,6 +32,7 @@ import {
 } from './approvalWorkflow.js';
 
 import { sendAlert, ALERT_LEVELS } from '../observer/alerting.js';
+import { delay } from '../utils/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -298,7 +299,7 @@ export async function processTicketBatch(tickets, context = {}) {
     }
 
     // Small delay between tickets
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await delay(500);
   }
 
   return results;

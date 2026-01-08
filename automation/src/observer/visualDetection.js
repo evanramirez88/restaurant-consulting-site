@@ -5,22 +5,13 @@
  * to locate UI elements visually in screenshots.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import { config } from '../config.js';
-
-// Initialize Anthropic client
-let anthropicClient = null;
-
-function getClient() {
-  if (!anthropicClient) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required for visual detection');
-    }
-    anthropicClient = new Anthropic({ apiKey });
-  }
-  return anthropicClient;
-}
+import {
+  getAnthropicClient,
+  AI_MODELS,
+  TOKEN_LIMITS,
+  extractJSON,
+  delay
+} from '../utils/ai.js';
 
 /**
  * Find an element visually using Claude Vision API
@@ -49,13 +40,13 @@ export async function findElementVisually(page, elementDescription, options = {}
     ? await page.evaluate(() => document.documentElement.scrollHeight)
     : viewport.height;
 
-  const client = getClient();
+  const client = getAnthropicClient();
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
+        model: AI_MODELS.VISION,
+        max_tokens: TOKEN_LIMITS.VISUAL_DETECTION,
         messages: [{
           role: 'user',
           content: [
@@ -96,14 +87,12 @@ Be precise with coordinates - they will be used for clicking.`
 
       // Parse response
       const responseText = response.content[0].text;
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      const result = extractJSON(responseText);
 
-      if (!jsonMatch) {
+      if (!result) {
         console.warn(`Visual detection attempt ${attempt}: Could not parse JSON response`);
         continue;
       }
-
-      const result = JSON.parse(jsonMatch[0]);
 
       if (!result.found) {
         console.warn(`Visual detection: Element not found - ${result.reasoning}`);
@@ -162,7 +151,7 @@ export async function clickElementVisually(page, elementDescription, options = {
         await page.evaluate((y) => {
           window.scrollTo(0, y - 200); // Scroll with 200px margin
         }, location.y);
-        await page.waitForTimeout(300);
+        await delay(300);
 
         // Re-detect after scroll
         const newLocation = await findElementVisually(page, elementDescription, {
@@ -215,7 +204,7 @@ export async function typeIntoElementVisually(page, elementDescription, text, op
       return clickResult;
     }
 
-    await page.waitForTimeout(100);
+    await delay(100);
 
     // Clear existing content if requested
     if (clearFirst) {
@@ -252,12 +241,12 @@ export async function typeIntoElementVisually(page, elementDescription, text, op
 export async function verifyElementState(page, elementDescription, expectedState) {
   const screenshot = await page.screenshot({ encoding: 'base64' });
 
-  const client = getClient();
+  const client = getAnthropicClient();
 
   try {
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 512,
+      model: AI_MODELS.VISION,
+      max_tokens: TOKEN_LIMITS.STATE_VERIFICATION,
       messages: [{
         role: 'user',
         content: [
@@ -289,13 +278,11 @@ Respond with ONLY a JSON object:
     });
 
     const responseText = response.content[0].text;
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const result = extractJSON(responseText);
 
-    if (!jsonMatch) {
+    if (!result) {
       throw new Error('Could not parse verification response');
     }
-
-    const result = JSON.parse(jsonMatch[0]);
 
     return {
       found: result.found,
@@ -327,12 +314,12 @@ Respond with ONLY a JSON object:
 export async function analyzeAvailableActions(page, context) {
   const screenshot = await page.screenshot({ encoding: 'base64' });
 
-  const client = getClient();
+  const client = getAnthropicClient();
 
   try {
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
+      model: AI_MODELS.VISION,
+      max_tokens: TOKEN_LIMITS.ACTION_ANALYSIS,
       messages: [{
         role: 'user',
         content: [
@@ -369,13 +356,9 @@ List up to 5 most relevant actions, ordered by relevance.`
     });
 
     const responseText = response.content[0].text;
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    const actions = extractJSON(responseText, 'array');
 
-    if (!jsonMatch) {
-      return [];
-    }
-
-    return JSON.parse(jsonMatch[0]);
+    return actions || [];
 
   } catch (error) {
     console.error('Action analysis failed:', error.message);

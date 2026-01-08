@@ -15,6 +15,7 @@ import {
   typeIntoElementVisually,
   extractSelectorAtCoordinates
 } from './visualDetection.js';
+import { delay } from '../utils/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -311,7 +312,7 @@ export async function typeIntoElement(page, selectorId, text, options = {}) {
     if (result.coordinates) {
       // Click the coordinates, then type
       await page.mouse.click(result.coordinates.x, result.coordinates.y);
-      await page.waitForTimeout(100);
+      await delay(100);
 
       if (clearFirst) {
         await page.keyboard.down('Control');

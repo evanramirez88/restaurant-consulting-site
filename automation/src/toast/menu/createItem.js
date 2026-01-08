@@ -6,6 +6,7 @@
 
 import { getSelector, getAllSelectors, updateSelector } from '../selectors.js';
 import { findMenuItem, selectCategory } from './navigation.js';
+import { wait } from '../../utils/browser.js';
 
 /**
  * Create a new menu item
@@ -57,7 +58,7 @@ export async function createItem(page, itemData, options = {}) {
     }
 
     // Wait for form to appear
-    await page.waitForTimeout(500);
+    await wait(500);
     await onScreenshot?.('item_form');
 
     // Fill item name
@@ -170,7 +171,7 @@ export async function bulkCreateItems(page, items, options = {}) {
 
     // Delay between items to avoid rate limiting
     if (i < total - 1) {
-      await page.waitForTimeout(delayBetweenItems);
+      await wait(delayBetweenItems);
     }
   }
 
@@ -201,7 +202,7 @@ export async function updateItem(page, itemName, updates, options = {}) {
     // Click to edit
     onProgress?.(30, 'Opening item for editing...');
     await item.click();
-    await page.waitForTimeout(500);
+    await wait(500);
 
     await onScreenshot?.('item_edit_form');
 
@@ -281,7 +282,7 @@ export async function deleteItem(page, itemName, options = {}) {
 
     // Right-click for context menu
     await item.click({ button: 'right' });
-    await page.waitForTimeout(500);
+    await wait(500);
 
     // Find delete option
     const deleteSelectors = getAllSelectors('common.deleteButton');
@@ -295,7 +296,7 @@ export async function deleteItem(page, itemName, options = {}) {
     if (!deleteButton) {
       // Try alternate: click item then find delete button in panel
       await item.click();
-      await page.waitForTimeout(500);
+      await wait(500);
 
       for (const selector of deleteSelectors) {
         deleteButton = await page.$(selector);
@@ -308,7 +309,7 @@ export async function deleteItem(page, itemName, options = {}) {
     }
 
     await deleteButton.click();
-    await page.waitForTimeout(500);
+    await wait(500);
 
     await onScreenshot?.('item_delete_confirm');
 
@@ -324,7 +325,7 @@ export async function deleteItem(page, itemName, options = {}) {
         }
       }
 
-      await page.waitForTimeout(1000);
+      await wait(1000);
     }
 
     onProgress?.(100, 'Item deleted');
@@ -514,7 +515,7 @@ async function waitForItemSave(page, timeout = 10000) {
     }
   }
 
-  await page.waitForTimeout(500);
+  await wait(500);
 }
 
 async function closeModal(page) {

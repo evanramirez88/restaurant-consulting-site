@@ -8,21 +8,13 @@
  * 4. What data is needed to fulfill the request
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-
-// Initialize Anthropic client
-let anthropicClient = null;
-
-function getClient() {
-  if (!anthropicClient) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required');
-    }
-    anthropicClient = new Anthropic({ apiKey });
-  }
-  return anthropicClient;
-}
+import {
+  getAnthropicClient,
+  AI_MODELS,
+  TOKEN_LIMITS,
+  extractJSON,
+  batchProcess
+} from '../utils/ai.js';
 
 /**
  * Supported automation task types
@@ -80,8 +72,6 @@ export const CONFIDENCE = {
 export async function analyzeTicket(ticket, options = {}) {
   const { includeExtraction = true } = options;
 
-  const client = getClient();
-
   const systemPrompt = `You are a support ticket analyzer for a restaurant POS consulting company.
 Your job is to analyze support tickets and determine:
 1. What the customer is requesting
@@ -127,9 +117,10 @@ Respond with ONLY a JSON object:
 }`;
 
   try {
+    const client = getAnthropicClient();
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      model: AI_MODELS.ANALYSIS,
+      max_tokens: TOKEN_LIMITS.TICKET_ANALYSIS,
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -138,18 +129,16 @@ Respond with ONLY a JSON object:
     });
 
     const responseText = response.content[0].text;
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const analysis = extractJSON(responseText);
 
-    if (!jsonMatch) {
+    if (!analysis) {
       throw new Error('Could not parse analysis response');
     }
-
-    const analysis = JSON.parse(jsonMatch[0]);
 
     // Add metadata
     analysis.analyzed_at = Date.now();
     analysis.ticket_subject = ticket.subject;
-    analysis.model_used = 'claude-sonnet-4-20250514';
+    analysis.model_used = AI_MODELS.ANALYSIS;
 
     // Validate task type
     if (!Object.values(TASK_TYPES).includes(analysis.task_type)) {
@@ -180,26 +169,27 @@ Respond with ONLY a JSON object:
 }
 
 /**
- * Batch analyze multiple tickets
+ * Batch analyze multiple tickets with parallel processing
  *
  * @param {Array} tickets - Array of ticket objects
+ * @param {Object} options - Analysis options
+ * @param {number} [options.concurrency=3] - Max concurrent analyses
  * @returns {Promise<Array>} Array of analysis results
  */
 export async function analyzeTicketBatch(tickets, options = {}) {
-  const results = [];
+  const { concurrency = 3, ...analysisOptions } = options;
 
-  for (const ticket of tickets) {
-    const analysis = await analyzeTicket(ticket, options);
-    results.push({
-      ticket_id: ticket.id,
-      ...analysis
-    });
-
-    // Small delay between API calls
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-
-  return results;
+  return batchProcess(
+    tickets,
+    async (ticket) => {
+      const analysis = await analyzeTicket(ticket, analysisOptions);
+      return {
+        ticket_id: ticket.id,
+        ...analysis
+      };
+    },
+    { concurrency, delayBetween: 500 }
+  );
 }
 
 /**
@@ -210,8 +200,6 @@ export async function analyzeTicketBatch(tickets, options = {}) {
  * @returns {Promise<Object>} Extracted data ready for automation
  */
 export async function extractAutomationData(ticket, taskType) {
-  const client = getClient();
-
   const extractionPrompts = {
     [TASK_TYPES.MENU_ADD_ITEMS]: `Extract menu items to add:
 - Item names (exact spelling)
@@ -246,9 +234,10 @@ export async function extractAutomationData(ticket, taskType) {
   const prompt = extractionPrompts[taskType] || 'Extract all relevant data for this request.';
 
   try {
+    const client = getAnthropicClient();
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
+      model: AI_MODELS.FAST,
+      max_tokens: TOKEN_LIMITS.DATA_EXTRACTION,
       messages: [{
         role: 'user',
         content: `${prompt}
@@ -264,13 +253,13 @@ Be precise with names and numbers.`
     });
 
     const responseText = response.content[0].text;
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const extracted = extractJSON(responseText);
 
-    if (!jsonMatch) {
+    if (!extracted) {
       return { extraction_failed: true, raw_response: responseText };
     }
 
-    return JSON.parse(jsonMatch[0]);
+    return extracted;
 
   } catch (error) {
     console.error('Data extraction failed:', error.message);
