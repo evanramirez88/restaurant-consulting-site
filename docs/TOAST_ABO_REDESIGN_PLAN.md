@@ -505,48 +505,61 @@ CREATE TABLE IF NOT EXISTS modifier_rules (
 
 ## Implementation Phases
 
-### Phase 1: Restaurant Classification Engine (Week 1)
+### Phase 1: Restaurant Classification Engine (Week 1) ✅ COMPLETE
 
 **Deliverable**: AI-powered restaurant classification system
 
-1. Create `restaurant_classifications` table (migration)
-2. Create `toast_config_templates` table with initial templates:
+**Status**: Completed 2026-01-07
+
+**Implemented:**
+1. ✅ Created `restaurant_classifications` table (migration 0013)
+2. ✅ Created `toast_config_templates` table with 8 templates seeded:
    - Counter Service Cafe
-   - Full Service Restaurant
    - Cocktail Bar
+   - Fine Dining Restaurant
    - Casual Dining
-   - Fine Dining
    - Quick Service
-3. Build classification API endpoint (`/api/automation/classify`)
-4. Integrate Claude API for website/menu analysis
-5. Add classification UI to Admin Portal (Client Detail view)
+   - Brewery/Taproom
+   - Coffee Shop
+   - Food Truck
+3. ✅ Built classification API endpoint (`/api/admin/automation/classify`)
+4. ✅ Templates API endpoint (`/api/admin/automation/templates`)
+5. ✅ Classifications list endpoint (`/api/admin/automation/classifications`)
+6. ✅ Created `ClassificationView.tsx` component
 
-### Phase 2: Modifier Logic Engine (Week 1-2)
+**Commit:** 3463e68
 
-**Deliverable**: Cocktail/food modifier rules system
-
-1. Create `modifier_rules` table (migration)
-2. Seed initial cocktail rules:
-   - Martini → Spirit (Gin/Vodka)
-   - Manhattan → Whiskey (Rye/Bourbon)
-   - Old Fashioned → Whiskey + Sweetener
-   - Margarita → Tequila + Salt rim
-3. Build modifier rule evaluation engine
-4. Add modifier rules management to Admin Portal
-
-### Phase 3: Menu Builder Integration (Week 2)
+### Phase 2: Menu Builder Integration (Week 2) ✅ COMPLETE
 
 **Deliverable**: "Deploy to Toast" feature in Menu Builder
 
-1. Add "Deploy to Toast" button to Menu Builder export
-2. Create pre-deployment modal with:
+**Status**: Completed 2026-01-07
+
+**Implemented:**
+1. ✅ Created `modifier_rules` table with 9 rules seeded:
+   - Martini Spirit Choice (Gin/Vodka)
+   - Manhattan Spirit Choice (Rye/Bourbon)
+   - Old Fashioned Whiskey + Sweetener
+   - Margarita Tequila + Salt Rim
+   - Coffee Drink Milk Choice
+   - Coffee Preparation (Hot/Iced/Blended)
+   - Steak Temperature
+   - Burger Temperature
+   - Salad Dressing
+2. ✅ Built modifier rules API (`/api/admin/automation/modifier-rules`)
+3. ✅ Built apply-modifiers API (`/api/admin/automation/apply-modifiers`)
+4. ✅ Added "Deploy to Toast" button to Menu Builder
+5. ✅ Created `DeployToToastModal.tsx` component with:
    - Client/Restaurant selection
    - Classification display
+   - Template selection
    - Modifier logic preview
-3. Create automation job from Menu Builder output
-4. Handle modifier rule application before deployment
+   - Automation job creation
+6. ✅ Created automation jobs API (`/api/admin/automation/jobs`)
 
-### Phase 4: Complete Toast Navigation Scripts (Week 2-3)
+**Commit:** 226cac5
+
+### Phase 3: Complete Toast Navigation Scripts (Week 2-3) ⏳ PENDING
 
 **Deliverable**: Working browser automation for all job types
 
@@ -559,7 +572,7 @@ CREATE TABLE IF NOT EXISTS modifier_rules (
 2. Implement robust error handling
 3. Add progress tracking and screenshots
 
-### Phase 5: Observer AI / Self-Healing (Week 3-4)
+### Phase 4: Observer AI / Self-Healing (Week 3-4) ⏳ PENDING
 
 **Deliverable**: Resilient automation that handles UI changes
 
@@ -569,7 +582,7 @@ CREATE TABLE IF NOT EXISTS modifier_rules (
 4. Create daily health check job
 5. Add alerting for persistent failures
 
-### Phase 6: Support Ticket Integration (Week 4)
+### Phase 5: Support Ticket Integration (Week 4) ⏳ PENDING
 
 **Deliverable**: Automated support task fulfillment
 
@@ -586,19 +599,19 @@ CREATE TABLE IF NOT EXISTS modifier_rules (
 
 | Component | Purpose | Status |
 |-----------|---------|--------|
-| `ClassificationView.tsx` | View/edit restaurant classification | NEW |
-| `ConfigTemplateManager.tsx` | Manage config templates | NEW |
-| `ModifierRulesEditor.tsx` | Edit modifier rules | NEW |
-| `DeployToToastModal.tsx` | Menu Builder integration modal | NEW |
-| `JobDetailEnhanced.tsx` | Enhanced job view with screenshots | UPDATE |
+| `ClassificationView.tsx` | View/edit restaurant classification | ✅ COMPLETE |
+| `ConfigTemplateManager.tsx` | Manage config templates | ⏳ PENDING |
+| `ModifierRulesEditor.tsx` | Edit modifier rules | ⏳ PENDING |
+| `DeployToToastModal.tsx` | Menu Builder integration modal | ✅ COMPLETE |
+| `JobDetailEnhanced.tsx` | Enhanced job view with screenshots | ⏳ PENDING |
 
 ### Menu Builder
 
 | Component | Purpose | Status |
 |-----------|---------|--------|
-| `DeployButton.tsx` | "Deploy to Toast" action | NEW |
-| `DeploymentModal.tsx` | Pre-deployment configuration | NEW |
-| `ModifierPreview.tsx` | Show modifier rules to apply | NEW |
+| Deploy to Toast Button | "Deploy to Toast" action in export section | ✅ COMPLETE |
+| `DeployToToastModal.tsx` | Pre-deployment configuration | ✅ COMPLETE |
+| Modifier Preview | Show modifier rules to apply | ✅ COMPLETE (in modal) |
 
 ---
 
@@ -675,7 +688,22 @@ migrations/
 
 ---
 
-*Document Version: 1.0*
+---
+
+## Implementation Progress Summary
+
+| Phase | Description | Status | Commit |
+|-------|-------------|--------|--------|
+| Phase 1 | Restaurant Classification Engine | ✅ COMPLETE | 3463e68 |
+| Phase 2 | Menu Builder Integration | ✅ COMPLETE | 226cac5 |
+| Phase 3 | Toast Navigation Scripts | ⏳ PENDING | - |
+| Phase 4 | Observer AI / Self-Healing | ⏳ PENDING | - |
+| Phase 5 | Support Ticket Integration | ⏳ PENDING | - |
+
+---
+
+*Document Version: 1.1*
 *Created: January 7, 2026*
+*Updated: January 7, 2026 23:30 EST*
 *Author: Claude Opus 4.5*
 *For: R&G Consulting / Cape Cod Restaurant Consulting*
