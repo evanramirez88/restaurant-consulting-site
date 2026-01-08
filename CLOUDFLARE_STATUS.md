@@ -1,7 +1,7 @@
 # Cloudflare Infrastructure Status
 
-**Last Updated:** 2026-01-07 05:45 EST
-**Session:** Contact form fixed - email and HubSpot both working
+**Last Updated:** 2026-01-07 12:00 EST
+**Session:** Full integration audit completed - all services verified
 
 ---
 
@@ -171,12 +171,70 @@
 
 ### 2026-01-07 - Contact Form Fixed (Commit 2c17c4e)
 1. ✅ Fixed Resend email recipient (changed to ramirezconsulting.rg@gmail.com)
-   - Resend test domain (`onboarding@resend.dev`) requires sending to account owner email
 2. ✅ Fixed HubSpot contact creation (removed invalid properties)
    - Removed `message` and `service_interest` properties (don't exist in HubSpot schema)
 3. ✅ Verified both integrations working:
    - `emailSent: true` - Resend delivering emails
    - `hubspotCreated: true` - HubSpot creating/updating contacts
+
+### 2026-01-07 - Email Sender Domain Updated
+1. ✅ Updated contact form to use verified domain (`noreply@ccrestaurantconsulting.com`)
+   - Previously used test domain (`onboarding@resend.dev`)
+2. ✅ All email senders now use verified ccrestaurantconsulting.com domain:
+   - Contact form: `noreply@ccrestaurantconsulting.com`
+   - Quote emails: `noreply@ccrestaurantconsulting.com`
+   - Magic links: `portal@ccrestaurantconsulting.com`
+   - Admin emails: `noreply@ccrestaurantconsulting.com`
+
+### 2026-01-07 - Integration Audit Complete
+1. ✅ HubSpot CRM - Contact form creates/updates contacts (Portal ID: 243379742)
+2. ✅ Square Billing - Invoice and subscription APIs configured
+3. ✅ Resend Email - All senders using verified domain
+4. ✅ Cal.com Scheduling - Iframe embed + new webhook handler for automated sequences
+5. ✅ Email Sequences - Pre-built sequences for Toast outreach, bookings, follow-ups
+
+---
+
+## INTEGRATION STATUS
+
+### Active Integrations
+
+| Service | Status | Configuration |
+|---------|--------|---------------|
+| HubSpot | ✅ ACTIVE | Portal 243379742, Panicky-Monkey app |
+| Square | ✅ ACTIVE | Lane B (LB8GE5HYZJYB7) for Toast billing |
+| Resend | ✅ ACTIVE | Verified domain ccrestaurantconsulting.com |
+| Cal.com | ✅ ACTIVE | User: r-g-consulting, webhook integration |
+| Cloudflare D1 | ✅ ACTIVE | 40+ tables, 6 email sequences seeded |
+| Cloudflare R2 | ✅ ACTIVE | ccrc-uploads bucket |
+| Workers AI | ✅ ACTIVE | Bound as `AI` |
+
+### Support Plan Flow
+
+1. **Visitor** → /services → sees Toast Guardian pricing
+2. **Schedule** → /schedule → Cal.com booking
+3. **Cal.com webhook** → Creates subscriber, triggers confirmation sequence
+4. **Consultation** → Admin creates client + subscription
+5. **Billing** → Square invoice or subscription created
+6. **Client Portal** → /portal/{slug}/billing → View subscription & invoices
+
+### Email Sequences (Pre-built)
+
+| Sequence | Trigger | Emails | Days |
+|----------|---------|--------|------|
+| toast-support-plan | Manual enrollment | 5 | 21 |
+| remote-menu-work | Manual enrollment | 4 | 10 |
+| booking-confirmation | Cal.com BOOKING_CREATED | 1 | 0 |
+| post-meeting-followup | Cal.com MEETING_ENDED | 1 | 0 |
+| noshow-reengagement | Cal.com NO_SHOW | 1 | 0 |
+
+### Pending Configuration (Human Tasks)
+
+| Task | Location | Priority |
+|------|----------|----------|
+| Create Square catalog items | Square Dashboard → Catalog | HIGH |
+| Create HubSpot sequences | HubSpot → Sequences | HIGH |
+| Configure Cal.com webhook | Cal.com → Webhooks | MEDIUM |
 
 ---
 

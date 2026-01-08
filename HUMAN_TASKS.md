@@ -87,13 +87,13 @@ All API keys have been set in Cloudflare Pages environment variables:
 
 **All features now operational.** Deployment `aee4ba74` includes all keys.
 
-### Contact Form Status (Verified 2026-01-07 05:45 EST)
+### Contact Form Status (Updated 2026-01-07)
 | Integration | Status | Notes |
 |-------------|--------|-------|
-| Resend Email | **WORKING** | Using `onboarding@resend.dev` test sender → `ramirezconsulting.rg@gmail.com` |
+| Resend Email | **WORKING** | Using verified domain `noreply@ccrestaurantconsulting.com` |
 | HubSpot CRM | **WORKING** | Creates/updates contacts with standard properties |
 
-**Latest deployment:** `2c17c4e` - Both `emailSent: true` and `hubspotCreated: true` confirmed.
+**All email senders use verified ccrestaurantconsulting.com domain.**
 
 ---
 

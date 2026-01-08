@@ -101,8 +101,8 @@ async function handleDelivered(env: Env, data: ResendWebhookPayload['data']): Pr
   // Update email_logs
   await env.DB.prepare(`
     UPDATE email_logs
-    SET status = 'delivered', delivered_at = ?, updated_at = ?
-    WHERE resend_id = ?
+    SET status = 'delivered', delivered_at = ?
+    WHERE message_id = ?
   `).bind(now, now, data.email_id).run();
 
   console.log(`[Resend Webhook] Email delivered: ${data.email_id}`);
@@ -118,42 +118,42 @@ async function handleOpened(env: Env, data: ResendWebhookPayload['data']): Promi
   const logResult = await env.DB.prepare(`
     UPDATE email_logs
     SET status = CASE WHEN status = 'delivered' THEN 'opened' ELSE status END,
-        opened_at = COALESCE(opened_at, ?),
+        first_opened_at = COALESCE(first_opened_at, ?),
         open_count = open_count + 1,
         user_agent = ?,
         ip_address = ?,
         updated_at = ?
-    WHERE resend_id = ?
-    RETURNING subscriber_id, sequence_step_id
+    WHERE message_id = ?
+    RETURNING subscriber_id, step_id
   `).bind(
     now,
     data.open?.user_agent || null,
     data.open?.ip_address || null,
     now,
     data.email_id
-  ).first<{ subscriber_id: string; sequence_step_id: string }>();
+  ).first<{ subscriber_id: string; step_id: string }>();
 
   if (logResult?.subscriber_id) {
     // Update subscriber stats
     await env.DB.prepare(`
       UPDATE email_subscribers
       SET total_emails_opened = total_emails_opened + 1,
-          last_email_opened_at = ?,
+          last_email_first_opened_at = ?,
           updated_at = ?
       WHERE id = ?
     `).bind(now, now, logResult.subscriber_id).run();
   }
 
-  if (logResult?.sequence_step_id) {
+  if (logResult?.step_id) {
     // Update step stats (only count first open)
     await env.DB.prepare(`
       UPDATE sequence_steps
-      SET total_opened = total_opened + 1, updated_at = ?
+      SET total_opens = total_opens + 1
       WHERE id = ? AND NOT EXISTS (
         SELECT 1 FROM email_logs
-        WHERE sequence_step_id = ? AND resend_id = ? AND open_count > 1
+        WHERE step_id = ? AND message_id = ? AND open_count > 1
       )
-    `).bind(now, logResult.sequence_step_id, logResult.sequence_step_id, data.email_id).run();
+    `).bind(now, logResult.step_id, logResult.step_id, data.email_id).run();
   }
 
   console.log(`[Resend Webhook] Email opened: ${data.email_id}`);
@@ -167,17 +167,17 @@ async function handleClicked(env: Env, data: ResendWebhookPayload['data']): Prom
 
   // Get current clicked links
   const existingLog = await env.DB.prepare(`
-    SELECT subscriber_id, sequence_step_id, clicked_links_json
-    FROM email_logs WHERE resend_id = ?
+    SELECT subscriber_id, step_id, clicks_json
+    FROM email_logs WHERE message_id = ?
   `).bind(data.email_id).first<{
     subscriber_id: string;
-    sequence_step_id: string;
-    clicked_links_json: string | null;
+    step_id: string;
+    clicks_json: string | null;
   }>();
 
   // Update clicked links
-  const existingLinks = existingLog?.clicked_links_json
-    ? JSON.parse(existingLog.clicked_links_json)
+  const existingLinks = existingLog?.clicks_json
+    ? JSON.parse(existingLog.clicks_json)
     : [];
   if (data.click?.link && !existingLinks.includes(data.click.link)) {
     existingLinks.push(data.click.link);
@@ -187,11 +187,11 @@ async function handleClicked(env: Env, data: ResendWebhookPayload['data']): Prom
   await env.DB.prepare(`
     UPDATE email_logs
     SET status = CASE WHEN status IN ('delivered', 'opened') THEN 'clicked' ELSE status END,
-        clicked_at = COALESCE(clicked_at, ?),
+        first_clicked_at = COALESCE(first_clicked_at, ?),
         click_count = click_count + 1,
-        clicked_links_json = ?,
+        clicks_json = ?,
         updated_at = ?
-    WHERE resend_id = ?
+    WHERE message_id = ?
   `).bind(now, JSON.stringify(existingLinks), now, data.email_id).run();
 
   if (existingLog?.subscriber_id) {
@@ -199,19 +199,19 @@ async function handleClicked(env: Env, data: ResendWebhookPayload['data']): Prom
     await env.DB.prepare(`
       UPDATE email_subscribers
       SET total_emails_clicked = total_emails_clicked + 1,
-          last_email_clicked_at = ?,
+          last_email_first_clicked_at = ?,
           updated_at = ?
       WHERE id = ?
     `).bind(now, now, existingLog.subscriber_id).run();
   }
 
-  if (existingLog?.sequence_step_id) {
+  if (existingLog?.step_id) {
     // Update step stats
     await env.DB.prepare(`
       UPDATE sequence_steps
-      SET total_clicked = total_clicked + 1, updated_at = ?
+      SET total_clicks = total_clicks + 1
       WHERE id = ?
-    `).bind(now, existingLog.sequence_step_id).run();
+    `).bind(now, existingLog.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email clicked: ${data.email_id}, link: ${data.click?.link}`);
@@ -228,12 +228,12 @@ async function handleBounced(env: Env, data: ResendWebhookPayload['data']): Prom
   // Update email_logs
   const logResult = await env.DB.prepare(`
     UPDATE email_logs
-    SET status = 'bounced', bounced_at = ?, error_message = ?, updated_at = ?
-    WHERE resend_id = ?
-    RETURNING subscriber_id, sequence_step_id
+    SET status = 'bounced', bounced_at = ?, bounce_message = ?
+    WHERE message_id = ?
+    RETURNING subscriber_id, step_id
   `).bind(now, bounceMessage, now, data.email_id).first<{
     subscriber_id: string;
-    sequence_step_id: string;
+    step_id: string;
   }>();
 
   if (logResult?.subscriber_id) {
@@ -261,13 +261,13 @@ async function handleBounced(env: Env, data: ResendWebhookPayload['data']): Prom
     console.log(`[Resend Webhook] Subscriber bounced: ${logResult.subscriber_id}`);
   }
 
-  if (logResult?.sequence_step_id) {
+  if (logResult?.step_id) {
     // Update step stats
     await env.DB.prepare(`
       UPDATE sequence_steps
-      SET total_bounced = total_bounced + 1, updated_at = ?
+      SET total_bounces = total_bounces + 1
       WHERE id = ?
-    `).bind(now, logResult.sequence_step_id).run();
+    `).bind(now, logResult.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email bounced: ${data.email_id}, type: ${bounceType}`);
@@ -282,12 +282,12 @@ async function handleComplained(env: Env, data: ResendWebhookPayload['data']): P
   // Update email_logs
   const logResult = await env.DB.prepare(`
     UPDATE email_logs
-    SET status = 'complained', complained_at = ?, updated_at = ?
-    WHERE resend_id = ?
-    RETURNING subscriber_id, sequence_step_id
+    SET status = 'complained', complained_at = ?
+    WHERE message_id = ?
+    RETURNING subscriber_id, step_id
   `).bind(now, now, data.email_id).first<{
     subscriber_id: string;
-    sequence_step_id: string;
+    step_id: string;
   }>();
 
   if (logResult?.subscriber_id) {
@@ -313,13 +313,13 @@ async function handleComplained(env: Env, data: ResendWebhookPayload['data']): P
     console.log(`[Resend Webhook] Subscriber complained: ${logResult.subscriber_id}`);
   }
 
-  if (logResult?.sequence_step_id) {
+  if (logResult?.step_id) {
     // Update step stats
     await env.DB.prepare(`
       UPDATE sequence_steps
-      SET total_complained = total_complained + 1, updated_at = ?
+      SET total_complaints = total_complaints + 1
       WHERE id = ?
-    `).bind(now, logResult.sequence_step_id).run();
+    `).bind(now, logResult.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email complained: ${data.email_id}`);

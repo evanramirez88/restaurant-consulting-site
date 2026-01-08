@@ -82,7 +82,7 @@ export async function onRequestPost(context) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: 'Cape Cod Restaurant Consulting <onboarding@resend.dev>',
+            from: 'Cape Cod Restaurant Consulting <noreply@ccrestaurantconsulting.com>',
             to: ['ramirezconsulting.rg@gmail.com'],
             subject: `New Contact: ${data.name} - ${data.service || 'General Inquiry'}`,
             html: `
