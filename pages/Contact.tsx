@@ -414,10 +414,10 @@ const Contact: React.FC = () => {
               </Link>
             </div>
 
-            {/* Compact Acuity Embed */}
+            {/* Cal.com Embed */}
             <div className="p-4 bg-white">
               <iframe
-                src="https://app.acuityscheduling.com/schedule.php?owner=34242148"
+                src="https://cal.com/r-g-consulting"
                 title="Schedule Appointment"
                 width="100%"
                 height="450"
@@ -426,7 +426,7 @@ const Contact: React.FC = () => {
               ></iframe>
               <p className="text-center text-xs text-gray-500 mt-2">
                 <a
-                  href="https://app.acuityscheduling.com/schedule.php?owner=34242148"
+                  href="https://cal.com/r-g-consulting"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-amber-500 transition-colors"

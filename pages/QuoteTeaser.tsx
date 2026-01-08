@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
-// Acuity Scheduling configuration
-const ACUITY_URL = 'https://app.acuityscheduling.com/schedule.php?owner=34242148';
+// Cal.com Scheduling configuration
+const CALCOM_URL = 'https://cal.com/r-g-consulting';
 
 const QuoteTeaser: React.FC = () => {
   useSEO({
@@ -102,7 +102,7 @@ const QuoteTeaser: React.FC = () => {
             Launch Quote Builder
           </Link>
           <a
-            href={ACUITY_URL}
+            href={CALCOM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 cta-secondary-dark"

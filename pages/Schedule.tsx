@@ -122,7 +122,7 @@ const Schedule: React.FC = () => {
             </div>
           </div>
 
-          {/* Acuity Calendar Embed */}
+          {/* Cal.com Calendar Embed */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 border-l-4 border-l-amber-500">
               <div className="p-4 border-b border-gray-200 bg-gray-50">

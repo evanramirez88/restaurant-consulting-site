@@ -15,7 +15,7 @@ interface AvailabilitySchedule {
   walk_ins_accepted: boolean;
   scheduling_available: boolean;
   scheduling_link: string | null;
-  scheduling_link_type: 'email' | 'phone' | 'acuity' | 'google' | 'calendly' | 'custom' | null;
+  scheduling_link_type: 'email' | 'phone' | 'calcom' | 'google' | 'calendly' | 'custom' | null;
   availability_start: number | null;
   availability_end: number | null;
   display_start: number | null;
@@ -45,7 +45,7 @@ const CAPE_COD_TOWNS = [
 const SCHEDULING_LINK_TYPES = [
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'phone', label: 'Phone', icon: Phone },
-  { value: 'acuity', label: 'Acuity', icon: CalendarClock },
+  { value: 'calcom', label: 'Cal.com', icon: CalendarClock },
   { value: 'google', label: 'Google Calendar', icon: Calendar },
   { value: 'calendly', label: 'Calendly', icon: CalendarClock },
   { value: 'custom', label: 'Custom URL', icon: Link2 }

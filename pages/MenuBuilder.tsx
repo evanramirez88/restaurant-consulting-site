@@ -31,8 +31,8 @@ import { extractText, getDocumentProxy } from 'unpdf';
 // ============================================================
 const SHOW_COMING_SOON = true;
 
-// Acuity Scheduling URL
-const ACUITY_URL = 'https://app.acuityscheduling.com/schedule.php?owner=34242148';
+// Cal.com Scheduling URL
+const CALCOM_URL = 'https://cal.com/r-g-consulting';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -167,7 +167,7 @@ const ComingSoonOverlay: React.FC = () => {
         {/* CTAs */}
         <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <a
-            href={ACUITY_URL}
+            href={CALCOM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 shadow-lg hover:opacity-90"
