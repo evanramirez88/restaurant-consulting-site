@@ -9,7 +9,9 @@ interface FormData {
   businessName: string;
   email: string;
   phone: string;
+  address: string;
   service: string;
+  serviceLocation: string;
   message: string;
   website: string; // Honeypot field
 }
@@ -31,7 +33,9 @@ const Contact: React.FC = () => {
     businessName: '',
     email: '',
     phone: '',
+    address: '',
     service: 'Toast POS',
+    serviceLocation: 'Remote',
     message: '',
     website: '' // Honeypot - should remain empty
   });
@@ -95,7 +99,9 @@ const Contact: React.FC = () => {
           businessName: '',
           email: '',
           phone: '',
+          address: '',
           service: 'Toast POS',
+          serviceLocation: 'Remote',
           message: '',
           website: ''
         });
@@ -133,43 +139,43 @@ const Contact: React.FC = () => {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-primary-dark p-3 rounded-lg text-white">
+                <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                   <Phone size={24} />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900">Phone</p>
+                  <p className="font-bold text-gray-900 inline">Phone</p>
                   <a href={`tel:${PHONE_NUMBER}`} className="text-orange-600 font-semibold hover:text-orange-700 transition-colors block">{PHONE_NUMBER}</a>
-                  <p className="text-xs text-gray-500 mt-1">Direct line. If I don't answer, I'm likely on a job site.</p>
+                  <p className="text-xs text-gray-500 mt-1">Direct line. If we don't answer, we're likely on a job site.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-primary-dark p-3 rounded-lg text-white">
+                <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                   <Mail size={24} />
                 </div>
-                <div>
-                  <p className="font-bold text-gray-900">Email</p>
-                  <a href={`mailto:${EMAIL_ADDRESS}`} className="text-gray-600 hover:text-amber-500 transition-colors block">{EMAIL_ADDRESS}</a>
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 inline">Email</p>
+                  <a href={`mailto:${EMAIL_ADDRESS}`} className="text-gray-600 hover:text-amber-500 transition-colors block break-all">{EMAIL_ADDRESS}</a>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-primary-dark p-3 rounded-lg text-white">
+                <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                   <MapPin size={24} />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900">Location</p>
+                  <p className="font-bold text-gray-900 inline">Location</p>
                   <p className="text-gray-600">Cape Cod, Massachusetts</p>
                   <p className="text-xs text-gray-500">Serving New England & Remote Nationwide</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-primary-dark p-3 rounded-lg text-white">
+                <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                   <Clock size={24} />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900">Hours</p>
+                  <p className="font-bold text-gray-900 inline">Hours</p>
                   <p className="text-gray-600">Mon-Fri: 9 AM - 6 PM</p>
                   <p className="text-xs text-amber-500 font-semibold mt-1">Emergency Support 24/7 for Contract Clients</p>
                 </div>
@@ -282,26 +288,60 @@ const Contact: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="service" className="block text-sm font-medium text-gray-900 mb-2">
-                  Service Interest
+                <label htmlFor="address" className="block text-sm font-medium text-gray-900 mb-2">
+                  Restaurant Address
                 </label>
-                <select
-                  id="service"
-                  name="service"
-                  value={formData.service}
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  value={formData.address}
                   onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
-                >
-                  <option value="Toast POS">Toast POS</option>
-                  <option value="Networking">Networking</option>
-                  <option value="Operations">Operations</option>
-                  <option value="Other">Other</option>
-                </select>
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                  placeholder="123 Main St, Hyannis, MA 02601"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="service" className="block text-sm font-medium text-gray-900 mb-2">
+                    Service Interest
+                  </label>
+                  <select
+                    id="service"
+                    name="service"
+                    value={formData.service}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                  >
+                    <option value="Toast POS">Toast POS</option>
+                    <option value="Networking">Networking</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Support Plan">Support Plan</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="serviceLocation" className="block text-sm font-medium text-gray-900 mb-2">
+                    Service Type
+                  </label>
+                  <select
+                    id="serviceLocation"
+                    name="serviceLocation"
+                    value={formData.serviceLocation}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                  >
+                    <option value="Remote">Remote Support</option>
+                    <option value="Local">Local / On-Site</option>
+                    <option value="Both">Both Remote & Local</option>
+                  </select>
+                </div>
               </div>
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">
-                  How can I help? <span className="text-orange-600">*</span>
+                  How can we help? <span className="text-orange-600">*</span>
                 </label>
                 <textarea
                   id="message"
@@ -348,7 +388,7 @@ const Contact: React.FC = () => {
                 Prefer to Schedule a Call?
               </h3>
               <p className="text-gray-600 mb-6">
-                Skip the form and book a time directly on my calendar. Choose a slot that works around your service schedule.
+                Skip the form and book a time directly on our calendar. Choose a slot that works around your service schedule.
               </p>
               <div className="space-y-3 text-gray-600 text-sm mb-6">
                 <div className="flex items-center gap-2">

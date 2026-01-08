@@ -133,21 +133,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
             </nav>
 
-            {/* Right side - CTA Button */}
-            <div className="hidden lg:flex items-center gap-4">
-              {/* Availability Badge */}
-              <div className="hidden xl:block">
-                <AvailabilityIndicator />
-              </div>
-
-              {/* Get Quote CTA Button - Orange */}
-              <Link
-                to="/quote"
-                className="px-5 py-2.5 rounded-md text-[14px] font-semibold transition-all duration-200 shadow-md hover:shadow-lg hover:opacity-90"
-                style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
-              >
-                Get Quote
-              </Link>
+            {/* Right side - Availability Manager (always visible) */}
+            <div className="hidden lg:flex items-center">
+              <AvailabilityIndicator />
             </div>
 
             {/* Mobile Menu Button */}
@@ -203,21 +191,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </NavLink>
             ))}
 
-            {/* Mobile CTA Button */}
-            <Link
-              to="/quote"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-8 px-8 py-4 rounded-md text-lg font-semibold transition-all duration-300 shadow-lg hover:opacity-90"
+            {/* Mobile Availability Indicator */}
+            <div
+              className="mt-8"
               style={{
-                backgroundColor: '#ea580c',
-                color: '#ffffff',
                 transitionDelay: isMobileMenuOpen ? `${NAV_ITEMS.length * 50}ms` : '0ms',
                 transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(20px)',
                 opacity: isMobileMenuOpen ? 1 : 0,
+                transition: 'all 0.3s ease-out',
               }}
             >
-              Get Quote
-            </Link>
+              <AvailabilityIndicator />
+            </div>
           </nav>
 
           {/* Contact info at bottom */}
@@ -333,7 +318,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="max-w-7xl mx-auto px-6 py-5">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs text-gray-500">
               <p>
-                &copy; 2025 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
+                &copy; 2026 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
               </p>
               <p className="text-gray-600">
                 Serving New England &amp; Remote

@@ -193,13 +193,13 @@ const About: React.FC = () => {
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-primary-dark p-3 rounded-lg text-white">
+                  <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                     <Phone size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">Phone</p>
+                    <p className="font-bold text-gray-900 inline">Phone</p>
                     <a href={`tel:${PHONE_NUMBER}`} className="text-orange-600 font-semibold hover:text-orange-700 transition-colors block">{PHONE_NUMBER}</a>
-                    <p className="text-xs text-gray-500 mt-1">Direct line. If I don't answer, I'm likely on a job site.</p>
+                    <p className="text-xs text-gray-500 mt-1">Direct line. If we don't answer, we're likely on a job site.</p>
                   </div>
                 </div>
 
@@ -214,22 +214,22 @@ const About: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="bg-primary-dark p-3 rounded-lg text-white">
+                  <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                     <MapPin size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">Location</p>
+                    <p className="font-bold text-gray-900 inline">Location</p>
                     <p className="text-gray-600">Cape Cod, Massachusetts</p>
                     <p className="text-xs text-gray-500">Serving New England & Remote Nationwide</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="bg-primary-dark p-3 rounded-lg text-white">
+                  <div className="bg-primary-dark p-3 rounded-lg text-white flex-shrink-0">
                     <Clock size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">Hours</p>
+                    <p className="font-bold text-gray-900 inline">Hours</p>
                     <p className="text-gray-600">Mon-Fri: 9 AM - 6 PM</p>
                     <p className="text-xs text-amber-500 font-semibold mt-1">Emergency Support 24/7 for Contract Clients</p>
                   </div>
@@ -360,7 +360,7 @@ const About: React.FC = () => {
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">
-                    How can I help? <span className="text-orange-600">*</span>
+                    How can we help? <span className="text-orange-600">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -406,7 +406,7 @@ const About: React.FC = () => {
                   Prefer to Schedule a Call?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Skip the form and book a time directly on my calendar. Choose a slot that works around your service schedule.
+                  Skip the form and book a time directly on our calendar. Choose a slot that works around your service schedule.
                 </p>
                 <div className="space-y-3 text-gray-600 text-sm mb-6">
                   <div className="flex items-center gap-2">

@@ -32,8 +32,8 @@ const Schedule: React.FC = () => {
             Schedule a <span className="text-gray-300">Toast POS Consultation</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Book time with Cape Cod's Toast POS consultant. Whether it's a quick discovery call or a full project consultation,
-            I'll make time to understand your restaurant's needs.
+            Book time with Cape Cod's Toast POS consultants. Whether it's a quick discovery call or a full project consultation,
+            we'll make time to understand your restaurant's needs.
           </p>
         </div>
       </div>
@@ -81,14 +81,14 @@ const Schedule: React.FC = () => {
                 <h3 className="font-semibold text-gray-900">Flexible Hours</h3>
               </div>
               <p className="text-gray-600 text-sm">
-                60% of my meetings happen in the evening because that's when you're available.
-                I work around your service schedule.
+                60% of our meetings happen in the evening because that's when you're available.
+                We work around your service schedule.
               </p>
             </div>
 
             {/* Urgent Support */}
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-              <h3 className="text-gray-900 font-semibold mb-2">Need Urgent Support?</h3>
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 border-l-4 border-l-amber-500">
+              <h3 className="font-display text-lg font-bold text-gray-900 mb-2">Need Urgent Support?</h3>
               <p className="text-gray-600 text-sm mb-4">
                 POS down during service? Skip the calendar and call directly.
               </p>

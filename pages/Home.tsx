@@ -7,7 +7,6 @@ import {
   ClipboardList,
   PhoneCall,
   CheckCircle2,
-  ChevronDown,
   Phone
 } from 'lucide-react';
 import ServiceCard from '../src/components/ServiceCard';
@@ -55,14 +54,6 @@ const Home: React.FC = () => {
 
         {/* Main content container */}
         <div className="relative z-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Availability Badge */}
-          <div className="hero-fade-in hero-fade-in-delay-1 mb-12 md:mb-16">
-            <span className="inline-flex items-center gap-2 bg-teal-600/90 text-white text-sm font-medium px-4 py-2 rounded-full">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Available for New Projects
-            </span>
-          </div>
-
           {/* Main headline */}
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 hero-fade-in hero-fade-in-delay-1">
             Your POS Crashed Mid-Rush.
@@ -118,11 +109,6 @@ const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 hero-fade-in hero-fade-in-delay-4">
-          <span className="text-gray-400 text-sm font-medium tracking-wide">Scroll to explore</span>
-          <ChevronDown className="w-5 h-5 text-gray-400 scroll-indicator" />
-        </div>
       </section>
 
       {/* Why Choose R&G Section - Two columns */}
@@ -144,27 +130,27 @@ const Home: React.FC = () => {
                 THE R&amp;G DIFFERENCE
               </span>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-8 leading-tight">
-                Your Last IT Guy Made You Explain What "86'd" Means. I Won't.
+                Your Last IT Guy Made You Explain What "86'd" Means. We Won't.
               </h2>
 
               <div className="space-y-6">
                 <FeatureRow
                   title="Kitchen-Tested Expertise"
-                  desc="I've expedited, bartended, and managed—so I build systems that survive a 300-cover night, not just a demo."
+                  desc="We've expedited, bartended, and managed—so we build systems that survive a 300-cover night, not just a demo."
                 />
                 <FeatureRow
-                  title="Your Schedule, Not Mine"
-                  desc="Need to meet after close? No problem. 60% of my consultations happen evenings and weekends."
+                  title="Your Schedule, Not Ours"
+                  desc="Need to meet after close? No problem. 60% of our consultations happen evenings and weekends."
                 />
                 <FeatureRow
                   title="Transparent Pricing, Fast"
-                  desc="Get an accurate quote in minutes with my algorithmic pricing tool—no sales calls, no surprises."
+                  desc="Get an accurate quote in minutes with our algorithmic pricing tool—no sales calls, no surprises."
                 />
               </div>
 
               <div className="mt-8">
                 <Link to="/about" className="text-amber-600 font-bold hover:text-orange-600 transition-colors inline-flex items-center">
-                  Read My Story <ArrowRight className="ml-2 w-4 h-4" />
+                  Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -177,11 +163,11 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 animate-on-scroll">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              From Setup to Service—I've Got You Covered
+              From Setup to Service—We've Got You Covered
             </h2>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 text-lg">
-              Tech that works is table stakes. I deliver systems that make your team faster, your tickets cleaner, and your margins healthier.
+              Tech that works is table stakes. We deliver systems that make your team faster, your tickets cleaner, and your margins healthier.
             </p>
           </div>
 
@@ -207,7 +193,7 @@ const Home: React.FC = () => {
             <ServiceCard
               icon={PhoneCall}
               title="Emergency Support"
-              description="Printer died mid-rush? Network down on a Saturday? I answer nights and weekends—period."
+              description="Printer died mid-rush? Network down on a Saturday? We answer nights and weekends—period."
               link="/contact"
             />
           </div>

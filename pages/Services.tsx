@@ -166,19 +166,19 @@ const Services: React.FC = () => {
           <ServiceSection
             title="Toast POS Installation & Configuration"
             icon={Terminal}
-            description="Don't trust your install to a generic IT contractor. I configure your menu, modifiers, and hardware specifically for your kitchen's workflow."
+            description="Don't trust your install to a generic IT contractor. We configure your menu, modifiers, and hardware specifically for your kitchen's workflow."
             features={[
               "Hardware deployment (Terminals, KDS, Printers)",
               "Menu engineering and modifier group optimization",
               "Staff training (FOH & BOH specific sessions)",
-              "Go-live support (I stay for the first service)"
+              "Go-live support"
             ]}
           />
 
           <ServiceSection
             title="Restaurant Networking & IT"
             icon={Activity}
-            description="If your internet drops, you can't print tickets. I build redundant, commercial-grade networks designed to handle heavy guest wifi traffic without compromising your POS."
+            description="If your internet drops, you can't print tickets. We build redundant, commercial-grade networks designed to handle heavy guest wifi traffic without compromising your POS."
             features={[
               "Ubiquiti/Cisco/Meraki configuration",
               "LTE Failover setup (never lose a credit card auth)",
@@ -211,7 +211,7 @@ const Services: React.FC = () => {
           <ServiceSection
             title="Operational Consulting"
             icon={BookOpen}
-            description="The best POS in the world won't fix a bad line setup. I analyze your FOH and BOH operations to reduce ticket times and increase table turns."
+            description="The best POS in the world won't fix a bad line setup. We analyze your FOH and BOH operations to reduce ticket times and increase table turns."
             features={[
               "Ticket routing analysis",
               "Server station optimization",
