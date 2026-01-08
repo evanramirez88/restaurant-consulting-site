@@ -259,7 +259,8 @@ const QuoteBuilder: React.FC = () => {
   const [isFeatureEnabled, setIsFeatureEnabled] = useState(!SHOW_COMING_SOON);
 
   // Check feature flag from API on load
-  // Admin users and demo mode (?demo=true) always have access
+  // Demo mode (?demo=true) bypasses the check for demonstrations
+  // Feature flag controls access for all users including admins
   useEffect(() => {
     const checkFeatureFlag = async () => {
       try {
@@ -269,28 +270,21 @@ const QuoteBuilder: React.FC = () => {
         const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
         const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
 
-        // Check if user is authenticated as admin
-        let isAdmin = false;
-        try {
-          const authResponse = await fetch('/api/auth/verify', { credentials: 'include' });
-          const authData = await authResponse.json();
-          isAdmin = authData.authenticated === true;
-        } catch {
-          // Not authenticated, continue with feature flag check
-        }
-
-        // Admin and demo mode always have access
-        if (isDemoMode || isAdmin) {
+        // Demo mode bypasses feature flag for demonstrations
+        if (isDemoMode) {
           setIsFeatureEnabled(true);
           setFeatureFlagLoading(false);
           return;
         }
 
-        // Check feature flag for regular users
+        // Check feature flag from API (controls access for everyone including admins)
         const response = await fetch('/api/admin/feature-flags');
         const result = await response.json();
         if (result.success && result.data?.flags) {
           setIsFeatureEnabled(result.data.flags.quote_builder_enabled === true);
+        } else {
+          // API failed, fall back to local constant
+          setIsFeatureEnabled(!SHOW_COMING_SOON);
         }
       } catch (error) {
         console.error('Failed to check feature flag:', error);
