@@ -11,9 +11,11 @@
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 
 // Default feature flag values
+// All tools default to DISABLED (false) to show Coming Soon pages
+// Admins can enable them via the Admin Panel > Config > Feature Flags
 const DEFAULT_FLAGS = {
   // Tool Feature Flags
-  quote_builder_enabled: true,
+  quote_builder_enabled: false,
   menu_builder_enabled: false,
   client_portal_enabled: false,
   rep_portal_enabled: false,
