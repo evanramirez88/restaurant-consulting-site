@@ -9,14 +9,21 @@
  * This enables multi-page PDF support by extracting text client-side.
  */
 
-import { handleOptions } from '../../_shared/auth.js';
+import { handleOptions, getCorsOrigin } from '../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Content-Type': 'application/json'
-};
+// Maximum text input size (100KB should be plenty for menu text)
+const MAX_TEXT_LENGTH = 100000;
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 /**
  * Get AI config from database
@@ -261,6 +268,19 @@ function parseMenuText(text) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
+
+  // Rate limiting - 10 parses per 5 minutes per IP (uses AI which has costs)
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'menu-parse-text',
+    RATE_LIMITS.QUOTE_FORM, // 10 per 5 minutes
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   try {
     const body = await request.json();
@@ -270,6 +290,17 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Missing or invalid text parameter'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    // Validate text size to prevent abuse
+    if (text.length > MAX_TEXT_LENGTH) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Text too large. Maximum ${MAX_TEXT_LENGTH} characters allowed.`
       }), {
         status: 400,
         headers: corsHeaders
@@ -336,6 +367,6 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
-  return handleOptions();
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
 }

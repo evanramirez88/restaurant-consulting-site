@@ -9,14 +9,17 @@
  * AUTHENTICATION: Requires admin or client JWT authentication
  */
 
-import { verifyAuth, verifyClientAuth, unauthorizedResponse, handleOptions } from '../../_shared/auth.js';
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, handleOptions, getCorsOrigin } from '../../_shared/auth.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 /**
  * Parse extracted text into menu structure
@@ -239,6 +242,7 @@ function parseMenuText(text) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
 
   try {
     // Verify authentication - require either admin or client session
@@ -442,6 +446,6 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
-  return handleOptions();
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
 }
