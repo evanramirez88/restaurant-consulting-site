@@ -21,6 +21,7 @@ interface Env {
   REPLY_TO: string;
   ENVIRONMENT: string;
   MAX_EMAILS_PER_RUN: string;
+  WORKER_API_KEY: string; // Required for /dispatch and /stats endpoints
 }
 
 interface SubscriberSequenceRow {
@@ -89,6 +90,37 @@ function calculateDelaySeconds(value: number, unit: string): number {
 
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function verifyApiKey(request: Request, env: Env): boolean {
+  if (!env.WORKER_API_KEY) {
+    console.error('[Auth] WORKER_API_KEY not configured');
+    return false;
+  }
+
+  // Check Authorization header (Bearer token)
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    if (token === env.WORKER_API_KEY) {
+      return true;
+    }
+  }
+
+  // Check X-API-Key header
+  const apiKeyHeader = request.headers.get('X-API-Key');
+  if (apiKeyHeader === env.WORKER_API_KEY) {
+    return true;
+  }
+
+  return false;
+}
+
+function unauthorizedResponse(message: string = 'Unauthorized'): Response {
+  return new Response(JSON.stringify({ success: false, error: message }), {
+    status: 401,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 // ============================================
@@ -488,8 +520,12 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Manual dispatch trigger (admin only - add auth in production)
+    // Manual dispatch trigger (admin only - requires API key)
     if (url.pathname === '/dispatch' && request.method === 'POST') {
+      if (!verifyApiKey(request, env)) {
+        return unauthorizedResponse('Invalid or missing API key');
+      }
+
       try {
         await handleScheduled({} as ScheduledEvent, env, ctx);
         return new Response(JSON.stringify({ success: true, message: 'Dispatch triggered' }), {
@@ -514,8 +550,12 @@ export default {
       });
     }
 
-    // Stats endpoint
+    // Stats endpoint (admin only - requires API key)
     if (url.pathname === '/stats') {
+      if (!verifyApiKey(request, env)) {
+        return unauthorizedResponse('Invalid or missing API key');
+      }
+
       try {
         const stats = await env.DB.prepare(`
           SELECT

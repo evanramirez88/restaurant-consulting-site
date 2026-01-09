@@ -38,7 +38,8 @@ id = "57fda5bf0515423db01df17ed5b335e6"
 # Set in Cloudflare Dashboard or via wrangler secret
 # ============================================
 # Required secrets (set via `wrangler secret put`):
-#   RESEND_API_KEY - Email delivery API key
+#   RESEND_API_KEY   - Email delivery API key
+#   WORKER_API_KEY   - API key for /dispatch and /stats endpoints (admin auth)
 
 [vars]
 ENVIRONMENT = "production"
