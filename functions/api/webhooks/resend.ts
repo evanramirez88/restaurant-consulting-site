@@ -103,7 +103,7 @@ async function handleDelivered(env: Env, data: ResendWebhookPayload['data']): Pr
     UPDATE email_logs
     SET status = 'delivered', delivered_at = ?
     WHERE message_id = ?
-  `).bind(now, now, data.email_id).run();
+  `).bind(now, data.email_id).run();
 
   console.log(`[Resend Webhook] Email delivered: ${data.email_id}`);
 }
@@ -153,7 +153,7 @@ async function handleOpened(env: Env, data: ResendWebhookPayload['data']): Promi
         SELECT 1 FROM email_logs
         WHERE step_id = ? AND message_id = ? AND open_count > 1
       )
-    `).bind(now, logResult.step_id, logResult.step_id, data.email_id).run();
+    `).bind(logResult.step_id, logResult.step_id, data.email_id).run();
   }
 
   console.log(`[Resend Webhook] Email opened: ${data.email_id}`);
@@ -211,7 +211,7 @@ async function handleClicked(env: Env, data: ResendWebhookPayload['data']): Prom
       UPDATE sequence_steps
       SET total_clicks = total_clicks + 1
       WHERE id = ?
-    `).bind(now, existingLog.step_id).run();
+    `).bind(existingLog.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email clicked: ${data.email_id}, link: ${data.click?.link}`);
@@ -231,7 +231,7 @@ async function handleBounced(env: Env, data: ResendWebhookPayload['data']): Prom
     SET status = 'bounced', bounced_at = ?, bounce_message = ?
     WHERE message_id = ?
     RETURNING subscriber_id, step_id
-  `).bind(now, bounceMessage, now, data.email_id).first<{
+  `).bind(now, bounceMessage, data.email_id).first<{
     subscriber_id: string;
     step_id: string;
   }>();
@@ -267,7 +267,7 @@ async function handleBounced(env: Env, data: ResendWebhookPayload['data']): Prom
       UPDATE sequence_steps
       SET total_bounces = total_bounces + 1
       WHERE id = ?
-    `).bind(now, logResult.step_id).run();
+    `).bind(logResult.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email bounced: ${data.email_id}, type: ${bounceType}`);
@@ -285,7 +285,7 @@ async function handleComplained(env: Env, data: ResendWebhookPayload['data']): P
     SET status = 'complained', complained_at = ?
     WHERE message_id = ?
     RETURNING subscriber_id, step_id
-  `).bind(now, now, data.email_id).first<{
+  `).bind(now, data.email_id).first<{
     subscriber_id: string;
     step_id: string;
   }>();
@@ -319,7 +319,7 @@ async function handleComplained(env: Env, data: ResendWebhookPayload['data']): P
       UPDATE sequence_steps
       SET total_complaints = total_complaints + 1
       WHERE id = ?
-    `).bind(now, logResult.step_id).run();
+    `).bind(logResult.step_id).run();
   }
 
   console.log(`[Resend Webhook] Email complained: ${data.email_id}`);
