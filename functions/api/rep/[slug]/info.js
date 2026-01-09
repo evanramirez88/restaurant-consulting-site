@@ -1,6 +1,18 @@
 // Rep Info API - Get rep information by slug
 // Supports demo mode for slugs starting with "demo-"
 
+import { getCorsOrigin } from '../../../_shared/auth.js';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
+
 // Demo rep data for testing
 const DEMO_REPS = {
   'demo-rep': {
@@ -15,6 +27,8 @@ const DEMO_REPS = {
 };
 
 export async function onRequestGet(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const { slug } = context.params;
@@ -25,7 +39,7 @@ export async function onRequestGet(context) {
         error: 'Rep slug is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -38,7 +52,7 @@ export async function onRequestGet(context) {
         success: true,
         data: DEMO_REPS[slug]
       }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -54,7 +68,7 @@ export async function onRequestGet(context) {
         error: 'Rep not found or portal not enabled'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -70,7 +84,7 @@ export async function onRequestGet(context) {
         portal_enabled: Boolean(rep.portal_enabled)
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Rep info error:', error);
@@ -79,7 +93,20 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(context.request),
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 }

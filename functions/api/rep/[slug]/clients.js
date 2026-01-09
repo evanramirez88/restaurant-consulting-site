@@ -1,8 +1,19 @@
 // Rep Clients API - Get assigned clients for a rep
 // Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 // Demo clients data
 const DEMO_CLIENTS = [
@@ -33,7 +44,7 @@ const DEMO_CLIENTS = [
     phone: '508-555-5678',
     slug: 'cape-cod-bistro',
     portal_enabled: true,
-    support_plan_tier: 'basic',
+    support_plan_tier: 'core',
     support_plan_status: 'active',
     avatar_url: null,
     timezone: 'America/New_York',
@@ -90,6 +101,8 @@ async function verifyRepAuth(request, env, slug) {
 }
 
 export async function onRequestGet(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const { slug } = context.params;
@@ -103,7 +116,7 @@ export async function onRequestGet(context) {
         success: true,
         data: DEMO_CLIENTS
       }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -115,7 +128,7 @@ export async function onRequestGet(context) {
         error: auth.error
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -127,7 +140,7 @@ export async function onRequestGet(context) {
         error: 'Rep not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -162,7 +175,7 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Rep clients error:', error);
@@ -171,7 +184,20 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(context.request),
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 }

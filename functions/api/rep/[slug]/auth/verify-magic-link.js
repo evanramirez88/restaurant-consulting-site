@@ -1,9 +1,22 @@
 // Rep Verify Magic Link API - Verify magic link token and create session
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
 
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
+
 export async function onRequestPost(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const { slug } = context.params;
@@ -16,7 +29,7 @@ export async function onRequestPost(context) {
         error: 'Token is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -27,7 +40,7 @@ export async function onRequestPost(context) {
         error: 'Server configuration error'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -41,7 +54,7 @@ export async function onRequestPost(context) {
         error: 'Invalid or expired token'
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -51,7 +64,7 @@ export async function onRequestPost(context) {
         error: 'Invalid or expired token'
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -64,7 +77,7 @@ export async function onRequestPost(context) {
         error: 'Invalid token'
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -81,7 +94,7 @@ export async function onRequestPost(context) {
         error: 'Rep not found or portal not enabled'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -128,7 +141,7 @@ export async function onRequestPost(context) {
       message: 'Login successful'
     }), {
       headers: {
-        'Content-Type': 'application/json',
+        ...corsHeaders,
         'Set-Cookie': cookie
       }
     });
@@ -139,7 +152,20 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(context.request),
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 }

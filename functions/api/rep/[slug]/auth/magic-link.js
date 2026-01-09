@@ -4,19 +4,39 @@
  * POST /api/rep/:slug/auth/magic-link
  */
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../../../_shared/rate-limit.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 export async function onRequestPost(context) {
+  const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
+
+  // Rate limiting - 5 magic links per 5 minutes per IP
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'rep-magic-link',
+    RATE_LIMITS.CONTACT_FORM, // 5 per 5 minutes
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
-    const db = context.env.DB;
+    const db = env.DB;
     const { slug } = context.params;
-    const body = await context.request.json();
+    const body = await request.json();
     const { email } = body;
 
     if (!email) {
@@ -48,7 +68,7 @@ export async function onRequestPost(context) {
     }
 
     // Generate magic link token
-    const jwtSecret = context.env.REP_JWT_SECRET || context.env.JWT_SECRET || context.env.ADMIN_PASSWORD_HASH;
+    const jwtSecret = env.REP_JWT_SECRET || env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
     if (!jwtSecret) {
       return new Response(JSON.stringify({
         success: false,
@@ -73,12 +93,12 @@ export async function onRequestPost(context) {
 
     // Send email with magic link using Resend if configured
     let emailSent = false;
-    if (context.env.RESEND_API_KEY) {
+    if (env.RESEND_API_KEY) {
       try {
         const emailResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${context.env.RESEND_API_KEY}`,
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -122,13 +142,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

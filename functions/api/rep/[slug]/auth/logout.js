@@ -1,7 +1,18 @@
 // Rep Logout API - Clear rep session
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 function parseCookies(cookieHeader) {
   const cookies = {};
@@ -15,6 +26,8 @@ function parseCookies(cookieHeader) {
 }
 
 export async function onRequestPost(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const cookieHeader = context.request.headers.get('Cookie');
@@ -47,7 +60,7 @@ export async function onRequestPost(context) {
       message: 'Logged out successfully'
     }), {
       headers: {
-        'Content-Type': 'application/json',
+        ...corsHeaders,
         'Set-Cookie': cookie
       }
     });
@@ -58,7 +71,20 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(context.request),
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 }

@@ -1,8 +1,19 @@
 // Rep Messages API - Get and send private messages between rep and admin
 // Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 // Demo messages data
 const DEMO_MESSAGES = [
@@ -74,6 +85,8 @@ async function verifyRepAuth(request, env, slug) {
 }
 
 export async function onRequestGet(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const { slug } = context.params;
@@ -88,7 +101,7 @@ export async function onRequestGet(context) {
         data: DEMO_MESSAGES,
         threadId: 'demo-thread-001'
       }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -100,7 +113,7 @@ export async function onRequestGet(context) {
         error: auth.error
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -112,7 +125,7 @@ export async function onRequestGet(context) {
         error: 'Rep not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -157,7 +170,7 @@ export async function onRequestGet(context) {
       data: results || [],
       threadId: thread.id
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Rep messages error:', error);
@@ -166,12 +179,14 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
+  const corsHeaders = getCorsHeaders(context.request);
+
   try {
     const db = context.env.DB;
     const { slug } = context.params;
@@ -184,7 +199,7 @@ export async function onRequestPost(context) {
         error: auth.error
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -196,7 +211,7 @@ export async function onRequestPost(context) {
         error: 'Rep not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -246,7 +261,7 @@ export async function onRequestPost(context) {
       success: true,
       data: message
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Send message error:', error);
@@ -255,7 +270,20 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(context.request),
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
 }
