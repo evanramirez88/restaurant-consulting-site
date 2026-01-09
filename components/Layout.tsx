@@ -74,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Right side */}
           <div className="flex items-center gap-3 text-sm ml-auto sm:ml-0">
-            <span className="text-amber-400 hidden md:inline">Emergency Support Available 24/7</span>
+            <span className="text-amber-400 hidden md:inline">Toast Support Available</span>
             <span className="text-gray-500 hidden md:inline">•</span>
             <a href={`tel:${PHONE_NUMBER}`} className="text-white hover:text-amber-400 transition-colors flex items-center gap-1.5">
               <Phone size={14} />
