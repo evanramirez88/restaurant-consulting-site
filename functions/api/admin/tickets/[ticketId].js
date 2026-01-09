@@ -2,19 +2,17 @@
 // GET /api/admin/tickets/:ticketId - Get ticket details
 // PUT /api/admin/tickets/:ticketId - Update ticket
 // DELETE /api/admin/tickets/:ticketId - Delete ticket
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   try {
     const { env, params } = context;
     const { ticketId } = params;
 
-    // Check admin auth
-    const authCookie = context.request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(context.request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const ticket = await env.DB.prepare(`
@@ -30,7 +28,7 @@ export async function onRequestGet(context) {
         error: 'Ticket not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -38,7 +36,7 @@ export async function onRequestGet(context) {
       success: true,
       data: ticket
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -47,7 +45,7 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
@@ -57,13 +55,10 @@ export async function onRequestPut(context) {
     const { env, request, params } = context;
     const { ticketId } = params;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const body = await request.json();
@@ -111,7 +106,7 @@ export async function onRequestPut(context) {
         error: 'No valid fields to update'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -134,7 +129,7 @@ export async function onRequestPut(context) {
       success: true,
       data: ticket
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -143,7 +138,7 @@ export async function onRequestPut(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
@@ -153,13 +148,10 @@ export async function onRequestDelete(context) {
     const { env, request, params } = context;
     const { ticketId } = params;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     await env.DB.prepare('DELETE FROM tickets WHERE id = ?').bind(ticketId).run();
@@ -168,7 +160,7 @@ export async function onRequestDelete(context) {
       success: true,
       message: 'Ticket deleted'
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -177,7 +169,11 @@ export async function onRequestDelete(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

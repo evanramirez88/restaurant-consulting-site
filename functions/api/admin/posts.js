@@ -1,6 +1,14 @@
 // Admin Posts API - List and Create (Toast Hub)
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
 
     const { results } = await db.prepare(`
@@ -12,7 +20,7 @@ export async function onRequestGet(context) {
       success: true,
       data: results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -20,13 +28,19 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const body = await context.request.json();
 
@@ -76,7 +90,7 @@ export async function onRequestPost(context) {
       success: true,
       data: post
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -84,7 +98,11 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

@@ -1,6 +1,14 @@
 // Admin Post API - Get, Update, Delete (Toast Hub)
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../_shared/auth.js';
+
 export async function onRequestGet(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
 
@@ -12,7 +20,7 @@ export async function onRequestGet(context) {
         error: 'Post not found'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -20,7 +28,7 @@ export async function onRequestGet(context) {
       success: true,
       data: post
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -28,13 +36,19 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPut(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
     const body = await context.request.json();
@@ -96,7 +110,7 @@ export async function onRequestPut(context) {
       success: true,
       data: post
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -104,13 +118,19 @@ export async function onRequestPut(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestDelete(context) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(context.request, context.env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
+    }
+
     const db = context.env.DB;
     const { id } = context.params;
 
@@ -119,7 +139,7 @@ export async function onRequestDelete(context) {
     return new Response(JSON.stringify({
       success: true
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
@@ -127,7 +147,11 @@ export async function onRequestDelete(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }

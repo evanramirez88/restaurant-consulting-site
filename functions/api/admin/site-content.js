@@ -1,18 +1,16 @@
 // Site Content Management API
 // GET: List all site content blocks
 // POST: Create or update content blocks
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   try {
     const { env } = context;
 
-    // Check admin auth
-    const authCookie = context.request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(context.request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const result = await env.DB.prepare(`
@@ -34,7 +32,7 @@ export async function onRequestGet(context) {
       data: result.results || [],
       grouped
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -43,7 +41,7 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
@@ -52,13 +50,10 @@ export async function onRequestPost(context) {
   try {
     const { env, request } = context;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const body = await request.json();
@@ -70,7 +65,7 @@ export async function onRequestPost(context) {
         error: 'Missing required fields: page, section, content_key'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -89,7 +84,7 @@ export async function onRequestPost(context) {
       success: true,
       data: { id, page, section, content_key, content_value, content_type }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -98,7 +93,7 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
@@ -107,13 +102,10 @@ export async function onRequestDelete(context) {
   try {
     const { env, request } = context;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Verify authentication
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error);
     }
 
     const body = await request.json();
@@ -125,14 +117,14 @@ export async function onRequestDelete(context) {
         error: 'Missing content ID'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
     await env.DB.prepare('DELETE FROM site_content WHERE id = ?').bind(id).run();
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -141,7 +133,11 @@ export async function onRequestDelete(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
 }
