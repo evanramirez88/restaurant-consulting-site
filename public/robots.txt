@@ -56,9 +56,19 @@ User-agent: *
 Allow: /
 Crawl-delay: 1
 
-# Block admin/API paths from all crawlers
-Disallow: /api/admin/
+# ============================================
+# PROTECTED PATHS - BLOCK FROM ALL CRAWLERS
+# Portals, proprietary tools, and admin areas
+# ============================================
 Disallow: /admin
+Disallow: /portal
+Disallow: /rep
+Disallow: /quote-builder
+Disallow: /menu-builder
+Disallow: /toast-automate
+Disallow: /api/admin/
+Disallow: /api/portal/
+Disallow: /api/rep/
 
 # Sitemap location
 Sitemap: https://ccrestaurantconsulting.com/sitemap.xml
