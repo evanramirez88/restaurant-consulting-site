@@ -9,6 +9,7 @@ interface FormData {
   businessName: string;
   email: string;
   phone: string;
+  address: string;
   service: string;
   message: string;
   website: string; // Honeypot field
@@ -31,6 +32,7 @@ const About: React.FC = () => {
     businessName: '',
     email: '',
     phone: '',
+    address: '',
     service: 'Toast POS',
     message: '',
     website: ''
@@ -325,6 +327,21 @@ const About: React.FC = () => {
                       placeholder="(508) 555-0123"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-900 mb-2">
+                    Restaurant Address
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                    placeholder="123 Main St, Provincetown, MA 02657"
+                  />
                 </div>
 
                 <div>
