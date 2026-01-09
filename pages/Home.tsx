@@ -76,7 +76,7 @@ const Home: React.FC = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 hero-fade-in hero-fade-in-delay-3">
             <Link
-              to="/about#contact"
+              to="/quote"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
@@ -88,7 +88,7 @@ const Home: React.FC = () => {
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all border-2 hover:bg-white hover:text-gray-900"
               style={{ backgroundColor: 'transparent', color: '#ffffff', borderColor: '#ffffff' }}
             >
-              Book a Free 15-Min Call
+              Book a Discovery Call
             </Link>
           </div>
 
