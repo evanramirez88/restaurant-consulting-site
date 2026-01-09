@@ -12,6 +12,8 @@
  * - DB: D1 database binding with login_attempts table
  */
 
+import { getCorsOrigin } from '../../_shared/auth.js';
+
 // Native JWT implementation using Web Crypto API
 async function signJWT(payload, secret) {
   const header = { alg: 'HS256', typ: 'JWT' };
@@ -45,13 +47,16 @@ const RATE_LIMIT_WINDOW = 60; // 1 minute in seconds
 const COOKIE_NAME = 'ccrc_admin_token';
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+// Dynamic CORS headers (uses allowed origins list)
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 /**
  * Hash a string using SHA-256
@@ -145,7 +150,7 @@ export async function onRequestPost(context) {
         error: 'Server configuration error'
       }), {
         status: 500,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -159,7 +164,7 @@ export async function onRequestPost(context) {
       }), {
         status: 429,
         headers: {
-          ...corsHeaders,
+          ...getCorsHeaders(request),
           'Retry-After': String(rateLimit.retryAfter)
         }
       });
@@ -173,7 +178,7 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({
         success: false,
         error: 'JSON parse failed: ' + (jsonError.message || String(jsonError))
-      }), { status: 400, headers: corsHeaders });
+      }), { status: 400, headers: getCorsHeaders(request) });
     }
 
     if (!data.password || typeof data.password !== 'string') {
@@ -182,7 +187,7 @@ export async function onRequestPost(context) {
         error: 'Password is required'
       }), {
         status: 400,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -197,7 +202,7 @@ export async function onRequestPost(context) {
         attemptsRemaining: rateLimit.remaining
       }), {
         status: 401,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -216,7 +221,7 @@ export async function onRequestPost(context) {
         error: 'JWT secret not configured'
       }), {
         status: 500,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -237,7 +242,7 @@ export async function onRequestPost(context) {
         error: 'JWT signing failed: ' + (jwtError.message || String(jwtError))
       }), {
         status: 500,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -247,7 +252,7 @@ export async function onRequestPost(context) {
         error: 'JWT token was not generated'
       }), {
         status: 500,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       });
     }
 
@@ -268,7 +273,7 @@ export async function onRequestPost(context) {
     }), {
       status: 200,
       headers: {
-        ...corsHeaders,
+        ...getCorsHeaders(request),
         'Set-Cookie': cookieValue
       }
     });
@@ -280,18 +285,20 @@ export async function onRequestPost(context) {
       error: 'An error occurred during login'
     }), {
       status: 500,
-      headers: corsHeaders
+      headers: getCorsHeaders(request)
     });
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });
