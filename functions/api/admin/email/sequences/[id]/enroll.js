@@ -24,6 +24,19 @@
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../../../../_shared/auth.js';
 
 /**
+ * Calculate delay in seconds from value and unit
+ */
+function calculateDelaySeconds(value, unit) {
+  switch (unit) {
+    case 'minutes': return value * 60;
+    case 'hours': return value * 60 * 60;
+    case 'days': return value * 60 * 60 * 24;
+    case 'weeks': return value * 60 * 60 * 24 * 7;
+    default: return value * 60 * 60; // Default to hours
+  }
+}
+
+/**
  * Build WHERE clause from filters
  */
 function buildFilterConditions(filters) {
@@ -94,16 +107,17 @@ async function getSubscriberIdsByEmails(db, emails) {
  */
 async function getSubscriberIdsFromSegment(db, segmentId) {
   // First check if it's a static or dynamic segment
-  const segment = await db.prepare('SELECT * FROM subscriber_segments WHERE id = ?').bind(segmentId).first();
+  // FIXED: Use email_segments table (not subscriber_segments)
+  const segment = await db.prepare('SELECT * FROM email_segments WHERE id = ?').bind(segmentId).first();
 
   if (!segment) {
     throw new Error('Segment not found');
   }
 
   if (segment.segment_type === 'static') {
-    // Get members from segment_members table
+    // Get members from email_segment_members table (not segment_members)
     const { results } = await db.prepare(`
-      SELECT subscriber_id FROM segment_members WHERE segment_id = ?
+      SELECT subscriber_id FROM email_segment_members WHERE segment_id = ?
     `).bind(segmentId).all();
 
     return (results || []).map(r => r.subscriber_id);
@@ -129,6 +143,28 @@ async function getSubscriberIdsFromSegment(db, segmentId) {
 }
 
 /**
+ * Allowed fields for segment queries (prevents SQL injection)
+ */
+const ALLOWED_SEGMENT_FIELDS = [
+  'email', 'first_name', 'last_name', 'company', 'phone',
+  'restaurant_name', 'restaurant_type', 'pos_system', 'pos_satisfaction',
+  'city', 'state', 'zip', 'geo_tier', 'timezone',
+  'source', 'source_detail', 'utm_source', 'utm_medium', 'utm_campaign',
+  'engagement_score', 'total_emails_sent', 'total_emails_opened',
+  'total_emails_clicked', 'status', 'lead_status', 'lead_score',
+  'created_at', 'updated_at'
+];
+
+/**
+ * Validate and sanitize field name for SQL query
+ */
+function validateFieldName(field) {
+  if (!field || typeof field !== 'string') return null;
+  const cleanField = field.toLowerCase().trim();
+  return ALLOWED_SEGMENT_FIELDS.includes(cleanField) ? cleanField : null;
+}
+
+/**
  * Build query from segment conditions
  */
 function buildSegmentQuery(query) {
@@ -147,43 +183,50 @@ function buildSegmentQuery(query) {
     for (const condition of group.conditions) {
       const { field, operator, value } = condition;
 
+      // Validate field name to prevent SQL injection
+      const validField = validateFieldName(field);
+      if (!validField) {
+        console.warn(`Invalid segment field rejected: ${field}`);
+        continue;
+      }
+
       switch (operator) {
         case 'equals':
-          conditionStrings.push(`${field} = ?`);
+          conditionStrings.push(`${validField} = ?`);
           params.push(value);
           break;
         case 'not_equals':
-          conditionStrings.push(`${field} != ?`);
+          conditionStrings.push(`${validField} != ?`);
           params.push(value);
           break;
         case 'contains':
-          conditionStrings.push(`${field} LIKE ?`);
+          conditionStrings.push(`${validField} LIKE ?`);
           params.push(`%${value}%`);
           break;
         case 'not_contains':
-          conditionStrings.push(`${field} NOT LIKE ?`);
+          conditionStrings.push(`${validField} NOT LIKE ?`);
           params.push(`%${value}%`);
           break;
         case 'greater_than':
-          conditionStrings.push(`${field} > ?`);
+          conditionStrings.push(`${validField} > ?`);
           params.push(value);
           break;
         case 'less_than':
-          conditionStrings.push(`${field} < ?`);
+          conditionStrings.push(`${validField} < ?`);
           params.push(value);
           break;
         case 'in_list':
           if (Array.isArray(value) && value.length > 0) {
             const placeholders = value.map(() => '?').join(',');
-            conditionStrings.push(`${field} IN (${placeholders})`);
+            conditionStrings.push(`${validField} IN (${placeholders})`);
             params.push(...value);
           }
           break;
         case 'is_empty':
-          conditionStrings.push(`(${field} IS NULL OR ${field} = '')`);
+          conditionStrings.push(`(${validField} IS NULL OR ${validField} = '')`);
           break;
         case 'is_not_empty':
-          conditionStrings.push(`${field} IS NOT NULL AND ${field} != ''`);
+          conditionStrings.push(`${validField} IS NOT NULL AND ${validField} != ''`);
           break;
       }
     }
@@ -217,12 +260,34 @@ async function getSubscriberIdsFromFilters(db, filters, limit = 10000) {
 
 /**
  * Process enrollment for subscribers
+ * CRITICAL: Uses subscriber_sequences table (not sequence_enrollments) to match email dispatcher
  */
 async function processEnrollment(db, enrollmentId, sequenceId, subscriberIds, excludeEnrolled) {
   const now = Math.floor(Date.now() / 1000);
   let successCount = 0;
   let errorCount = 0;
+  let skippedCount = 0;
   const errors = [];
+
+  // Get the first step of the sequence to set up the enrollment
+  const firstStep = await db.prepare(`
+    SELECT id, delay_value, delay_unit
+    FROM sequence_steps
+    WHERE sequence_id = ? AND step_number = 1 AND status = 'active'
+  `).bind(sequenceId).first();
+
+  if (!firstStep) {
+    throw new Error('Sequence has no active first step');
+  }
+
+  // Calculate when the first email should be sent
+  const delaySeconds = calculateDelaySeconds(firstStep.delay_value, firstStep.delay_unit);
+  const nextStepScheduledAt = now + delaySeconds;
+
+  // Get sequence A/B test config
+  const sequence = await db.prepare(`
+    SELECT ab_test_enabled, ab_test_split_percentage FROM email_sequences WHERE id = ?
+  `).bind(sequenceId).first();
 
   const batchSize = 50;
 
@@ -232,25 +297,38 @@ async function processEnrollment(db, enrollmentId, sequenceId, subscriberIds, ex
     for (const subscriberId of batch) {
       try {
         // Check if already enrolled (if excludeEnrolled is true)
+        // Uses subscriber_sequences - the table the dispatcher actually reads!
         if (excludeEnrolled) {
           const existing = await db.prepare(`
-            SELECT id FROM sequence_enrollments
-            WHERE subscriber_id = ? AND sequence_id = ? AND status IN ('active', 'paused')
+            SELECT id FROM subscriber_sequences
+            WHERE subscriber_id = ? AND sequence_id = ? AND status IN ('active', 'queued', 'paused')
           `).bind(subscriberId, sequenceId).first();
 
           if (existing) {
-            // Skip already enrolled
+            skippedCount++;
             continue;
           }
         }
 
-        // Create enrollment
+        // Assign A/B variant if A/B testing is enabled
+        let abVariant = null;
+        if (sequence?.ab_test_enabled) {
+          const splitPct = sequence.ab_test_split_percentage || 50;
+          abVariant = Math.random() * 100 < splitPct ? 'A' : 'B';
+        }
+
+        // Create enrollment in subscriber_sequences (the table dispatcher reads!)
         const enrollmentRecordId = crypto.randomUUID();
         await db.prepare(`
-          INSERT INTO sequence_enrollments (
-            id, subscriber_id, sequence_id, status, current_step, enrolled_at
-          ) VALUES (?, ?, ?, 'active', 1, ?)
-        `).bind(enrollmentRecordId, subscriberId, sequenceId, now).run();
+          INSERT INTO subscriber_sequences (
+            id, subscriber_id, sequence_id, current_step_id, current_step_number,
+            status, ab_variant, enrolled_at, started_at, next_step_scheduled_at,
+            emails_sent, emails_opened, emails_clicked, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, 1, 'active', ?, ?, ?, ?, 0, 0, 0, ?, ?)
+        `).bind(
+          enrollmentRecordId, subscriberId, sequenceId, firstStep.id,
+          abVariant, now, now, nextStepScheduledAt, now, now
+        ).run();
 
         successCount++;
       } catch (err) {

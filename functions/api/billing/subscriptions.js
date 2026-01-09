@@ -17,34 +17,13 @@ import {
   getLocationId,
   SUPPORT_PLAN_CATALOG_IDS
 } from '../_shared/square.js';
-
-// Support plan pricing (in cents for Square)
-// MUST match website pricing in pages/Services.tsx
-const SUPPORT_PLAN_PRICES = {
-  core: 35000,         // $350/month
-  professional: 50000, // $500/month
-  premium: 80000       // $800/month
-};
-
-// Quarterly prices (for reference)
-const SUPPORT_PLAN_QUARTERLY = {
-  core: 105000,        // $1,050/quarter
-  professional: 150000, // $1,500/quarter
-  premium: 240000      // $2,400/quarter
-};
-
-// Annual prepay (11 months - 1 month free)
-const SUPPORT_PLAN_ANNUAL = {
-  core: 385000,        // $3,850/year (saves $350)
-  professional: 550000, // $5,500/year (saves $500)
-  premium: 880000      // $8,800/year (saves $800)
-};
-
-const SUPPORT_PLAN_HOURS = {
-  core: 1.5,
-  professional: 3,
-  premium: 5
-};
+import {
+  SUPPORT_PLAN_PRICES_CENTS as SUPPORT_PLAN_PRICES,
+  SUPPORT_PLAN_HOURS,
+  SUPPORT_PLAN_TIERS,
+  isValidTier,
+  normalizeTier
+} from '../_shared/pricing.js';
 
 /**
  * GET /api/billing/subscriptions
@@ -181,10 +160,12 @@ export async function onRequestPost(context) {
       });
     }
 
-    if (!['core', 'professional', 'premium'].includes(tier)) {
+    // Normalize tier (handles legacy 'essential' -> 'core' mapping)
+    const validTier = normalizeTier(tier);
+    if (!validTier) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Invalid tier. Must be: core, professional, or premium'
+        error: `Invalid tier "${tier}". Must be: ${SUPPORT_PLAN_TIERS.join(', ')}`
       }), {
         status: 400,
         headers: corsHeaders
@@ -228,6 +209,9 @@ export async function onRequestPost(context) {
 
     let squareSubscriptionId = null;
 
+    // Track warnings for partial success scenarios
+    const warnings = [];
+
     // Ensure client has Square customer ID
     let squareCustomerId = client.square_customer_id;
     if (!squareCustomerId) {
@@ -239,12 +223,15 @@ export async function onRequestPost(context) {
         ).bind(squareCustomerId, client_id).run();
       } catch (squareError) {
         console.error('Failed to create Square customer:', squareError);
+        warnings.push(`Failed to create Square customer: ${squareError.message}`);
       }
     }
 
     // Create Square subscription if catalog IDs are configured
-    const planVariationId = SUPPORT_PLAN_CATALOG_IDS[tier];
-    if (planVariationId && squareCustomerId) {
+    const planVariationId = SUPPORT_PLAN_CATALOG_IDS[validTier];
+    if (!planVariationId) {
+      warnings.push('Square catalog not configured for this tier. Client will need manual invoicing.');
+    } else if (squareCustomerId) {
       try {
         const subscription = await createSubscription(env, {
           customerId: squareCustomerId,
@@ -255,8 +242,10 @@ export async function onRequestPost(context) {
         squareSubscriptionId = subscription.id;
       } catch (squareError) {
         console.error('Failed to create Square subscription:', squareError);
-        // Continue without Square - can be manually invoiced
+        warnings.push(`Square subscription failed: ${squareError.message}. Client will need manual invoicing.`);
       }
+    } else {
+      warnings.push('No Square customer ID. Subscription created locally only.');
     }
 
     // Update client record with subscription info
@@ -270,19 +259,21 @@ export async function onRequestPost(context) {
         square_subscription_id = ?,
         updated_at = unixepoch()
       WHERE id = ?
-    `).bind(tier, now, renewsAt, squareSubscriptionId, client_id).run();
+    `).bind(validTier, now, renewsAt, squareSubscriptionId, client_id).run();
 
     return new Response(JSON.stringify({
       success: true,
       data: {
-        tier: tier,
+        tier: validTier,
         status: 'active',
         started_at: now,
         renews_at: renewsAt,
         square_subscription_id: squareSubscriptionId,
-        price: SUPPORT_PLAN_PRICES[tier] / 100,
-        hours: SUPPORT_PLAN_HOURS[tier]
-      }
+        square_billing_active: !!squareSubscriptionId,
+        price: SUPPORT_PLAN_PRICES[validTier] / 100,
+        hours: SUPPORT_PLAN_HOURS[validTier]
+      },
+      warnings: warnings.length > 0 ? warnings : undefined
     }), {
       headers: corsHeaders
     });
