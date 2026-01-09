@@ -9,74 +9,53 @@
  */
 
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../_shared/auth.js';
 
 const COOKIE_NAME = 'ccrc_client_token';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
-/**
- * Parse cookies from request
- */
 function parseCookies(cookieHeader) {
   const cookies = {};
   if (!cookieHeader) return cookies;
-
   cookieHeader.split(';').forEach(cookie => {
     const [name, ...rest] = cookie.split('=');
     const value = rest.join('=').trim();
-    if (name) {
-      cookies[name.trim()] = value;
-    }
+    if (name) cookies[name.trim()] = value;
   });
-
   return cookies;
 }
 
-/**
- * Verify client authentication and return client ID
- */
-async function verifyClientAuth(request, env, slug) {
+async function verifyClientAuthWithSlug(request, env, slug) {
   const cookieHeader = request.headers.get('Cookie');
   const cookies = parseCookies(cookieHeader);
   const token = cookies[COOKIE_NAME];
 
-  if (!token) {
-    return { authenticated: false, error: 'No session' };
-  }
+  if (!token) return { authenticated: false, error: 'No session' };
 
   const jwtSecret = env.CLIENT_JWT_SECRET || env.JWT_SECRET;
-  if (!jwtSecret) {
-    return { authenticated: false, error: 'Server config error' };
-  }
+  if (!jwtSecret) return { authenticated: false, error: 'Server config error' };
 
   try {
     const isValid = await jwt.verify(token, jwtSecret);
-    if (!isValid) {
-      return { authenticated: false, error: 'Invalid session' };
-    }
+    if (!isValid) return { authenticated: false, error: 'Invalid session' };
 
     const { payload } = jwt.decode(token);
-
-    // Verify the client matches the slug
     const db = env.DB;
     const client = await db.prepare('SELECT id, slug, google_drive_folder_id FROM clients WHERE id = ?')
-      .bind(payload.clientId)
-      .first();
+      .bind(payload.clientId).first();
 
-    if (!client || client.slug !== slug) {
-      return { authenticated: false, error: 'Unauthorized' };
-    }
+    if (!client || client.slug !== slug) return { authenticated: false, error: 'Unauthorized' };
 
-    return {
-      authenticated: true,
-      clientId: payload.clientId,
-      googleDriveFolderId: client.google_drive_folder_id
-    };
+    return { authenticated: true, clientId: payload.clientId, googleDriveFolderId: client.google_drive_folder_id };
   } catch (error) {
     return { authenticated: false, error: 'Session error' };
   }
@@ -85,6 +64,7 @@ async function verifyClientAuth(request, env, slug) {
 export async function onRequestGet(context) {
   const { request, params, env } = context;
   const { slug } = params;
+  const corsHeaders = getCorsHeaders(request);
 
   if (!slug) {
     return new Response(JSON.stringify({
@@ -97,7 +77,7 @@ export async function onRequestGet(context) {
   }
 
   // Verify authentication
-  const auth = await verifyClientAuth(request, env, slug);
+  const auth = await verifyClientAuthWithSlug(request, env, slug);
   if (!auth.authenticated) {
     return new Response(JSON.stringify({
       success: false,
@@ -189,13 +169,15 @@ export async function onRequestGet(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

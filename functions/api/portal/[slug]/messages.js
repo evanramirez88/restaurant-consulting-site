@@ -9,6 +9,7 @@
  */
 
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import { getCorsOrigin } from '../../../_shared/auth.js';
 
 const COOKIE_NAME = 'ccrc_client_token';
 
@@ -36,12 +37,15 @@ const DEMO_MESSAGES = [
   }
 ];
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 /**
  * Parse cookies from request
@@ -112,6 +116,7 @@ async function verifyClientAuth(request, env, slug) {
 export async function onRequestGet(context) {
   const { request, params, env } = context;
   const { slug } = params;
+  const corsHeaders = getCorsHeaders(request);
 
   if (!slug) {
     return new Response(JSON.stringify({
@@ -200,6 +205,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { request, params, env } = context;
   const { slug } = params;
+  const corsHeaders = getCorsHeaders(request);
 
   if (!slug) {
     return new Response(JSON.stringify({
@@ -303,13 +309,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });
