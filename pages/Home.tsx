@@ -76,11 +76,11 @@ const Home: React.FC = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 hero-fade-in hero-fade-in-delay-3">
             <Link
-              to="/quote"
+              to="/about#contact"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:opacity-90"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
-              Get a Quote in 2 Minutes
+              Get a Quote
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link
