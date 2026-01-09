@@ -8,12 +8,18 @@
  * calculated prices without exposing the underlying formulas.
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+import { getCorsOrigin } from '../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 // ============================================
 // PROPRIETARY PRICING DATA (SERVER-SIDE ONLY)
@@ -212,7 +218,20 @@ function calculateQuote(config) {
 // ============================================
 
 export async function onRequestPost(context) {
-  const { request } = context;
+  const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
+
+  // Rate limiting - 30 calculations per minute per IP
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'quote-calculate',
+    RATE_LIMITS.API_WRITE,
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   try {
     const config = await request.json();
@@ -222,6 +241,29 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid request body'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    // Validate payload size to prevent abuse
+    const floors = config.floors || [];
+    if (floors.length > 20) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Too many floors. Maximum 20 allowed.'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    const totalStations = floors.reduce((sum, f) => sum + (f.stations?.length || 0), 0);
+    if (totalStations > 100) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Too many stations. Maximum 100 allowed.'
       }), {
         status: 400,
         headers: corsHeaders
@@ -251,13 +293,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

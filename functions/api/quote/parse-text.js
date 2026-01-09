@@ -11,12 +11,21 @@
  * - Toast rep information
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+import { getCorsOrigin } from '../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
+
+// Maximum text input size (100KB should be plenty for PDF text)
+const MAX_TEXT_LENGTH = 100000;
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 // ============================================
 // HARDWARE MAPPING
@@ -676,6 +685,19 @@ function normalizeAiResponse(aiData) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
+
+  // Rate limiting - 10 parses per minute per IP (uses AI which has costs)
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'quote-parse-text',
+    RATE_LIMITS.API_WRITE, // 30/min but AI is expensive so this is reasonable
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   try {
     const body = await request.json();
@@ -685,6 +707,17 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Missing or invalid text content'
+      }), {
+        status: 400,
+        headers: corsHeaders
+      });
+    }
+
+    // Validate text size to prevent abuse
+    if (text.length > MAX_TEXT_LENGTH) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Text too large. Maximum ${MAX_TEXT_LENGTH} characters allowed.`
       }), {
         status: 400,
         headers: corsHeaders
@@ -789,13 +822,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

@@ -7,12 +7,18 @@
  * creates a quote import job record in D1 for processing.
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json'
-};
+import { getCorsOrigin } from '../../_shared/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
+
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
 // Only allow PDF files for Toast quotes
 const ALLOWED_TYPES = {
@@ -45,6 +51,19 @@ function validateFile(contentType, size) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
+
+  // Rate limiting - 10 uploads per 5 minutes per IP
+  const rateLimitResponse = await rateLimit(
+    request,
+    env.RATE_LIMIT_KV,
+    'quote-upload',
+    RATE_LIMITS.QUOTE_FORM,
+    corsHeaders
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   try {
     // Parse multipart form data
@@ -59,24 +78,7 @@ export async function onRequestPost(context) {
       // Store demo job in DB if available
       if (env.DB) {
         try {
-          await env.DB.prepare(`
-            CREATE TABLE IF NOT EXISTS quote_import_jobs (
-              id TEXT PRIMARY KEY,
-              status TEXT NOT NULL DEFAULT 'uploaded',
-              file_key TEXT NOT NULL,
-              file_name TEXT,
-              file_type TEXT,
-              file_size INTEGER,
-              ocr_result_json TEXT,
-              extracted_items_json TEXT,
-              error_message TEXT,
-              processing_started_at INTEGER,
-              processing_completed_at INTEGER,
-              created_at INTEGER DEFAULT (unixepoch()),
-              updated_at INTEGER DEFAULT (unixepoch())
-            )
-          `).run();
-
+          // Table should exist from migrations - just insert
           await env.DB.prepare(`
             INSERT INTO quote_import_jobs (id, status, file_key, file_name, file_type, file_size, created_at, updated_at)
             VALUES (?, 'uploaded', ?, ?, ?, ?, unixepoch(), unixepoch())
@@ -151,25 +153,7 @@ export async function onRequestPost(context) {
     // Create job record in D1
     if (env.DB) {
       try {
-        // Ensure quote_import_jobs table exists
-        await env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS quote_import_jobs (
-            id TEXT PRIMARY KEY,
-            status TEXT NOT NULL DEFAULT 'uploaded',
-            file_key TEXT NOT NULL,
-            file_name TEXT,
-            file_type TEXT,
-            file_size INTEGER,
-            ocr_result_json TEXT,
-            extracted_items_json TEXT,
-            error_message TEXT,
-            processing_started_at INTEGER,
-            processing_completed_at INTEGER,
-            created_at INTEGER DEFAULT (unixepoch()),
-            updated_at INTEGER DEFAULT (unixepoch())
-          )
-        `).run();
-
+        // Table exists from migration 0005_quote_import.sql
         await env.DB.prepare(`
           INSERT INTO quote_import_jobs (id, status, file_key, file_name, file_type, file_size, created_at, updated_at)
           VALUES (?, 'uploaded', ?, ?, ?, ?, unixepoch(), unixepoch())
@@ -213,13 +197,15 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
+  const { request } = context;
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
     }
   });

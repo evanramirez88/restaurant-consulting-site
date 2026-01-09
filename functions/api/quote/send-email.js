@@ -62,24 +62,7 @@ export async function onRequestPost(context) {
 
     const db = context.env.DB;
 
-    // Ensure table exists
-    await db.prepare(`
-      CREATE TABLE IF NOT EXISTS quote_requests (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        restaurant_name TEXT,
-        phone TEXT,
-        quote_data TEXT,
-        locations_data TEXT,
-        estimate_data TEXT,
-        status TEXT DEFAULT 'pending',
-        notes TEXT,
-        created_at INTEGER DEFAULT (unixepoch()),
-        updated_at INTEGER DEFAULT (unixepoch())
-      )
-    `).run();
-
+    // Table exists from migration 0017_quote_requests.sql
     const id = crypto.randomUUID();
     const now = Math.floor(Date.now() / 1000);
 
