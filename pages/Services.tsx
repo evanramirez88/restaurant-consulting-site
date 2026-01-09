@@ -269,9 +269,6 @@ const Services: React.FC = () => {
               <h2 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">Toast Guardian</h2>
             </div>
             <div className="brass-line-draw short mb-6" />
-            <p className="text-amber-600 text-xl sm:text-2xl font-semibold mb-4">
-              Never get caught off guard again
-            </p>
             <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
               When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone.
               Toast Guardian provides reliable support plans built for Cape Cod restaurants.
@@ -486,7 +483,7 @@ const Services: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ready to protect your restaurant?</h2>
             <div className="brass-line-draw short mb-4" />
             <p className="text-gray-300 mb-6 text-sm sm:text-base">
-              Let's discuss which Toast Guardian plan is right for your operation.
+              Let's discuss which plan is right for your operation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

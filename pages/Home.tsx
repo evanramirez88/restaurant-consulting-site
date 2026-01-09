@@ -208,7 +208,7 @@ const Home: React.FC = () => {
               REAL RESULTS
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Recent Client Success Stories
+              Client Success Stories
             </h2>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 text-lg">
@@ -270,7 +270,7 @@ const Home: React.FC = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Menu Architecture</span>
-                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Pizza & Ice Cream Shop — Westport</h3>
+                  <h3 className="font-display text-xl font-bold text-gray-900 mt-2">Village Pizza & Ice Cream — Westport</h3>
                 </div>
               </div>
               <div className="space-y-3 text-sm text-gray-600">
@@ -367,7 +367,7 @@ const Home: React.FC = () => {
                   <span className="font-semibold text-gray-900">Upserve: Supported</span>
                 </div>
                 <p className="text-xs text-gray-600 mt-4 italic">
-                  Platform-agnostic consulting—I'll tell you when switching isn't the right move.
+                  Platform-agnostic consulting—we'll tell you when switching isn't the right move.
                 </p>
               </div>
             </div>

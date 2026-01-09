@@ -145,7 +145,6 @@ const Contact: React.FC = () => {
                 <div>
                   <p className="font-bold text-gray-900 inline">Phone</p>
                   <a href={`tel:${PHONE_NUMBER}`} className="text-orange-600 font-semibold hover:text-orange-700 transition-colors block">{PHONE_NUMBER}</a>
-                  <p className="text-xs text-gray-500 mt-1">Direct line. If we don't answer, we're likely on a job site.</p>
                 </div>
               </div>
 
@@ -241,7 +240,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <label htmlFor="businessName" className="block text-sm font-medium text-gray-900 mb-2">
-                    Restaurant Name
+                    Location or Group Name
                   </label>
                   <input
                     type="text"

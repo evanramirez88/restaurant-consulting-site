@@ -81,8 +81,7 @@ const Schedule: React.FC = () => {
                 <h3 className="font-semibold text-gray-900">Flexible Hours</h3>
               </div>
               <p className="text-gray-600 text-sm">
-                60% of our meetings happen in the evening because that's when you're available.
-                We work around your service schedule.
+                We work around your schedule, with most of our meetings taking place in the evening to accommodate service hours.
               </p>
             </div>
 

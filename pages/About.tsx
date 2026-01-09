@@ -128,32 +128,20 @@ const About: React.FC = () => {
       {/* About Content Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="prose prose-lg mx-auto animate-on-scroll">
-          <p className="lead text-xl text-gray-900 font-bold mb-8">
-            I didn't start in IT. I started in kitchens.
+          <p className="mb-6 text-gray-600">
+            I didn't start in IT; I started in kitchens, working every restaurant position from dishwasher to manager. I know the panic when your KDS or online ordering fails during a rush.
           </p>
 
           <p className="mb-6 text-gray-600">
-            I've worked every position in a restaurant—from dishwasher scrubbing pans at midnight to floor manager dealing with a Friday rush and a broken POS. I know what it's like when your KDS goes down an hour before the dinner push. I know the panic when your online ordering stops working on a Saturday night. I've lived it.
-          </p>
-
-          <p className="mb-6 font-bold text-gray-900">
-            That's why I do this work differently.
+            That experience shapes how I work. A typical IT vendor sees specs; I see your operation. I know you can't stop for maintenance and need technical problems explained clearly amidst fifty other issues. I know the difference between "fixed" and "fixed right." I became the bridge: fluent in both restaurant and tech.
           </p>
 
           <p className="mb-6 text-gray-600">
-            When a typical IT vendor shows up, they see network configurations and hardware specs. When I show up, I see your operation. I know you can't shut down for 'standard maintenance windows.' I know you need someone who can explain technical problems in plain English while you're managing fifty other fires. I know the difference between 'fixed' and 'fixed right.'
-          </p>
-
-          <div className="my-10 border-l-4 border-amber-500 pl-6 py-4 italic text-gray-700 bg-gray-50 rounded-r-lg">
-            "I became the bridge. Someone who speaks fluent restaurant AND fluent tech."
-          </div>
-
-          <p className="mb-6 text-gray-600">
-            After years in restaurants, I specialized in Toast POS—not because it was trendy, but because I saw how much restaurants struggled with vendors who didn't understand their world.
+            After years in the industry, I specialized in Toast POS because I saw restaurants struggling with vendors who didn't understand their world.
           </p>
 
           <p className="mb-12 text-gray-600">
-            Now I work with independent restaurants and small groups across New England. I install systems, fix networks, optimize operations, and show up when things go sideways—evenings, weekends, whenever you need me. Because I remember what it was like to be on your side of the phone at 11 PM on a Friday.
+            Now, I support independent restaurants and small groups across New England. I install systems, fix networks, optimize operations, and provide emergency support—evenings, weekends, whenever. Because I remember being on your side of that 11 PM Friday call.
           </p>
 
           <hr className="my-12 border-gray-200" />
@@ -199,8 +187,7 @@ const About: React.FC = () => {
                   <div>
                     <p className="font-bold text-gray-900 inline">Phone</p>
                     <a href={`tel:${PHONE_NUMBER}`} className="text-orange-600 font-semibold hover:text-orange-700 transition-colors block">{PHONE_NUMBER}</a>
-                    <p className="text-xs text-gray-500 mt-1">Direct line. If we don't answer, we're likely on a job site.</p>
-                  </div>
+                                      </div>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -294,7 +281,7 @@ const About: React.FC = () => {
                   </div>
                   <div>
                     <label htmlFor="businessName" className="block text-sm font-medium text-gray-900 mb-2">
-                      Restaurant Name
+                      Location or Group Name
                     </label>
                     <input
                       type="text"
