@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ShieldCheck, Terminal, BookOpen, Clock, Activity, Shield, X } from 'lucide-react';
+import { Check, ShieldCheck, Terminal, BookOpen, Clock, Activity, Shield, X, ArrowRightLeft, KeyRound } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
 // Combined FAQ data for SEO schema
@@ -159,6 +159,81 @@ const Services: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+        {/* ======================== */}
+        {/* SEGMENT CALLOUTS */}
+        {/* ======================== */}
+        <div className="grid md:grid-cols-2 gap-6 mb-12">
+          {/* Segment A - POS Switchers */}
+          <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6 animate-on-scroll">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <ArrowRightLeft className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-display text-xl font-bold text-gray-900">Switching from Clover or Square?</h3>
+            </div>
+            <p className="text-gray-700 mb-4">
+              Menu builds that take Toast corporate 3 weeks? I deliver in 48 hours. I migrate your menu data so you do not have to re-type it, and I handle the configuration based on your actual workflow.
+            </p>
+            <ul className="space-y-2 mb-5 text-sm text-gray-600">
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                <span>Zero-downtime migration planning</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                <span>Menu and modifier data transfer</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                <span>Staff training before go-live</span>
+              </li>
+            </ul>
+            <Link
+              to="/schedule"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
+              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
+            >
+              Get a Switch Readiness Audit
+              <span className="text-lg">→</span>
+            </Link>
+          </div>
+
+          {/* Segment C - Transitions */}
+          <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-6 animate-on-scroll">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-violet-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <KeyRound className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-display text-xl font-bold text-gray-900">Taking Over a Restaurant?</h3>
+            </div>
+            <p className="text-gray-700 mb-4">
+              Restaurant transitions fail when the tech handoff is fuzzy. I map ownership changes into a zero-downtime checklist: credentials, accounts, training, and vendor handoffs all covered.
+            </p>
+            <ul className="space-y-2 mb-5 text-sm text-gray-600">
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                <span>Full system and credential audit</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                <span>Overnight cutover execution</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
+                <span>Day-one on-site support</span>
+              </li>
+            </ul>
+            <Link
+              to="/schedule"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
+              style={{ backgroundColor: '#7c3aed', color: '#ffffff' }}
+            >
+              Schedule Transition Consultation
+              <span className="text-lg">→</span>
+            </Link>
+          </div>
+        </div>
+
         {/* ======================== */}
         {/* SERVICES SECTION */}
         {/* ======================== */}

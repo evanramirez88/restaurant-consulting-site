@@ -532,7 +532,7 @@ const LocalNetworking: React.FC = () => {
             <div className="brass-line-draw short mb-6" />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 animate-on-scroll">
               <div className="w-12 h-12 bg-primary-dark rounded-full flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6 text-white" />
@@ -558,7 +558,17 @@ const LocalNetworking: React.FC = () => {
               <div className="w-12 h-12 bg-primary-dark rounded-full flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">The City</h3>
+              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Southeastern MA</h3>
+              <p className="text-gray-600">
+                Fall River, New Bedford & surrounding areas
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 animate-on-scroll" style={{ animationDelay: '300ms' }}>
+              <div className="w-12 h-12 bg-primary-dark rounded-full flex items-center justify-center mb-4">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-display text-xl font-bold text-gray-900 mb-2">Providence Area</h3>
               <p className="text-gray-600">
                 Providence, RI & surrounding areas
               </p>
