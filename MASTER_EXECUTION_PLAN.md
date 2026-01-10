@@ -1157,6 +1157,181 @@ CREATE TABLE station_templates (
 ---
 
 **Plan Created:** 2026-01-07
-**Last Updated:** 2026-01-09 (Go-Live + Platform Consolidation Sections Added)
-**Status:** ACTIVE - Go-Live Phase Initiated, Platform Analysis Complete
-**Next Action:** HUMAN to create Square subscription plans, then platform consolidation begins
+**Last Updated:** 2026-01-10 (Phase Z Sales & Marketing Blueprint COMPLETE)
+**Status:** ACTIVE - Lead Import Infrastructure Ready
+**Next Action:** Run lead imports, configure PandaDocs, enable subscriptions
+
+---
+
+## PHASE Z: SALES & MARKETING BLUEPRINT EXECUTION (COMPLETE)
+
+**Completed:** 2026-01-10
+**Reference:** `G:\My Drive\RG OPS\70_LEADS\RG_Sales_Marketing_Blueprint_v2.md`
+
+### Overview
+
+4-Phase execution of lead segmentation and outreach infrastructure:
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 1** | Email Sequences (D1) | ✅ COMPLETE |
+| **Phase 2** | Website Content | ✅ COMPLETE |
+| **Phase 3** | HubSpot Properties | ✅ COMPLETE |
+| **Phase 4** | Lead Import Script | ✅ COMPLETE |
+
+---
+
+### PHASE Z.1: Email Sequences (D1 Database)
+
+**Files Created:**
+- `migrations/0019_segment_email_sequences.sql` - 3 new sequences
+- `scripts/deploy_sequences.cjs` - Deployment helper
+
+**Sequences Deployed:**
+
+| Sequence ID | Name | Emails | Days | Target Segment |
+|-------------|------|--------|------|----------------|
+| `seq_pos_switcher_001` | POS Switcher Outreach | 4 | 15 | Segment A (Clover/Square) |
+| `seq_transition_001` | Ownership Transition | 4 | 14 | Segment C (New Owners) |
+| `seq_local_network_001` | Local Network Outreach | 4 | 14 | Segment D (Cape Cod/SE MA) |
+
+**Email Step Structure:**
+
+| Step | Segment A Theme | Segment C Theme | Segment D Theme |
+|------|-----------------|-----------------|-----------------|
+| 1 | Switch Anxiety Intro | Systems Gap Intro | Local Intro |
+| 2 | Outage Insurance | Horror Story Prevention | Kitchen Environment |
+| 3 | Speed Differentiator | Zero Downtime Promise | Local Case Study |
+| 4 | Breakup Email | Breakup Email | Breakup Email |
+
+**Total in D1:** 8 sequences, 22 email steps
+
+---
+
+### PHASE Z.2: Website Content Updates
+
+**Files Modified:**
+
+**`pages/Services.tsx`:**
+- Added Segment A callout card (POS Switchers - orange theme)
+  - "Switching from Clover or Square?" messaging
+  - 48-hour menu build promise
+  - "Get a Switch Readiness Audit" CTA
+- Added Segment C callout card (Transitions - violet theme)
+  - "Taking Over a Restaurant?" messaging
+  - Zero-downtime checklist promise
+  - "Schedule Transition Consultation" CTA
+
+**`pages/LocalNetworking.tsx`:**
+- Expanded service area grid from 3 to 4 columns
+- Added "Southeastern MA" card (Fall River, New Bedford)
+- Added "Providence Area" card
+
+---
+
+### PHASE Z.3: HubSpot Custom Properties
+
+**Script:** `scripts/setup_hubspot_properties.cjs`
+
+**8 Properties Created (verified via API):**
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `rg_segment` | Enumeration | A/B/C/D segment classification |
+| `rg_door` | Enumeration | National Remote / Local Regional |
+| `rg_current_pos` | Enumeration | Toast/Clover/Square/Lightspeed/etc. |
+| `rg_urgency_window` | Enumeration | Now / 30-60 days / 90+ days |
+| `rg_ownership_change` | Enumeration | Yes / No / Unknown |
+| `rg_primary_pain` | Enumeration | Migration/Support/Menu/Network/Transition |
+| `rg_lead_score` | Number | 0-100 calculated score |
+| `rg_source_file` | String | Original BuiltWith CSV filename |
+
+**Cloudflare Environment Variable:** Updated with new HubSpot token (2026-01-10)
+
+---
+
+### PHASE Z.4: Lead Import Infrastructure
+
+**Script:** `scripts/import_leads.cjs`
+
+**Features:**
+- Parses BuiltWith CSV format (handles compliance notice, quoted fields)
+- Scores leads 0-100 based on:
+  - Revenue potential (25 pts)
+  - Employee count (15 pts)
+  - Email presence (15 pts)
+  - Phone presence (10 pts)
+  - Company name (10 pts)
+  - Geographic fit (15 pts for Segment D)
+  - Website presence (10 pts)
+- Assigns segment configuration (sequence ID, door, primary pain)
+- Geographic filtering for Segment D (Cape Cod + SE MA)
+- Dry run mode for testing
+- Batch insertion with progress reporting
+
+**Usage:**
+```bash
+# Dry run to preview
+node scripts/import_leads.cjs "path/to/file.csv" A --dry-run
+
+# Import with limit
+node scripts/import_leads.cjs "path/to/file.csv" B --limit 100
+
+# Full import
+node scripts/import_leads.cjs "path/to/file.csv" A
+```
+
+**Segment Configuration:**
+
+| Segment | Name | Sequence ID | Door | Primary Pain |
+|---------|------|-------------|------|--------------|
+| A | POS Switcher | seq_pos_switcher_001 | national_remote | migration |
+| B | Toast Optimizer | seq_toast_support_001 | national_remote | support |
+| C | Transition | seq_transition_001 | national_remote | transition |
+| D | Local Network | seq_local_network_001 | local_regional | network |
+
+---
+
+### REMAINING WORK (Post-Phase Z)
+
+| Category | Task | Priority | Owner |
+|----------|------|----------|-------|
+| **Lead Import** | Run imports for Segment A/B leads | HIGH | Claude |
+| **Website Text** | Minor copy improvements | MEDIUM | Claude |
+| **Contracts** | Set up PandaDoc templates | HIGH | Human |
+| **Subscriptions** | Create Square subscription catalog IDs | HIGH | Human |
+| **Email Bodies** | Populate sequence step body_html_a | MEDIUM | Human/Claude |
+
+---
+
+### LEAD IMPORT PRIORITY ORDER
+
+| Batch | File | Segment | Count | Priority |
+|-------|------|---------|-------|----------|
+| 1 | Toast-POS-websites-filter-Upcoming-implementations.csv | B | ~1,600 | HIGHEST |
+| 2 | All-Live-Toast-POS-WebSites.csv | B | ~15,000 | HIGH |
+| 3 | All-Live-Clover-WebSites.csv | A | ~10,000 | HIGH |
+| 4 | All-Live-Square-Point-of-Sale-WebSites.csv | A | ~8,000 | MEDIUM |
+| 5 | MA/RI geographic filter | D | Varies | MEDIUM |
+
+---
+
+### SESSION SUMMARY (2026-01-10)
+
+**Completed Tasks:**
+1. ✅ Created 3 email sequences with 12 steps in D1
+2. ✅ Added segment callout cards to Services.tsx
+3. ✅ Added SE MA + Providence to LocalNetworking.tsx
+4. ✅ Created 8 HubSpot custom properties via API
+5. ✅ Built lead import script with scoring logic
+6. ✅ Updated Cloudflare HUBSPOT_API_KEY env var
+7. ✅ All changes committed and deployed
+
+**Git Commits:**
+- `6e9b255`: feat: add lead import and HubSpot setup scripts
+
+**Infrastructure Status:**
+- D1 Database: 8 sequences, 22 steps
+- HubSpot: 8 custom properties, 614+ contacts
+- Cloudflare: All env vars current
+- Website: Live at ccrestaurantconsulting.com

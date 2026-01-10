@@ -1,32 +1,105 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** 2026-01-07 09:00 EST
-**Goal:** $400K by May 1, 2026 (116 days remaining)
+**Last Updated:** 2026-01-10 06:30 EST
+**Goal:** $400K by May 1, 2026 (111 days remaining)
 
 ---
 
-## AI-LED DEVELOPMENT (In Progress)
+## ✅ COMPLETED: Sales & Marketing Blueprint (2026-01-10)
 
-**See:** `AI_EXECUTION_PLAN.md` for full details
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | Email Sequences in D1 | ✅ 3 sequences, 12 steps |
+| Phase 2 | Website Segment Callouts | ✅ Services + LocalNetworking |
+| Phase 3 | HubSpot Custom Properties | ✅ 8 properties created |
+| Phase 4 | Lead Import Script | ✅ Ready to run |
 
-The following critical development work will be completed by AI agents in **5-6 days** (compressed from 13-17 days):
+**Scripts Created:**
+- `scripts/import_leads.cjs` - BuiltWith CSV parser + D1 importer
+- `scripts/setup_hubspot_properties.cjs` - HubSpot property setup
+- `scripts/deploy_sequences.cjs` - Email step deployment helper
 
-| Component | AI Agent Responsibility | Human Action |
-|-----------|------------------------|--------------|
-| Email Admin UI | Build all 10 components + 30 API endpoints | Review & approve |
-| Quote Builder Fixes | Move hardcoded contacts to env vars | None |
-| Menu Builder Auth | Add JWT verification | None |
-| Invoice Generation | Complete Square integration | None |
-| PDF Processing | Complete OCR for Quote/Menu builders | Test with real PDFs |
+---
 
-**Estimated AI Completion:** 5-6 days with 4 parallel agents
+## IMMEDIATE HUMAN TASKS (Priority Order)
 
-### What Humans Still Need to Do
+### 1. Square Subscription Catalog IDs (BLOCKING)
 
-1. **Review AI-built components** - Approve before production deploy
-2. **Test with real data** - Run email sequences with subset of leads
-3. **Configure HubSpot sequences** - Create actual sequences in HubSpot UI
-4. **Monitor first campaign** - Watch metrics, adjust copy if needed
+**Status:** ❌ REQUIRED FOR AUTOMATED BILLING
+**Location:** https://squareup.com/dashboard/items
+
+Create these subscription plans in Square Dashboard:
+
+| Plan | Monthly | Annual | Location |
+|------|---------|--------|----------|
+| Toast Guardian Core | $350 | $3,850 | LB8GE5HYZJYB7 |
+| Toast Guardian Professional | $500 | $5,500 | LB8GE5HYZJYB7 |
+| Toast Guardian Premium | $800 | $8,800 | LB8GE5HYZJYB7 |
+
+**After creation:** Provide catalog IDs to Claude for code update in `functions/api/_shared/square.js`
+
+---
+
+### 2. PandaDoc Contract Templates
+
+**Status:** ⏳ PENDING
+**Location:** https://app.pandadoc.com/
+
+Create templates for:
+- Support Plan Agreement (Core/Professional/Premium)
+- Menu Build SOW
+- Implementation Agreement
+- NDA (for Toast credentials)
+
+---
+
+### 3. Cal.com Availability
+
+**Status:** ⚠️ VERIFY CURRENT
+**Location:** https://app.cal.com/settings/my-account/availability
+
+Ensure availability matches your schedule:
+- Evening hours (7pm-10pm)
+- Weekend slots if desired
+- Buffer times between calls
+
+---
+
+### 4. Domain Nameserver Updates (Low Priority)
+
+**Status:** ⏳ PENDING (not blocking)
+
+Update NS at Squarespace for:
+| Domain | Change NS To |
+|--------|--------------|
+| thewanderinbartender.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
+| toastspecialist.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
+| thewanderingardener.com | adel.ns.cloudflare.com, simon.ns.cloudflare.com |
+
+---
+
+## AI READY TASKS (Claude Can Execute)
+
+### Lead Import (Ready Now)
+
+```bash
+# Start with Toast upcoming implementations (highest priority)
+node scripts/import_leads.cjs "G:\My Drive\RG OPS\70_LEADS\71_BUILTWITH_LEADS\Toast-POS-websites-filter-Upcoming-implementations.csv" B --limit 100
+
+# Clover switchers
+node scripts/import_leads.cjs "G:\My Drive\RG OPS\70_LEADS\71_BUILTWITH_LEADS\All-Live-Clover-WebSites.csv" A --limit 100
+```
+
+### Website Text Updates
+
+Minor copy improvements can be made to:
+- Hero section messaging
+- Service descriptions
+- CTA button text
+
+### Email Body Content
+
+Populate `body_html_a` for sequence steps (currently placeholder text)
 
 ---
 
