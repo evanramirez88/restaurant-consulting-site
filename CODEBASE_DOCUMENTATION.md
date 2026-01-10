@@ -1,9 +1,23 @@
 # Codebase Documentation
 ## R&G Consulting - Restaurant Consulting Website
 
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-09
 **Completion:** 92% Production Ready
 **Repository:** https://github.com/evanramirez88/restaurant-consulting-site
+
+---
+
+## RELATED PLATFORM COMPONENTS
+
+This website is part of a larger automation platform. Related components:
+
+| Component | Location | Status | Integration |
+|-----------|----------|--------|-------------|
+| **TOAST-ABO** | `PLATFORM/80_AUTOMATION/TOAST-ABO/` | 60% standalone | Menu extraction, to be consolidated |
+| **Quote Building** | `PLATFORM/80_AUTOMATION/QUOTE_BUILDING/` | 80% frontend | Costing model, to be consolidated |
+| **Toast_Hub** | `PLATFORM/80_AUTOMATION/Toast_Hub/` | Placeholder | Planned integration hub |
+
+See **PLATFORM_INTEGRATION_PLAN.md** for consolidation strategy.
 
 ---
 
