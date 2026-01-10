@@ -531,6 +531,632 @@ v=spf1 include:_spf.google.com include:XXXXXX.spf03.hubspotemail.net include:res
 
 ---
 
+---
+
+## PHASE X: MISSION-CRITICAL GO-LIVE (THIS WEEK)
+
+**Added:** 2026-01-09
+**Mission:** ENROLL COLD LEADS → ANNUAL SUPPORT PLANS → CAPTURE PAYMENT
+**Target:** Go live by January 12, 2026
+
+---
+
+### CRITICAL PATH: COLD LEAD TO PAYMENT
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MISSION-CRITICAL FLOW                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. COLD OUTREACH          2. LANDING PAGE         3. LEAD CAPTURE         │
+│  ┌─────────────┐           ┌─────────────┐         ┌─────────────┐         │
+│  │ HubSpot     │  ──────►  │ Website     │  ────►  │ Contact     │         │
+│  │ Sequences   │           │ (LIVE ✅)   │         │ Form ✅     │         │
+│  │ ⚠️ NOT DONE │           │             │         │             │         │
+│  └─────────────┘           └─────────────┘         └─────────────┘         │
+│                                                           │                 │
+│                                                           ▼                 │
+│  4. DISCOVERY CALL         5. PROPOSAL              6. ENROLLMENT          │
+│  ┌─────────────┐           ┌─────────────┐         ┌─────────────┐         │
+│  │ Cal.com     │  ◄─────   │ Quote       │  ────►  │ Support     │         │
+│  │ Booking ✅  │           │ Builder     │         │ Plan Signup │         │
+│  │             │           │ (flagged)   │         │ ⚠️ NO IDs   │         │
+│  └─────────────┘           └─────────────┘         └─────────────┘         │
+│                                                           │                 │
+│                                                           ▼                 │
+│                            7. PAYMENT CAPTURE                               │
+│                            ┌─────────────┐                                  │
+│                            │ Square      │                                  │
+│                            │ Invoices ✅ │                                  │
+│                            │ Subs ⚠️ NULL│                                  │
+│                            └─────────────┘                                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### BLOCKER #1: SQUARE SUBSCRIPTION CATALOG (HUMAN TASK)
+
+**Status:** ❌ BLOCKING PAYMENT CAPTURE
+**File:** `functions/api/_shared/square.js:311-315`
+**Current Code:**
+```javascript
+export const SUPPORT_PLAN_CATALOG_IDS = {
+  core: null,         // BROKEN - No subscription possible
+  professional: null, // BROKEN - No subscription possible
+  premium: null       // BROKEN - No subscription possible
+};
+```
+
+**HUMAN TASK: Create Square Subscription Plans**
+
+| Step | Action | Details |
+|------|--------|---------|
+| 1 | Log into Square Dashboard | https://squareup.com/dashboard |
+| 2 | Navigate to Items & Orders → Subscriptions | Left sidebar |
+| 3 | Click "Create Subscription Plan" | Top right button |
+| 4 | Create "Toast Guardian Core" | Monthly: $350, Annual: $3,850 |
+| 5 | Create "Toast Guardian Professional" | Monthly: $500, Annual: $5,500 |
+| 6 | Create "Toast Guardian Premium" | Monthly: $800, Annual: $8,800 |
+| 7 | Copy each Plan Variation ID | Found in plan details → URL or API response |
+| 8 | Provide IDs to Claude | For code update |
+
+**Each plan should have:**
+- Monthly billing option
+- Annual billing option (11 months = 1 month free)
+- Description matching /services page
+- Location: LB8GE5HYZJYB7 (Lane B - National/Toast)
+
+**CLAUDE TASK: Update Code After Human Provides IDs**
+```javascript
+// Claude will update square.js with provided IDs:
+export const SUPPORT_PLAN_CATALOG_IDS = {
+  core: 'PROVIDED_BY_HUMAN',
+  professional: 'PROVIDED_BY_HUMAN',
+  premium: 'PROVIDED_BY_HUMAN'
+};
+```
+
+---
+
+### BLOCKER #2: HUBSPOT EMAIL SEQUENCES (CLAUDE TASK)
+
+**Status:** ❌ BLOCKING COLD OUTREACH
+**Templates exist but sequences NOT created in HubSpot**
+
+**CLAUDE TASK: Create 6 Email Sequences via HubSpot API**
+
+| Sequence | Target | Emails | Days | Priority |
+|----------|--------|--------|------|----------|
+| **toast-support-upsell** | Current Toast users | 3 | 10 | HIGH |
+| **clover-switch** | Clover POS users | 3 | 10 | HIGH |
+| **square-switch** | Square POS users | 3 | 10 | MEDIUM |
+| **new-implementation** | Toast upcoming installs | 3 | 7 | HIGHEST |
+| **referral-request** | Past clients | 2 | 14 | MEDIUM |
+| **reengagement** | Non-responders (45+ days) | 2 | 21 | LOW |
+
+**HubSpot API Endpoint:** `POST /automation/v4/sequences`
+**API Key Location:** `C:\Users\evanr\.claude\.secrets.local.md`
+**Portal ID:** 243379742
+
+**Email Templates (Per Sequence):**
+
+#### Sequence 1: Toast Support Upsell (3 emails)
+```
+Email 1 (Day 0): "Your Toast system running at peak efficiency?"
+Email 2 (Day 4): "Toast optimization quick wins (5 min read)"
+Email 3 (Day 10): "Limited: $800 Toast audit this month"
+```
+
+#### Sequence 2: Clover Switch (3 emails)
+```
+Email 1 (Day 0): "Clover vs Toast: Real cost comparison"
+Email 2 (Day 4): "$1,000 referral credit for switching"
+Email 3 (Day 10): "Free Toast demo for Clover users"
+```
+
+#### Sequence 3: Square Switch (3 emails)
+```
+Email 1 (Day 0): "Square restaurant limitations vs Toast"
+Email 2 (Day 4): "Toast implementation: What to expect"
+Email 3 (Day 10): "Free Toast demo for Square users"
+```
+
+#### Sequence 4: New Implementation (3 emails) - HIGHEST PRIORITY
+```
+Email 1 (Day 0): "Your upcoming Toast install - tips from a certified consultant"
+Email 2 (Day 3): "Menu build before install = faster launch"
+Email 3 (Day 7): "Implementation support: Core, Professional, or Premium?"
+```
+
+#### Sequence 5: Referral Request (2 emails)
+```
+Email 1 (Day 0): "Quick favor request + $1,000 for you"
+Email 2 (Day 14): "Still open: $1,000 referral credit"
+```
+
+#### Sequence 6: Re-engagement (2 emails)
+```
+Email 1 (Day 0): "Still need Toast help?"
+Email 2 (Day 21): "Last touch: Toast consulting availability"
+```
+
+**Execution Steps:**
+1. Read API key from secrets file
+2. Create each sequence via HubSpot Sequences API
+3. Create email templates with merge fields
+4. Associate templates with sequences
+5. Verify sequences appear in HubSpot UI
+6. Document sequence IDs for enrollment
+
+---
+
+### BLOCKER #3: LEAD IMPORT (CLAUDE TASK)
+
+**Status:** ❌ BLOCKING OUTREACH
+**Current HubSpot contacts:** 614
+**Available leads:** 42,967 in BuiltWith export
+**File location:** `G:\RG OPS\70_LEADS_BUILTWITH\hubspot_pos_leads_consolidated.csv`
+
+**CLAUDE TASK: Batch Import Strategy**
+
+**Import Priority Order:**
+
+| Batch | Segment | Count | Day | Sequence |
+|-------|---------|-------|-----|----------|
+| 1 | Toast Upcoming Implementations | 1,600 | Day 1 | new-implementation |
+| 2 | Current Toast Users (Tier 1) | 2,400 | Day 2 | toast-support-upsell |
+| 3 | Current Toast Users (Tier 2) | 5,000 | Day 4 | toast-support-upsell |
+| 4 | Clover Users (Tier 1) | 3,000 | Day 7 | clover-switch |
+| 5 | Square Users (Tier 1) | 3,000 | Day 10 | square-switch |
+| 6+ | Remaining leads | 28,000+ | Week 3+ | Appropriate sequence |
+
+**Lead Properties to Import:**
+```json
+{
+  "email": "required",
+  "firstname": "from business name parsing",
+  "lastname": "from business name parsing",
+  "company": "restaurant name",
+  "phone": "if available",
+  "pos_system": "Toast|Clover|Square|Other",
+  "geographic_tier": "Cape Cod|MA|New England|National",
+  "lead_source": "BuiltWith",
+  "lead_score": "calculated 0-100",
+  "tier_classification": "Hot|Warm|Nurture|Long-tail",
+  "hs_lead_status": "NEW"
+}
+```
+
+**HubSpot Import API:** `POST /crm/v3/imports`
+**Batch size limit:** 2,000 contacts per import
+**Rate limit:** 10 imports per day
+
+**Execution Steps:**
+1. Read and parse CSV file
+2. Score leads using 100-point matrix
+3. Segment by POS system and tier
+4. Create import files (max 2,000 each)
+5. Upload via HubSpot Import API
+6. Associate with appropriate sequence
+7. Monitor import status and errors
+
+---
+
+### BLOCKER #4: QUOTE BUILDER FLAG (CLAUDE TASK)
+
+**Status:** ⚠️ OPTIONAL - Not blocking go-live
+**File:** `pages/QuoteBuilder.tsx:45`
+**Current Code:**
+```javascript
+const SHOW_COMING_SOON = true; // Blocks quote builder
+```
+
+**CLAUDE TASK: Evaluate and optionally enable**
+```javascript
+const SHOW_COMING_SOON = false; // Enable quote builder
+```
+
+**Decision:** Enable after first 5 clients signed to ensure quote builder is stable.
+
+---
+
+### GO-LIVE EXECUTION CALENDAR
+
+#### DAY 1 (January 9, 2026) - PLANNING ✅
+
+| Time | Task | Owner | Status |
+|------|------|-------|--------|
+| AM | Analyze codebase | Claude | ✅ COMPLETE |
+| AM | Analyze business docs | Claude | ✅ COMPLETE |
+| AM | Analyze 400K plan | Claude | ✅ COMPLETE |
+| PM | Update MASTER_EXECUTION_PLAN | Claude | ✅ IN PROGRESS |
+| PM | Document all blockers | Claude | ✅ COMPLETE |
+
+#### DAY 2 (January 10, 2026) - SQUARE SETUP
+
+| Time | Task | Owner | Status |
+|------|------|-------|--------|
+| AM | Create Square subscription plans | HUMAN | ⏳ PENDING |
+| AM | Copy catalog IDs | HUMAN | ⏳ PENDING |
+| PM | Update square.js with IDs | Claude | ⏳ PENDING |
+| PM | Test subscription creation | Claude | ⏳ PENDING |
+| PM | Commit and deploy | Claude | ⏳ PENDING |
+
+#### DAY 3 (January 11, 2026) - HUBSPOT SEQUENCES
+
+| Time | Task | Owner | Status |
+|------|------|-------|--------|
+| AM | Create 6 email sequences | Claude | ⏳ PENDING |
+| AM | Create email templates | Claude | ⏳ PENDING |
+| AM | Import Batch 1 (1,600 leads) | Claude | ⏳ PENDING |
+| PM | Enroll Batch 1 in sequences | Claude | ⏳ PENDING |
+| PM | Monitor delivery metrics | Claude | ⏳ PENDING |
+
+#### DAY 4 (January 12, 2026) - GO LIVE
+
+| Time | Task | Owner | Status |
+|------|------|-------|--------|
+| AM | Import Batch 2 (2,400 leads) | Claude | ⏳ PENDING |
+| AM | Verify email deliverability | Claude | ⏳ PENDING |
+| PM | First discovery calls booked | HUMAN | ⏳ PENDING |
+| PM | Official GO-LIVE announcement | HUMAN | ⏳ PENDING |
+
+#### DAY 5-7 (January 13-15, 2026) - VOLUME RAMP
+
+| Task | Owner | Target |
+|------|-------|--------|
+| Import remaining Tier 1 leads | Claude | 5,000+ |
+| Monitor response rates | Claude | >5% |
+| Book discovery calls | HUMAN | 3-5 |
+| Send first proposals | HUMAN | 1-2 |
+
+---
+
+### FALLBACK: MANUAL INVOICING (IMMEDIATE)
+
+**If Square subscription setup is delayed:**
+
+The website can go live TODAY using manual Square invoicing:
+
+1. Website collects leads via contact form ✅
+2. Human books discovery calls via Cal.com ✅
+3. Human sends manual quote via email
+4. Human creates invoice in Square Dashboard
+5. Client pays invoice via Square link
+6. Subscription created manually after first payment
+
+**Square Dashboard Manual Invoice:**
+- Log in: https://squareup.com/dashboard/invoices
+- Click "Create Invoice"
+- Add line item: "Toast Guardian [Tier] - Quarterly"
+- Set amount: $1,050 / $1,500 / $2,400
+- Send to client email
+- Payment captured on acceptance
+
+**This approach works indefinitely while automation is configured.**
+
+---
+
+### PARALLEL TRACK: FEATURES TO ACTIVATE LATER
+
+**Not blocking go-live - enable after first revenue:**
+
+| Feature | Current State | Enable When |
+|---------|---------------|-------------|
+| Quote Builder | SHOW_COMING_SOON=true | After 5 clients |
+| Menu Builder Auth | No API auth | After 10 clients |
+| Rep Portal | Complete, unused | When hiring reps |
+| Toast Hub Blog | Infrastructure only | Month 2 |
+| AI Phone | Not started | After email traction |
+| Toast Automation | Framework only | After 15 clients |
+| PandaDoc Contracts | Webhook ready | When scaling |
+
+---
+
+### SUCCESS METRICS (Week 1)
+
+| Metric | Target | Tracking |
+|--------|--------|----------|
+| Emails sent | 4,000+ | HubSpot dashboard |
+| Open rate | >25% | HubSpot analytics |
+| Reply rate | >3% | HubSpot inbox |
+| Discovery calls booked | 5+ | Cal.com |
+| Proposals sent | 3+ | Manual tracking |
+| Deals closed | 1+ | Square invoice |
+| Revenue captured | $1,500+ | Square dashboard |
+
+---
+
+### FILES TO UPDATE DURING GO-LIVE
+
+| File | Update | Owner |
+|------|--------|-------|
+| `functions/api/_shared/square.js` | Add catalog IDs | Claude |
+| `pages/QuoteBuilder.tsx` | Set SHOW_COMING_SOON=false | Claude (optional) |
+| `CLAUDE.md` | Add go-live checklist | Claude |
+| `wrangler.toml` | Verify secrets configured | Claude |
+| HubSpot | 6 sequences created | Claude |
+| HubSpot | 42,967 leads imported | Claude (batched) |
+
+---
+
+### GIT WORKFLOW FOR GO-LIVE
+
+```bash
+# Before any changes
+cd /c/Users/evanr/projects/restaurant-consulting-site
+git status
+git pull origin main
+
+# After each blocker resolved
+git add -A
+git commit -m "GO-LIVE: [description of change]
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+git push origin main
+
+# Verify Cloudflare deployment
+# Check: https://restaurant-consulting-site.pages.dev
+# Check: https://ccrestaurantconsulting.com
+```
+
+---
+
+---
+
+## PHASE Y: PLATFORM CONSOLIDATION (Post Go-Live)
+
+**Added:** 2026-01-09
+**Purpose:** Consolidate standalone automation components into unified platform
+**Trigger:** After first 5 clients signed (estimated Week 3-4)
+
+---
+
+### PLATFORM COMPONENT INVENTORY
+
+**Comprehensive analysis completed 2026-01-09 covering 4 major systems:**
+
+| Component | Location | Files | Status | Decision |
+|-----------|----------|-------|--------|----------|
+| **TOAST-ABO** | `PLATFORM/80_AUTOMATION/TOAST-ABO/` | 49+ | 60% standalone | Consolidate into website |
+| **QUOTE_BUILDING** | `PLATFORM/80_AUTOMATION/QUOTE_BUILDING/` | 12 | 80% frontend | Port data to website |
+| **Toast_Hub** | `PLATFORM/80_AUTOMATION/Toast_Hub/` | 0 | Placeholder | Not needed - website is hub |
+| **Website** | `projects/restaurant-consulting-site/` | 4,172 | 92% complete | PRIMARY PLATFORM |
+
+---
+
+### TOAST-ABO COMPONENT ANALYSIS
+
+**Path:** `C:\Users\evanr\OneDrive\Desktop\PLATFORM\business_platform_parts\80_AUTOMATION\TOAST-ABO`
+
+#### What Exists (Node.js CLI Application)
+
+```
+MENU_BUILDING/menu-builder/
+├── src/
+│   ├── index.js              # CLI entry point (MenuBuilder class)
+│   ├── intake/ocr.js         # Tesseract.js OCR processing
+│   ├── structuring/parser.js # Regex-based menu parsing
+│   └── output/
+│       ├── toast.js          # Toast CSV/JSON export (GUIDs, PLU codes)
+│       ├── square.js         # Square Catalog API format
+│       └── pdf.js            # PDFKit professional menu generation
+└── package.json              # tesseract.js, pdf-parse, pdfkit, sharp
+```
+
+#### Capabilities
+- 3-stage pipeline: OCR → Parse → Export
+- Multi-format input: PDF, PNG, JPG, HEIC, TIFF, BMP, WEBP
+- Tesseract.js OCR with confidence scoring
+- Regex-based price/category/modifier extraction
+- Toast export (GUIDs, PLU codes, cents pricing)
+- Square Catalog export (idempotency keys)
+- Professional PDF menu generation with branding
+
+#### Valuable Business Logic Files
+- `bar_menu_logic.txt` - Cocktail pricing (bottle-to-pour math, 80% margins)
+- `menu-2-venue_equation.txt` - 9-domain financial analysis framework
+- `logicofquestion.txt` - Restaurant complexity classification
+- `Toast automation vision.txt` - Full n8n/Puppeteer architecture spec
+
+#### Integration Decision
+| Feature | Website Status | TOAST-ABO Status | Action |
+|---------|---------------|------------------|--------|
+| OCR Processing | Cloudflare AI (superior) | Tesseract.js | Keep Cloudflare |
+| PDF Text Extraction | unpdf (client-side) | pdf-parse | Keep unpdf |
+| Menu Parsing | LLaMA 3.1 AI (flexible) | Regex (brittle) | Keep AI |
+| Toast Export | Integrated with automation | CSV/JSON generation | Already done |
+| Square Export | Not present | Full implementation | **PORT TO WEBSITE** |
+| PDF Export | Not present | PDFKit generation | **PORT TO WEBSITE** |
+
+#### Files to Port
+1. `output/square.js` → `functions/api/menu/export-square.js`
+2. `output/pdf.js` → `functions/api/menu/export-pdf.js`
+3. Bar pricing logic → Modifier rules in database
+
+---
+
+### QUOTE_BUILDING COMPONENT ANALYSIS
+
+**Path:** `C:\Users\evanr\OneDrive\Desktop\PLATFORM\business_platform_parts\80_AUTOMATION\QUOTE_BUILDING`
+
+#### What Exists (Self-Contained React SPA)
+
+```
+quote-builder/
+├── quote_builder_pos_networking_canvas_test_v_4.html  # 789-line React SPA
+├── toast_quote_builder_spec.md                        # Full system spec (925 lines)
+├── Point of Sale Install Costing*.xlsx/csv           # Hardware catalog (45 devices)
+├── StationTemplates_Info.txt                          # 12 pre-built station templates
+└── CORRECTED INSTALLATION COSTING AL.txt             # Business logic documentation
+```
+
+#### Hardware Catalog (45 Devices)
+| Category | Devices | TTI Range |
+|----------|---------|-----------|
+| Terminals | Toast Flex, Go 2, Self-Service | 20-45 min |
+| Printers | Thermal, Impact, Label | 30-45 min |
+| Network | Router, PoE Switch, AP | 15-45 min |
+| Accessories | Cash Drawer, Card Readers, Scale | 10-45 min |
+
+#### Station Templates (12 Pre-Built)
+| Template | TTI | Devices |
+|----------|-----|---------|
+| Server Station | 85 min | Terminal + Printer + Card Reader |
+| Bar Station | 120 min | Terminal + Printer + 2 Card Readers + Drawer |
+| Full Kitchen | 50 min | KDS + Kitchen Printer |
+| Host Stand | 75 min | Terminal + Printer + Card Reader + Drawer |
+| Takeout Station | 130 min | Terminal + Printer + Guest Pay + Drawer + Display |
+| Barista Station | 190 min | Terminal + Printer + Guest Pay + Drawer + Display + Label |
+| Network Area | 75 min | Router + Switch + Access Point |
+
+#### Integration Decision
+| Feature | Website Status | Standalone Status | Action |
+|---------|---------------|-------------------|--------|
+| Visual Canvas | Implemented | Implemented | Keep website |
+| Station Templates | Basic (16) | Rich (12 w/TTI) | **IMPORT DATA** |
+| Hardware Catalog | ~17 devices | 45 devices w/TTI | **IMPORT DATA** |
+| Cabling Specs | Basic | Comprehensive | **IMPORT DATA** |
+| Travel Zones | Implemented | Detailed | Already aligned |
+| PDF Export | Not present | Spec only | **IMPLEMENT** |
+
+#### Data to Import
+1. Hardware catalog (45 devices) → `migrations/0015_hardware_catalog.sql`
+2. Station templates (12) → Database seed
+3. Cabling specifications → Pricing constants
+
+---
+
+### WEBSITE TOAST AUTOMATION STATUS
+
+**Already Built (Phases 1-4 COMPLETE):**
+
+| Phase | Description | Files | Status |
+|-------|-------------|-------|--------|
+| Phase 1 | Restaurant Classification Engine | 8 templates, 9 modifier rules | ✅ COMPLETE |
+| Phase 2 | Menu Builder Integration | Deploy to Toast modal | ✅ COMPLETE |
+| Phase 3 | Toast Navigation Scripts | `automation/src/toast/` (13 files) | ✅ COMPLETE |
+| Phase 4 | Observer AI / Self-Healing | `automation/src/observer/` (6 files) | ✅ COMPLETE |
+| Phase 5 | Support Ticket Integration | Not started | ⏳ PENDING |
+
+**Phase 3 Capabilities (4,539 lines):**
+- Self-healing CSS selectors with fallbacks
+- 2FA/TOTP handling for login
+- Partner portal client switching
+- Menu CRUD (categories, items, modifiers)
+- KDS station management and routing
+- Bulk creation with progress callbacks
+- Screenshot capture throughout
+
+**Phase 4 Capabilities (2,694 lines):**
+- Claude Vision API for visual element detection
+- Automatic selector recovery when CSS fails
+- Golden copy baseline screenshot comparison
+- Daily health check verification
+- Multi-channel alerts (email, webhook, API)
+
+---
+
+### CONSOLIDATION TASKS (Priority Order)
+
+#### Sprint Y1: Data Migration (1-2 days)
+| Task | Effort | Impact |
+|------|--------|--------|
+| Create `0015_hardware_catalog.sql` migration | 2 hrs | High |
+| Seed 45 hardware devices with TTI | 1 hr | High |
+| Seed 12 station templates | 1 hr | High |
+| Update Quote Builder to fetch from API | 4 hrs | High |
+
+**Migration Schema:**
+```sql
+CREATE TABLE hardware_catalog (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,  -- terminal, printer, network, accessory
+  sku TEXT,
+  tti_minutes INTEGER NOT NULL,
+  cost_estimate REAL,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE station_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  hardware_ids TEXT NOT NULL,  -- JSON array
+  total_tti_minutes INTEGER NOT NULL,
+  use_cases TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Sprint Y2: Export Features (2-3 days)
+| Task | Effort | Impact |
+|------|--------|--------|
+| Port Square export to Menu Builder | 4 hrs | Medium |
+| Port PDF menu generation | 6 hrs | Medium |
+| Implement PDF quote export | 6 hrs | High |
+
+#### Sprint Y3: Phase 5 Ticket Integration (3-4 days)
+| Task | Effort | Impact |
+|------|--------|--------|
+| Ticket analysis AI | 6 hrs | Medium |
+| Automation decision engine | 8 hrs | Medium |
+| Approval workflows | 4 hrs | Medium |
+| Client portal integration | 4 hrs | Low |
+
+#### Sprint Y4: Puppeteer Execution (3-4 days)
+| Task | Effort | Impact |
+|------|--------|--------|
+| Set up Browserless.io account | 1 hr | High |
+| Create execution worker | 8 hrs | High |
+| Wire up job queue execution | 4 hrs | High |
+| Real-time progress reporting | 6 hrs | Medium |
+
+---
+
+### ARCHITECTURAL DECISIONS (2026-01-09)
+
+| Decision | Rationale |
+|----------|-----------|
+| **OCR:** Cloudflare AI over Tesseract.js | Better accuracy, already integrated, no bundle bloat |
+| **Parsing:** LLaMA 3.1 AI over regex | Handles edge cases, more flexible, learns patterns |
+| **Puppeteer:** Browserless.io for production | Managed service, reliable, no Docker maintenance |
+| **Job Queue:** D1 polling short-term | Simple, already working, migrate to Queues later |
+| **Platform:** Website as primary | Avoid maintaining parallel systems, single source of truth |
+
+---
+
+### FILES TO DEPRECATE (After Porting)
+
+| File | Reason |
+|------|--------|
+| `TOAST-ABO/MENU_BUILDING/menu-builder/` | CLI not needed, features in website |
+| `QUOTE_BUILDING/quote_builder_*.html` | Standalone SPA replaced by website |
+
+**Keep as Reference:**
+- `bar_menu_logic.txt` - Cocktail pricing formulas
+- `menu-2-venue_equation.txt` - Financial analysis framework
+- `Toast automation vision.txt` - n8n architecture reference
+- `toast_quote_builder_spec.md` - Backend specification reference
+
+---
+
+### RELATED DOCUMENTATION
+
+| Document | Purpose |
+|----------|---------|
+| `PLATFORM_INTEGRATION_PLAN.md` | Detailed technical integration strategy |
+| `DEVELOPMENT_ROADMAP.md` | 6-sprint plan with revenue priorities |
+| `CODEBASE_DOCUMENTATION.md` | Technical reference with platform context |
+| `CONTINUITY_LEDGER.md` | Session history including this analysis |
+
+---
+
 **Plan Created:** 2026-01-07
-**Last Updated:** 2026-01-07 23:30 EST
-**Status:** ACTIVE - Phase 0 Complete, Phase 2 (Toast ABO) In Progress
+**Last Updated:** 2026-01-09 (Go-Live + Platform Consolidation Sections Added)
+**Status:** ACTIVE - Go-Live Phase Initiated, Platform Analysis Complete
+**Next Action:** HUMAN to create Square subscription plans, then platform consolidation begins
