@@ -1335,3 +1335,112 @@ node scripts/import_leads.cjs "path/to/file.csv" A
 - HubSpot: 8 custom properties, 614+ contacts
 - Cloudflare: All env vars current
 - Website: Live at ccrestaurantconsulting.com
+
+---
+
+## PHASE Z.5: RESTAURANT INTELLIGENCE SYSTEM (2026-01-11)
+
+**Completed:** 2026-01-11
+**Documentation:** `docs/RESTAURANT_INTELLIGENCE_SYSTEM.md`
+
+### Overview
+
+Comprehensive database and classification system connecting:
+**Leads → Classification → POS Config → Quote Builder → Menu Builder**
+
+### Database Schema (11 new tables in D1)
+
+| Table | Records | Purpose |
+|-------|---------|---------|
+| `cuisine_types` | 20 | Cuisine categories with keywords |
+| `service_styles` | 8 | Fine Dining → QSR |
+| `bar_programs` | 6 | Full Bar, Beer/Wine, None |
+| `menu_complexity_profiles` | 4 | Simple → Ultra Complex |
+| `restaurant_type_templates` | 13 | Combined restaurant profiles |
+| `pos_config_templates` | 6 | POS config by restaurant type |
+| `restaurant_leads` | 42,969 capacity | Master lead database |
+| `lead_segments` | 9 | Dynamic segment definitions |
+| `lead_segment_members` | - | Lead-to-segment assignments |
+| `lead_contacts` | - | Contact persons |
+| `lead_activity_log` | - | Activity tracking |
+
+### Lead Processing System
+
+**Script:** `scripts/process_leads.cjs`
+
+**Capabilities:**
+- Parses all BuiltWith CSV files
+- Deduplicates 55,594 → 42,969 unique domains
+- Auto-classifies cuisine from company names
+- Calculates lead scores (0-100)
+- Assigns to 9 segments
+- Exports workbooks to G: drive
+
+**Usage:**
+```bash
+node scripts/process_leads.cjs --stats    # Statistics only
+node scripts/process_leads.cjs --export   # Export workbooks
+node scripts/process_leads.cjs --import   # Import to D1
+```
+
+### Lead Segments Generated
+
+| Segment | Count | Email Sequence |
+|---------|-------|----------------|
+| Toast Existing | 15,786 | seq_toast_support_001 |
+| Clover Switchers | 12,397 | seq_pos_switcher_001 |
+| Square Switchers | 12,080 | seq_pos_switcher_001 |
+| Contactable | 3,398 | - |
+| Toast Upcoming | 1,614 | seq_toast_support_001 |
+| Upserve Switchers | 1,045 | seq_pos_switcher_001 |
+| High Value (80+) | 477 | - |
+| Massachusetts | 251 | - |
+| Cape Cod | 3 | seq_local_network_001 |
+
+### Workbooks Exported
+
+Location: `G:/My Drive/RG OPS/70_LEADS/SEGMENTED_WORKBOOKS/`
+
+| File | Leads |
+|------|-------|
+| ALL_LEADS_MASTER_2026-01-11.csv | 42,969 |
+| seg_toast_existing_2026-01-11.csv | 15,786 |
+| seg_switcher_clover_2026-01-11.csv | 12,397 |
+| seg_switcher_square_2026-01-11.csv | 12,080 |
+| seg_contactable_2026-01-11.csv | 3,398 |
+| seg_toast_upcoming_2026-01-11.csv | 1,614 |
+| seg_high_value_2026-01-11.csv | 477 |
+| seg_local_ma_2026-01-11.csv | 251 |
+
+### Email Content Completed (2026-01-11)
+
+All 22 email steps now have full HTML content:
+
+| Sequence | Steps | Status |
+|----------|-------|--------|
+| Toast Support | 5 | ✅ Full content |
+| Menu Work | 2 | ✅ Full content |
+| POS Switcher | 4 | ✅ Full content |
+| Transition | 4 | ✅ Full content |
+| Local Network | 4 | ✅ Full content |
+| Booking/Post-Meeting/No-Show | 3 | ✅ Full content |
+
+### Git Commits (2026-01-11)
+
+1. `9dbd810` - Add email sequence content for Switcher, Transition, and Network sequences
+2. `3260cfb` - Add Restaurant Intelligence System for lead classification and segmentation
+
+---
+
+### NEXT ACTIONS (Post-Phase Z.5)
+
+| Priority | Task | Command/Action |
+|----------|------|----------------|
+| 1 | Import leads to D1 | `node scripts/process_leads.cjs --import` |
+| 2 | Sync high-value to HubSpot | Export seg_high_value + seg_contactable |
+| 3 | Begin outreach | Activate sequences for Toast Upcoming |
+| 4 | Square subscriptions | **HUMAN: Create catalog IDs** |
+| 5 | PandaDoc templates | **HUMAN: Set up contracts** |
+
+---
+
