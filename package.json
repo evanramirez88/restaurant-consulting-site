@@ -25,6 +25,8 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.22",
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "puppeteer": "^24.34.0",
