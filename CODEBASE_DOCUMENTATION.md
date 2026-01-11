@@ -1,9 +1,16 @@
 # Codebase Documentation
 ## R&G Consulting - Restaurant Consulting Website
 
-**Last Updated:** 2026-01-09
+**Last Updated:** 2026-01-10
 **Completion:** 92% Production Ready
 **Repository:** https://github.com/evanramirez88/restaurant-consulting-site
+
+### Recent Changes (2026-01-10)
+- Added client intelligence fields to database schema
+- Created client data import system (`automation/client-data/`)
+- Created local control center infrastructure (`automation/local-control-center/`)
+- Updated ClientForm.tsx with intel UI section
+- Added dual storage architecture documentation
 
 ---
 
@@ -61,6 +68,9 @@ API Token:  24aujAQSZ8JEky8IFrnk7MeUhOrcn_Yj6MnsCCAk
 | Payments | Square | Latest |
 | Contracts | PandaDoc | Latest |
 | Scheduling | Cal.com | v7 |
+| Local DB | PostgreSQL 16 | Seagate/SAGE-LENOVO |
+| Local Cache | Redis 7 | Seagate/SAGE-LENOVO |
+| Local Storage | MinIO | Seagate/SAGE-LENOVO |
 
 ---
 
@@ -72,7 +82,7 @@ restaurant-consulting-site/
 │   ├── admin/               # Admin dashboard (37 files)
 │   │   ├── automation/      # Toast automation UI (9)
 │   │   ├── email/           # Email campaigns (16)
-│   │   ├── clients/         # Client management
+│   │   ├── clients/         # Client management (+ intel fields)
 │   │   ├── reps/            # Rep management
 │   │   ├── tickets/         # Support tickets
 │   │   └── ...
@@ -93,10 +103,20 @@ restaurant-consulting-site/
 │   ├── billing/             # Square billing
 │   ├── automation/          # Toast automation
 │   └── webhooks/            # External webhooks
-├── migrations/              # D1 migrations (15)
+├── migrations/              # D1 migrations (20+)
 ├── docs/                    # Technical docs
 ├── hubspot-sequences/       # Email templates (6)
-└── automation/              # Node.js scripts
+├── automation/              # Automation systems
+│   ├── client-data/         # Client data import system
+│   │   ├── import_service.py  # File import processor
+│   │   ├── import/            # Import drop zones
+│   │   └── clients/           # Organized client folders
+│   ├── local-control-center/  # SAGE-LENOVO infrastructure
+│   │   ├── docker-compose.yml # PostgreSQL, Redis, MinIO, API
+│   │   ├── api/               # FastAPI control center
+│   │   └── migrations/        # PostgreSQL schema
+│   └── SESSION_NOTES_*.md   # Session documentation
+└── TODO.md                  # Task tracking
 ```
 
 ---
@@ -155,6 +175,28 @@ restaurant-consulting-site/
 | `api_configs` | API settings |
 | `audit_logs` | Activity tracking |
 | `login_attempts` | Rate limiting |
+
+### Client Intelligence Fields (Added 2026-01-10)
+Extended fields on `clients` table for internal-only research data:
+| Field | Type | Purpose |
+|-------|------|---------|
+| `intel_profile` | TEXT | Research/competitive intelligence |
+| `intel_notes` | TEXT | Private admin notes |
+| `intel_sources` | TEXT | Source of intel data |
+| `intel_last_updated` | INTEGER | Timestamp of last intel update |
+| `client_submitted` | TEXT | Data submitted by client in portal |
+| `local_folder_path` | TEXT | Path on Seagate drive |
+| `tags` | TEXT | Comma-separated categorization |
+
+**Note:** Intel fields are **NOT synced** to client portal - for admin use only.
+
+### Dual Storage Architecture
+| Storage | Purpose | Location |
+|---------|---------|----------|
+| Cloudflare D1 | Portal-visible data | Cloud |
+| PostgreSQL | Complete data vault | Seagate/SAGE-LENOVO |
+| Cloudflare R2 | Client-visible files | Cloud CDN |
+| MinIO | All files + intel | Seagate/SAGE-LENOVO |
 
 ---
 
