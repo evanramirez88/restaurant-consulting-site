@@ -27,6 +27,11 @@ interface Client {
   avatar_url: string | null;
   notes: string | null;
   timezone?: string;
+  // Intelligence fields (NOT synced to client portal)
+  intel_profile: string | null;
+  intel_notes: string | null;
+  tags: string | null;
+  local_folder_path: string | null;
 }
 
 interface ClientFormProps {
@@ -65,7 +70,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
     google_drive_folder_id: null,
     avatar_url: null,
     notes: null,
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
+    // Intel fields
+    intel_profile: null,
+    intel_notes: null,
+    tags: null,
+    local_folder_path: null
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -321,9 +331,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
                 value={formData.slug || ''}
                 onChange={(e) => handleSlugChange(e.target.value)}
                 placeholder="seafood-shack"
-                className={`flex-1 px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${
-                  slugError ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={`flex-1 px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${slugError ? 'border-red-500' : 'border-gray-600'
+                  }`}
               />
             </div>
             {slugError && <p className="text-red-400 text-xs mt-1">{slugError}</p>}
@@ -361,15 +370,13 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
                   support_plan_tier: tier.value === 'none' ? null : tier.value,
                   support_plan_status: tier.value === 'none' ? null : 'active'
                 }))}
-                className={`p-3 rounded-lg border text-left transition-all ${
-                  (formData.support_plan_tier || 'none') === tier.value
+                className={`p-3 rounded-lg border text-left transition-all ${(formData.support_plan_tier || 'none') === tier.value
                     ? 'border-amber-500 bg-amber-500/10'
                     : 'border-gray-700 hover:border-gray-600'
-                }`}
+                  }`}
               >
-                <span className={`block font-medium ${
-                  (formData.support_plan_tier || 'none') === tier.value ? 'text-amber-400' : 'text-white'
-                }`}>
+                <span className={`block font-medium ${(formData.support_plan_tier || 'none') === tier.value ? 'text-amber-400' : 'text-white'
+                  }`}>
                   {tier.label}
                 </span>
                 {tier.description && (
@@ -379,6 +386,66 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
             ))}
           </div>
         </div>
+
+        {/* Client Intelligence - ADMIN ONLY, NOT synced to portal */}
+        <div className="space-y-4 p-4 bg-purple-900/10 border border-purple-500/20 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+            <h3 className="text-sm font-semibold text-purple-400 uppercase tracking-wider">
+              Client Intelligence (Private)
+            </h3>
+          </div>
+          <p className="text-xs text-gray-500">
+            This data is for internal use only and is NOT visible in the client portal.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Intel Profile</label>
+            <textarea
+              value={formData.intel_profile || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, intel_profile: e.target.value || null }))}
+              placeholder="Research findings, competitive intel, key insights..."
+              rows={4}
+              className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Intel Notes</label>
+            <textarea
+              value={formData.intel_notes || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, intel_notes: e.target.value || null }))}
+              placeholder="Private notes, strategy, follow-up actions..."
+              rows={3}
+              className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
+            <input
+              type="text"
+              value={formData.tags || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value || null }))}
+              placeholder="toast-user, cape-cod, high-priority, ..."
+              className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <p className="text-gray-500 text-xs mt-1">Comma-separated tags for filtering and categorization</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Local Folder Path</label>
+            <input
+              type="text"
+              value={formData.local_folder_path || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, local_folder_path: e.target.value || null }))}
+              placeholder="S:\rg_platform\clients\client-slug"
+              className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <p className="text-gray-500 text-xs mt-1">Path to client folder on Seagate drive</p>
+          </div>
+        </div>
+
 
         {/* Google Drive */}
         <div className="space-y-4">

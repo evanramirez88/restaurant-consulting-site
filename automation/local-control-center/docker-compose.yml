@@ -1,0 +1,128 @@
+services:
+  # PostgreSQL Database - Primary data store
+  postgres:
+    image: postgres:16-alpine
+    container_name: rg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rg_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: rg_consulting
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ${SEAGATE_MOUNT}/rg_data/postgres:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rg_admin -d rg_consulting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rg-network
+
+  # Redis - Caching, sessions, and pub/sub
+  redis:
+    image: redis:7-alpine
+    container_name: rg-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - ${SEAGATE_MOUNT}/rg_data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rg-network
+
+  # MinIO - S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    container_name: rg-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rg_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme123}
+    volumes:
+      - ${SEAGATE_MOUNT}/rg_data/minio:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - rg-network
+
+  # FastAPI Application - Control Center API
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rg-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://rg_admin:${POSTGRES_PASSWORD:-changeme}@postgres:5432/rg_consulting
+      REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-rg_admin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-changeme123}
+      MINIO_BUCKET: rg-files
+      CLIENT_FILES_PATH: /app/client_files
+      CLOUDFLARE_SYNC_ENABLED: ${CLOUDFLARE_SYNC_ENABLED:-false}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+    volumes:
+      - ${SEAGATE_MOUNT}/rg_data/clients:/app/client_files
+      - ${SEAGATE_MOUNT}/rg_data/sync:/app/sync_queue
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - rg-network
+
+  # Backup Service - Automated daily backups
+  backup:
+    image: postgres:16-alpine
+    container_name: rg-backup
+    restart: unless-stopped
+    entrypoint: /bin/sh
+    command: >
+      -c "while true; do
+        echo 'Running backup at $$(date)';
+        PGPASSWORD=$${POSTGRES_PASSWORD} pg_dump -h postgres -U rg_admin rg_consulting > /backups/rg_consulting_$$(date +%Y%m%d_%H%M%S).sql;
+        find /backups -name '*.sql' -mtime +7 -delete;
+        sleep 86400;
+      done"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - ${SEAGATE_MOUNT}/rg_data/backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rg-network
+
+networks:
+  rg-network:
+    driver: bridge
