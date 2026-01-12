@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, Plus, Building2, MapPin, Shield, ExternalLink, ChevronRight,
   Loader2, RefreshCw, Users, Mail, Phone, FolderOpen, MoreVertical,
-  Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle
+  Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle, Power, Brain
 } from 'lucide-react';
 
 interface Client {
@@ -22,6 +22,7 @@ interface Client {
   created_at: number;
   restaurant_count?: number;
   rep_count?: number;
+  intel_profile?: string | null;
 }
 
 type ViewMode = 'cards' | 'table';
@@ -37,6 +38,7 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [togglingClients, setTogglingClients] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadClients();
@@ -54,6 +56,43 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
       console.error('Failed to load clients:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Toggle portal enabled/disabled directly from list
+  const handleTogglePortal = async (clientId: string, currentEnabled: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Prevent double-click
+    if (togglingClients.has(clientId)) return;
+
+    setTogglingClients(prev => new Set(prev).add(clientId));
+
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}/portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !currentEnabled })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local state
+        setClients(prev => prev.map(c =>
+          c.id === clientId ? { ...c, portal_enabled: !currentEnabled } : c
+        ));
+      } else {
+        console.error('Failed to toggle portal:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to toggle portal:', error);
+    } finally {
+      setTogglingClients(prev => {
+        const next = new Set(prev);
+        next.delete(clientId);
+        return next;
+      });
     }
   };
 
@@ -216,7 +255,22 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
                     <td className="px-4 py-3 text-gray-400 text-sm">{client.phone || '-'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                        {/* Portal Toggle Switch */}
+                        <button
+                          onClick={(e) => handleTogglePortal(client.id, client.portal_enabled, e)}
+                          disabled={togglingClients.has(client.id)}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-600'
+                            } ${togglingClients.has(client.id) ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:opacity-80'}`}
+                          title={client.portal_enabled ? 'Click to disable portal' : 'Click to enable portal'}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${client.portal_enabled ? 'translate-x-4' : 'translate-x-1'
+                              }`}
+                          />
+                          {togglingClients.has(client.id) && (
+                            <Loader2 className="absolute inset-0 m-auto w-3 h-3 text-white animate-spin" />
+                          )}
+                        </button>
                         {client.portal_enabled && client.slug ? (
                           <a
                             href={`/#/portal/${client.slug}/dashboard`}
@@ -228,7 +282,7 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
                             /{client.slug}
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-500">Disabled</span>
+                          <span className="text-xs text-gray-500">Off</span>
                         )}
                       </div>
                     </td>
@@ -329,9 +383,24 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
 
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-700">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-500'}`} />
+                  {/* Portal Toggle Switch */}
+                  <button
+                    onClick={(e) => handleTogglePortal(client.id, client.portal_enabled, e)}
+                    disabled={togglingClients.has(client.id)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${client.portal_enabled ? 'bg-green-500' : 'bg-gray-600'
+                      } ${togglingClients.has(client.id) ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:opacity-80'}`}
+                    title={client.portal_enabled ? 'Click to disable portal' : 'Click to enable portal'}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${client.portal_enabled ? 'translate-x-4' : 'translate-x-1'
+                        }`}
+                    />
+                    {togglingClients.has(client.id) && (
+                      <Loader2 className="absolute inset-0 m-auto w-3 h-3 text-white animate-spin" />
+                    )}
+                  </button>
                   <span className="text-xs text-gray-400">
-                    {client.portal_enabled ? 'Portal Active' : 'Portal Inactive'}
+                    {client.portal_enabled ? 'Portal Active' : 'Portal Off'}
                   </span>
                 </div>
                 {getSupportBadge(client.support_plan_tier, client.support_plan_status)}
