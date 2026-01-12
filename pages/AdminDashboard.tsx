@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Loader2, LogOut, UtensilsCrossed, LayoutDashboard, Building2, Briefcase,
-  Wrench, FileText, Calendar, Settings, Users, Ticket, Mail
+  Wrench, FileText, Calendar, Settings, Users, Ticket, Mail, Brain
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
@@ -18,6 +18,7 @@ import AvailabilityManager from '../src/components/admin/availability/Availabili
 import ConfigManager from '../src/components/admin/config/ConfigManager';
 import PortalManagement from '../src/components/admin/portals/PortalManagement';
 import TicketingDashboard from '../src/components/admin/tickets/TicketingDashboard';
+import { ClientIntelligenceTab } from '../src/components/admin/intelligence';
 import {
   EmailCampaigns,
   EmailSubscribers,
@@ -30,7 +31,7 @@ import {
 } from '../src/components/admin/email';
 import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
 
-type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'tools' | 'toasthub' | 'availability' | 'config';
+type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'toasthub' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
 type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics' | 'ab-testing' | 'enrollment' | 'errors' | 'schedule';
@@ -272,6 +273,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'reps', label: 'Reps', icon: <Briefcase className="w-4 h-4" /> },
     { id: 'tickets', label: 'Tickets', icon: <Ticket className="w-4 h-4" /> },
     { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
+    { id: 'intelligence', label: 'Intel', icon: <Brain className="w-4 h-4" /> },
     { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> },
     { id: 'toasthub', label: 'Toast Hub', icon: <FileText className="w-4 h-4" /> },
     { id: 'availability', label: 'Availability', icon: <Calendar className="w-4 h-4" /> },
@@ -501,6 +503,11 @@ const AdminDashboard: React.FC = () => {
             {emailSubTab === 'errors' && <ErrorRecovery />}
             {emailSubTab === 'schedule' && <SendTimeOptimizer />}
           </>
+        )}
+
+        {/* Intelligence Tab */}
+        {activeTab === 'intelligence' && (
+          <ClientIntelligenceTab />
         )}
 
         {/* Tools Tab */}
