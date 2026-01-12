@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings, Phone, Mail, Clock, DollarSign, Car, Shield, ToggleLeft, ToggleRight,
   Save, Loader2, RefreshCw, CheckCircle, AlertCircle, Monitor, MapPin, Sliders,
-  AlertTriangle, FileText, Cpu, ChevronDown, ChevronUp, Brain, Sparkles
+  AlertTriangle, FileText, Cpu, ChevronDown, ChevronUp, Brain, Sparkles, Database,
+  Target, Users, TrendingUp, Zap
 } from 'lucide-react';
 
 interface ConfigData {
@@ -88,7 +89,26 @@ const AI_VISION_MODELS = [
   { id: '@cf/unum/uform-gen2-qwen-500m', name: 'UForm Gen2', desc: 'Fast, lightweight' }
 ];
 
-type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'ai' | 'content';
+type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'ai' | 'intelligence' | 'content';
+
+// Intelligence Configuration
+interface IntelligenceConfig {
+  ai_provider: string;
+  lead_scoring_enabled: boolean;
+  auto_sync_enabled: boolean;
+  sync_schedule: string;
+  min_confidence_score: number;
+  auto_approve_threshold: number;
+  hubspot_sync_enabled: boolean;
+  email_enrichment_enabled: boolean;
+}
+
+const AI_PROVIDERS = [
+  { id: 'cloudflare', name: 'Cloudflare Workers AI', desc: 'Built-in, no API key needed', recommended: true },
+  { id: 'openai', name: 'OpenAI GPT-4', desc: 'Most capable, requires API key' },
+  { id: 'anthropic', name: 'Anthropic Claude', desc: 'Great for analysis, requires API key' },
+  { id: 'google', name: 'Google Gemini', desc: 'Multimodal, requires API key' }
+];
 
 const ConfigManager: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionType>('contact');
@@ -166,6 +186,19 @@ const ConfigManager: React.FC = () => {
   });
   const [aiConfigSaveStatus, setAiConfigSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [aiConfigsLoaded, setAiConfigsLoaded] = useState(false);
+
+  // Intelligence Config
+  const [intelligenceConfig, setIntelligenceConfig] = useState<IntelligenceConfig>({
+    ai_provider: 'cloudflare',
+    lead_scoring_enabled: true,
+    auto_sync_enabled: false,
+    sync_schedule: '0 5,17 * * *',
+    min_confidence_score: 0.7,
+    auto_approve_threshold: 0.9,
+    hubspot_sync_enabled: false,
+    email_enrichment_enabled: true
+  });
+  const [intelConfigSaveStatus, setIntelConfigSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     loadAllData();
@@ -438,9 +471,38 @@ const ConfigManager: React.FC = () => {
     { id: 'rates', label: 'Business Rates', icon: <DollarSign className="w-4 h-4" /> },
     { id: 'flags', label: 'Feature Flags', icon: <ToggleRight className="w-4 h-4" /> },
     { id: 'ai', label: 'AI Models', icon: <Brain className="w-4 h-4" /> },
+    { id: 'intelligence', label: 'Intelligence', icon: <Target className="w-4 h-4" /> },
     { id: 'api', label: 'API Settings', icon: <Cpu className="w-4 h-4" /> },
     { id: 'content', label: 'Site Content', icon: <FileText className="w-4 h-4" /> }
   ];
+
+  // Save Intelligence Config
+  const saveIntelligenceConfig = async () => {
+    setIntelConfigSaveStatus('saving');
+    try {
+      const response = await fetch('/api/admin/api-configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service: 'intelligence',
+          provider: intelligenceConfig.ai_provider,
+          display_name: 'Market Intelligence',
+          config_json: JSON.stringify(intelligenceConfig),
+          is_active: true
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setIntelConfigSaveStatus('success');
+        setTimeout(() => setIntelConfigSaveStatus('idle'), 3000);
+      } else {
+        setIntelConfigSaveStatus('error');
+      }
+    } catch (error) {
+      console.error('Save intelligence config error:', error);
+      setIntelConfigSaveStatus('error');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -982,6 +1044,237 @@ const ConfigManager: React.FC = () => {
                     <Save className="w-4 h-4" />
                   )}
                   Save AI Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Intelligence Settings Section */}
+      {activeSection === 'intelligence' && (
+        <section className="space-y-6">
+          {/* AI Provider */}
+          <div className="admin-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Brain className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">AI Provider</h3>
+                <p className="text-gray-400 text-sm">Configure the AI service for market intelligence</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">AI Provider</label>
+                <select
+                  value={intelligenceConfig.ai_provider}
+                  onChange={(e) => setIntelligenceConfig(prev => ({ ...prev, ai_provider: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-amber-500"
+                >
+                  {AI_PROVIDERS.map(provider => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.name} {provider.recommended ? '(Recommended)' : ''} - {provider.desc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {intelligenceConfig.ai_provider !== 'cloudflare' && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <p className="text-amber-400 text-sm flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    API key required. Configure in API Settings section.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Lead Scoring & Automation */}
+          <div className="admin-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Lead Scoring & Automation</h3>
+                <p className="text-gray-400 text-sm">Configure automatic lead scoring and fact approval</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Lead Scoring Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div>
+                  <p className="text-white font-medium">Lead Scoring</p>
+                  <p className="text-gray-500 text-xs mt-1">Automatically score prospects based on fit criteria</p>
+                </div>
+                <button
+                  onClick={() => setIntelligenceConfig(prev => ({ ...prev, lead_scoring_enabled: !prev.lead_scoring_enabled }))}
+                  className="transition-transform hover:scale-110"
+                >
+                  {intelligenceConfig.lead_scoring_enabled ? (
+                    <ToggleRight className="w-10 h-10 text-green-500" />
+                  ) : (
+                    <ToggleLeft className="w-10 h-10 text-gray-500" />
+                  )}
+                </button>
+              </div>
+
+              {/* Confidence Thresholds */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                  <label className="block text-sm text-gray-400 mb-2">Min Confidence Score</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={intelligenceConfig.min_confidence_score * 100}
+                      onChange={(e) => setIntelligenceConfig(prev => ({ ...prev, min_confidence_score: parseInt(e.target.value) / 100 }))}
+                      className="flex-1"
+                    />
+                    <span className="text-white font-medium w-12 text-right">
+                      {Math.round(intelligenceConfig.min_confidence_score * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Facts below this threshold require manual review</p>
+                </div>
+
+                <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                  <label className="block text-sm text-gray-400 mb-2">Auto-Approve Threshold</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={intelligenceConfig.auto_approve_threshold * 100}
+                      onChange={(e) => setIntelligenceConfig(prev => ({ ...prev, auto_approve_threshold: parseInt(e.target.value) / 100 }))}
+                      className="flex-1"
+                    />
+                    <span className="text-white font-medium w-12 text-right">
+                      {Math.round(intelligenceConfig.auto_approve_threshold * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">Facts above this are automatically approved</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sync & Integrations */}
+          <div className="admin-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Database className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Sync & Integrations</h3>
+                <p className="text-gray-400 text-sm">Configure data synchronization and external integrations</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Auto Sync */}
+              <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div>
+                  <p className="text-white font-medium">Automatic Sync</p>
+                  <p className="text-gray-500 text-xs mt-1">Automatically sync data on schedule</p>
+                </div>
+                <button
+                  onClick={() => setIntelligenceConfig(prev => ({ ...prev, auto_sync_enabled: !prev.auto_sync_enabled }))}
+                  className="transition-transform hover:scale-110"
+                >
+                  {intelligenceConfig.auto_sync_enabled ? (
+                    <ToggleRight className="w-10 h-10 text-green-500" />
+                  ) : (
+                    <ToggleLeft className="w-10 h-10 text-gray-500" />
+                  )}
+                </button>
+              </div>
+
+              {intelligenceConfig.auto_sync_enabled && (
+                <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                  <label className="block text-sm text-gray-400 mb-2">Sync Schedule (Cron)</label>
+                  <input
+                    type="text"
+                    value={intelligenceConfig.sync_schedule}
+                    onChange={(e) => setIntelligenceConfig(prev => ({ ...prev, sync_schedule: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-xs text-gray-600 mt-1">Default: 5 AM and 5 PM daily (0 5,17 * * *)</p>
+                </div>
+              )}
+
+              {/* HubSpot Sync */}
+              <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div>
+                  <p className="text-white font-medium">HubSpot Sync</p>
+                  <p className="text-gray-500 text-xs mt-1">Sync prospects with HubSpot CRM contacts</p>
+                </div>
+                <button
+                  onClick={() => setIntelligenceConfig(prev => ({ ...prev, hubspot_sync_enabled: !prev.hubspot_sync_enabled }))}
+                  className="transition-transform hover:scale-110"
+                >
+                  {intelligenceConfig.hubspot_sync_enabled ? (
+                    <ToggleRight className="w-10 h-10 text-green-500" />
+                  ) : (
+                    <ToggleLeft className="w-10 h-10 text-gray-500" />
+                  )}
+                </button>
+              </div>
+
+              {/* Email Enrichment */}
+              <div className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+                <div>
+                  <p className="text-white font-medium">Email Enrichment</p>
+                  <p className="text-gray-500 text-xs mt-1">Automatically enrich contacts with email data</p>
+                </div>
+                <button
+                  onClick={() => setIntelligenceConfig(prev => ({ ...prev, email_enrichment_enabled: !prev.email_enrichment_enabled }))}
+                  className="transition-transform hover:scale-110"
+                >
+                  {intelligenceConfig.email_enrichment_enabled ? (
+                    <ToggleRight className="w-10 h-10 text-green-500" />
+                  ) : (
+                    <ToggleLeft className="w-10 h-10 text-gray-500" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="admin-card p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                <p>Changes will apply to new intelligence operations.</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {intelConfigSaveStatus === 'success' && (
+                  <span className="text-green-400 text-sm flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Saved!
+                  </span>
+                )}
+                {intelConfigSaveStatus === 'error' && (
+                  <span className="text-red-400 text-sm flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" /> Error saving
+                  </span>
+                )}
+                <button
+                  onClick={saveIntelligenceConfig}
+                  disabled={intelConfigSaveStatus === 'saving'}
+                  className="flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                >
+                  {intelConfigSaveStatus === 'saving' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save Intelligence Settings
                 </button>
               </div>
             </div>
