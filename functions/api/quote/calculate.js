@@ -83,6 +83,216 @@ const STATION_OVERHEAD_MIN = 15;
 const ANNUAL_DISCOUNT = 0.95;
 
 // ============================================
+// DCI ALGORITHM - PROPRIETARY PRICING INTELLIGENCE
+// ============================================
+
+// Service Style Complexity Multipliers
+const SERVICE_STYLE_MODIFIERS = {
+  'fine_dining': 1.25,     // +25% - table management, coursing, extensive service
+  'upscale_casual': 1.15,  // +15% - elevated service expectations
+  'full_service': 1.10,    // +10% - standard table service
+  'fast_casual': 1.05,     // +5%  - counter + table hybrid
+  'quick_service': 1.00,   // baseline
+  'counter': 0.95,         // -5%  - simple counter operations
+  'cafe': 0.90,            // -10% - minimal menu, basic ops
+  'food_truck': 0.85       // -15% - mobile, simplified setup
+};
+
+// Menu Complexity Multipliers
+const MENU_COMPLEXITY_MODIFIERS = {
+  'ultra': 1.30,           // +30% - 200+ items, extensive modifiers, coursing
+  'complex': 1.15,         // +15% - 100-200 items, moderate modifiers
+  'moderate': 1.05,        // +5%  - 50-100 items
+  'simple': 0.90           // -10% - <50 items, minimal modifiers
+};
+
+// Bar Program Multipliers
+const BAR_PROGRAM_MODIFIERS = {
+  'craft_cocktail': 1.25,  // +25% - extensive recipes, inventory tracking
+  'full_bar': 1.15,        // +15% - complete liquor program
+  'wine_focus': 1.10,      // +10% - wine list management
+  'beer_wine': 1.05,       // +5%  - limited beverage program
+  'none': 1.00             // baseline - no alcohol
+};
+
+// Volume Discount Tiers
+const VOLUME_DISCOUNT_TIERS = [
+  { minDevices: 50, discount: 0.15 },  // 15% off for 50+ devices
+  { minDevices: 30, discount: 0.10 },  // 10% off for 30-49 devices
+  { minDevices: 15, discount: 0.05 }   // 5% off for 15-29 devices
+];
+
+// Multi-location discount per additional location
+const MULTI_LOCATION_DISCOUNT_PER = 0.05;  // 5% per additional location
+const MAX_MULTI_LOCATION_DISCOUNT = 0.20;  // Cap at 20%
+
+/**
+ * Calculate DCI complexity modifier based on restaurant characteristics
+ */
+function getComplexityModifier(config) {
+  let modifier = 1.0;
+  const factors = [];
+
+  // Service Style
+  if (config.serviceStyle && SERVICE_STYLE_MODIFIERS[config.serviceStyle]) {
+    const styleModifier = SERVICE_STYLE_MODIFIERS[config.serviceStyle];
+    modifier *= styleModifier;
+    if (styleModifier !== 1.0) {
+      factors.push({
+        type: 'service_style',
+        value: config.serviceStyle,
+        modifier: styleModifier
+      });
+    }
+  }
+
+  // Menu Complexity
+  if (config.menuComplexity && MENU_COMPLEXITY_MODIFIERS[config.menuComplexity]) {
+    const menuModifier = MENU_COMPLEXITY_MODIFIERS[config.menuComplexity];
+    modifier *= menuModifier;
+    if (menuModifier !== 1.0) {
+      factors.push({
+        type: 'menu_complexity',
+        value: config.menuComplexity,
+        modifier: menuModifier
+      });
+    }
+  }
+
+  // Bar Program
+  if (config.barProgram && BAR_PROGRAM_MODIFIERS[config.barProgram]) {
+    const barModifier = BAR_PROGRAM_MODIFIERS[config.barProgram];
+    modifier *= barModifier;
+    if (barModifier !== 1.0) {
+      factors.push({
+        type: 'bar_program',
+        value: config.barProgram,
+        modifier: barModifier
+      });
+    }
+  }
+
+  // Station complexity: >5 stations adds 3% per extra station
+  const stationCount = (config.floors || []).reduce(
+    (sum, f) => sum + (f.stations?.length || 0), 0
+  );
+  if (stationCount > 5) {
+    const stationModifier = 1 + ((stationCount - 5) * 0.03);
+    modifier *= stationModifier;
+    factors.push({
+      type: 'station_count',
+      value: stationCount,
+      modifier: stationModifier
+    });
+  }
+
+  // KDS presence adds 10%
+  const hasKDS = (config.floors || []).some(f =>
+    (f.stations || []).some(s =>
+      (s.hardware || []).some(hw => hw.hid === 'toast-kds')
+    )
+  );
+  if (hasKDS) {
+    modifier *= 1.10;
+    factors.push({
+      type: 'kds_present',
+      value: true,
+      modifier: 1.10
+    });
+  }
+
+  // Multiple printers adds 8% (routing complexity)
+  const printerCount = (config.floors || []).reduce((sum, f) =>
+    sum + (f.stations || []).reduce((s, st) =>
+      s + (st.hardware || []).filter(hw =>
+        ['receipt-printer', 'impact-printer', 'label-printer'].includes(hw.hid)
+      ).length, 0
+    ), 0
+  );
+  if (printerCount > 2) {
+    modifier *= 1.08;
+    factors.push({
+      type: 'multi_printer',
+      value: printerCount,
+      modifier: 1.08
+    });
+  }
+
+  return { modifier: Math.round(modifier * 100) / 100, factors };
+}
+
+/**
+ * Calculate applicable discounts
+ */
+function calculateDiscounts(config, baseTotal, deviceCount) {
+  const discounts = [];
+  let totalDiscount = 0;
+
+  // Volume discount based on device count
+  for (const tier of VOLUME_DISCOUNT_TIERS) {
+    if (deviceCount >= tier.minDevices) {
+      discounts.push({
+        type: 'volume',
+        reason: `${tier.minDevices}+ devices`,
+        percentage: tier.discount
+      });
+      totalDiscount += tier.discount;
+      break; // Only apply highest tier
+    }
+  }
+
+  // Multi-location discount
+  const locationCount = config.locationCount || 1;
+  if (locationCount > 1) {
+    const multiLocDiscount = Math.min(
+      (locationCount - 1) * MULTI_LOCATION_DISCOUNT_PER,
+      MAX_MULTI_LOCATION_DISCOUNT
+    );
+    discounts.push({
+      type: 'multi_location',
+      reason: `${locationCount} locations`,
+      percentage: multiLocDiscount
+    });
+    totalDiscount += multiLocDiscount;
+  }
+
+  // Loyalty discount for existing clients
+  if (config.isExistingClient) {
+    discounts.push({
+      type: 'loyalty',
+      reason: 'Existing client',
+      percentage: 0.10
+    });
+    totalDiscount += 0.10;
+  }
+
+  // Referral credit (Toast referral)
+  let referralCredit = 0;
+  if (config.hasToastReferral) {
+    referralCredit = 1000; // $1,000 flat credit
+    discounts.push({
+      type: 'referral',
+      reason: 'Toast referral credit',
+      creditAmount: referralCredit
+    });
+  }
+
+  // Cap total percentage discount at 30%
+  totalDiscount = Math.min(totalDiscount, 0.30);
+
+  const discountAmount = baseTotal * totalDiscount;
+  const finalTotal = baseTotal - discountAmount - referralCredit;
+
+  return {
+    discounts,
+    totalPercentage: Math.round(totalDiscount * 100) / 100,
+    discountAmount: Math.round(discountAmount * 100) / 100,
+    referralCredit,
+    finalTotal: Math.max(0, Math.round(finalTotal * 100) / 100)
+  };
+}
+
+// ============================================
 // CALCULATION FUNCTIONS
 // ============================================
 
@@ -115,6 +325,9 @@ function calculateQuote(config) {
     mins: { hardware: 0, overhead: 0, integrations: 0, cabling: 0 }
   };
 
+  // Track device count for volume discounts
+  let deviceCount = 0;
+
   // Calculate labor for all floors
   (floors || []).forEach(floor => {
     // Stations & hardware
@@ -133,6 +346,8 @@ function calculateQuote(config) {
       (station.hardware || []).forEach(hw => {
         const tti = HARDWARE_TTI[hw.hid];
         if (!tti) return;
+
+        deviceCount++; // Count all devices for volume discount
 
         const hwExisting = hw.flags?.existing && !hw.flags?.replace;
         if (stationExisting || hwExisting) return;
@@ -172,18 +387,28 @@ function calculateQuote(config) {
     });
   });
 
-  // Calculate totals
+  // Calculate base totals
   const totalMin = Object.values(breakdown.mins).reduce((a, b) => a + b, 0);
-  const installCost = (totalMin / 60) * RATES.hourly;
+  const baseInstallCost = (totalMin / 60) * RATES.hourly;
   const travelCost = calculateTravelCost(travel);
 
-  // Support plan calculations
+  // Apply DCI Algorithm
+  const complexityResult = getComplexityModifier(config);
+  const adjustedInstallCost = baseInstallCost * complexityResult.modifier;
+
+  // Calculate discounts on the complexity-adjusted total
+  const subtotalBeforeDiscount = adjustedInstallCost + travelCost;
+  const discountResult = calculateDiscounts(config, subtotalBeforeDiscount, deviceCount);
+
+  // Support plan calculations (based on adjusted install cost)
   const tierPct = (supportTier || 0) / 100;
-  const supportMonthly = tierPct * installCost;
+  const supportMonthly = tierPct * adjustedInstallCost;
   const supportAnnual = supportMonthly * 12 * ANNUAL_DISCOUNT;
   const supportNow = supportPeriod === 'annual' ? supportAnnual : supportMonthly;
 
-  const combinedFirst = installCost + travelCost + supportNow;
+  // Final totals
+  const installAfterDiscount = discountResult.finalTotal;
+  const combinedFirst = installAfterDiscount + supportNow;
 
   return {
     // Detailed breakdown (without revealing TTI formulas)
@@ -199,11 +424,25 @@ function calculateQuote(config) {
       overheadCost: (breakdown.mins.overhead / 60) * RATES.hourly,
       integrationsCost: (breakdown.mins.integrations / 60) * RATES.hourly,
       cablingCost: (breakdown.mins.cabling / 60) * RATES.hourly,
-      installCost,
+      baseInstallCost,
+      complexityAdjustment: adjustedInstallCost - baseInstallCost,
+      installCost: adjustedInstallCost,
       travelCost,
+      subtotalBeforeDiscount,
+      discountAmount: discountResult.discountAmount,
+      referralCredit: discountResult.referralCredit,
+      installAfterDiscount,
       supportMonthly,
       supportAnnual,
       totalFirst: combinedFirst
+    },
+    // DCI Intelligence breakdown (for transparency)
+    dci: {
+      complexityModifier: complexityResult.modifier,
+      complexityFactors: complexityResult.factors,
+      discounts: discountResult.discounts,
+      totalDiscountPercent: discountResult.totalPercentage,
+      deviceCount
     },
     // Time estimate (approximate range, not exact)
     timeEstimate: {
