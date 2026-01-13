@@ -119,15 +119,103 @@ Pre-defined templates map to POS configurations:
 - Restaurant type → Typical hardware needs
 - Seat count estimates → Terminal recommendations
 - Service style → KDS/printer requirements
+- **DCI Algorithm** → Dynamic pricing based on complexity/discounts/industry
 
 ### Menu Builder
 - Cuisine type → Category templates
 - Menu complexity → Modifier depth
 - Bar program → Beverage menu structure
 
+## DCI Algorithm (Quote Builder)
+
+The DCI (Discount/Complexity/Industry) algorithm applies intelligent pricing adjustments.
+
+### Complexity Multipliers
+
+| Factor | Value | Adjustment |
+|--------|-------|------------|
+| **Service Style** | | |
+| Fine Dining | 1.25 | +25% |
+| Upscale Casual | 1.15 | +15% |
+| Full Service | 1.10 | +10% |
+| Fast Casual | 1.05 | +5% |
+| Quick Service | 1.00 | baseline |
+| Counter | 0.95 | -5% |
+| Cafe | 0.90 | -10% |
+| Food Truck | 0.85 | -15% |
+| **Menu Complexity** | | |
+| Ultra (200+ items) | 1.30 | +30% |
+| Complex (100-200) | 1.15 | +15% |
+| Moderate (50-100) | 1.05 | +5% |
+| Simple (<50) | 0.90 | -10% |
+| **Bar Program** | | |
+| Craft Cocktail | 1.25 | +25% |
+| Full Bar | 1.15 | +15% |
+| Wine Focus | 1.10 | +10% |
+| Beer/Wine | 1.05 | +5% |
+| None | 1.00 | baseline |
+
+### Hardware Complexity Factors
+
+| Factor | Threshold | Adjustment |
+|--------|-----------|------------|
+| Station count | >5 stations | +3% per extra station |
+| KDS present | Any | +10% |
+| Multi-printer | >2 printers | +8% |
+
+### Discount Tiers
+
+| Type | Condition | Discount |
+|------|-----------|----------|
+| Volume | 50+ devices | 15% |
+| Volume | 30-49 devices | 10% |
+| Volume | 15-29 devices | 5% |
+| Multi-location | Per additional location | 5% (max 20%) |
+| Loyalty | Existing client | 10% |
+| Referral | Toast referral | $1,000 credit |
+
+*Maximum total discount capped at 30%*
+
+## HubSpot Integration
+
+**Status: ACTIVE** (215 contacts synced)
+
+### Sync Endpoint
+`POST /api/sync/hubspot-contacts`
+
+### Custom Properties
+| Property | Internal Name | Description |
+|----------|---------------|-------------|
+| D1 Lead ID | `d1_lead_id` | Links HubSpot to D1 record |
+| D1 Synced At | `d1_synced_at` | Last sync timestamp |
+| Square Customer ID | `square_customer_id` | Links to Square billing |
+
+### Database Columns Added
+- `restaurant_leads.hubspot_synced_at` - Sync tracking
+- `clients.hubspot_synced_at` - Sync tracking
+- `clients.square_customer_id` - Square integration
+- `quotes.square_customer_id` - Quote tracking
+
+## Email Enrollment
+
+**Endpoint:** `POST /api/email/enroll`
+
+### Available Sequences
+| ID | Segment | Steps |
+|----|---------|-------|
+| 1 | Segment A (Switchers) | 3 |
+| 2 | Segment B (Toast) | 3 |
+| 3 | Segment C (Transitions) | 2 |
+| 4 | Segment D (Local) | 2 |
+| 5 | Menu Builder Launch | 3 |
+| 6 | Quote Follow-up | 3 |
+| 7 | Booking Confirmation | 3 |
+| 8 | Onboarding | 3 |
+
 ## Future Enhancements
 
-1. **Google Places Enrichment** - Add hours, reviews, photos
-2. **Yelp API Integration** - Cuisine verification, price level
-3. **AI Website Analysis** - Scrape menus for item counts
-4. **HubSpot Sync** - Two-way lead sync with CRM
+1. ~~**HubSpot Sync** - Two-way lead sync with CRM~~ ✅ COMPLETED
+2. **Google Places Enrichment** - Add hours, reviews, photos
+3. **Yelp API Integration** - Cuisine verification, price level
+4. **AI Website Analysis** - Scrape menus for item counts
+5. **Square Subscription Plans** - Automated billing for support plans
