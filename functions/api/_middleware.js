@@ -26,7 +26,9 @@ const BYPASS_PATHS = [
   '/api/admin/',     // Admin is already protected by auth
   '/api/client/',    // Client portal is auth-protected
   '/api/config/',    // Config endpoints
-  '/api/availability/' // Availability check
+  '/api/availability/', // Availability check
+  '/api/stripe/',    // Stripe webhooks need immediate processing
+  '/api/webhooks/'   // General webhooks
 ];
 
 /**
