@@ -42,12 +42,19 @@ binding = "AI"
 #   JWT_SECRET             - Secret for signing JWTs (defaults to ADMIN_PASSWORD_HASH)
 #   CLIENT_JWT_SECRET      - Secret for client portal tokens (defaults to JWT_SECRET)
 #
-# SQUARE API:
+# SQUARE API (Legacy - use Stripe for new integrations):
 #   SQUARE_ACCESS_TOKEN    - From https://developer.squareup.com
 #   SQUARE_ENVIRONMENT     - 'sandbox' or 'production'
 #   SQUARE_LOCATION_ID_LANE_A - L6GGMPCHFM6WR (Local Cape Cod)
 #   SQUARE_LOCATION_ID_LANE_B - LB8GE5HYZJYB7 (National Remote)
 #   SQUARE_WEBHOOK_SIGNATURE_KEY - Webhook verification key
+#
+# STRIPE API (Primary billing system):
+#   STRIPE_SECRET_KEY      - From https://dashboard.stripe.com/apikeys
+#                            Use sk_test_xxx for testing, sk_live_xxx for production
+#   STRIPE_PUBLISHABLE_KEY - pk_test_xxx or pk_live_xxx (for frontend)
+#   STRIPE_WEBHOOK_SECRET  - whsec_xxx from webhook endpoint settings
+#                            Configure webhook at: /api/stripe/webhook
 #
 # PANDADOC (for contracts/proposals):
 #   PANDADOC_API_KEY       - From https://app.pandadoc.com/a/#/settings/api

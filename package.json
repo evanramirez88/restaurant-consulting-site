@@ -19,6 +19,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-router-dom": "^7.10.1",
+    "stripe": "^20.1.2",
     "svix": "^1.84.1",
     "unpdf": "^1.4.0"
   },
