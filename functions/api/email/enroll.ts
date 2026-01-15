@@ -216,9 +216,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
 export async function onRequestGet({ env }: { env: Env }): Promise<Response> {
   try {
     const sequences = await env.DB.prepare(`
-      SELECT id, name, type, status, 
+      SELECT id, name, sequence_type, status,
              (SELECT COUNT(*) FROM sequence_steps WHERE sequence_id = email_sequences.id) as step_count
-      FROM email_sequences 
+      FROM email_sequences
       WHERE status = 'active'
       ORDER BY name
     `).all();
