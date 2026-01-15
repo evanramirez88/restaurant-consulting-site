@@ -1,7 +1,7 @@
 # Cloudflare Infrastructure Status
 
-**Last Updated:** 2026-01-07 12:00 EST
-**Session:** Full integration audit completed - all services verified
+**Last Updated:** 2026-01-15 18:30 EST
+**Session:** Stripe Billing Integration completed - all subscription products live
 
 ---
 
@@ -104,8 +104,11 @@
 |----------|--------|---------|------------|
 | RESEND_API_KEY | ✅ | Contact form emails | `re_*` |
 | HUBSPOT_API_KEY | ✅ | CRM sync (Panicky-Monkey app) | `pat-na2-*` |
-| SQUARE_ACCESS_TOKEN | ✅ | Billing/Invoices | `EAAA*` (OAuth token) |
-| SQUARE_APPLICATION_ID | ✅ | Billing/Invoices | `sq0idp-*` |
+| SQUARE_ACCESS_TOKEN | ✅ | One-time invoices | `EAAA*` (OAuth token) |
+| SQUARE_APPLICATION_ID | ✅ | One-time invoices | `sq0idp-*` |
+| **STRIPE_SECRET_KEY** | ✅ | Subscription billing | `sk_live_*` |
+| **STRIPE_PUBLISHABLE_KEY** | ✅ | Checkout integration | `pk_live_*` |
+| **STRIPE_WEBHOOK_SECRET** | ✅ | Webhook verification | `whsec_*` |
 
 #### Contact Information (Quote Emails)
 | Variable | Status | Notes | Default Value |
@@ -201,22 +204,33 @@
 
 | Service | Status | Configuration |
 |---------|--------|---------------|
+| **Stripe** | ✅ ACTIVE | Live mode, 6 products, 18 prices |
 | HubSpot | ✅ ACTIVE | Portal 243379742, Panicky-Monkey app |
-| Square | ✅ ACTIVE | Lane B (LB8GE5HYZJYB7) for Toast billing |
+| Square | ✅ ACTIVE | Lane B (LB8GE5HYZJYB7) for one-time invoices |
 | Resend | ✅ ACTIVE | Verified domain ccrestaurantconsulting.com |
 | Cal.com | ✅ ACTIVE | User: r-g-consulting, webhook integration |
-| Cloudflare D1 | ✅ ACTIVE | 40+ tables, 6 email sequences seeded |
+| Cloudflare D1 | ✅ ACTIVE | 80+ tables, Stripe billing tables added |
 | Cloudflare R2 | ✅ ACTIVE | ccrc-uploads bucket |
 | Workers AI | ✅ ACTIVE | Bound as `AI` |
 
-### Support Plan Flow
+### Billing Strategy (Square + Stripe)
 
-1. **Visitor** → /services → sees Toast Guardian pricing
-2. **Schedule** → /schedule → Cal.com booking
-3. **Cal.com webhook** → Creates subscriber, triggers confirmation sequence
-4. **Consultation** → Admin creates client + subscription
-5. **Billing** → Square invoice or subscription created
-6. **Client Portal** → /portal/{slug}/billing → View subscription & invoices
+| Use Case | Platform | Notes |
+|----------|----------|-------|
+| Recurring Subscriptions | **Stripe** | Toast Guardian + Network Support plans |
+| One-time Invoices | Square | Project work, hourly billing |
+| Custom Quotes | **Stripe Quotes** | Bespoke pricing with PDF generation |
+| Customer Portal | **Stripe** | Self-service subscription management |
+
+### Support Plan Flow (Updated 2026-01-15)
+
+1. **Visitor** → /services or /local-networking → sees support plan pricing
+2. **Subscribe** → Click "Subscribe Now" → **Stripe Checkout** (hosted)
+3. **Payment** → Customer enters payment info on Stripe-hosted page
+4. **Webhook** → Stripe sends `checkout.session.completed` event
+5. **Processing** → `/api/stripe/webhook` creates subscription records in D1
+6. **HubSpot Sync** → Deal stage updated, subscription linked
+7. **Customer Portal** → `/api/stripe/portal` for self-service management
 
 ### Email Sequences (Pre-built)
 
@@ -232,9 +246,10 @@
 
 | Task | Location | Priority |
 |------|----------|----------|
-| Create Square catalog items | Square Dashboard → Catalog | HIGH |
-| Create HubSpot sequences | HubSpot → Sequences | HIGH |
+| ~~Create Square catalog items~~ | ~~Square Dashboard~~ | ~~DONE - Using Stripe~~ |
+| Create HubSpot sequences | HubSpot → Sequences | MEDIUM |
 | Configure Cal.com webhook | Cal.com → Webhooks | MEDIUM |
+| Test Stripe Checkout end-to-end | Live site | LOW |
 
 ---
 
