@@ -13,8 +13,8 @@
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { getStripeClient } from '../_shared/stripe.js';
 
-// Toast Guardian product definitions
-const PRODUCT_DEFINITIONS = [
+// Toast Guardian product definitions (Lane B - Remote Support)
+const TOAST_GUARDIAN_PRODUCTS = [
   {
     name: 'Toast Guardian - Core',
     description: 'Essential Toast POS support for small restaurants. 5 hours/month included.',
@@ -46,6 +46,43 @@ const PRODUCT_DEFINITIONS = [
     ]
   }
 ];
+
+// Local Networking Support product definitions (Lane A - Cape Cod Cable Contractors)
+const NETWORKING_SUPPORT_PRODUCTS = [
+  {
+    name: 'Network Support - Basic',
+    description: 'Essential network maintenance for Cape Cod restaurants. 48-hour response, business hours support.',
+    tier: 'network_basic',
+    prices: [
+      { billing_interval: 'monthly', amount: 15000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 45000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'annual', amount: 165000, interval: 'year', interval_count: 1 }
+    ]
+  },
+  {
+    name: 'Network Support - Premium',
+    description: 'Enhanced network support with 24-hour response, after-hours availability, and on-site service.',
+    tier: 'network_premium',
+    prices: [
+      { billing_interval: 'monthly', amount: 30000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 90000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'annual', amount: 330000, interval: 'year', interval_count: 1 }
+    ]
+  },
+  {
+    name: 'Network Support - Enterprise',
+    description: 'Full-service network management with 24/7 monitoring, emergency response, and dedicated account manager.',
+    tier: 'network_enterprise',
+    prices: [
+      { billing_interval: 'monthly', amount: 50000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 150000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'annual', amount: 550000, interval: 'year', interval_count: 1 }
+    ]
+  }
+];
+
+// Combined product definitions
+const PRODUCT_DEFINITIONS = [...TOAST_GUARDIAN_PRODUCTS, ...NETWORKING_SUPPORT_PRODUCTS];
 
 /**
  * POST /api/stripe/setup-products
@@ -175,9 +212,28 @@ export async function onRequestPost(context) {
 
     // Insert real price IDs
     for (const price of createdPrices) {
-      // Get included hours based on tier
-      const includedHours = { core: 5, professional: 10, premium: 20 }[price.tier];
-      const description = `Toast Guardian ${price.tier.charAt(0).toUpperCase() + price.tier.slice(1)} - ${price.billing_interval.charAt(0).toUpperCase() + price.billing_interval.slice(1)}`;
+      // Get included hours based on tier (Toast Guardian and Network Support)
+      const includedHoursMap = {
+        core: 5,
+        professional: 10,
+        premium: 20,
+        network_basic: 2,
+        network_premium: 4,
+        network_enterprise: 8
+      };
+      const includedHours = includedHoursMap[price.tier] || 0;
+
+      // Format tier name for description
+      const tierNameMap = {
+        core: 'Toast Guardian Core',
+        professional: 'Toast Guardian Professional',
+        premium: 'Toast Guardian Premium',
+        network_basic: 'Network Support Basic',
+        network_premium: 'Network Support Premium',
+        network_enterprise: 'Network Support Enterprise'
+      };
+      const tierName = tierNameMap[price.tier] || price.tier;
+      const description = `${tierName} - ${price.billing_interval.charAt(0).toUpperCase() + price.billing_interval.slice(1)}`;
 
       await env.DB.prepare(`
         INSERT OR REPLACE INTO stripe_products
