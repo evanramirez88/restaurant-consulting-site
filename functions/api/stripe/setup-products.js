@@ -1,0 +1,262 @@
+/**
+ * Stripe Products Setup API (Admin Only - One-time use)
+ *
+ * POST /api/stripe/setup-products - Create Toast Guardian products and prices
+ *
+ * This endpoint creates the required Stripe products and prices for
+ * Toast Guardian support plans, then updates the D1 database.
+ *
+ * IMPORTANT: This is a one-time setup endpoint. After products are created,
+ * this endpoint can be deleted or disabled.
+ */
+
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+import { getStripeClient } from '../_shared/stripe.js';
+
+// Toast Guardian product definitions
+const PRODUCT_DEFINITIONS = [
+  {
+    name: 'Toast Guardian - Core',
+    description: 'Essential Toast POS support for small restaurants. 5 hours/month included.',
+    tier: 'core',
+    prices: [
+      { billing_interval: 'monthly', amount: 35000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 105000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'yearly', amount: 385000, interval: 'year', interval_count: 1 }
+    ]
+  },
+  {
+    name: 'Toast Guardian - Professional',
+    description: 'Enhanced Toast POS support for growing restaurants. 10 hours/month included.',
+    tier: 'professional',
+    prices: [
+      { billing_interval: 'monthly', amount: 50000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 150000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'yearly', amount: 550000, interval: 'year', interval_count: 1 }
+    ]
+  },
+  {
+    name: 'Toast Guardian - Premium',
+    description: 'Priority Toast POS support for high-volume restaurants. 20 hours/month included.',
+    tier: 'premium',
+    prices: [
+      { billing_interval: 'monthly', amount: 80000, interval: 'month', interval_count: 1 },
+      { billing_interval: 'quarterly', amount: 240000, interval: 'month', interval_count: 3 },
+      { billing_interval: 'yearly', amount: 880000, interval: 'year', interval_count: 1 }
+    ]
+  }
+];
+
+/**
+ * POST /api/stripe/setup-products
+ * Create all Toast Guardian products and prices in Stripe
+ */
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  // Admin auth required
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  try {
+    const stripe = getStripeClient(env);
+    const createdPrices = [];
+    const results = [];
+
+    // Check if products already exist
+    const existingProducts = await stripe.products.list({
+      limit: 100,
+      active: true
+    });
+
+    const existingByTier = {};
+    for (const product of existingProducts.data) {
+      if (product.metadata?.tier && product.metadata?.type === 'support_plan') {
+        existingByTier[product.metadata.tier] = product;
+      }
+    }
+
+    for (const productDef of PRODUCT_DEFINITIONS) {
+      let product;
+
+      // Check if product already exists
+      if (existingByTier[productDef.tier]) {
+        product = existingByTier[productDef.tier];
+        results.push({
+          tier: productDef.tier,
+          product_id: product.id,
+          status: 'existing'
+        });
+      } else {
+        // Create new product
+        product = await stripe.products.create({
+          name: productDef.name,
+          description: productDef.description,
+          metadata: {
+            tier: productDef.tier,
+            type: 'support_plan'
+          }
+        });
+        results.push({
+          tier: productDef.tier,
+          product_id: product.id,
+          status: 'created'
+        });
+      }
+
+      // Get existing prices for this product
+      const existingPrices = await stripe.prices.list({
+        product: product.id,
+        active: true,
+        limit: 100
+      });
+
+      const existingPricesByInterval = {};
+      for (const price of existingPrices.data) {
+        const interval = price.metadata?.billing_interval;
+        if (interval) {
+          existingPricesByInterval[interval] = price;
+        }
+      }
+
+      // Create prices for this product
+      for (const priceDef of productDef.prices) {
+        let price;
+
+        if (existingPricesByInterval[priceDef.billing_interval]) {
+          price = existingPricesByInterval[priceDef.billing_interval];
+        } else {
+          const priceParams = {
+            product: product.id,
+            currency: 'usd',
+            unit_amount: priceDef.amount,
+            recurring: {
+              interval: priceDef.interval,
+              interval_count: priceDef.interval_count
+            },
+            metadata: {
+              tier: productDef.tier,
+              billing_interval: priceDef.billing_interval
+            }
+          };
+
+          price = await stripe.prices.create(priceParams);
+        }
+
+        createdPrices.push({
+          tier: productDef.tier,
+          billing_interval: priceDef.billing_interval,
+          price_id: price.id,
+          amount: priceDef.amount
+        });
+      }
+    }
+
+    // Update D1 database with real price IDs
+    // First, delete placeholder entries
+    await env.DB.prepare(`
+      DELETE FROM stripe_products WHERE stripe_price_id LIKE '%_TBD'
+    `).run();
+
+    // Insert real price IDs
+    for (const price of createdPrices) {
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO stripe_products
+        (tier, billing_interval, stripe_price_id, price_cents, active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now'))
+      `).bind(
+        price.tier,
+        price.billing_interval,
+        price.price_id,
+        price.amount
+      ).run();
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Toast Guardian products and prices created successfully',
+      data: {
+        products: results,
+        prices: createdPrices,
+        database_updated: true
+      }
+    }), {
+      headers: corsHeaders
+    });
+
+  } catch (error) {
+    console.error('Setup products error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+}
+
+/**
+ * GET /api/stripe/setup-products
+ * Check current product/price status
+ */
+export async function onRequestGet(context) {
+  const { request, env } = context;
+
+  // Admin auth required
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  try {
+    const stripe = getStripeClient(env);
+
+    // Get products from Stripe
+    const products = await stripe.products.list({
+      limit: 100,
+      active: true
+    });
+
+    const supportPlanProducts = products.data.filter(
+      p => p.metadata?.type === 'support_plan'
+    );
+
+    // Get prices from D1
+    const dbPrices = await env.DB.prepare(`
+      SELECT * FROM stripe_products ORDER BY tier, billing_interval
+    `).all();
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        stripe_products: supportPlanProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          tier: p.metadata?.tier,
+          active: p.active
+        })),
+        database_prices: dbPrices.results,
+        needs_setup: dbPrices.results.some(p => p.stripe_price_id?.includes('_TBD'))
+      }
+    }), {
+      headers: corsHeaders
+    });
+
+  } catch (error) {
+    console.error('Get products status error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+}
+
+export async function onRequestOptions() {
+  return handleOptions();
+}
