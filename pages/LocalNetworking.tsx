@@ -19,6 +19,37 @@ import { useSEO } from '../src/components/SEO';
 
 const LocalNetworking: React.FC = () => {
   const [parallaxOffset, setParallaxOffset] = useState(0);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  // Handle subscription checkout
+  const handleSubscribe = async (tier: string) => {
+    setLoadingPlan(tier);
+    try {
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier: `network_${tier.toLowerCase()}`,
+          billing_interval: 'monthly',
+          success_url: `${window.location.origin}/#/local-networking?success=true&plan=${tier}`,
+          cancel_url: `${window.location.origin}/#/local-networking`,
+          commitment_months: 3
+        })
+      });
+      const data = await response.json();
+      if (data.success && data.data?.url) {
+        window.location.href = data.data.url;
+      } else {
+        console.error('Checkout error:', data.error);
+        alert('Unable to start checkout. Please try again or contact support.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Unable to start checkout. Please try again or contact support.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   useSEO({
     title: 'Restaurant Networking & Cabling | Cape Cod, MA | Toast POS Specialists',
@@ -407,16 +438,17 @@ const LocalNetworking: React.FC = () => {
                     ))}
                   </div>
 
-                  <Link
-                    to="/schedule"
-                    className="block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90"
+                  <button
+                    onClick={() => handleSubscribe(plan.name)}
+                    disabled={loadingPlan !== null}
+                    className="block w-full text-center px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       backgroundColor: plan.highlighted ? '#ea580c' : '#1f2937',
                       color: '#ffffff'
                     }}
                   >
-                    Get Started
-                  </Link>
+                    {loadingPlan === plan.name ? 'Loading...' : 'Subscribe Now'}
+                  </button>
                 </div>
               </div>
             ))}
