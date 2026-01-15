@@ -128,19 +128,15 @@ export async function onRequestPost(context) {
 
     await db.prepare(`
       INSERT INTO email_sequences (
-        id, name, description, type, status,
-        trigger_type, trigger_config, settings,
+        id, name, description, sequence_type, status,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       body.name.trim(),
       body.description || null,
       body.type || 'drip',
       body.status || 'draft',
-      body.trigger_type || 'manual',
-      body.trigger_config || null,
-      body.settings || null,
       now,
       now
     ).run();
