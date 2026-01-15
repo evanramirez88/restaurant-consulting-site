@@ -158,6 +158,7 @@ export async function onRequestPost(context) {
         createdPrices.push({
           tier: productDef.tier,
           billing_interval: priceDef.billing_interval,
+          product_id: product.id,
           price_id: price.id,
           amount: priceDef.amount
         });
@@ -172,15 +173,22 @@ export async function onRequestPost(context) {
 
     // Insert real price IDs
     for (const price of createdPrices) {
+      // Get included hours based on tier
+      const includedHours = { core: 5, professional: 10, premium: 20 }[price.tier];
+      const description = `Toast Guardian ${price.tier.charAt(0).toUpperCase() + price.tier.slice(1)} - ${price.billing_interval.charAt(0).toUpperCase() + price.billing_interval.slice(1)}`;
+
       await env.DB.prepare(`
         INSERT OR REPLACE INTO stripe_products
-        (tier, billing_interval, stripe_price_id, price_cents, active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 1, datetime('now'), datetime('now'))
+        (tier, billing_interval, stripe_product_id, stripe_price_id, amount_cents, included_hours, description, active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))
       `).bind(
         price.tier,
         price.billing_interval,
+        price.product_id,
         price.price_id,
-        price.amount
+        price.amount,
+        includedHours,
+        description
       ).run();
     }
 
