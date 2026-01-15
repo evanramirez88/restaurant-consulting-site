@@ -125,7 +125,9 @@ export async function onRequestPost(context) {
 
       const existingPricesByInterval = {};
       for (const price of existingPrices.data) {
-        const interval = price.metadata?.billing_interval;
+        let interval = price.metadata?.billing_interval;
+        // Normalize 'yearly' to 'annual' for database consistency
+        if (interval === 'yearly') interval = 'annual';
         if (interval) {
           existingPricesByInterval[interval] = price;
         }
