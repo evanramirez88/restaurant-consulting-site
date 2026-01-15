@@ -22,7 +22,7 @@ const PRODUCT_DEFINITIONS = [
     prices: [
       { billing_interval: 'monthly', amount: 35000, interval: 'month', interval_count: 1 },
       { billing_interval: 'quarterly', amount: 105000, interval: 'month', interval_count: 3 },
-      { billing_interval: 'yearly', amount: 385000, interval: 'year', interval_count: 1 }
+      { billing_interval: 'annual', amount: 385000, interval: 'year', interval_count: 1 }
     ]
   },
   {
@@ -32,7 +32,7 @@ const PRODUCT_DEFINITIONS = [
     prices: [
       { billing_interval: 'monthly', amount: 50000, interval: 'month', interval_count: 1 },
       { billing_interval: 'quarterly', amount: 150000, interval: 'month', interval_count: 3 },
-      { billing_interval: 'yearly', amount: 550000, interval: 'year', interval_count: 1 }
+      { billing_interval: 'annual', amount: 550000, interval: 'year', interval_count: 1 }
     ]
   },
   {
@@ -42,7 +42,7 @@ const PRODUCT_DEFINITIONS = [
     prices: [
       { billing_interval: 'monthly', amount: 80000, interval: 'month', interval_count: 1 },
       { billing_interval: 'quarterly', amount: 240000, interval: 'month', interval_count: 3 },
-      { billing_interval: 'yearly', amount: 880000, interval: 'year', interval_count: 1 }
+      { billing_interval: 'annual', amount: 880000, interval: 'year', interval_count: 1 }
     ]
   }
 ];
