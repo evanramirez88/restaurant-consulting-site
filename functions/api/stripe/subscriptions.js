@@ -9,7 +9,7 @@
  * Manages Stripe subscription lifecycle with commitment tracking
  */
 
-import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import {
   getStripeClient,
   getOrCreateStripeCustomer,

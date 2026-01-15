@@ -13,7 +13,7 @@
  * - HubSpot deal integration
  */
 
-import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import {
   getStripeClient,
   createStripeQuote,

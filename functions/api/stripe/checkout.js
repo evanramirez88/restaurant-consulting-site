@@ -11,7 +11,7 @@
  * - Promotion code support
  */
 
-import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyAuth, verifyClientAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import {
   createCheckoutSession,
   getCheckoutSession,

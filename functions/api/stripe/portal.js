@@ -10,7 +10,7 @@
  * - Cancel subscription (if allowed by portal config)
  */
 
-import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyClientAuth, verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { createPortalSession } from '../_shared/stripe.js';
 
 /**
