@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Crosshair,
   Copy,
   Edit3,
   MapPin,
@@ -214,19 +215,19 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   badge,
   maxHeight = '300px'
 }) => (
-  <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden transition-all duration-200">
+  <div className="overflow-hidden transition-all duration-200">
     <button
       onClick={onToggle}
-      className="w-full flex items-center gap-2 px-4 py-3 hover:bg-slate-700/30 transition-colors text-left"
+      className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-800/40 rounded-lg transition-colors text-left group"
     >
-      {icon && <span className="text-slate-400">{icon}</span>}
-      <span className="text-xs font-semibold uppercase tracking-wider text-slate-200 flex-1">{title}</span>
-      {badge !== undefined && (
-        <span className="px-2 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded-full">{badge}</span>
-      )}
-      <span className="text-slate-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-        <ChevronDown size={16} />
+      <span className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
+        <ChevronRight size={14} className="text-gray-500 group-hover:text-amber-400" />
       </span>
+      {icon && <span className="text-gray-400 group-hover:text-amber-400 transition-colors">{icon}</span>}
+      <span className="text-xs font-semibold uppercase tracking-wider text-gray-300 flex-1">{title}</span>
+      {badge !== undefined && (
+        <span className="px-2 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded-full font-medium">{badge}</span>
+      )}
     </button>
     <div
       className="transition-all duration-200 ease-in-out"
@@ -236,10 +237,12 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
         overflow: 'hidden'
       }}
     >
-      <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: `calc(${maxHeight} - 16px)` }}>
+      <div className="pl-7 pr-2 pb-3 pt-1 overflow-y-auto quote-builder-scrollbar" style={{ maxHeight: `calc(${maxHeight} - 16px)` }}>
         {children}
       </div>
     </div>
+    {/* Subtle divider line when open */}
+    {isOpen && <div className="mx-3 border-b border-gray-700/50" />}
   </div>
 );
 
@@ -1324,7 +1327,7 @@ const QuoteBuilder: React.FC = () => {
   // Loading state while checking feature flag
   if (featureFlagLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-amber-400 animate-spin" aria-label="Loading" />
       </div>
     );
@@ -1333,7 +1336,7 @@ const QuoteBuilder: React.FC = () => {
   // Coming Soon overlay - shows when feature is disabled via API or local flag
   if (!isFeatureEnabled) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-xl px-6">
           <div className="text-amber-400 text-6xl mb-6">
             <Wrench className="w-16 h-16 mx-auto" />
@@ -1358,26 +1361,26 @@ const QuoteBuilder: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-[#0a0f1a] flex flex-col overflow-hidden quote-builder-theme">
       {/* Header Toolbar - Compact */}
-      <header className="flex-shrink-0 border-b border-slate-700 bg-slate-900/95 backdrop-blur z-20">
+      <header className="flex-shrink-0 border-b border-gray-800 bg-[#111827]/95 backdrop-blur z-20">
         <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto">
           {/* Back button and title */}
           <Link
             to="/"
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mr-2 flex-shrink-0"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mr-2 flex-shrink-0"
           >
             <X size={18} />
           </Link>
           <h1 className="text-white font-serif font-semibold text-sm mr-4 flex-shrink-0">Quote Builder</h1>
 
-          <div className="w-px h-6 bg-slate-700 mx-1 flex-shrink-0" />
+          <div className="w-px h-6 bg-gray-700 mx-1 flex-shrink-0" />
 
           {/* Location name - editable */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Building2 size={14} className="text-slate-400" />
+            <Building2 size={14} className="text-gray-400" />
             <input
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white w-40"
+              className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white w-40"
               placeholder="Restaurant Name"
               value={currentLocation?.name || ''}
               onChange={e => updateCurrentLocation(loc => ({ ...loc, name: e.target.value }))}
@@ -1385,7 +1388,7 @@ const QuoteBuilder: React.FC = () => {
             />
             {locations.length > 1 && (
               <select
-                className="bg-slate-800 border border-slate-600 rounded px-1 py-1.5 text-xs text-white w-8"
+                className="bg-gray-800 border border-gray-700 rounded px-1 py-1.5 text-xs text-white w-8"
                 value={locId}
                 onChange={e => setLocId(e.target.value)}
                 title="Switch location"
@@ -1395,26 +1398,26 @@ const QuoteBuilder: React.FC = () => {
                 ))}
               </select>
             )}
-            <button onClick={addLocation} className="bg-slate-700 hover:bg-slate-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Location">
+            <button onClick={addLocation} className="bg-gray-700 hover:bg-gray-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Location">
               <Plus size={12} />
             </button>
           </div>
 
           {/* Address input */}
           <input
-            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white w-48 flex-shrink-0"
+            className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white w-48 flex-shrink-0"
             placeholder="Address (auto-detects zone)"
             value={currentLocation?.address || ''}
             onChange={e => setAddress(e.target.value)}
           />
 
-          <div className="w-px h-6 bg-slate-700 mx-1 flex-shrink-0" />
+          <div className="w-px h-6 bg-gray-700 mx-1 flex-shrink-0" />
 
           {/* Floor selector */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Layers size={14} className="text-slate-400" />
+            <Layers size={14} className="text-gray-400" />
             <select
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white"
+              className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white"
               value={floorId}
               onChange={e => setFloorId(e.target.value)}
             >
@@ -1422,7 +1425,7 @@ const QuoteBuilder: React.FC = () => {
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
-            <button onClick={addFloor} className="bg-slate-700 hover:bg-slate-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Floor">
+            <button onClick={addFloor} className="bg-gray-700 hover:bg-gray-600 rounded p-1.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Floor">
               <Plus size={12} />
             </button>
           </div>
@@ -1435,7 +1438,7 @@ const QuoteBuilder: React.FC = () => {
             <button
               onClick={undo}
               disabled={!canUndo}
-              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canUndo ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canUndo ? 'bg-gray-700 text-white hover:bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
               title="Undo (Ctrl+Z)"
             >
               <Undo2 size={14} />
@@ -1443,7 +1446,7 @@ const QuoteBuilder: React.FC = () => {
             <button
               onClick={redo}
               disabled={!canRedo}
-              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canRedo ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${canRedo ? 'bg-gray-700 text-white hover:bg-gray-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
               title="Redo (Ctrl+Y)"
             >
               <Redo2 size={14} />
@@ -1466,14 +1469,14 @@ const QuoteBuilder: React.FC = () => {
           <div className="flex items-center gap-1 flex-shrink-0 ml-2">
             <button
               onClick={() => setLeftOpen(!leftOpen)}
-              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${leftOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${leftOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-700 text-gray-400 hover:text-white'}`}
               title={leftOpen ? "Hide left panel" : "Show left panel"}
             >
               <PanelLeftClose size={14} />
             </button>
             <button
               onClick={() => setRightOpen(!rightOpen)}
-              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${rightOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400 hover:text-white'}`}
+              className={`p-1.5 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${rightOpen ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-700 text-gray-400 hover:text-white'}`}
               title={rightOpen ? "Hide right panel" : "Show right panel"}
             >
               <PanelRightClose size={14} />
@@ -1486,10 +1489,10 @@ const QuoteBuilder: React.FC = () => {
       <div className="flex flex-1 relative overflow-hidden">
         {/* Left Sidebar */}
         <aside
-          className={`flex-shrink-0 border-r border-slate-700 bg-slate-900/95 flex flex-col transition-all duration-300 ease-in-out ${leftOpen ? 'w-72' : 'w-0'}`}
+          className={`flex-shrink-0 border-r border-gray-800 bg-[#111827]/95 flex flex-col transition-all duration-300 ease-in-out ${leftOpen ? 'w-72' : 'w-0'}`}
           style={{ overflow: leftOpen ? 'visible' : 'hidden' }}
         >
-          <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ display: leftOpen ? 'block' : 'none' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1 quote-builder-scrollbar" style={{ display: leftOpen ? 'block' : 'none' }}>
             {/* Add Station Panel */}
             <CollapsiblePanel
               title="Add Station"
@@ -1502,12 +1505,12 @@ const QuoteBuilder: React.FC = () => {
               <div className="space-y-2">
                 <button
                   onClick={() => addStation('Blank Station')}
-                  className="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   + Blank Station
                 </button>
                 <select
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
                   onChange={e => { if (e.target.value) addStation(e.target.value); e.target.value = ''; }}
                   defaultValue=""
                 >
@@ -1532,11 +1535,11 @@ const QuoteBuilder: React.FC = () => {
                   <button
                     key={t.id}
                     onClick={() => addTemplateStation(t)}
-                    className="w-full text-left px-3 py-2 border border-slate-600 rounded-lg hover:bg-slate-700/50 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full text-left px-3 py-2 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium" style={{ color: t.color }}>{t.label}</span>
-                      <span className="text-xs text-slate-400">{t.ttiMin}m</span>
+                      <span className="text-xs text-gray-400">{t.ttiMin}m</span>
                     </div>
                   </button>
                 ))}
@@ -1563,12 +1566,12 @@ const QuoteBuilder: React.FC = () => {
                     key={hw.id}
                     onClick={() => selected.kind === 'station' ? addHardwareToStation(selected.id!, hw.id) : null}
                     disabled={selected.kind !== 'station'}
-                    className={`w-full text-left border border-slate-600 rounded-lg px-3 py-2 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
-                      selected.kind === 'station' ? 'hover:bg-slate-700/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                    className={`w-full text-left border border-gray-700 rounded-lg px-3 py-2 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
+                      selected.kind === 'station' ? 'hover:bg-gray-700/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'
                     }`}
                   >
                     <div className="text-sm font-medium text-white">{hw.name}</div>
-                    <div className="text-xs text-slate-400">{hw.category} • {hw.ttiMin}m</div>
+                    <div className="text-xs text-gray-400">{hw.category} • {hw.ttiMin}m</div>
                   </button>
                 ))}
               </div>
@@ -1590,7 +1593,7 @@ const QuoteBuilder: React.FC = () => {
                       <button
                         key={o.type}
                         onClick={() => addObject(o)}
-                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                        className="px-2 py-1 text-xs border border-gray-700 rounded hover:bg-gray-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
                       >
                         {o.type}
                       </button>
@@ -1604,21 +1607,21 @@ const QuoteBuilder: React.FC = () => {
                       <button
                         key={o.type}
                         onClick={() => addObject(o)}
-                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                        className="px-2 py-1 text-xs border border-gray-700 rounded hover:bg-gray-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
                       >
                         {o.type}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="pt-2 border-t border-slate-700">
-                  <div className="text-xs text-slate-400 font-medium mb-1.5">Structure</div>
+                <div className="pt-2 border-t border-gray-700">
+                  <div className="text-xs text-gray-400 font-medium mb-1.5">Structure</div>
                   <div className="flex flex-wrap gap-1">
                     {STRUCTURE_OBJECTS.map(o => (
                       <button
                         key={o.type}
                         onClick={() => addObject(o)}
-                        className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
+                        className="px-2 py-1 text-xs border border-gray-700 rounded hover:bg-gray-700/50 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors"
                       >
                         {o.type}
                       </button>
@@ -1638,7 +1641,7 @@ const QuoteBuilder: React.FC = () => {
 
         {/* Canvas Area - Infinite Canvas with Fixed Rulers */}
         <div
-          className="flex-1 relative overflow-hidden bg-slate-950"
+          className="flex-1 relative overflow-hidden bg-[#050810]"
           onClick={() => !isPanning && setSelected({ kind: null, id: null })}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
@@ -1652,27 +1655,27 @@ const QuoteBuilder: React.FC = () => {
               ═══════════════════════════════════════════════════════════════ */}
 
           {/* Horizontal Ruler - Fixed to top of viewport */}
-          <div className="absolute top-0 left-6 right-0 h-6 bg-slate-800/95 border-b border-slate-700 z-30 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-8 right-0 h-8 bg-[#111827]/95 border-b border-gray-700 z-30 pointer-events-none overflow-hidden">
             {(() => {
               const pxPerFt = currentFloor?.scalePxPerFt || 16;
               const scaledPxPerFt = pxPerFt * zoom;
-              // Calculate visible range in world feet
-              const startFt = Math.floor(-pan.x / scaledPxPerFt);
+              // Calculate visible range in world feet - supports negative
+              const startFt = Math.floor(-pan.x / scaledPxPerFt) - 5;
               const endFt = Math.ceil((window.innerWidth - pan.x) / scaledPxPerFt) + 10;
               const marks = [];
-              for (let ft = Math.max(0, startFt - 5); ft <= endFt; ft++) {
+              for (let ft = startFt; ft <= endFt; ft++) {
                 const isMajor = ft % 10 === 0;
                 const isMid = ft % 5 === 0 && !isMajor;
                 const screenX = (ft * pxPerFt * zoom) + pan.x;
-                if (screenX < -20 || screenX > window.innerWidth + 20) continue;
+                if (screenX < -30 || screenX > window.innerWidth + 30) continue;
                 marks.push(
                   <div key={ft} className="absolute flex flex-col items-center" style={{ left: screenX }}>
                     <div
-                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-slate-400' : 'bg-slate-600'}
-                      style={{ width: 1, height: isMajor ? 14 : isMid ? 10 : 6 }}
+                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-gray-400' : 'bg-gray-600'}
+                      style={{ width: 1, height: isMajor ? 18 : isMid ? 12 : 6 }}
                     />
                     {isMajor && (
-                      <span className="text-[9px] text-amber-400 font-medium">{ft}</span>
+                      <span className={`text-[10px] font-semibold tabular-nums mt-0.5 ${ft < 0 ? 'text-cyan-400' : 'text-amber-400'}`}>{ft}</span>
                     )}
                   </div>
                 );
@@ -1682,27 +1685,27 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Vertical Ruler - Fixed to left of viewport */}
-          <div className="absolute top-6 left-0 bottom-0 w-6 bg-slate-800/95 border-r border-slate-700 z-30 pointer-events-none overflow-hidden">
+          <div className="absolute top-8 left-0 bottom-0 w-8 bg-[#111827]/95 border-r border-gray-700 z-30 pointer-events-none overflow-hidden">
             {(() => {
               const pxPerFt = currentFloor?.scalePxPerFt || 16;
               const scaledPxPerFt = pxPerFt * zoom;
-              // Calculate visible range in world feet
-              const startFt = Math.floor(-pan.y / scaledPxPerFt);
+              // Calculate visible range in world feet - supports negative
+              const startFt = Math.floor(-pan.y / scaledPxPerFt) - 5;
               const endFt = Math.ceil((window.innerHeight - pan.y) / scaledPxPerFt) + 10;
               const marks = [];
-              for (let ft = Math.max(0, startFt - 5); ft <= endFt; ft++) {
+              for (let ft = startFt; ft <= endFt; ft++) {
                 const isMajor = ft % 10 === 0;
                 const isMid = ft % 5 === 0 && !isMajor;
                 const screenY = (ft * pxPerFt * zoom) + pan.y;
-                if (screenY < -20 || screenY > window.innerHeight + 20) continue;
+                if (screenY < -30 || screenY > window.innerHeight + 30) continue;
                 marks.push(
                   <div key={ft} className="absolute flex items-center" style={{ top: screenY }}>
                     <div
-                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-slate-400' : 'bg-slate-600'}
-                      style={{ height: 1, width: isMajor ? 14 : isMid ? 10 : 6 }}
+                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-gray-400' : 'bg-gray-600'}
+                      style={{ height: 1, width: isMajor ? 18 : isMid ? 12 : 6 }}
                     />
                     {isMajor && (
-                      <span className="text-[9px] text-amber-400 font-medium ml-1">{ft}</span>
+                      <span className={`text-[10px] font-semibold tabular-nums ml-1 ${ft < 0 ? 'text-cyan-400' : 'text-amber-400'}`}>{ft}</span>
                     )}
                   </div>
                 );
@@ -1712,8 +1715,14 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Origin Corner - Fixed */}
-          <div className="absolute top-0 left-0 w-6 h-6 bg-slate-900 border-r border-b border-slate-700 flex items-center justify-center z-40 pointer-events-none">
-            <span className="text-[8px] text-slate-400 font-medium">ft</span>
+          <div className="absolute top-0 left-0 w-8 h-8 bg-[#0a0f1a] border-r border-b border-gray-700 flex items-center justify-center z-40">
+            <button
+              onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
+              className="text-[9px] text-gray-400 font-semibold hover:text-amber-400 transition-colors"
+              title="Reset view to origin"
+            >
+              <Crosshair size={12} />
+            </button>
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════
@@ -1723,12 +1732,12 @@ const QuoteBuilder: React.FC = () => {
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              // Minor grid (1ft) + Major grid (10ft)
+              // Minor grid (1ft) + Major grid (10ft) - using neutral grays
               backgroundImage: `
-                linear-gradient(to right, rgba(100, 116, 139, ${zoom > 0.5 ? 0.12 : 0.06}) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(100, 116, 139, ${zoom > 0.5 ? 0.12 : 0.06}) 1px, transparent 1px),
-                linear-gradient(to right, rgba(100, 116, 139, 0.25) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(100, 116, 139, 0.25) 1px, transparent 1px)
+                linear-gradient(to right, rgba(75, 85, 99, ${zoom > 0.5 ? 0.15 : 0.08}) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(75, 85, 99, ${zoom > 0.5 ? 0.15 : 0.08}) 1px, transparent 1px),
+                linear-gradient(to right, rgba(156, 163, 175, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(156, 163, 175, 0.2) 1px, transparent 1px)
               `,
               backgroundSize: `
                 ${(currentFloor?.scalePxPerFt || 16) * zoom}px ${(currentFloor?.scalePxPerFt || 16) * zoom}px,
@@ -1781,10 +1790,10 @@ const QuoteBuilder: React.FC = () => {
                   onMouseDown={e => { e.stopPropagation(); dragStart(e, 'object', o.id); }}
                 >
                   <div className="absolute -top-7 left-0 flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: o.w + 10 })} aria-label="Increase width">W+</button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: Math.max(10, o.w - 10) })} aria-label="Decrease width">W-</button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { rot: (o.rot + 15) % 360 })} aria-label="Rotate object"><RotateCw size={10} /></button>
-                    <button className="bg-slate-800 border border-slate-600 rounded px-1 py-0.5 text-[10px] text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeObject(o.id)} aria-label="Delete object"><Trash2 size={10} /></button>
+                    <button className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: o.w + 10 })} aria-label="Increase width">W+</button>
+                    <button className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { w: Math.max(10, o.w - 10) })} aria-label="Decrease width">W-</button>
+                    <button className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => updateObject(o.id, { rot: (o.rot + 15) % 360 })} aria-label="Rotate object"><RotateCw size={10} /></button>
+                    <button className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeObject(o.id)} aria-label="Delete object"><Trash2 size={10} /></button>
                   </div>
                   <div className="text-[10px] text-white/80 px-1">{o.type}</div>
                 </div>
@@ -1794,16 +1803,16 @@ const QuoteBuilder: React.FC = () => {
               {currentFloor?.stations.map(st => (
                 <div
                   key={st.id}
-                  className={`absolute select-none rounded-xl border ${selected.kind === 'station' && selected.id === st.id ? 'border-emerald-400' : 'border-slate-600'} bg-slate-800/90 shadow-xl cursor-move`}
+                  className={`absolute select-none rounded-xl border ${selected.kind === 'station' && selected.id === st.id ? 'border-emerald-400 ring-2 ring-emerald-400/30 shadow-emerald-500/20' : 'border-gray-700'} bg-[#1f2937]/95 shadow-xl cursor-move backdrop-blur-sm`}
                   style={{ left: st.x, top: st.y, width: st.w || 240, height: st.h || 160 }}
                   onMouseDown={e => { e.stopPropagation(); dragStart(e, 'station', st.id); }}
                 >
                   {/* Action rail */}
                   <div className="absolute -left-8 top-2 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
-                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-red-400 hover:bg-red-900/50 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeStation(st.id)} aria-label="Delete station">
+                    <button className="w-6 h-6 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-red-400 hover:bg-red-900/50 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeStation(st.id)} aria-label="Delete station">
                       <Trash2 size={12} />
                     </button>
-                    <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Duplicate station" onClick={() => {
+                    <button className="w-6 h-6 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-gray-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Duplicate station" onClick={() => {
                       const dupe = deepClone(st);
                       dupe.id = uid();
                       dupe.x += 24;
@@ -1817,7 +1826,7 @@ const QuoteBuilder: React.FC = () => {
                       <Copy size={12} />
                     </button>
                     <button
-                      className={`w-6 h-6 rounded-full bg-slate-900 border flex items-center justify-center text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none ${st.flags?.existing ? 'border-yellow-400 text-yellow-400' : 'border-slate-600 text-slate-200'}`}
+                      className={`w-6 h-6 rounded-full bg-gray-900 border flex items-center justify-center text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none ${st.flags?.existing ? 'border-yellow-400 text-yellow-400' : 'border-gray-600 text-gray-200'}`}
                       title="Mark as Existing"
                       aria-label="Mark station as existing"
                       onClick={() => updateStation(st.id, { flags: { ...st.flags, existing: !st.flags?.existing } })}
@@ -1828,7 +1837,7 @@ const QuoteBuilder: React.FC = () => {
 
                   {/* Header */}
                   <div
-                    className="px-3 py-1.5 border-b border-slate-600 flex items-center gap-2 rounded-t-xl"
+                    className="px-3 py-1.5 border-b border-gray-600 flex items-center gap-2 rounded-t-xl"
                     style={{ background: `linear-gradient(0deg, ${st.color}22, transparent)` }}
                   >
                     <div className="h-2.5 w-2.5 rounded-full" style={{ background: st.color }} />
@@ -1838,7 +1847,7 @@ const QuoteBuilder: React.FC = () => {
                       onChange={e => updateStation(st.id, { name: e.target.value })}
                       onClick={e => e.stopPropagation()}
                     />
-                    {st.dept && <span className="ml-auto text-[10px] text-white px-2 py-0.5 rounded-full border border-slate-600">{st.dept}</span>}
+                    {st.dept && <span className="ml-auto text-[10px] text-white px-2 py-0.5 rounded-full border border-gray-700">{st.dept}</span>}
                     {st.flags?.existing && !st.flags?.replace && <span className="text-[10px] text-yellow-300 ml-1">Existing</span>}
                   </div>
 
@@ -1848,15 +1857,15 @@ const QuoteBuilder: React.FC = () => {
                       const hw = hwById[assoc.hid];
                       if (!hw) return null;
                       return (
-                        <div key={idx} className="relative border border-slate-600 rounded-md px-2 py-1">
+                        <div key={idx} className="relative border border-gray-700 rounded-md px-2 py-1">
                           <div className="text-[11px] flex items-center gap-2 text-white">
                             <span>{hw.name}</span>
-                            <span className="text-slate-200">- {hw.ttiMin} min</span>
+                            <span className="text-gray-200">- {hw.ttiMin} min</span>
                             {assoc.flags?.existing && !assoc.flags?.replace && <span className="ml-auto text-[10px] text-yellow-300">Existing</span>}
                           </div>
                           <div className="absolute top-0 right-1 flex gap-1" onClick={e => e.stopPropagation()}>
                             <button
-                              className={`text-[10px] focus:ring-2 focus:ring-amber-500 focus:outline-none ${assoc.flags?.existing ? 'text-yellow-400' : 'text-slate-200'}`}
+                              className={`text-[10px] focus:ring-2 focus:ring-amber-500 focus:outline-none ${assoc.flags?.existing ? 'text-yellow-400' : 'text-gray-200'}`}
                               onClick={() => updateHardwareAssoc(st.id, idx, { flags: { ...assoc.flags, existing: !assoc.flags?.existing } })}
                               aria-label="Mark hardware as existing"
                             >
@@ -1870,11 +1879,11 @@ const QuoteBuilder: React.FC = () => {
 
                     {/* Quick add hardware when selected */}
                     {selected.kind === 'station' && selected.id === st.id && (
-                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-slate-700">
+                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-700">
                         {hardwareCatalog.slice(0, 6).map(hw => (
                           <button
                             key={hw.id}
-                            className="text-[9px] bg-slate-700 hover:bg-slate-600 rounded px-1.5 py-0.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            className="text-[9px] bg-gray-700 hover:bg-gray-600 rounded px-1.5 py-0.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                             onClick={e => { e.stopPropagation(); addHardwareToStation(st.id, hw.id); }}
                             aria-label={`Add ${hw.name} to station`}
                           >
@@ -1897,7 +1906,7 @@ const QuoteBuilder: React.FC = () => {
               {currentFloor?.labels.map(l => (
                 <div
                   key={l.id}
-                  className={`absolute select-none px-2 py-1 rounded border cursor-move ${selected.kind === 'label' && selected.id === l.id ? 'border-emerald-400' : 'border-slate-600'} bg-slate-800/80 text-xs text-white`}
+                  className={`absolute select-none px-2 py-1 rounded border cursor-move ${selected.kind === 'label' && selected.id === l.id ? 'border-emerald-400' : 'border-gray-600'} bg-gray-800/80 text-xs text-white`}
                   style={{ left: l.x, top: l.y, transform: `rotate(${l.rot}deg)` }}
                   onMouseDown={e => { e.stopPropagation(); dragStart(e, 'label', l.id); }}
                 >
@@ -1909,7 +1918,7 @@ const QuoteBuilder: React.FC = () => {
                       onClick={e => e.stopPropagation()}
                       aria-label="Label text"
                     />
-                    <button className="text-slate-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={e => { e.stopPropagation(); updateLabel(l.id, { rot: (l.rot + 15) % 360 }); }} aria-label="Rotate label">
+                    <button className="text-gray-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={e => { e.stopPropagation(); updateLabel(l.id, { rot: (l.rot + 15) % 360 }); }} aria-label="Rotate label">
                       <RotateCw size={10} />
                     </button>
                     <button className="text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={e => { e.stopPropagation(); removeLabel(l.id); }} aria-label="Delete label">
@@ -1929,11 +1938,11 @@ const QuoteBuilder: React.FC = () => {
                   return (
                     <div key={run.id} className="absolute" style={{ left: run.from.x, top: run.from.y, width: len, transform: `rotate(${angle}deg)`, transformOrigin: '0 0' }}>
                       <div className="border-t-2 border-dotted border-cyan-400" />
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] bg-slate-900/80 px-2 py-0.5 rounded border border-slate-600 text-white whitespace-nowrap">
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] bg-gray-900/80 px-2 py-0.5 rounded border border-gray-700 text-white whitespace-nowrap">
                         {run.lengthFt} ft - {run.ttiMin} min
                       </div>
                       <button
-                        className="absolute -bottom-5 right-0 text-[10px] text-red-400 bg-slate-900/80 px-1 rounded border border-slate-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        className="absolute -bottom-5 right-0 text-[10px] text-red-400 bg-gray-900/80 px-1 rounded border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                         onClick={e => { e.stopPropagation(); removeCable(layer.id, run.id); }}
                         aria-label="Remove cable run"
                       >
@@ -1947,28 +1956,28 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Pan/Zoom hint - Updated for infinite canvas */}
-          <div className="absolute left-8 bottom-4 text-xs bg-slate-800/95 rounded-lg px-3 py-2 border border-slate-700 text-slate-300 z-20">
-            <span className="text-slate-500">Pan:</span> Space+drag or scroll
-            <span className="mx-2 text-slate-600">•</span>
-            <span className="text-slate-500">Zoom:</span> Ctrl+scroll or pinch
+          <div className="absolute left-8 bottom-4 text-xs bg-gray-800/95 rounded-lg px-3 py-2 border border-gray-700 text-gray-300 z-20">
+            <span className="text-gray-500">Pan:</span> Space+drag or scroll
+            <span className="mx-2 text-gray-500">•</span>
+            <span className="text-gray-500">Zoom:</span> Ctrl+scroll or pinch
           </div>
 
           {/* Zoom indicator - Shows current zoom level */}
-          <div className="absolute right-4 bottom-4 text-xs bg-slate-800/95 rounded-lg px-3 py-2 border border-slate-700 text-white z-20 flex items-center gap-2">
-            <span className="text-slate-400">Zoom:</span>
+          <div className="absolute right-4 bottom-4 text-xs bg-gray-800/95 rounded-lg px-3 py-2 border border-gray-700 text-white z-20 flex items-center gap-2">
+            <span className="text-gray-400">Zoom:</span>
             <span className="font-medium tabular-nums">{Math.round(zoom * 100)}%</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-slate-400">Scale:</span>
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-400">Scale:</span>
             <span className="font-medium">{currentFloor?.scalePxPerFt || 16} px/ft</span>
           </div>
         </div>
 
         {/* Right Sidebar */}
         <aside
-          className={`flex-shrink-0 border-l border-slate-700 bg-slate-900/95 flex flex-col transition-all duration-300 ease-in-out ${rightOpen ? 'w-80' : 'w-0'}`}
+          className={`flex-shrink-0 border-l border-gray-800 bg-[#111827]/95 flex flex-col transition-all duration-300 ease-in-out ${rightOpen ? 'w-80' : 'w-0'}`}
           style={{ overflow: rightOpen ? 'visible' : 'hidden' }}
         >
-          <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ display: rightOpen ? 'block' : 'none' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1 quote-builder-scrollbar" style={{ display: rightOpen ? 'block' : 'none' }}>
             {/* Integrations Panel */}
             <CollapsiblePanel
               title="Integrations"
@@ -1980,10 +1989,10 @@ const QuoteBuilder: React.FC = () => {
             >
               <div className="space-y-1.5">
                 {integrations.map(integ => (
-                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-slate-600 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-700/50 transition-colors">
+                  <label key={integ.id} className="flex items-center justify-between gap-2 text-sm border border-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-700/50 transition-colors">
                     <div>
                       <div className="font-medium text-white text-xs">{integ.name}</div>
-                      <div className="text-[10px] text-slate-400">{integ.ttiMin}m</div>
+                      <div className="text-[10px] text-gray-400">{integ.ttiMin}m</div>
                     </div>
                     <input
                       type="checkbox"
@@ -2007,9 +2016,9 @@ const QuoteBuilder: React.FC = () => {
               <div className="space-y-4">
                 {/* Travel Zone */}
                 <div>
-                  <label className="text-xs text-slate-400 mb-1.5 block">Travel Zone</label>
+                  <label className="text-xs text-gray-400 mb-1.5 block">Travel Zone</label>
                   <select
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white"
                     value={currentLocation?.travel?.zone || 'cape'}
                     onChange={e => updateCurrentLocation(loc => {
                       loc.travel = { ...loc.travel, zone: e.target.value as TravelSettings['zone'] };
@@ -2025,7 +2034,7 @@ const QuoteBuilder: React.FC = () => {
 
                 {/* Travel Options */}
                 <div className="flex flex-wrap gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
+                  <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
                     <input
                       type="checkbox"
                       checked={!!currentLocation?.travel?.remote}
@@ -2039,7 +2048,7 @@ const QuoteBuilder: React.FC = () => {
                   </label>
                   {currentLocation?.travel?.zone === 'island' && !currentLocation?.travel?.remote && (
                     <>
-                      <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
+                      <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
                         <input
                           type="checkbox"
                           checked={!!currentLocation?.travel?.islandVehicle}
@@ -2051,7 +2060,7 @@ const QuoteBuilder: React.FC = () => {
                         />
                         Vehicle Ferry
                       </label>
-                      <label className="flex items-center gap-1.5 text-xs text-white bg-slate-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-700">
+                      <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
                         <input
                           type="checkbox"
                           checked={!!currentLocation?.travel?.lodging}
@@ -2068,13 +2077,13 @@ const QuoteBuilder: React.FC = () => {
                 </div>
 
                 {/* Support Tiers */}
-                <div className="pt-3 border-t border-slate-700">
-                  <div className="text-xs text-slate-400 mb-2">Support Plan</div>
+                <div className="pt-3 border-t border-gray-700">
+                  <div className="text-xs text-gray-400 mb-2">Support Plan</div>
                   <div className="grid grid-cols-4 gap-1.5">
                     {SUPPORT_TIERS.map(pct => (
                       <button
                         key={pct}
-                        className={`py-1.5 text-center rounded-lg border text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-slate-600 text-slate-300 hover:bg-slate-700/50'}`}
+                        className={`py-1.5 text-center rounded-lg border text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors ${supportTier === pct ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300' : 'border-gray-600 text-gray-300 hover:bg-gray-700/50'}`}
                         onClick={() => setSupportTier(pct)}
                       >
                         {pct === 0 ? 'None' : `${pct}%`}
@@ -2123,7 +2132,7 @@ const QuoteBuilder: React.FC = () => {
                   <SummaryRow label="Integrations" dollars={serverQuote?.summary.integrationsCost || 0} />
                   <SummaryRow label="Networking & cabling" dollars={serverQuote?.summary.cablingCost || 0} />
                   <SummaryRow label="Travel" dollars={estimate.travelCost} />
-                  <div className="h-px bg-slate-700 my-2" />
+                  <div className="h-px bg-gray-700 my-2" />
                   <SummaryRow
                     label="Est. install time"
                     raw={serverQuote?.timeEstimate ? `${serverQuote.timeEstimate.minHours}-${serverQuote.timeEstimate.maxHours} hrs` : '--'}
@@ -2133,7 +2142,7 @@ const QuoteBuilder: React.FC = () => {
                     label={`Support (${supportPeriod === 'monthly' ? 'Mo' : 'Yr'})`}
                     dollars={supportPeriod === 'monthly' ? estimate.supportMonthly : estimate.supportAnnual}
                   />
-                  <div className="h-px bg-slate-700 my-2" />
+                  <div className="h-px bg-gray-700 my-2" />
                   <SummaryRow label="Install + Travel" dollars={estimate.installCost + estimate.travelCost} strong />
                   <SummaryRow
                     label={`Total (first ${supportPeriod === 'monthly' ? 'mo' : 'yr'})`}
@@ -2142,7 +2151,7 @@ const QuoteBuilder: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-3 border-t border-slate-700 space-y-2">
+                <div className="pt-3 border-t border-gray-700 space-y-2">
                   <button
                     onClick={() => setShowEmailModal(true)}
                     className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -2151,7 +2160,7 @@ const QuoteBuilder: React.FC = () => {
                   </button>
                   <button
                     onClick={exportJSON}
-                    className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     <Download size={14} /> Export JSON
                   </button>
@@ -2163,13 +2172,13 @@ const QuoteBuilder: React.FC = () => {
       </div>
 
       {/* Bottom Toolbar - Compact */}
-      <footer className="flex-shrink-0 border-t border-slate-700 bg-slate-900/95 backdrop-blur z-20">
+      <footer className="flex-shrink-0 border-t border-gray-700 bg-gray-900/95 backdrop-blur z-20">
         <div className="px-4 py-1.5 flex items-center gap-2 overflow-x-auto">
           {/* Layer controls */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <Layers size={12} className="text-slate-400" />
+            <Layers size={12} className="text-gray-400" />
             <select
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white"
+              className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white"
               value={activeLayerId}
               onChange={e => setActiveLayerId(e.target.value)}
             >
@@ -2177,17 +2186,17 @@ const QuoteBuilder: React.FC = () => {
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
-            <button onClick={addLayer} className="bg-slate-700 hover:bg-slate-600 rounded p-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Layer">
+            <button onClick={addLayer} className="bg-gray-700 hover:bg-gray-600 rounded p-1 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" title="Add Layer">
               <Plus size={12} />
             </button>
           </div>
 
-          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+          <div className="w-px h-5 bg-gray-700 mx-1 flex-shrink-0" />
 
           {/* Layer visibility toggles */}
           <div className="flex items-center gap-2 text-xs flex-shrink-0">
             {currentFloor?.layers.map(l => (
-              <label key={l.id} className="flex items-center gap-1 cursor-pointer text-slate-300 hover:text-white transition-colors">
+              <label key={l.id} className="flex items-center gap-1 cursor-pointer text-gray-300 hover:text-white transition-colors">
                 <input
                   type="checkbox"
                   checked={l.visible}
@@ -2199,12 +2208,12 @@ const QuoteBuilder: React.FC = () => {
             ))}
           </div>
 
-          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+          <div className="w-px h-5 bg-gray-700 mx-1 flex-shrink-0" />
 
           {/* Cable run button */}
           {activeLayer?.type === 'network' && (
             <button
-              className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors flex-shrink-0 ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors flex-shrink-0 ${mode === 'addCable' ? 'bg-cyan-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white'}`}
               onClick={() => {
                 setMode(mode === 'addCable' ? 'idle' : 'addCable');
                 setPendingCableStart(null);
@@ -2217,10 +2226,10 @@ const QuoteBuilder: React.FC = () => {
 
           {/* Scale control */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-[10px] text-slate-400">Scale</span>
+            <span className="text-[10px] text-gray-400">Scale</span>
             <input
               type="number"
-              className="bg-slate-800 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-white w-12"
+              className="bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-xs text-white w-12"
               value={currentFloor?.scalePxPerFt || 16}
               onChange={e => updateCurrentLocation(loc => {
                 const f = loc.floors.find(fl => fl.id === currentFloor?.id);
@@ -2228,7 +2237,7 @@ const QuoteBuilder: React.FC = () => {
                 return loc;
               })}
             />
-            <span className="text-[10px] text-slate-400">px/ft</span>
+            <span className="text-[10px] text-gray-400">px/ft</span>
           </div>
 
           {/* Spacer */}
@@ -2238,29 +2247,29 @@ const QuoteBuilder: React.FC = () => {
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))}
-              className="p-1 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              className="p-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
               title="Zoom out"
             >
               <ZoomOut size={12} />
             </button>
-            <span className="text-[10px] text-slate-300 w-8 text-center">{Math.round(zoom * 100)}%</span>
+            <span className="text-[10px] text-gray-300 w-8 text-center">{Math.round(zoom * 100)}%</span>
             <button
               onClick={() => setZoom(z => Math.min(2.5, +(z + 0.1).toFixed(2)))}
-              className="p-1 bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              className="p-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
               title="Zoom in"
             >
               <ZoomIn size={12} />
             </button>
             <button
               onClick={() => { setZoom(1); resetPan(); }}
-              className="p-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              className="p-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
               title="Reset view"
             >
               <RefreshCw size={12} />
             </button>
           </div>
 
-          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
+          <div className="w-px h-5 bg-gray-700 mx-1 flex-shrink-0" />
 
           {/* Reset button */}
           <button
@@ -2275,7 +2284,7 @@ const QuoteBuilder: React.FC = () => {
       {/* Email Modal */}
       {showEmailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-600">
+          <div className="bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-2xl border border-gray-700">
             {emailStatus.type === 'success' ? (
               // Success state
               <div className="text-center py-4">
@@ -2285,14 +2294,14 @@ const QuoteBuilder: React.FC = () => {
                   </svg>
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-white mb-2">Quote Sent!</h3>
-                <p className="text-slate-300 mb-6">{emailStatus.message}</p>
+                <p className="text-gray-300 mb-6">{emailStatus.message}</p>
                 <button
                   onClick={() => {
                     setShowEmailModal(false);
                     setEmailStatus({ type: 'idle', message: '' });
                     setEmailForm({ name: '', email: '', restaurantName: '', phone: '' });
                   }}
-                  className="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
                   Close
                 </button>
@@ -2301,7 +2310,7 @@ const QuoteBuilder: React.FC = () => {
               // Form state
               <>
                 <h3 className="font-serif text-2xl font-bold text-white mb-2">Save Your Quote</h3>
-                <p className="text-slate-200 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
+                <p className="text-gray-200 mb-4 text-sm">Enter your details and we'll send you this itemized breakdown immediately.</p>
                 <form
                   className="space-y-4"
                   onSubmit={async (e) => {
@@ -2354,7 +2363,7 @@ const QuoteBuilder: React.FC = () => {
                       type="text"
                       value={emailForm.name}
                       onChange={(e) => setEmailForm({ ...emailForm, name: e.target.value })}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       required
                       disabled={emailSending}
                     />
@@ -2365,7 +2374,7 @@ const QuoteBuilder: React.FC = () => {
                       type="email"
                       value={emailForm.email}
                       onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       required
                       disabled={emailSending}
                     />
@@ -2376,7 +2385,7 @@ const QuoteBuilder: React.FC = () => {
                       type="text"
                       value={emailForm.restaurantName}
                       onChange={(e) => setEmailForm({ ...emailForm, restaurantName: e.target.value })}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       disabled={emailSending}
                     />
                   </div>
@@ -2386,7 +2395,7 @@ const QuoteBuilder: React.FC = () => {
                       type="tel"
                       value={emailForm.phone}
                       onChange={(e) => setEmailForm({ ...emailForm, phone: e.target.value })}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       placeholder="(optional)"
                       disabled={emailSending}
                     />
@@ -2406,7 +2415,7 @@ const QuoteBuilder: React.FC = () => {
                         setShowEmailModal(false);
                         setEmailStatus({ type: 'idle', message: '' });
                       }}
-                      className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="flex-1 py-2 text-gray-200 hover:bg-gray-700 rounded-lg border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                       disabled={emailSending}
                     >
                       Cancel
@@ -2436,7 +2445,7 @@ const QuoteBuilder: React.FC = () => {
       {/* Import PDF Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl border border-slate-600">
+          <div className="bg-gray-800 rounded-xl max-w-lg w-full p-6 shadow-2xl border border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
                 <Upload className="w-5 h-5 text-purple-400" />
@@ -2444,19 +2453,19 @@ const QuoteBuilder: React.FC = () => {
               </h3>
               <button
                 onClick={resetImportModal}
-                className="p-1 hover:bg-slate-700 rounded transition-colors"
+                className="p-1 hover:bg-gray-700 rounded transition-colors"
               >
-                <X size={18} className="text-slate-400" />
+                <X size={18} className="text-gray-400" />
               </button>
             </div>
 
             {importStatus === 'idle' && (
               <>
-                <p className="text-slate-300 text-sm mb-4">
+                <p className="text-gray-300 text-sm mb-4">
                   Upload a Toast quote or order PDF to automatically extract hardware items.
                 </p>
                 <div
-                  className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-purple-500 transition-colors cursor-pointer"
                   onClick={() => importFileRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-purple-500', 'bg-purple-500/10'); }}
                   onDragLeave={(e) => { e.currentTarget.classList.remove('border-purple-500', 'bg-purple-500/10'); }}
@@ -2467,9 +2476,9 @@ const QuoteBuilder: React.FC = () => {
                     if (file) handleImportPdf(file);
                   }}
                 >
-                  <FileText className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                  <FileText className="w-12 h-12 text-gray-500 mx-auto mb-3" />
                   <p className="text-white font-medium mb-1">Drop PDF here or click to browse</p>
-                  <p className="text-slate-400 text-xs">Accepts Toast quote PDFs (max 10MB)</p>
+                  <p className="text-gray-400 text-xs">Accepts Toast quote PDFs (max 10MB)</p>
                 </div>
                 <input
                   ref={importFileRef}
@@ -2490,7 +2499,7 @@ const QuoteBuilder: React.FC = () => {
                 <p className="text-white font-medium">
                   {importStatus === 'uploading' ? 'Uploading PDF...' : 'Extracting hardware items...'}
                 </p>
-                <p className="text-slate-400 text-sm mt-1">This may take a few seconds</p>
+                <p className="text-gray-400 text-sm mt-1">This may take a few seconds</p>
               </div>
             )}
 
@@ -2501,7 +2510,7 @@ const QuoteBuilder: React.FC = () => {
                 <p className="text-red-300 text-sm mb-4">{importError}</p>
                 <button
                   onClick={resetImportModal}
-                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-700"
                 >
                   Try Again
                 </button>
@@ -2527,14 +2536,14 @@ const QuoteBuilder: React.FC = () => {
                         placeholder="Business Name"
                         value={extractedClientInfo?.businessName || ''}
                         onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), businessName: e.target.value } as ExtractedClientInfo))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                       />
                       <input
                         type="text"
                         placeholder="Address"
                         value={extractedClientInfo?.address || ''}
                         onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), address: e.target.value } as ExtractedClientInfo))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                       />
                       <div className="grid grid-cols-3 gap-2">
                         <input
@@ -2542,21 +2551,21 @@ const QuoteBuilder: React.FC = () => {
                           placeholder="City"
                           value={extractedClientInfo?.city || ''}
                           onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), city: e.target.value } as ExtractedClientInfo))}
-                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                         />
                         <input
                           type="text"
                           placeholder="State"
                           value={extractedClientInfo?.state || ''}
                           onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), state: e.target.value } as ExtractedClientInfo))}
-                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                         />
                         <input
                           type="text"
                           placeholder="ZIP"
                           value={extractedClientInfo?.zip || ''}
                           onChange={e => setExtractedClientInfo(prev => ({ ...(prev || {}), zip: e.target.value } as ExtractedClientInfo))}
-                          className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -2581,8 +2590,8 @@ const QuoteBuilder: React.FC = () => {
                 <div className="max-h-64 overflow-y-auto mb-4 space-y-3">
                   {/* Station Groups */}
                   {stationGroups.map((group, gIdx) => (
-                    <div key={gIdx} className="border border-slate-600 rounded-lg overflow-hidden">
-                      <div className="bg-slate-700/70 px-3 py-2 flex items-center justify-between">
+                    <div key={gIdx} className="border border-gray-700 rounded-lg overflow-hidden">
+                      <div className="bg-gray-700/70 px-3 py-2 flex items-center justify-between">
                         <span className="text-white text-sm font-medium">{group.name}</span>
                         <span className="text-purple-400 text-xs">
                           {group.quantity > 1 ? `×${group.quantity} stations` : `${group.items.length} items`}
@@ -2590,9 +2599,9 @@ const QuoteBuilder: React.FC = () => {
                       </div>
                       <div className="p-2 space-y-1">
                         {group.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                          <div key={idx} className="flex items-center justify-between p-1.5 bg-gray-800/50 rounded">
                             <div className="flex-1 min-w-0">
-                              <p className="text-slate-200 text-xs truncate">{item.productName}</p>
+                              <p className="text-gray-200 text-xs truncate">{item.productName}</p>
                             </div>
                             <div className="flex items-center gap-2 ml-2">
                               <span className="text-purple-400 text-xs">×{item.quantity}</span>
@@ -2606,16 +2615,16 @@ const QuoteBuilder: React.FC = () => {
 
                   {/* Ungrouped Items */}
                   {(ungroupedItems.length > 0 || (extractedItems.length > 0 && stationGroups.length === 0)) && (
-                    <div className="border border-slate-600 rounded-lg overflow-hidden">
-                      <div className="bg-slate-700/70 px-3 py-2">
-                        <span className="text-slate-300 text-sm font-medium">Other Hardware</span>
+                    <div className="border border-gray-700 rounded-lg overflow-hidden">
+                      <div className="bg-gray-700/70 px-3 py-2">
+                        <span className="text-gray-300 text-sm font-medium">Other Hardware</span>
                       </div>
                       <div className="p-2 space-y-1">
                         {(ungroupedItems.length > 0 ? ungroupedItems : extractedItems).map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                          <div key={idx} className="flex items-center justify-between p-1.5 bg-gray-800/50 rounded">
                             <div className="flex-1 min-w-0">
-                              <p className="text-slate-200 text-xs truncate">{item.productName}</p>
-                              <p className="text-slate-500 text-[10px]">
+                              <p className="text-gray-200 text-xs truncate">{item.productName}</p>
+                              <p className="text-gray-500 text-[10px]">
                                 {item.mappedHardwareIds.length > 0 ? item.mappedHardwareIds.join(', ') : 'Needs mapping'}
                               </p>
                             </div>
@@ -2630,14 +2639,14 @@ const QuoteBuilder: React.FC = () => {
                   )}
 
                   {stationGroups.length === 0 && ungroupedItems.length === 0 && extractedItems.length === 0 && (
-                    <p className="text-slate-400 text-center py-4">No hardware items found in the PDF</p>
+                    <p className="text-gray-400 text-center py-4">No hardware items found in the PDF</p>
                   )}
                 </div>
 
                 <div className="flex gap-3">
                   <button
                     onClick={resetImportModal}
-                    className="flex-1 py-2 text-slate-200 hover:bg-slate-700 rounded-lg border border-slate-600"
+                    className="flex-1 py-2 text-gray-200 hover:bg-gray-700 rounded-lg border border-gray-700"
                   >
                     Cancel
                   </button>
