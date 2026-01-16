@@ -68,7 +68,8 @@ import {
   ExtractedClientInfo,
   ExtractedSoftware,
   ExtractedAdminData,
-  ParseTextResponse
+  ParseTextResponse,
+  HardwareGroup
 } from '../types';
 import {
   HARDWARE_CATALOG,
@@ -309,6 +310,7 @@ const QuoteBuilder: React.FC = () => {
   const [supportPeriod, setSupportPeriod] = usePersistentState<SupportPeriod>(LS_KEY + ":supportPeriod", "monthly");
   const [locations, setLocations] = usePersistentState<Location[]>(LS_KEY + ":locations", [createDefaultLocation()]);
   const [locId, setLocId] = usePersistentState<string>(LS_KEY + ":locId", locations[0]?.id || "");
+  const [hardwareGroups, setHardwareGroups] = usePersistentState<HardwareGroup[]>(LS_KEY + ":hardwareGroups", []);
 
   // UI state
   const [selected, setSelected] = useState<Selection>({ kind: null, id: null });
@@ -323,6 +325,17 @@ const QuoteBuilder: React.FC = () => {
   const [emailForm, setEmailForm] = useState({ name: '', email: '', restaurantName: '', phone: '' });
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+
+  // Onboarding state
+  const [hasStarted, setHasStarted] = usePersistentState<boolean>(LS_KEY + ":hasStarted", false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding for new users
+  useEffect(() => {
+    if (!hasStarted) {
+      setShowOnboarding(true);
+    }
+  }, [hasStarted]);
 
   // PDF Import Modal State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -984,6 +997,62 @@ const QuoteBuilder: React.FC = () => {
     updateStation(stationId, { hardware: arr });
   };
 
+  // Hardware Group operations
+  const createHardwareGroup = (name: string, hardwareIds: string[]) => {
+    const group: HardwareGroup = {
+      id: uid(),
+      name,
+      color: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6'][hardwareGroups.length % 6],
+      hardwareIds,
+      collapsed: false
+    };
+    setHardwareGroups(prev => [...prev, group]);
+    return group.id;
+  };
+
+  const updateHardwareGroup = (groupId: string, patch: Partial<HardwareGroup>) => {
+    setHardwareGroups(prev => prev.map(g => g.id === groupId ? { ...g, ...patch } : g));
+  };
+
+  const deleteHardwareGroup = (groupId: string) => {
+    setHardwareGroups(prev => prev.filter(g => g.id !== groupId));
+  };
+
+  const addHardwareToGroup = (groupId: string, hid: string) => {
+    setHardwareGroups(prev => prev.map(g =>
+      g.id === groupId && !g.hardwareIds.includes(hid)
+        ? { ...g, hardwareIds: [...g.hardwareIds, hid] }
+        : g
+    ));
+  };
+
+  const removeHardwareFromGroup = (groupId: string, hid: string) => {
+    setHardwareGroups(prev => prev.map(g =>
+      g.id === groupId
+        ? { ...g, hardwareIds: g.hardwareIds.filter(id => id !== hid) }
+        : g
+    ));
+  };
+
+  const addGroupToStation = (stationId: string, groupId: string) => {
+    const group = hardwareGroups.find(g => g.id === groupId);
+    if (!group) return;
+    const st = currentFloor?.stations.find(s => s.id === stationId);
+    if (!st) return;
+
+    const newHardware = group.hardwareIds.map(hid => ({
+      hid,
+      nickname: "",
+      notes: "",
+      flags: { existing: false, replace: false },
+      groupId
+    }));
+
+    updateStation(stationId, {
+      hardware: [...st.hardware, ...newHardware]
+    });
+  };
+
   // Integration toggle
   const toggleIntegration = (id: string) => {
     updateCurrentLocation(loc => {
@@ -1080,11 +1149,18 @@ const QuoteBuilder: React.FC = () => {
   };
 
   const handleCanvasWheel = (e: React.WheelEvent) => {
-    // Ctrl+scroll for zoom, regular scroll for pan
-    if (e.ctrlKey || e.metaKey) {
+    // Alt+scroll for zoom (avoiding Ctrl which conflicts with browser zoom)
+    // Also support pinch-to-zoom on trackpads (detected by ctrlKey being set during pinch)
+    if (e.altKey) {
       e.preventDefault();
+      e.stopPropagation();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom(z => Math.max(0.25, Math.min(3, +(z + delta).toFixed(2))));
+      setZoom(z => Math.max(0.1, Math.min(4, +(z + delta).toFixed(2))));
+    } else if (e.ctrlKey && Math.abs(e.deltaY) < 50) {
+      // Pinch-to-zoom on trackpad (smaller deltaY values)
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.05 : 0.05;
+      setZoom(z => Math.max(0.1, Math.min(4, +(z + delta).toFixed(2))));
     } else {
       // Pan with scroll wheel
       setPan(p => ({
@@ -1360,8 +1436,98 @@ const QuoteBuilder: React.FC = () => {
     );
   }
 
+  // Start fresh - resets everything
+  const handleStartFresh = () => {
+    // Reset to clean default state
+    setLocations([createDefaultLocation()]);
+    setHardwareGroups([]);
+    setHasStarted(true);
+    setShowOnboarding(false);
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  // Start from import
+  const handleStartWithImport = () => {
+    setHasStarted(true);
+    setShowOnboarding(false);
+    setShowImportModal(true);
+  };
+
+  // Continue with existing
+  const handleContinueExisting = () => {
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0f1a] flex flex-col overflow-hidden quote-builder-theme">
+      {/* Onboarding Modal */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl max-w-lg w-full p-8 shadow-2xl border border-gray-700">
+            {/* Logo/Title */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <Building2 size={32} className="text-white" />
+              </div>
+              <h2 className="text-2xl font-serif text-white mb-2">Quote Builder</h2>
+              <p className="text-gray-400">Create professional quotes for your restaurant POS installation</p>
+            </div>
+
+            {/* Options */}
+            <div className="space-y-3">
+              <button
+                onClick={handleStartFresh}
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors text-left group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500/30 transition-colors">
+                  <Plus size={24} className="text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-white font-medium">Start Fresh</div>
+                  <div className="text-sm text-gray-400">Create a new quote from scratch</div>
+                </div>
+              </button>
+
+              <button
+                onClick={handleStartWithImport}
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors text-left group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500/30 transition-colors">
+                  <Upload size={24} className="text-blue-400" />
+                </div>
+                <div>
+                  <div className="text-white font-medium">Import Toast Quote</div>
+                  <div className="text-sm text-gray-400">Upload a PDF from Toast to pre-fill hardware</div>
+                </div>
+              </button>
+
+              {hasStarted && (
+                <button
+                  onClick={handleContinueExisting}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-700/30 border border-gray-600 hover:bg-gray-700/50 transition-colors text-left group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gray-700 flex items-center justify-center flex-shrink-0 group-hover:bg-gray-600 transition-colors">
+                    <RefreshCw size={24} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">Continue Previous Quote</div>
+                    <div className="text-sm text-gray-400">Resume where you left off</div>
+                  </div>
+                </button>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <p className="text-center text-xs text-gray-500">
+                Your progress is saved automatically in your browser
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Toolbar - Compact */}
       <header className="flex-shrink-0 border-b border-gray-800 bg-[#111827]/95 backdrop-blur z-20">
         <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto">
@@ -1453,15 +1619,23 @@ const QuoteBuilder: React.FC = () => {
             </button>
           </div>
 
-          {/* Import PDF Button */}
+          {/* New Quote & Import Buttons */}
           <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded transition-colors focus:ring-2 focus:ring-gray-400 focus:outline-none"
+              title="Start new quote"
+            >
+              <Plus size={14} />
+              <span className="hidden sm:inline">New</span>
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded transition-colors focus:ring-2 focus:ring-purple-400 focus:outline-none"
               title="Import Toast PDF"
             >
               <Upload size={14} />
-              <span className="hidden sm:inline">Import PDF</span>
+              <span className="hidden sm:inline">Import</span>
             </button>
           </div>
 
@@ -1546,34 +1720,162 @@ const QuoteBuilder: React.FC = () => {
               </div>
             </CollapsiblePanel>
 
-            {/* Hardware Catalog Panel */}
+            {/* Hardware & Groups Panel */}
             <CollapsiblePanel
-              title="Hardware Catalog"
+              title="Hardware & Groups"
               icon={<Wrench size={14} />}
               isOpen={leftPanels.hardware}
               onToggle={() => toggleLeftPanel('hardware')}
-              badge={selected.kind === 'station' ? '!' : undefined}
-              maxHeight="320px"
+              badge={hardwareGroups.length > 0 ? hardwareGroups.length.toString() : undefined}
+              maxHeight="400px"
             >
-              <div className="space-y-1.5">
-                {selected.kind === 'station' && (
-                  <div className="text-xs text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2 mb-2 border border-amber-500/30">
-                    Click hardware to add to: <strong>{currentFloor?.stations.find(s => s.id === selected.id)?.name}</strong>
+              <div className="space-y-3">
+                {/* Hardware Groups Section */}
+                {hardwareGroups.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs text-emerald-400 font-medium flex items-center gap-1">
+                        <Layers size={12} />
+                        Your Groups
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {hardwareGroups.map(group => (
+                        <div
+                          key={group.id}
+                          className="border border-gray-700 rounded-lg overflow-hidden bg-gray-800/30"
+                        >
+                          {/* Group Header */}
+                          <div
+                            className="flex items-center gap-2 px-2.5 py-2 cursor-pointer hover:bg-gray-700/30"
+                            onClick={() => updateHardwareGroup(group.id, { collapsed: !group.collapsed })}
+                          >
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: group.color }} />
+                            <input
+                              className="bg-transparent text-sm font-medium text-white outline-none flex-1 min-w-0"
+                              value={group.name}
+                              onChange={e => { e.stopPropagation(); updateHardwareGroup(group.id, { name: e.target.value }); }}
+                              onClick={e => e.stopPropagation()}
+                            />
+                            <span className="text-[10px] text-gray-400 px-1.5 py-0.5 bg-gray-700 rounded">
+                              {group.hardwareIds.length}
+                            </span>
+                            <ChevronDown size={14} className={`text-gray-400 transition-transform ${group.collapsed ? '-rotate-90' : ''}`} />
+                          </div>
+
+                          {/* Group Items & Actions */}
+                          {!group.collapsed && (
+                            <div className="px-2.5 pb-2 pt-1 border-t border-gray-700/50 space-y-2">
+                              {/* Hardware chips */}
+                              <div className="flex flex-wrap gap-1">
+                                {group.hardwareIds.map(hid => {
+                                  const hw = hwById[hid];
+                                  if (!hw) return null;
+                                  return (
+                                    <div
+                                      key={hid}
+                                      className="group/item flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-gray-700/50 text-gray-300"
+                                    >
+                                      <span className="truncate max-w-16">{hw.name}</span>
+                                      <button
+                                        className="opacity-0 group-hover/item:opacity-100 text-red-400 hover:text-red-300"
+                                        onClick={() => removeHardwareFromGroup(group.id, hid)}
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Group Actions */}
+                              <div className="flex items-center gap-1 pt-1">
+                                {selected.kind === 'station' && (
+                                  <button
+                                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                                    onClick={() => addGroupToStation(selected.id!, group.id)}
+                                  >
+                                    <Plus size={10} />
+                                    Add to Station
+                                  </button>
+                                )}
+                                <button
+                                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-red-400 hover:bg-red-500/10 transition-colors ml-auto"
+                                  onClick={() => deleteHardwareGroup(group.id)}
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-                {hardwareCatalog.map(hw => (
+
+                {/* Create New Group */}
+                <div className="border border-dashed border-gray-600 rounded-lg p-2">
                   <button
-                    key={hw.id}
-                    onClick={() => selected.kind === 'station' ? addHardwareToStation(selected.id!, hw.id) : null}
-                    disabled={selected.kind !== 'station'}
-                    className={`w-full text-left border border-gray-700 rounded-lg px-3 py-2 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
-                      selected.kind === 'station' ? 'hover:bg-gray-700/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'
-                    }`}
+                    className="w-full flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-emerald-400 py-1 transition-colors"
+                    onClick={() => {
+                      const name = `Group ${hardwareGroups.length + 1}`;
+                      createHardwareGroup(name, []);
+                    }}
                   >
-                    <div className="text-sm font-medium text-white">{hw.name}</div>
-                    <div className="text-xs text-gray-400">{hw.category} • {hw.ttiMin}m</div>
+                    <Plus size={12} />
+                    Create New Group
                   </button>
-                ))}
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-700 pt-2">
+                  <div className="text-xs text-gray-400 font-medium mb-2">All Hardware</div>
+                </div>
+
+                {/* Status indicator when station selected */}
+                {selected.kind === 'station' && (
+                  <div className="text-xs text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/30">
+                    Click to add to: <strong>{currentFloor?.stations.find(s => s.id === selected.id)?.name}</strong>
+                  </div>
+                )}
+
+                {/* Hardware Items by Category */}
+                {['POS', 'KDS', 'Printers', 'Network', 'Card', 'Power', 'Accessories'].map(category => {
+                  const items = hardwareCatalog.filter(hw => hw.category === category);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={category}>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{category}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {items.map(hw => (
+                          <button
+                            key={hw.id}
+                            onClick={() => {
+                              if (selected.kind === 'station') {
+                                addHardwareToStation(selected.id!, hw.id);
+                              } else if (hardwareGroups.length > 0) {
+                                // Add to most recent group if no station selected
+                                addHardwareToGroup(hardwareGroups[hardwareGroups.length - 1].id, hw.id);
+                              }
+                            }}
+                            className={`px-2 py-1 text-[11px] border rounded transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
+                              selected.kind === 'station'
+                                ? 'border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/15'
+                                : hardwareGroups.length > 0
+                                ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/15'
+                                : 'border-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                            }`}
+                            disabled={selected.kind !== 'station' && hardwareGroups.length === 0}
+                            title={`${hw.name} - ${hw.ttiMin}m`}
+                          >
+                            {hw.name.split(' ').slice(0, 2).join(' ')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CollapsiblePanel>
 
@@ -1655,7 +1957,7 @@ const QuoteBuilder: React.FC = () => {
               ═══════════════════════════════════════════════════════════════ */}
 
           {/* Horizontal Ruler - Fixed to top of viewport */}
-          <div className="absolute top-0 left-8 right-0 h-8 bg-[#111827]/95 border-b border-gray-700 z-30 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-7 right-0 h-7 bg-[#111827]/95 border-b border-gray-700/50 z-30 pointer-events-none overflow-hidden">
             {(() => {
               const pxPerFt = currentFloor?.scalePxPerFt || 16;
               const scaledPxPerFt = pxPerFt * zoom;
@@ -1671,11 +1973,11 @@ const QuoteBuilder: React.FC = () => {
                 marks.push(
                   <div key={ft} className="absolute flex flex-col items-center" style={{ left: screenX }}>
                     <div
-                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-gray-400' : 'bg-gray-600'}
-                      style={{ width: 1, height: isMajor ? 18 : isMid ? 12 : 6 }}
+                      className={isMajor ? 'bg-amber-400/80' : isMid ? 'bg-gray-500' : 'bg-gray-600/50'}
+                      style={{ width: 1, height: isMajor ? 12 : isMid ? 8 : 4 }}
                     />
                     {isMajor && (
-                      <span className={`text-[10px] font-semibold tabular-nums mt-0.5 ${ft < 0 ? 'text-cyan-400' : 'text-amber-400'}`}>{ft}</span>
+                      <span className={`text-[8px] font-medium tabular-nums leading-none ${ft < 0 ? 'text-cyan-400' : 'text-amber-400/90'}`}>{ft}</span>
                     )}
                   </div>
                 );
@@ -1685,7 +1987,7 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Vertical Ruler - Fixed to left of viewport */}
-          <div className="absolute top-8 left-0 bottom-0 w-8 bg-[#111827]/95 border-r border-gray-700 z-30 pointer-events-none overflow-hidden">
+          <div className="absolute top-7 left-0 bottom-0 w-7 bg-[#111827]/95 border-r border-gray-700/50 z-30 pointer-events-none overflow-hidden">
             {(() => {
               const pxPerFt = currentFloor?.scalePxPerFt || 16;
               const scaledPxPerFt = pxPerFt * zoom;
@@ -1701,11 +2003,11 @@ const QuoteBuilder: React.FC = () => {
                 marks.push(
                   <div key={ft} className="absolute flex items-center" style={{ top: screenY }}>
                     <div
-                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-gray-400' : 'bg-gray-600'}
-                      style={{ height: 1, width: isMajor ? 18 : isMid ? 12 : 6 }}
+                      className={isMajor ? 'bg-amber-400/80' : isMid ? 'bg-gray-500' : 'bg-gray-600/50'}
+                      style={{ height: 1, width: isMajor ? 12 : isMid ? 8 : 4 }}
                     />
                     {isMajor && (
-                      <span className={`text-[10px] font-semibold tabular-nums ml-1 ${ft < 0 ? 'text-cyan-400' : 'text-amber-400'}`}>{ft}</span>
+                      <span className={`text-[8px] font-medium tabular-nums leading-none ml-0.5 ${ft < 0 ? 'text-cyan-400' : 'text-amber-400/90'}`}>{ft}</span>
                     )}
                   </div>
                 );
@@ -1715,13 +2017,13 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Origin Corner - Fixed */}
-          <div className="absolute top-0 left-0 w-8 h-8 bg-[#0a0f1a] border-r border-b border-gray-700 flex items-center justify-center z-40">
+          <div className="absolute top-0 left-0 w-7 h-7 bg-[#0a0f1a] border-r border-b border-gray-700/50 flex items-center justify-center z-40">
             <button
               onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
-              className="text-[9px] text-gray-400 font-semibold hover:text-amber-400 transition-colors"
-              title="Reset view to origin"
+              className="text-gray-500 hover:text-amber-400 transition-colors p-1"
+              title="Reset view to origin (0,0)"
             >
-              <Crosshair size={12} />
+              <Crosshair size={10} />
             </button>
           </div>
 
@@ -1799,108 +2101,159 @@ const QuoteBuilder: React.FC = () => {
                 </div>
               ))}
 
-              {/* Stations */}
-              {currentFloor?.stations.map(st => (
-                <div
-                  key={st.id}
-                  className={`absolute select-none rounded-xl border ${selected.kind === 'station' && selected.id === st.id ? 'border-emerald-400 ring-2 ring-emerald-400/30 shadow-emerald-500/20' : 'border-gray-700'} bg-[#1f2937]/95 shadow-xl cursor-move backdrop-blur-sm`}
-                  style={{ left: st.x, top: st.y, width: st.w || 240, height: st.h || 160 }}
-                  onMouseDown={e => { e.stopPropagation(); dragStart(e, 'station', st.id); }}
-                >
-                  {/* Action rail */}
-                  <div className="absolute -left-8 top-2 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
-                    <button className="w-6 h-6 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-red-400 hover:bg-red-900/50 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeStation(st.id)} aria-label="Delete station">
-                      <Trash2 size={12} />
-                    </button>
-                    <button className="w-6 h-6 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-gray-200 hover:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none" aria-label="Duplicate station" onClick={() => {
-                      const dupe = deepClone(st);
-                      dupe.id = uid();
-                      dupe.x += 24;
-                      dupe.y += 24;
-                      updateCurrentLocation(loc => {
-                        const f = loc.floors.find(fl => fl.id === currentFloor?.id);
-                        if (f) f.stations.push(dupe);
-                        return loc;
-                      });
-                    }}>
-                      <Copy size={12} />
-                    </button>
-                    <button
-                      className={`w-6 h-6 rounded-full bg-gray-900 border flex items-center justify-center text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none ${st.flags?.existing ? 'border-yellow-400 text-yellow-400' : 'border-gray-600 text-gray-200'}`}
-                      title="Mark as Existing"
-                      aria-label="Mark station as existing"
-                      onClick={() => updateStation(st.id, { flags: { ...st.flags, existing: !st.flags?.existing } })}
-                    >
-                      E
-                    </button>
-                  </div>
+              {/* Stations - Redesigned with cleaner cards */}
+              {currentFloor?.stations.map(st => {
+                const isSelected = selected.kind === 'station' && selected.id === st.id;
+                const hwCount = st.hardware.length;
+                const existingCount = st.hardware.filter(h => h.flags?.existing).length;
+                const totalTti = st.hardware.reduce((sum, h) => {
+                  const hw = hwById[h.hid];
+                  return sum + (hw?.ttiMin || 0);
+                }, 0);
 
-                  {/* Header */}
+                return (
                   <div
-                    className="px-3 py-1.5 border-b border-gray-600 flex items-center gap-2 rounded-t-xl"
-                    style={{ background: `linear-gradient(0deg, ${st.color}22, transparent)` }}
+                    key={st.id}
+                    className={`station-card absolute select-none rounded-lg border transition-all duration-150 ${isSelected ? 'border-emerald-400 shadow-lg shadow-emerald-500/20' : 'border-gray-700/60 hover:border-gray-600'} bg-gradient-to-b from-gray-800/95 to-gray-900/95 cursor-move group`}
+                    style={{ left: st.x, top: st.y, width: st.w || 200, minHeight: isSelected ? 120 : 56 }}
+                    onMouseDown={e => { e.stopPropagation(); dragStart(e, 'station', st.id); }}
                   >
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: st.color }} />
-                    <input
-                      className="bg-transparent text-sm font-medium outline-none text-white w-32"
-                      value={st.name}
-                      onChange={e => updateStation(st.id, { name: e.target.value })}
-                      onClick={e => e.stopPropagation()}
-                    />
-                    {st.dept && <span className="ml-auto text-[10px] text-white px-2 py-0.5 rounded-full border border-gray-700">{st.dept}</span>}
-                    {st.flags?.existing && !st.flags?.replace && <span className="text-[10px] text-yellow-300 ml-1">Existing</span>}
-                  </div>
+                    {/* Floating action buttons - only visible on hover or selection */}
+                    <div className={`absolute -top-2 -right-2 flex gap-1 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} onClick={e => e.stopPropagation()}>
+                      <button
+                        className="w-5 h-5 rounded-full bg-gray-900 border border-gray-600 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+                        onClick={() => {
+                          const dupe = deepClone(st);
+                          dupe.id = uid();
+                          dupe.x += 24;
+                          dupe.y += 24;
+                          updateCurrentLocation(loc => {
+                            const f = loc.floors.find(fl => fl.id === currentFloor?.id);
+                            if (f) f.stations.push(dupe);
+                            return loc;
+                          });
+                        }}
+                        aria-label="Duplicate station"
+                      >
+                        <Copy size={10} />
+                      </button>
+                      <button
+                        className="w-5 h-5 rounded-full bg-gray-900 border border-gray-600 flex items-center justify-center text-red-400 hover:text-red-300 hover:border-red-500/50 transition-colors"
+                        onClick={() => removeStation(st.id)}
+                        aria-label="Delete station"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
 
-                  {/* Body - Hardware list */}
-                  <div className="p-2 space-y-1 overflow-auto" style={{ height: 'calc(100% - 40px)' }}>
-                    {st.hardware.map((assoc, idx) => {
-                      const hw = hwById[assoc.hid];
-                      if (!hw) return null;
-                      return (
-                        <div key={idx} className="relative border border-gray-700 rounded-md px-2 py-1">
-                          <div className="text-[11px] flex items-center gap-2 text-white">
-                            <span>{hw.name}</span>
-                            <span className="text-gray-200">- {hw.ttiMin} min</span>
-                            {assoc.flags?.existing && !assoc.flags?.replace && <span className="ml-auto text-[10px] text-yellow-300">Existing</span>}
-                          </div>
-                          <div className="absolute top-0 right-1 flex gap-1" onClick={e => e.stopPropagation()}>
-                            <button
-                              className={`text-[10px] focus:ring-2 focus:ring-amber-500 focus:outline-none ${assoc.flags?.existing ? 'text-yellow-400' : 'text-gray-200'}`}
-                              onClick={() => updateHardwareAssoc(st.id, idx, { flags: { ...assoc.flags, existing: !assoc.flags?.existing } })}
-                              aria-label="Mark hardware as existing"
-                            >
-                              E
-                            </button>
-                            <button className="text-[10px] text-red-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" onClick={() => removeHardwareFromStation(st.id, idx)} aria-label="Remove hardware">x</button>
+                    {/* Compact Header */}
+                    <div className="px-3 py-2 flex items-center gap-2">
+                      {/* Color indicator */}
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white/10"
+                        style={{ background: st.color }}
+                      />
+
+                      {/* Name */}
+                      <input
+                        className="bg-transparent text-sm font-medium outline-none text-white flex-1 min-w-0 placeholder-gray-500"
+                        value={st.name}
+                        placeholder="Station name"
+                        onChange={e => updateStation(st.id, { name: e.target.value })}
+                        onClick={e => e.stopPropagation()}
+                      />
+
+                      {/* Hardware count chip */}
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${hwCount > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-400'}`}>
+                        <Layers size={10} />
+                        <span>{hwCount}</span>
+                      </div>
+
+                      {/* Existing badge */}
+                      {st.flags?.existing && (
+                        <div className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-yellow-500/20 text-yellow-400">
+                          Existing
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expandable content - Only when selected */}
+                    {isSelected && (
+                      <div className="px-3 pb-3 space-y-2 border-t border-gray-700/50 pt-2 animate-in slide-in-from-top-2 duration-150">
+                        {/* Quick stats row */}
+                        <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                          <span>{totalTti} min TTI</span>
+                          {existingCount > 0 && <span className="text-yellow-400">{existingCount} existing</span>}
+                          {st.dept && <span className="ml-auto px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">{st.dept}</span>}
+                        </div>
+
+                        {/* Hardware as compact chips */}
+                        <div className="flex flex-wrap gap-1">
+                          {st.hardware.map((assoc, idx) => {
+                            const hw = hwById[assoc.hid];
+                            if (!hw) return null;
+                            return (
+                              <div
+                                key={idx}
+                                className={`group/hw flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors ${assoc.flags?.existing ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/30' : 'bg-gray-700/50 text-gray-300 border border-gray-600/50'}`}
+                              >
+                                <span className="max-w-20 truncate">{hw.name}</span>
+                                <button
+                                  className="opacity-0 group-hover/hw:opacity-100 text-red-400 hover:text-red-300 transition-opacity ml-0.5"
+                                  onClick={e => { e.stopPropagation(); removeHardwareFromStation(st.id, idx); }}
+                                  aria-label="Remove"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            );
+                          })}
+
+                          {/* Add hardware button */}
+                          <button
+                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <Plus size={10} />
+                            <span>Add</span>
+                          </button>
+                        </div>
+
+                        {/* Station controls row */}
+                        <div className="flex items-center gap-2 pt-1 border-t border-gray-700/30">
+                          <button
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors ${st.flags?.existing ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700/50 text-gray-400 hover:text-gray-300'}`}
+                            onClick={e => { e.stopPropagation(); updateStation(st.id, { flags: { ...st.flags, existing: !st.flags?.existing } }); }}
+                          >
+                            <CheckCircle size={10} />
+                            <span>{st.flags?.existing ? 'Existing' : 'Mark Existing'}</span>
+                          </button>
+
+                          {/* Color picker */}
+                          <div className="flex items-center gap-1 ml-auto">
+                            {['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'].map(color => (
+                              <button
+                                key={color}
+                                className={`w-4 h-4 rounded-full transition-transform ${st.color === color ? 'ring-2 ring-white/50 scale-110' : 'hover:scale-110'}`}
+                                style={{ background: color }}
+                                onClick={e => { e.stopPropagation(); updateStation(st.id, { color }); }}
+                                aria-label={`Set color to ${color}`}
+                              />
+                            ))}
                           </div>
                         </div>
-                      );
-                    })}
-
-                    {/* Quick add hardware when selected */}
-                    {selected.kind === 'station' && selected.id === st.id && (
-                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-700">
-                        {hardwareCatalog.slice(0, 6).map(hw => (
-                          <button
-                            key={hw.id}
-                            className="text-[9px] bg-gray-700 hover:bg-gray-600 rounded px-1.5 py-0.5 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                            onClick={e => { e.stopPropagation(); addHardwareToStation(st.id, hw.id); }}
-                            aria-label={`Add ${hw.name} to station`}
-                          >
-                            +{hw.name.split(' ')[0]}
-                          </button>
-                        ))}
                       </div>
                     )}
-                  </div>
 
-                  {/* Resizer */}
-                  <div
-                    className="absolute right-0 bottom-0 w-4 h-4 cursor-nwse-resize bg-emerald-500 rounded-tl-md"
-                    onMouseDown={e => resizeStart(e, st.id)}
-                  />
-                </div>
-              ))}
+                    {/* Resize handle - subtle, bottom-right corner */}
+                    <div
+                      className={`absolute right-0 bottom-0 w-3 h-3 cursor-nwse-resize transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}
+                      style={{ background: 'linear-gradient(135deg, transparent 50%, #10b981 50%)' }}
+                      onMouseDown={e => { e.stopPropagation(); resizeStart(e, st.id); }}
+                    />
+                  </div>
+                );
+              })}
 
               {/* Labels */}
               {currentFloor?.labels.map(l => (
@@ -1956,10 +2309,10 @@ const QuoteBuilder: React.FC = () => {
           </div>
 
           {/* Pan/Zoom hint - Updated for infinite canvas */}
-          <div className="absolute left-8 bottom-4 text-xs bg-gray-800/95 rounded-lg px-3 py-2 border border-gray-700 text-gray-300 z-20">
-            <span className="text-gray-500">Pan:</span> Space+drag or scroll
-            <span className="mx-2 text-gray-500">•</span>
-            <span className="text-gray-500">Zoom:</span> Ctrl+scroll or pinch
+          <div className="absolute left-9 bottom-4 text-[10px] bg-gray-800/90 rounded-md px-2 py-1.5 border border-gray-700/50 text-gray-400 z-20 backdrop-blur-sm">
+            <span className="text-gray-500">Pan:</span> Scroll or Space+drag
+            <span className="mx-2 text-gray-600">•</span>
+            <span className="text-gray-500">Zoom:</span> Alt+scroll or buttons
           </div>
 
           {/* Zoom indicator - Shows current zoom level */}
@@ -1998,7 +2351,7 @@ const QuoteBuilder: React.FC = () => {
                       type="checkbox"
                       checked={currentLocation?.integrationIds.includes(integ.id) || false}
                       onChange={() => toggleIntegration(integ.id)}
-                      className="accent-emerald-500 w-4 h-4"
+                      className="qb-checkbox"
                     />
                   </label>
                 ))}
@@ -2201,7 +2554,7 @@ const QuoteBuilder: React.FC = () => {
                   type="checkbox"
                   checked={l.visible}
                   onChange={() => toggleLayerVisibility(l.id)}
-                  className="accent-emerald-500 w-3 h-3"
+                  className="qb-checkbox w-3 h-3"
                 />
                 <span className="text-[11px]">{l.name}</span>
               </label>

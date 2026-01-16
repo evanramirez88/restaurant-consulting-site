@@ -266,29 +266,81 @@ export const COMMON_STATION_NAMES = [
 
 // FOH Objects (front of house)
 export const FOH_OBJECTS: ObjectDefinition[] = [
-  { type: "Table", w: 80, h: 80, color: "#6b7280" },
+  // Seating
+  { type: "Round Table (2)", w: 48, h: 48, color: "#6b7280" },
+  { type: "Round Table (4)", w: 64, h: 64, color: "#6b7280" },
+  { type: "Square Table", w: 64, h: 64, color: "#6b7280" },
+  { type: "Rect Table (4)", w: 96, h: 64, color: "#6b7280" },
+  { type: "Rect Table (6)", w: 128, h: 64, color: "#6b7280" },
+  { type: "Booth", w: 96, h: 48, color: "#78716c" },
+  { type: "High Top", w: 48, h: 48, color: "#71717a" },
+  { type: "Patio Table", w: 80, h: 80, color: "#92400e" },
+  // Bar/Service
   { type: "Bar Counter", w: 220, h: 44, color: "#4b5563" },
+  { type: "Bar Stool", w: 24, h: 24, color: "#737373" },
+  { type: "Wait Station", w: 48, h: 36, color: "#525252" },
+  { type: "Bus Station", w: 48, h: 36, color: "#525252" },
+  // Front Desk
   { type: "Host Stand", w: 60, h: 40, color: "#6b7280" },
-  { type: "Phone", w: 24, h: 24, color: "#94a3b8" },
-  { type: "Service Window", w: 120, h: 12, color: "#eab308" }
+  { type: "Cashier", w: 72, h: 36, color: "#6b7280" },
+  { type: "Service Window", w: 120, h: 12, color: "#eab308" },
+  { type: "Phone", w: 24, h: 24, color: "#94a3b8" }
 ];
 
 // BOH Objects (back of house)
 export const BOH_OBJECTS: ObjectDefinition[] = [
+  // Prep & Storage
   { type: "Prep Table", w: 120, h: 50, color: "#7c3aed" },
-  { type: "Walk-in", w: 160, h: 120, color: "#0ea5e9" },
-  { type: "Sink", w: 60, h: 40, color: "#06b6d4" },
+  { type: "Cutting Board", w: 48, h: 32, color: "#a78bfa" },
+  { type: "Sheet Rack", w: 32, h: 48, color: "#a1a1aa" },
+  { type: "Dry Storage", w: 96, h: 48, color: "#78716c" },
+  { type: "Shelf Unit", w: 72, h: 24, color: "#a8a29e" },
+  // Refrigeration
+  { type: "Walk-in Cooler", w: 160, h: 120, color: "#0ea5e9" },
+  { type: "Walk-in Freezer", w: 120, h: 100, color: "#38bdf8" },
+  { type: "Reach-in Fridge", w: 48, h: 32, color: "#22c55e" },
+  { type: "Reach-in Freezer", w: 48, h: 32, color: "#3b82f6" },
+  { type: "Prep Cooler", w: 72, h: 36, color: "#10b981" },
+  // Cooking Equipment
   { type: "Oven", w: 60, h: 60, color: "#f97316" },
-  { type: "Fryer", w: 50, h: 50, color: "#f59e0b" },
-  { type: "Grill", w: 120, h: 60, color: "#ef4444" },
-  { type: "Fridge", w: 60, h: 60, color: "#22c55e" }
+  { type: "Range", w: 96, h: 48, color: "#ea580c" },
+  { type: "Flat Top", w: 72, h: 36, color: "#dc2626" },
+  { type: "Charbroiler", w: 72, h: 36, color: "#ef4444" },
+  { type: "Fryer Bank", w: 72, h: 48, color: "#f59e0b" },
+  { type: "Steam Table", w: 96, h: 36, color: "#eab308" },
+  { type: "Salamander", w: 36, h: 24, color: "#f97316" },
+  { type: "Pizza Oven", w: 72, h: 72, color: "#dc2626" },
+  // Wash/Utility
+  { type: "3-Comp Sink", w: 96, h: 36, color: "#06b6d4" },
+  { type: "Hand Sink", w: 24, h: 24, color: "#22d3ee" },
+  { type: "Mop Sink", w: 36, h: 36, color: "#67e8f9" },
+  { type: "Dishwasher", w: 48, h: 48, color: "#14b8a6" },
+  { type: "Dish Table", w: 72, h: 36, color: "#5eead4" },
+  // Other
+  { type: "Ice Machine", w: 36, h: 36, color: "#a5f3fc" },
+  { type: "Expo Line", w: 180, h: 24, color: "#fbbf24" },
+  { type: "Pass Window", w: 120, h: 12, color: "#f59e0b" }
 ];
 
 // Structure Objects
 export const STRUCTURE_OBJECTS: ObjectDefinition[] = [
-  { type: "Wall", w: 220, h: 10, color: "#1f2937" },
-  { type: "Door (Entry)", w: 36, h: 4, color: "#94a3b8" },
-  { type: "Door (Exit)", w: 36, h: 4, color: "#94a3b8" }
+  // Walls
+  { type: "Wall (H)", w: 220, h: 10, color: "#1f2937" },
+  { type: "Wall (V)", w: 10, h: 160, color: "#1f2937" },
+  { type: "Half Wall", w: 120, h: 8, color: "#374151" },
+  { type: "Partition", w: 80, h: 6, color: "#4b5563" },
+  // Doors/Windows
+  { type: "Entry Door", w: 40, h: 6, color: "#94a3b8" },
+  { type: "Exit Door", w: 40, h: 6, color: "#ef4444" },
+  { type: "Double Door", w: 64, h: 6, color: "#94a3b8" },
+  { type: "Kitchen Door", w: 36, h: 6, color: "#fbbf24" },
+  { type: "Window", w: 60, h: 4, color: "#67e8f9" },
+  // Special
+  { type: "Stairs", w: 48, h: 72, color: "#6b7280" },
+  { type: "Elevator", w: 48, h: 48, color: "#9ca3af" },
+  { type: "Restroom", w: 80, h: 64, color: "#a78bfa" },
+  { type: "Office", w: 96, h: 80, color: "#6366f1" },
+  { type: "Storage", w: 72, h: 56, color: "#78716c" }
 ];
 
 // Station overhead per station (in minutes)

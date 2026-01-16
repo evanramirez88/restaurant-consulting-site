@@ -1459,6 +1459,159 @@ html {
 }
 
 /* ========================
+   QUOTE BUILDER CUSTOM FORM CONTROLS
+   ======================== */
+
+/* Custom Checkbox - Modern toggle style */
+.qb-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #4b5563;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.qb-checkbox:hover {
+  border-color: #6b7280;
+  background: rgba(75, 85, 99, 0.2);
+}
+
+.qb-checkbox:checked {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: transparent;
+}
+
+.qb-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.qb-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+/* Custom Toggle Switch */
+.qb-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #374151;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.qb-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #9ca3af;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.qb-toggle:checked {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.qb-toggle:checked::after {
+  left: 18px;
+  background: white;
+}
+
+.qb-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+/* Custom Radio Button */
+.qb-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #4b5563;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.qb-radio:hover {
+  border-color: #6b7280;
+  background: rgba(75, 85, 99, 0.2);
+}
+
+.qb-radio:checked {
+  border-color: #10b981;
+}
+
+.qb-radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.qb-radio:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+/* Pill-style option buttons */
+.qb-pill {
+  padding: 6px 12px;
+  border: 1px solid #374151;
+  border-radius: 9999px;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.qb-pill:hover {
+  border-color: #4b5563;
+  color: #e5e7eb;
+  background: rgba(75, 85, 99, 0.2);
+}
+
+.qb-pill.active, .qb-pill:checked {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+/* ========================
    QUOTE BUILDER DARK THEME SCROLLBARS
    ======================== */
 

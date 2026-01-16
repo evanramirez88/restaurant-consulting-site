@@ -81,6 +81,15 @@ export interface HardwareAssociation {
   nickname: string;
   notes: string;
   flags: HardwareFlags;
+  groupId?: string; // Optional group ID for hardware grouping
+}
+
+export interface HardwareGroup {
+  id: string;
+  name: string;
+  color: string;
+  hardwareIds: string[]; // Hardware IDs in this group
+  collapsed: boolean;
 }
 
 export interface StationFlags {
