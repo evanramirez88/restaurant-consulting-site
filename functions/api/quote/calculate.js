@@ -286,50 +286,103 @@ const RATES = {
 
 const TRAVEL_RATES = {
   cape: 0,
-  southShore: 100,
-  southernNE: 250,
-  'ne100+': 400,
-  island: 300,
-  islandVehicle: 200,
+  driveZone: 0,
+  rhodeIsland: 0,
+  worcester: 0,
+  boston: 50,
+  island: 150,
+  islandVehicle: 150,
   islandLodging: 250,
-  outOfRegion: 800
+  extended: null  // Quote based on actual travel
 };
 
-// Hardware TTI (time-to-install in minutes) - PROPRIETARY
-const HARDWARE_TTI = {
-  'toast-flex': 45,
-  'toast-flex-guest': 30,
-  'toast-go2': 25,
-  'toast-kds': 30,
-  'receipt-printer': 20,
-  'impact-printer': 20,
-  'label-printer': 40,
-  'poe-switch': 10,
-  'ap': 25,
-  'router': 25,
-  'card-reader-direct': 20,
-  'card-reader-guest': 20,
-  'card-reader-employee': 20,
-  'ups': 15,
-  'cash-drawer': 15,
-  'barcode': 15,
-  'scale': 45
+// ============================================
+// VARIABILITY DATABASE - TIME-MOTION VALUES
+// Core trade secret: TTI with variance ranges
+// Format: { expected, min, max, failureRate, recoveryMin }
+// ============================================
+
+const VARIABILITY_DB = {
+  hardware: {
+    'toast-flex': { expected: 45, min: 35, max: 60, failureRate: 0.02, recoveryMin: 20 },
+    'toast-flex-guest': { expected: 30, min: 20, max: 45, failureRate: 0.02, recoveryMin: 15 },
+    'toast-go2': { expected: 25, min: 15, max: 35, failureRate: 0.03, recoveryMin: 10 },
+    'toast-kds': { expected: 30, min: 20, max: 45, failureRate: 0.04, recoveryMin: 25 },
+    'receipt-printer': { expected: 20, min: 12, max: 30, failureRate: 0.05, recoveryMin: 15 },
+    'impact-printer': { expected: 20, min: 12, max: 35, failureRate: 0.06, recoveryMin: 20 },
+    'label-printer': { expected: 40, min: 25, max: 55, failureRate: 0.04, recoveryMin: 25 },
+    'poe-switch': { expected: 10, min: 5, max: 20, failureRate: 0.01, recoveryMin: 10 },
+    'ap': { expected: 25, min: 15, max: 40, failureRate: 0.02, recoveryMin: 15 },
+    'router': { expected: 25, min: 15, max: 40, failureRate: 0.02, recoveryMin: 20 },
+    'card-reader-direct': { expected: 20, min: 12, max: 30, failureRate: 0.03, recoveryMin: 10 },
+    'card-reader-guest': { expected: 20, min: 12, max: 30, failureRate: 0.03, recoveryMin: 10 },
+    'card-reader-employee': { expected: 20, min: 12, max: 30, failureRate: 0.03, recoveryMin: 10 },
+    'ups': { expected: 15, min: 10, max: 25, failureRate: 0.01, recoveryMin: 10 },
+    'cash-drawer': { expected: 15, min: 10, max: 25, failureRate: 0.02, recoveryMin: 10 },
+    'barcode': { expected: 15, min: 10, max: 25, failureRate: 0.02, recoveryMin: 10 },
+    'scale': { expected: 45, min: 30, max: 60, failureRate: 0.03, recoveryMin: 20 }
+  },
+  integrations: {
+    'toast-payroll': { expected: 90, min: 60, max: 120, failureRate: 0.08, recoveryMin: 30 },
+    'xtrachef': { expected: 90, min: 60, max: 120, failureRate: 0.06, recoveryMin: 25 },
+    'loyalty': { expected: 60, min: 40, max: 90, failureRate: 0.05, recoveryMin: 20 },
+    'gift-cards': { expected: 45, min: 30, max: 60, failureRate: 0.04, recoveryMin: 15 },
+    'online-ordering': { expected: 60, min: 40, max: 90, failureRate: 0.07, recoveryMin: 25 },
+    'delivery-services': { expected: 30, min: 20, max: 45, failureRate: 0.05, recoveryMin: 15 },
+    '3p-delivery': { expected: 60, min: 40, max: 90, failureRate: 0.08, recoveryMin: 30 },
+    'opentable': { expected: 60, min: 45, max: 90, failureRate: 0.06, recoveryMin: 25 },
+    'tables': { expected: 90, min: 60, max: 120, failureRate: 0.05, recoveryMin: 30 },
+    'email-mktg': { expected: 45, min: 30, max: 60, failureRate: 0.04, recoveryMin: 15 },
+    '7shifts': { expected: 75, min: 50, max: 100, failureRate: 0.05, recoveryMin: 25 }
+  },
+  cabling: {
+    // Per-foot cabling time with variance
+    cat6Standard: { expected: 0.5, min: 0.3, max: 0.8, failureRate: 0.02, recoveryMin: 5 },
+    cat6Grease: { expected: 0.7, min: 0.5, max: 1.2, failureRate: 0.05, recoveryMin: 10 },
+    cat6Historic: { expected: 0.9, min: 0.6, max: 1.5, failureRate: 0.08, recoveryMin: 15 }
+  }
 };
 
-// Integration TTI - PROPRIETARY
-const INTEGRATION_TTI = {
-  'toast-payroll': 90,
-  'xtrachef': 90,
-  'loyalty': 60,
-  'gift-cards': 45,
-  'online-ordering': 60,
-  'delivery-services': 30,
-  '3p-delivery': 60,
-  'opentable': 60,
-  'tables': 90,
-  'email-mktg': 45,
-  '7shifts': 75
+// Station Criticality Weights - affects DCI score
+const STATION_CRITICALITY_WEIGHTS = {
+  'toast-kds': 1.5,      // Kitchen Display: mission-critical
+  'receipt-printer': 1.3, // Receipt printer: high impact
+  'impact-printer': 1.3,  // Kitchen printer: high impact
+  'label-printer': 1.2,   // Label printer: moderate impact
+  'toast-flex': 1.0,      // Terminal: baseline
+  'toast-flex-guest': 0.9, // Guest terminal: lower criticality
+  'toast-go2': 0.9,       // Mobile device: lower criticality
+  'card-reader-direct': 1.1,
+  'card-reader-guest': 0.9,
+  'card-reader-employee': 1.0,
+  'poe-switch': 1.4,      // Network: high criticality
+  'router': 1.5,          // Network: highest criticality
+  'ap': 1.3,              // Network: high criticality
+  'ups': 1.2,             // Power: moderate-high
+  'cash-drawer': 0.8,     // Cash: lower criticality
+  'barcode': 0.7,         // Accessory: low criticality
+  'scale': 0.8            // Accessory: low criticality
 };
+
+// Environmental Multipliers - affects installation time
+const ENVIRONMENTAL_MULTIPLIERS = {
+  standard: 1.0,
+  historicBuilding: 1.5,   // Old construction, difficult cabling
+  greaseHeavy: 1.25,       // Kitchen areas with grease buildup
+  outdoorPatio: 1.3,       // Weather considerations
+  basement: 1.2,           // Below-grade installations
+  multiLevel: 1.15,        // Multi-floor buildings
+  limitedAccess: 1.35      // Restricted work hours or access
+};
+
+// Legacy compatibility: flat TTI values derived from Variability DB
+const HARDWARE_TTI = Object.fromEntries(
+  Object.entries(VARIABILITY_DB.hardware).map(([k, v]) => [k, v.expected])
+);
+
+const INTEGRATION_TTI = Object.fromEntries(
+  Object.entries(VARIABILITY_DB.integrations).map(([k, v]) => [k, v.expected])
+);
 
 // Station overhead per new station
 const STATION_OVERHEAD_MIN = 15;
@@ -382,7 +435,192 @@ const MULTI_LOCATION_DISCOUNT_PER = 0.05;  // 5% per additional location
 const MAX_MULTI_LOCATION_DISCOUNT = 0.20;  // Cap at 20%
 
 /**
+ * Calculate environmental modifier from venue characteristics
+ */
+function getEnvironmentalModifier(config) {
+  let modifier = 1.0;
+  const factors = [];
+
+  // Check for environmental flags
+  const environment = config.environment || {};
+
+  if (environment.historicBuilding) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.historicBuilding;
+    factors.push({
+      type: 'environment',
+      value: 'historic_building',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.historicBuilding,
+      reason: 'Historic building - difficult cabling paths'
+    });
+  }
+
+  if (environment.greaseHeavy) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.greaseHeavy;
+    factors.push({
+      type: 'environment',
+      value: 'grease_heavy',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.greaseHeavy,
+      reason: 'Grease-heavy environment - additional protection needed'
+    });
+  }
+
+  if (environment.outdoorPatio) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.outdoorPatio;
+    factors.push({
+      type: 'environment',
+      value: 'outdoor_patio',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.outdoorPatio,
+      reason: 'Outdoor installation - weather considerations'
+    });
+  }
+
+  if (environment.basement) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.basement;
+    factors.push({
+      type: 'environment',
+      value: 'basement',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.basement,
+      reason: 'Below-grade installation'
+    });
+  }
+
+  if (environment.multiLevel) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.multiLevel;
+    factors.push({
+      type: 'environment',
+      value: 'multi_level',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.multiLevel,
+      reason: 'Multi-floor building'
+    });
+  }
+
+  if (environment.limitedAccess) {
+    modifier *= ENVIRONMENTAL_MULTIPLIERS.limitedAccess;
+    factors.push({
+      type: 'environment',
+      value: 'limited_access',
+      modifier: ENVIRONMENTAL_MULTIPLIERS.limitedAccess,
+      reason: 'Limited work hours or access restrictions'
+    });
+  }
+
+  return { modifier: Math.round(modifier * 100) / 100, factors };
+}
+
+/**
+ * Calculate Station Criticality Index using weighted hardware criticality
+ */
+function calculateStationCriticalityIndex(floors) {
+  let totalWeight = 0;
+  let hardwareCount = 0;
+  const criticalItems = [];
+
+  (floors || []).forEach(floor => {
+    (floor.stations || []).forEach(station => {
+      (station.hardware || []).forEach(hw => {
+        const weight = STATION_CRITICALITY_WEIGHTS[hw.hid] || 1.0;
+        totalWeight += weight;
+        hardwareCount++;
+
+        if (weight >= 1.3) {
+          criticalItems.push({
+            hardware: hw.hid,
+            station: station.name,
+            weight
+          });
+        }
+      });
+    });
+  });
+
+  const avgCriticality = hardwareCount > 0 ? totalWeight / hardwareCount : 1.0;
+
+  return {
+    totalWeight: Math.round(totalWeight * 100) / 100,
+    avgCriticality: Math.round(avgCriticality * 100) / 100,
+    criticalItems,
+    // Modifier based on avg criticality: if above 1.1, add that excess as percentage
+    modifier: avgCriticality > 1.1 ? avgCriticality : 1.0
+  };
+}
+
+/**
+ * Calculate time ranges using Variability Database
+ */
+function calculateTimeWithVariance(floors, integrationIds, environmentModifier) {
+  const result = {
+    hardware: { expected: 0, min: 0, max: 0, failureRisk: 0 },
+    integrations: { expected: 0, min: 0, max: 0, failureRisk: 0 },
+    cabling: { expected: 0, min: 0, max: 0, failureRisk: 0 },
+    overhead: 0
+  };
+
+  // Hardware time with variance
+  (floors || []).forEach(floor => {
+    (floor.stations || []).forEach(station => {
+      const stationExisting = station.flags?.existing && !station.flags?.replace;
+
+      if (!stationExisting) {
+        result.overhead += STATION_OVERHEAD_MIN;
+      }
+
+      (station.hardware || []).forEach(hw => {
+        const varData = VARIABILITY_DB.hardware[hw.hid];
+        if (!varData) return;
+
+        const hwExisting = hw.flags?.existing && !hw.flags?.replace;
+        if (stationExisting || hwExisting) return;
+
+        // Apply environmental modifier to time
+        result.hardware.expected += varData.expected * environmentModifier;
+        result.hardware.min += varData.min * environmentModifier;
+        result.hardware.max += varData.max * environmentModifier;
+
+        // Calculate expected failure time contribution
+        result.hardware.failureRisk += varData.failureRate * varData.recoveryMin;
+      });
+    });
+
+    // Cabling with variance
+    (floor.layers || []).filter(l => l.type === 'network').forEach(layer => {
+      (layer.cableRuns || []).forEach(run => {
+        // Determine cabling type based on environment
+        const env = floor.environment || {};
+        let cablingType = 'cat6Standard';
+        if (env.greaseHeavy) cablingType = 'cat6Grease';
+        if (env.historicBuilding) cablingType = 'cat6Historic';
+
+        const varData = VARIABILITY_DB.cabling[cablingType];
+        const lengthFt = run.lengthFt || 0;
+
+        result.cabling.expected += lengthFt * varData.expected * environmentModifier;
+        result.cabling.min += lengthFt * varData.min * environmentModifier;
+        result.cabling.max += lengthFt * varData.max * environmentModifier;
+        result.cabling.failureRisk += varData.failureRate * varData.recoveryMin;
+      });
+    });
+  });
+
+  // Integrations with variance
+  (integrationIds || []).forEach(id => {
+    const varData = VARIABILITY_DB.integrations[id];
+    if (!varData) return;
+
+    result.integrations.expected += varData.expected;
+    result.integrations.min += varData.min;
+    result.integrations.max += varData.max;
+    result.integrations.failureRisk += varData.failureRate * varData.recoveryMin;
+  });
+
+  return result;
+}
+
+/**
  * Calculate DCI complexity modifier based on restaurant characteristics
+ * DCI = f(T, F, I) where:
+ *   T = Variability of Work (time variance)
+ *   F = Failure Rate (historical probability)
+ *   I = Hardware Interactions (network topology complexity)
  */
 function getComplexityModifier(config) {
   let modifier = 1.0;
@@ -425,6 +663,25 @@ function getComplexityModifier(config) {
         modifier: barModifier
       });
     }
+  }
+
+  // Environmental factors
+  const envResult = getEnvironmentalModifier(config);
+  if (envResult.modifier !== 1.0) {
+    modifier *= envResult.modifier;
+    factors.push(...envResult.factors);
+  }
+
+  // Station Criticality Index
+  const criticalityResult = calculateStationCriticalityIndex(config.floors);
+  if (criticalityResult.modifier > 1.0) {
+    modifier *= criticalityResult.modifier;
+    factors.push({
+      type: 'station_criticality',
+      value: criticalityResult.avgCriticality,
+      modifier: criticalityResult.modifier,
+      criticalItems: criticalityResult.criticalItems
+    });
   }
 
   // Station complexity: >5 stations adds 3% per extra station
@@ -575,15 +832,22 @@ function calculateTravelCost(travel) {
 function calculateQuote(config) {
   const { floors, travel, integrationIds, supportTier, supportPeriod } = config;
 
+  // Get environmental modifier first (affects time calculations)
+  const envResult = getEnvironmentalModifier(config);
+
+  // Calculate time with variance from Variability Database
+  const timeVariance = calculateTimeWithVariance(floors, integrationIds, envResult.modifier);
+
   const breakdown = {
     items: [],
-    mins: { hardware: 0, overhead: 0, integrations: 0, cabling: 0 }
+    mins: { hardware: 0, overhead: 0, integrations: 0, cabling: 0 },
+    variance: timeVariance
   };
 
   // Track device count for volume discounts
   let deviceCount = 0;
 
-  // Calculate labor for all floors
+  // Calculate labor for all floors (using expected values for pricing)
   (floors || []).forEach(floor => {
     // Stations & hardware
     (floor.stations || []).forEach(station => {
@@ -607,11 +871,14 @@ function calculateQuote(config) {
         const hwExisting = hw.flags?.existing && !hw.flags?.replace;
         if (stationExisting || hwExisting) return;
 
-        breakdown.mins.hardware += tti;
+        // Apply environmental modifier to hardware TTI
+        const adjustedTTI = tti * envResult.modifier;
+        breakdown.mins.hardware += adjustedTTI;
         breakdown.items.push({
           type: 'hardware',
           label: `${hw.hid} - ${station.name}`,
-          minutes: tti
+          minutes: adjustedTTI,
+          criticality: STATION_CRITICALITY_WEIGHTS[hw.hid] || 1.0
         });
       });
     });
@@ -619,11 +886,12 @@ function calculateQuote(config) {
     // Cable runs
     (floor.layers || []).filter(l => l.type === 'network').forEach(layer => {
       (layer.cableRuns || []).forEach(run => {
-        breakdown.mins.cabling += run.ttiMin;
+        const adjustedTTI = run.ttiMin * envResult.modifier;
+        breakdown.mins.cabling += adjustedTTI;
         breakdown.items.push({
           type: 'cabling',
           label: `Cable run ${run.lengthFt} ft`,
-          minutes: run.ttiMin
+          minutes: adjustedTTI
         });
       });
     });
@@ -642,7 +910,7 @@ function calculateQuote(config) {
     });
   });
 
-  // Calculate base totals
+  // Calculate base totals using expected times
   const totalMin = Object.values(breakdown.mins).reduce((a, b) => a + b, 0);
   const baseInstallCost = (totalMin / 60) * RATES.hourly;
   const travelCost = calculateTravelCost(travel);
@@ -665,13 +933,36 @@ function calculateQuote(config) {
   const installAfterDiscount = discountResult.finalTotal;
   const combinedFirst = installAfterDiscount + supportNow;
 
+  // Calculate time range from Variability Database
+  const totalExpected = timeVariance.hardware.expected +
+    timeVariance.integrations.expected +
+    timeVariance.cabling.expected +
+    timeVariance.overhead;
+  const totalMin_low = timeVariance.hardware.min +
+    timeVariance.integrations.min +
+    timeVariance.cabling.min +
+    timeVariance.overhead;
+  const totalMax = timeVariance.hardware.max +
+    timeVariance.integrations.max +
+    timeVariance.cabling.max +
+    timeVariance.overhead;
+
+  // Calculate expected failure time contribution
+  const failureRiskTime = timeVariance.hardware.failureRisk +
+    timeVariance.integrations.failureRisk +
+    timeVariance.cabling.failureRisk;
+
+  // Station criticality calculation
+  const criticalityResult = calculateStationCriticalityIndex(floors);
+
   return {
     // Detailed breakdown (without revealing TTI formulas)
     items: breakdown.items.map(item => ({
       type: item.type,
       label: item.label,
       // Don't expose minutes - only show dollars
-      cost: (item.minutes / 60) * RATES.hourly
+      cost: (item.minutes / 60) * RATES.hourly,
+      criticality: item.criticality
     })),
     // Summary totals
     summary: {
@@ -681,6 +972,8 @@ function calculateQuote(config) {
       cablingCost: (breakdown.mins.cabling / 60) * RATES.hourly,
       baseInstallCost,
       complexityAdjustment: adjustedInstallCost - baseInstallCost,
+      environmentalAdjustment: envResult.modifier !== 1.0 ?
+        (baseInstallCost * (envResult.modifier - 1)) : 0,
       installCost: adjustedInstallCost,
       travelCost,
       subtotalBeforeDiscount,
@@ -695,14 +988,29 @@ function calculateQuote(config) {
     dci: {
       complexityModifier: complexityResult.modifier,
       complexityFactors: complexityResult.factors,
+      environmentalModifier: envResult.modifier,
+      environmentalFactors: envResult.factors,
+      stationCriticality: {
+        avgCriticality: criticalityResult.avgCriticality,
+        totalWeight: criticalityResult.totalWeight,
+        criticalItems: criticalityResult.criticalItems.slice(0, 5) // Limit for response size
+      },
       discounts: discountResult.discounts,
       totalDiscountPercent: discountResult.totalPercentage,
       deviceCount
     },
-    // Time estimate (approximate range, not exact)
+    // Time estimate from Variability Database (range, not exact)
     timeEstimate: {
-      minHours: Math.floor(totalMin * 0.85 / 60),
-      maxHours: Math.ceil(totalMin * 1.15 / 60)
+      minHours: Math.floor(totalMin_low / 60),
+      expectedHours: Math.round(totalExpected / 60),
+      maxHours: Math.ceil(totalMax / 60),
+      failureRiskMinutes: Math.round(failureRiskTime),
+      // Confidence range: min to max with failure buffer
+      withBuffer: {
+        optimistic: Math.floor(totalMin_low / 60),
+        expected: Math.round((totalExpected + failureRiskTime * 0.5) / 60),
+        conservative: Math.ceil((totalMax + failureRiskTime) / 60)
+      }
     }
   };
 }

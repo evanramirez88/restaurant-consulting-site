@@ -9,8 +9,12 @@ import { ToastBrowserClient } from './ToastBrowserClient.js';
 import { config } from './config.js';
 import crypto from 'crypto';
 
+// Import toast automation functions
+import { deployMenu, configureKDS } from './toast/index.js';
+
 // Job type handlers
 const JOB_HANDLERS = {
+  menu_deployment: executeMenuDeployment,  // Menu Builder → Toast deployment
   menu_upload: executeMenuUpload,
   menu_update: executeMenuUpdate,
   kds_config: executeKDSConfig,
@@ -148,11 +152,11 @@ export class JobExecutor {
 
       // Job input is already parsed from API response
       const payload = job.input || {};
-      await handler(client, job, payload, this);
+      const handlerResult = await handler(client, job, payload, this);
 
-      // Job completed successfully
+      // Job completed successfully - include handler results in output
       await this.updateJobStatus(jobId, 'completed', {
-        output: { success: true, message: 'Job completed successfully' },
+        output: handlerResult || { success: true, message: 'Job completed successfully' },
       });
 
       this.log('info', `Job completed: ${jobId}`);
@@ -317,6 +321,112 @@ export class JobExecutor {
 // ============================================
 // JOB TYPE HANDLERS
 // ============================================
+
+/**
+ * Execute menu deployment job (Menu Builder → Toast)
+ *
+ * This handler processes menus from the Menu Builder with auto-applied modifiers
+ * and deploys them to Toast POS using the high-level deployMenu workflow.
+ *
+ * Payload structure (from DeployToToastModal):
+ * - menu_items: Array of processed menu items with applied_modifier_groups
+ * - template_id: Configuration template ID
+ * - classification_id: Restaurant classification ID
+ * - modifier_stats: Statistics about applied modifiers
+ * - source: 'menu_builder'
+ */
+async function executeMenuDeployment(client, job, payload, executor) {
+  const {
+    menu_items = [],
+    template_id,
+    classification_id,
+    modifier_stats,
+    source
+  } = payload;
+
+  executor.log('info', `Menu deployment job from ${source || 'unknown'}`);
+  executor.log('info', `Items: ${menu_items.length}, Template: ${template_id || 'none'}`);
+
+  if (menu_items.length === 0) {
+    throw new Error('No menu items provided for deployment');
+  }
+
+  // Extract unique categories from items
+  const categoriesSet = new Set();
+  for (const item of menu_items) {
+    if (item.category) {
+      categoriesSet.add(item.category);
+    }
+  }
+  const categories = Array.from(categoriesSet).map(name => ({
+    name,
+    description: '',
+    sortOrder: 0
+  }));
+
+  executor.log('info', `Found ${categories.length} unique categories`);
+
+  // Prepare menu data for deployMenu function
+  const menuData = {
+    categories,
+    items: menu_items.map(item => ({
+      name: item.name,
+      description: item.description || '',
+      price: parseFloat(item.price) || 0,
+      category: item.category,
+      // Include modifier groups for applyModifierRules
+      applied_modifier_groups: item.applied_modifier_groups || []
+    }))
+  };
+
+  await executor.updateJobProgress(job.id, 25, 'Starting menu deployment...');
+
+  // Use the high-level deployMenu function from toast module
+  // This handles: switch restaurant, navigate, create categories, create items, apply modifiers
+  const result = await deployMenu(
+    client.page,
+    client.currentRestaurantGuid,
+    menuData,
+    {
+      onProgress: (pct, msg) => {
+        // Scale progress from 25% to 95%
+        const scaledProgress = 25 + Math.floor(pct * 0.7);
+        executor.updateJobProgress(job.id, scaledProgress, msg);
+      },
+      onScreenshot: async (name) => {
+        await client.takeScreenshot(name);
+      },
+      delayBetweenItems: 1500 // 1.5 second between items for stability
+    }
+  );
+
+  if (!result.success) {
+    executor.log('error', `Menu deployment failed: ${result.error}`);
+    throw new Error(result.error || 'Menu deployment failed');
+  }
+
+  // Log results
+  const { categories: catResults, items: itemResults, modifiers: modResults } = result.results;
+  executor.log('info', `Categories: ${catResults.created} created, ${catResults.failed} failed`);
+  executor.log('info', `Items: ${itemResults.created} created, ${itemResults.failed} failed`);
+  executor.log('info', `Modifiers: ${modResults.applied} applied, ${modResults.failed} failed`);
+
+  await executor.updateJobProgress(job.id, 95, 'Menu deployment complete');
+  await client.takeScreenshot('menu_deployment_complete');
+
+  // Return detailed results
+  return {
+    success: true,
+    results: result.results,
+    summary: {
+      total_items: menu_items.length,
+      items_created: itemResults.created,
+      items_failed: itemResults.failed,
+      modifiers_applied: modResults.applied,
+      categories_created: catResults.created
+    }
+  };
+}
 
 /**
  * Execute menu upload job

@@ -212,10 +212,151 @@ The DCI (Discount/Complexity/Industry) algorithm applies intelligent pricing adj
 | 7 | Booking Confirmation | 3 |
 | 8 | Onboarding | 3 |
 
+## M2V Scoring Equation (NEW - 2026-01-16)
+
+Menu-to-Venue composite assessment formula that evaluates fit across 7 dimensions.
+
+### Formula
+```
+M2V = w_M·Q̃ + w_P·CM̃ + w_O·Occ̃ - w_R·RevPASH̃ + w_L·(1-Labor%̃) - w_S·(1-TCÕ) + w_V·SI_peak
+```
+
+### Components
+| Symbol | Metric | Description |
+|--------|--------|-------------|
+| Q̃ | Quality Score | Menu quality assessment (0-100) |
+| CM̃ | Contribution Margin | Pricing effectiveness |
+| Occ̃ | Occupancy Rate | Table/seat utilization |
+| RevPASH̃ | Revenue Per Available Seat Hour | Efficiency metric |
+| Labor%̃ | Labor Percentage | Cost efficiency |
+| TCÕ | Total Cost of Ownership | Technology cost burden |
+| SI_peak | Seasonality Index | Peak period performance |
+
+### Weights by Category
+| Category | Q | CM | Occ | RevPASH | Labor | TCO | Volume |
+|----------|---|----|----|---------|-------|-----|--------|
+| Fine Dining | 0.20 | 0.25 | 0.15 | 0.10 | 0.10 | 0.10 | 0.10 |
+| Casual Dining | 0.15 | 0.15 | 0.20 | 0.15 | 0.15 | 0.10 | 0.10 |
+| Fast Casual | 0.10 | 0.10 | 0.15 | 0.20 | 0.20 | 0.10 | 0.15 |
+| QSR | 0.05 | 0.05 | 0.10 | 0.25 | 0.20 | 0.15 | 0.20 |
+
+### Endpoint
+`POST /api/quote/m2v-score` - Calculate M2V score for venue
+
+---
+
+## Core 4 Intelligence Agents (NEW - 2026-01-16)
+
+Autonomous intelligence gathering running on daily schedule.
+
+### Agent Schedule
+| Agent | Time | Focus |
+|-------|------|-------|
+| **Hunter** | 4:00 AM | Lead discovery, licensing boards, real estate |
+| **Analyst** | 5:00 AM | Data enrichment, POS audits, network mapping |
+| **Operator** | 6:00 AM | Operations audit, automation health, task validation |
+| **Strategist** | 7:00 AM | Lead scoring, gap analysis, daily briefing |
+
+### Lead Scoring Formula
+```
+Score = (Property Ownership × 3) + (Tech Vulnerability × 2) + (Warm Intro × 5)
+      + Revenue Estimate + Urgency Signals + Engagement History
+```
+
+### Recursive Gap Filling
+System identifies missing data with `<<NEED>>` markers and generates search queries:
+```javascript
+{
+  gaps: [
+    { field: 'phone', marker: '<<NEED:PHONE>>', searchQuery: 'Joes Pizza Hyannis phone' },
+    { field: 'owner', marker: '<<NEED:OWNER>>', searchQuery: 'Joes Pizza Hyannis owner' }
+  ]
+}
+```
+
+### Endpoint
+`POST /api/intelligence/agents` - Execute agent task
+
+---
+
+## Martini/Manhattan Inventory Logic (NEW - 2026-01-16)
+
+Bar inventory tracking treating cocktails as "states" of base spirits.
+
+### Formula
+```
+Final Price = (Base Spirit Price × Volume Multiplier) + Style Upcharge
+```
+
+### Cocktail Styles
+| Style | Volume Multiplier | Upcharge | Typical Oz |
+|-------|-------------------|----------|------------|
+| Martini | 2.0 | $2.00 | 4.0 |
+| Manhattan | 1.8 | $2.00 | 3.5 |
+| Old Fashioned | 1.25 | $1.50 | 2.5 |
+| Neat | 1.0 | $0.00 | 2.0 |
+| On the Rocks | 1.0 | $0.00 | 2.0 |
+| Highball | 0.75 | $0.50 | 1.5 |
+
+### Example Calculation
+- Tito's base price: $10
+- Martini style: 2.0 multiplier, $2 upcharge
+- Result: ($10 × 2.0) + $2 = **$22**
+
+### Database Tables
+- `spirit_base_items` - 30+ spirits with cost/pricing
+- `cocktail_styles` - 12 styles with multipliers
+- `cocktail_modifier_templates` - Garnish, temp, size options
+- `cocktail_menu_items` - Generated combinations
+
+### Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/menu/cocktail-config` | Get configuration |
+| `GET /api/menu/cocktail-config?action=pricing` | Full pricing matrix |
+| `POST /api/menu/cocktail-config/calculate` | Custom calculation |
+| `POST /api/menu/cocktail-config/generate` | Generate menu items |
+
+---
+
+## DCI Variability Database (ENHANCED - 2026-01-16)
+
+Time-motion intelligence with real-world variance data.
+
+### Hardware Items (17 total)
+```javascript
+{
+  'toast-flex': { expected: 45, min: 35, max: 60, failureRate: 0.02, recoveryMin: 20 },
+  'toast-kds': { expected: 30, min: 20, max: 45, failureRate: 0.04, recoveryMin: 25 },
+  'receipt-printer': { expected: 15, min: 10, max: 25, failureRate: 0.05, recoveryMin: 10 },
+  // ... 14 more
+}
+```
+
+### Station Criticality Weights
+| Hardware | Weight | Reason |
+|----------|--------|--------|
+| KDS | 1.5 | Mission-critical for kitchen |
+| Router | 1.5 | Entire system depends on network |
+| Receipt Printer | 1.3 | Customer-facing impact |
+| Toast Flex | 1.2 | Primary POS terminal |
+
+### Environmental Multipliers
+| Condition | Multiplier | Reason |
+|-----------|------------|--------|
+| Standard | 1.0 | Baseline |
+| Historic Building | 1.5 | Difficult cabling |
+| Grease Heavy | 1.25 | Kitchen areas |
+| Outdoor Patio | 1.3 | Weatherproofing |
+
+---
+
 ## Future Enhancements
 
 1. ~~**HubSpot Sync** - Two-way lead sync with CRM~~ ✅ COMPLETED
-2. **Google Places Enrichment** - Add hours, reviews, photos
-3. **Yelp API Integration** - Cuisine verification, price level
-4. **AI Website Analysis** - Scrape menus for item counts
-5. **Square Subscription Plans** - Automated billing for support plans
+2. ~~**M2V Scoring** - Menu-to-venue assessment~~ ✅ COMPLETED
+3. ~~**Core 4 Agents** - Autonomous intelligence~~ ✅ COMPLETED
+4. ~~**Martini/Manhattan Logic** - Bar inventory tracking~~ ✅ COMPLETED
+5. **Google Places Enrichment** - Add hours, reviews, photos
+6. **Yelp API Integration** - Cuisine verification, price level
+7. **AI Website Analysis** - Scrape menus for item counts

@@ -15,6 +15,7 @@ import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '..
 
 // Valid job types
 const VALID_JOB_TYPES = [
+  'menu_deployment',       // Deploy menu from Menu Builder to Toast (with modifiers)
   'menu_import',           // Import menu from PDF/image to Toast
   'menu_export',           // Export menu from Toast
   'pos_sync',              // Sync POS data
@@ -209,6 +210,7 @@ export async function onRequestGet(context) {
       data: {
         jobTypes: VALID_JOB_TYPES,
         descriptions: {
+          menu_deployment: 'Deploy menu from Menu Builder to Toast POS (with auto-applied modifiers)',
           menu_import: 'Import menu from PDF/image to Toast POS',
           menu_export: 'Export menu data from Toast POS',
           pos_sync: 'Synchronize POS data between systems',
