@@ -95,39 +95,70 @@ export async function onRequestPost(context) {
 
 // Cloudflare AI extraction (uses Workers AI)
 async function extractWithCloudflareAI(ai, text, client) {
-  const prompt = `You are analyzing text about a restaurant called "${client.company || client.name}".
-Extract any factual information you can find about this restaurant.
+  const systemPrompt = `You are a restaurant business intelligence analyst. Extract structured data from text about restaurants.
 
-For each fact, provide:
-- field: the type of information (e.g., "cuisine_type", "seating_capacity", "pos_system", "website", "phone", "address")
-- value: the extracted value
-- confidence: your confidence (0.0 to 1.0)
-- originalText: the relevant quote from the text
+Return ONLY a valid JSON array of facts. Each fact must have:
+- field: one of [cuisine_type, service_style, pos_system, website, phone, email, address, seating_capacity, employee_count, bar_program, established_date, owner_name]
+- value: the extracted value (string)
+- confidence: number between 0.0 and 1.0
+- originalText: the exact quote from the text
 
-TEXT TO ANALYZE:
-${text}
+Example output:
+[{"field": "cuisine_type", "value": "Italian", "confidence": 0.9, "originalText": "authentic Italian cuisine"}]`;
 
-Return a JSON array of facts. Example format:
-[{"field": "cuisine_type", "value": "Italian", "confidence": 0.9, "originalText": "specializing in Italian cuisine"}]
+  const userPrompt = `Extract facts about "${client.company || client.name}" from this text:
 
-Only return the JSON array, no other text.`;
+${text.substring(0, 3000)}
 
-  const response = await ai.run('@cf/meta/llama-2-7b-chat-int8', {
-    prompt,
-    max_tokens: 1000,
-  });
+Return ONLY the JSON array, no other text.`;
 
-  try {
-    // Try to parse the response as JSON
-    const jsonMatch = response.response.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+  // Try multiple models in order of preference
+  const models = [
+    '@cf/meta/llama-3.1-8b-instruct',
+    '@cf/meta/llama-3-8b-instruct',
+    '@cf/mistral/mistral-7b-instruct-v0.1',
+    '@cf/meta/llama-2-7b-chat-int8'
+  ];
+
+  for (const model of models) {
+    try {
+      const response = await ai.run(model, {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 1500,
+        temperature: 0.1,
+      });
+
+      const responseText = response.response || '';
+
+      // Try to extract JSON from response
+      const jsonMatch = responseText.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Validate and clean the extracted facts
+          return parsed.filter(f =>
+            f.field && f.value &&
+            typeof f.confidence === 'number' &&
+            f.confidence >= 0 && f.confidence <= 1
+          ).map(f => ({
+            field: String(f.field),
+            value: String(f.value),
+            confidence: f.confidence,
+            originalText: String(f.originalText || ''),
+          }));
+        }
+      }
+    } catch (modelError) {
+      console.error(`AI model ${model} failed:`, modelError.message);
+      continue;
     }
-  } catch (parseError) {
-    console.error('Failed to parse AI response:', parseError);
   }
 
-  // Return simulated if parsing fails
+  // All AI models failed, use pattern-based extraction
+  console.log('All AI models failed, falling back to pattern extraction');
   return simulateExtraction(text, client);
 }
 

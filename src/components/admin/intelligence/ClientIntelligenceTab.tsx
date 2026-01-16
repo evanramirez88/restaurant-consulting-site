@@ -13,6 +13,7 @@ import {
   DollarSign, Activity, Eye, Edit2, Trash2, MoreVertical, Tag, X,
   ChevronDown, ChevronUp, List, Grid3X3, Link2, Send, Sparkles
 } from 'lucide-react';
+import ResearchPanel from './ResearchPanel';
 
 // Types
 interface IntelClient {
@@ -105,6 +106,10 @@ const ClientIntelligenceTab: React.FC = () => {
 
   const loadData = async () => {
     setIsLoading(true);
+    let loadedProspects: IntelClient[] = [];
+    let loadedStats: MarketStats | null = null;
+    let loadedFacts: IntelFact[] = [];
+
     try {
       // Load prospects/leads from intelligence API
       const [prospectsRes, factsRes, statsRes] = await Promise.all([
@@ -115,24 +120,40 @@ const ClientIntelligenceTab: React.FC = () => {
 
       if (prospectsRes.ok) {
         const data = await (prospectsRes as Response).json();
-        if (data.success) setProspects(data.data || []);
+        if (data.success && data.data) {
+          loadedProspects = data.data;
+        }
       }
 
       if (factsRes.ok) {
         const data = await (factsRes as Response).json();
-        if (data.success) setPendingFacts(data.data || []);
+        if (data.success) {
+          // Facts API returns 'facts' not 'data'
+          loadedFacts = data.facts || data.data || [];
+        }
       }
 
       if (statsRes.ok) {
         const data = await (statsRes as Response).json();
-        if (data.success) setStats(data.data);
+        if (data.success && data.data) {
+          loadedStats = data.data;
+        }
       }
 
-      // If no data from API, use demo data
-      if (prospects.length === 0) {
+      // Use loaded data or fall back to demo
+      if (loadedProspects.length > 0) {
+        setProspects(loadedProspects);
+      } else {
         setProspects(getDemoProspects());
+      }
+
+      if (loadedStats) {
+        setStats(loadedStats);
+      } else {
         setStats(getDemoStats());
       }
+
+      setPendingFacts(loadedFacts);
     } catch (error) {
       console.error('Failed to load intelligence data:', error);
       // Use demo data on error
@@ -197,17 +218,30 @@ const ClientIntelligenceTab: React.FC = () => {
 
     setIsImporting(true);
     try {
-      const formData = new FormData();
-      if (importFile) {
-        formData.append('file', importFile);
-      } else {
-        formData.append('text', importText);
-      }
+      let response;
 
-      const response = await fetch('/api/admin/intelligence/import', {
-        method: 'POST',
-        body: formData
-      });
+      if (importFile) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append('file', importFile);
+        if (selectedProspect) {
+          formData.append('client_id', selectedProspect.id);
+        }
+        response = await fetch('/api/admin/intelligence/import', {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        // Use JSON for text import
+        response = await fetch('/api/admin/intelligence/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: importText,
+            client_id: selectedProspect?.id || null
+          })
+        });
+      }
 
       const result = await response.json();
       if (result.success) {
@@ -215,6 +249,10 @@ const ClientIntelligenceTab: React.FC = () => {
         setShowImportModal(false);
         setImportText('');
         setImportFile(null);
+        // Show success message
+        console.log('Import completed:', result.message);
+      } else {
+        console.error('Import failed:', result.error);
       }
     } catch (error) {
       console.error('Import failed:', error);
@@ -226,12 +264,15 @@ const ClientIntelligenceTab: React.FC = () => {
   // Handle fact approval
   const handleFactAction = async (factId: string, action: 'approve' | 'reject') => {
     try {
-      await fetch(`/api/admin/intelligence/facts/${factId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/admin/intelligence/facts/${factId}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: action === 'approve' ? 'approved' : 'rejected' })
+        body: JSON.stringify({ action, reviewed_by: 'admin' })
       });
-      setPendingFacts(prev => prev.filter(f => f.id !== factId));
+      const result = await response.json();
+      if (result.success) {
+        setPendingFacts(prev => prev.filter(f => f.id !== factId));
+      }
     } catch (error) {
       console.error('Fact action failed:', error);
     }
@@ -798,73 +839,7 @@ const ClientIntelligenceTab: React.FC = () => {
       )}
 
       {/* Research Tab */}
-      {activeTab === 'research' && (
-        <div className="space-y-4">
-          <div className="admin-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-amber-500/20 rounded-lg">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">AI Research Assistant</h3>
-                <p className="text-gray-400 text-sm">Research restaurants and extract business intelligence</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Research Target</label>
-                <input
-                  type="text"
-                  placeholder="Enter restaurant name, URL, or business details..."
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {['Website', 'Social Media', 'Reviews', 'Menu', 'Ownership', 'Tech Stack', 'Competitors', 'News'].map(type => (
-                  <label key={type} className="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700 cursor-pointer hover:border-amber-500/50 transition-colors">
-                    <input type="checkbox" className="rounded bg-gray-800 border-gray-600 text-amber-500 focus:ring-amber-500" />
-                    <span className="text-sm text-gray-300">{type}</span>
-                  </label>
-                ))}
-              </div>
-
-              <button className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-                <Search className="w-4 h-4" />
-                Start Research
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="admin-card p-4 hover:border-amber-500/50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3 mb-2">
-                <Globe className="w-5 h-5 text-blue-400" />
-                <span className="text-white font-medium">Bulk Website Scan</span>
-              </div>
-              <p className="text-gray-400 text-sm">Scan multiple restaurant websites for contact info and tech stack</p>
-            </div>
-
-            <div className="admin-card p-4 hover:border-amber-500/50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3 mb-2">
-                <Database className="w-5 h-5 text-green-400" />
-                <span className="text-white font-medium">POS Detection</span>
-              </div>
-              <p className="text-gray-400 text-sm">Identify what POS system a restaurant is using</p>
-            </div>
-
-            <div className="admin-card p-4 hover:border-amber-500/50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3 mb-2">
-                <TrendingUp className="w-5 h-5 text-purple-400" />
-                <span className="text-white font-medium">Lead Scoring</span>
-              </div>
-              <p className="text-gray-400 text-sm">Re-score all prospects based on latest criteria</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'research' && <ResearchPanel />}
 
       {/* Facts Review Tab */}
       {activeTab === 'facts' && (
