@@ -1317,8 +1317,6 @@ const QuoteBuilder: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const gridSize = (currentFloor?.scalePxPerFt || 16) * zoom;
-
   // ============================================
   // RENDER
   // ============================================
@@ -1638,7 +1636,7 @@ const QuoteBuilder: React.FC = () => {
           </div>
         </aside>
 
-        {/* Canvas Area */}
+        {/* Canvas Area - Infinite Canvas with Fixed Rulers */}
         <div
           className="flex-1 relative overflow-hidden bg-slate-950"
           onClick={() => !isPanning && setSelected({ kind: null, id: null })}
@@ -1648,89 +1646,124 @@ const QuoteBuilder: React.FC = () => {
           onMouseLeave={handleCanvasMouseUp}
           onWheel={handleCanvasWheel}
         >
-          {/* Grid overlay */}
+          {/* ═══════════════════════════════════════════════════════════════
+              FIXED RULERS - Outside canvas, attached to viewport frame
+              These stay fixed while content pans/zooms
+              ═══════════════════════════════════════════════════════════════ */}
+
+          {/* Horizontal Ruler - Fixed to top of viewport */}
+          <div className="absolute top-0 left-6 right-0 h-6 bg-slate-800/95 border-b border-slate-700 z-30 pointer-events-none overflow-hidden">
+            {(() => {
+              const pxPerFt = currentFloor?.scalePxPerFt || 16;
+              const scaledPxPerFt = pxPerFt * zoom;
+              // Calculate visible range in world feet
+              const startFt = Math.floor(-pan.x / scaledPxPerFt);
+              const endFt = Math.ceil((window.innerWidth - pan.x) / scaledPxPerFt) + 10;
+              const marks = [];
+              for (let ft = Math.max(0, startFt - 5); ft <= endFt; ft++) {
+                const isMajor = ft % 10 === 0;
+                const isMid = ft % 5 === 0 && !isMajor;
+                const screenX = (ft * pxPerFt * zoom) + pan.x;
+                if (screenX < -20 || screenX > window.innerWidth + 20) continue;
+                marks.push(
+                  <div key={ft} className="absolute flex flex-col items-center" style={{ left: screenX }}>
+                    <div
+                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-slate-400' : 'bg-slate-600'}
+                      style={{ width: 1, height: isMajor ? 14 : isMid ? 10 : 6 }}
+                    />
+                    {isMajor && (
+                      <span className="text-[9px] text-amber-400 font-medium">{ft}</span>
+                    )}
+                  </div>
+                );
+              }
+              return marks;
+            })()}
+          </div>
+
+          {/* Vertical Ruler - Fixed to left of viewport */}
+          <div className="absolute top-6 left-0 bottom-0 w-6 bg-slate-800/95 border-r border-slate-700 z-30 pointer-events-none overflow-hidden">
+            {(() => {
+              const pxPerFt = currentFloor?.scalePxPerFt || 16;
+              const scaledPxPerFt = pxPerFt * zoom;
+              // Calculate visible range in world feet
+              const startFt = Math.floor(-pan.y / scaledPxPerFt);
+              const endFt = Math.ceil((window.innerHeight - pan.y) / scaledPxPerFt) + 10;
+              const marks = [];
+              for (let ft = Math.max(0, startFt - 5); ft <= endFt; ft++) {
+                const isMajor = ft % 10 === 0;
+                const isMid = ft % 5 === 0 && !isMajor;
+                const screenY = (ft * pxPerFt * zoom) + pan.y;
+                if (screenY < -20 || screenY > window.innerHeight + 20) continue;
+                marks.push(
+                  <div key={ft} className="absolute flex items-center" style={{ top: screenY }}>
+                    <div
+                      className={isMajor ? 'bg-amber-400' : isMid ? 'bg-slate-400' : 'bg-slate-600'}
+                      style={{ height: 1, width: isMajor ? 14 : isMid ? 10 : 6 }}
+                    />
+                    {isMajor && (
+                      <span className="text-[9px] text-amber-400 font-medium ml-1">{ft}</span>
+                    )}
+                  </div>
+                );
+              }
+              return marks;
+            })()}
+          </div>
+
+          {/* Origin Corner - Fixed */}
+          <div className="absolute top-0 left-0 w-6 h-6 bg-slate-900 border-r border-b border-slate-700 flex items-center justify-center z-40 pointer-events-none">
+            <span className="text-[8px] text-slate-400 font-medium">ft</span>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              INFINITE GRID - CSS background that tiles infinitely
+              Moves with pan, scales with zoom
+              ═══════════════════════════════════════════════════════════════ */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage: `linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px)`,
-              backgroundSize: `${gridSize}px ${gridSize}px`,
+              // Minor grid (1ft) + Major grid (10ft)
+              backgroundImage: `
+                linear-gradient(to right, rgba(100, 116, 139, ${zoom > 0.5 ? 0.12 : 0.06}) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(100, 116, 139, ${zoom > 0.5 ? 0.12 : 0.06}) 1px, transparent 1px),
+                linear-gradient(to right, rgba(100, 116, 139, 0.25) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(100, 116, 139, 0.25) 1px, transparent 1px)
+              `,
+              backgroundSize: `
+                ${(currentFloor?.scalePxPerFt || 16) * zoom}px ${(currentFloor?.scalePxPerFt || 16) * zoom}px,
+                ${(currentFloor?.scalePxPerFt || 16) * zoom}px ${(currentFloor?.scalePxPerFt || 16) * zoom}px,
+                ${(currentFloor?.scalePxPerFt || 16) * 10 * zoom}px ${(currentFloor?.scalePxPerFt || 16) * 10 * zoom}px,
+                ${(currentFloor?.scalePxPerFt || 16) * 10 * zoom}px ${(currentFloor?.scalePxPerFt || 16) * 10 * zoom}px
+              `,
               backgroundPosition: `${pan.x}px ${pan.y}px`
             }}
           />
 
-          {/* Canvas */}
+          {/* ═══════════════════════════════════════════════════════════════
+              WORLD CONTENT LAYER - Infinite canvas for objects
+              No size limits - objects can be placed anywhere
+              ═══════════════════════════════════════════════════════════════ */}
           <div
             ref={canvasRef}
             className="absolute inset-0"
             onClick={canvasClick}
             style={{
               cursor: isPanning ? 'grab' : mode === 'addCable' ? 'crosshair' : 'default',
-              transform: `translate(${pan.x}px, ${pan.y}px)`,
               userSelect: isPanning ? 'none' : 'auto'
             }}
           >
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', minWidth: '10000px', minHeight: '8000px', position: 'relative' }}>
-              {/* Scale Grid Background - 1ft squares */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(to right, rgba(100, 116, 139, 0.15) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(100, 116, 139, 0.15) 1px, transparent 1px),
-                    linear-gradient(to right, rgba(100, 116, 139, 0.3) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(100, 116, 139, 0.3) 1px, transparent 1px)
-                  `,
-                  backgroundSize: `
-                    ${currentFloor?.scalePxPerFt || 16}px ${currentFloor?.scalePxPerFt || 16}px,
-                    ${currentFloor?.scalePxPerFt || 16}px ${currentFloor?.scalePxPerFt || 16}px,
-                    ${(currentFloor?.scalePxPerFt || 16) * 10}px ${(currentFloor?.scalePxPerFt || 16) * 10}px,
-                    ${(currentFloor?.scalePxPerFt || 16) * 10}px ${(currentFloor?.scalePxPerFt || 16) * 10}px
-                  `
-                }}
-              />
-
-              {/* Scale Ruler - Top */}
-              <div className="absolute top-0 left-0 right-0 h-6 bg-slate-800/90 border-b border-slate-600 flex items-end pointer-events-none z-10">
-                {Array.from({ length: 100 }).map((_, i) => {
-                  const isMajor = i % 10 === 0;
-                  const ftPos = i * (currentFloor?.scalePxPerFt || 16);
-                  return (
-                    <div key={i} className="absolute flex flex-col items-center" style={{ left: ftPos }}>
-                      <div
-                        className={`${isMajor ? 'bg-amber-400' : 'bg-slate-500'}`}
-                        style={{ width: 1, height: isMajor ? 12 : 6 }}
-                      />
-                      {isMajor && (
-                        <span className="text-[8px] text-amber-400 mt-0.5">{i}ft</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Scale Ruler - Left */}
-              <div className="absolute top-6 left-0 bottom-0 w-6 bg-slate-800/90 border-r border-slate-600 flex flex-col items-end pointer-events-none z-10">
-                {Array.from({ length: 100 }).map((_, i) => {
-                  const isMajor = i % 10 === 0;
-                  const ftPos = i * (currentFloor?.scalePxPerFt || 16);
-                  return (
-                    <div key={i} className="absolute flex items-center" style={{ top: ftPos }}>
-                      <div
-                        className={`${isMajor ? 'bg-amber-400' : 'bg-slate-500'}`}
-                        style={{ height: 1, width: isMajor ? 12 : 6 }}
-                      />
-                      {isMajor && (
-                        <span className="text-[8px] text-amber-400 ml-0.5 -rotate-90 origin-left translate-x-3">{i}ft</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Scale Origin Marker */}
-              <div className="absolute top-0 left-0 w-6 h-6 bg-slate-900 border-r border-b border-slate-600 flex items-center justify-center z-20 pointer-events-none">
-                <span className="text-[7px] text-slate-400">ft</span>
-              </div>
+            {/* Transform layer - applies pan and zoom to world content */}
+            <div
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: '0 0',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                // NO fixed size - truly infinite
+              }}
+            >
 
               {/* Objects */}
               {currentFloor?.objects.map(o => (
@@ -1913,14 +1946,20 @@ const QuoteBuilder: React.FC = () => {
             </div>
           </div>
 
-          {/* Pan hint */}
-          <div className="absolute left-4 bottom-4 text-xs bg-slate-800/90 rounded-lg px-3 py-2 border border-slate-600 text-slate-300">
-            <span className="text-slate-400">Hold</span> Space <span className="text-slate-400">+ drag to pan • Scroll to zoom</span>
+          {/* Pan/Zoom hint - Updated for infinite canvas */}
+          <div className="absolute left-8 bottom-4 text-xs bg-slate-800/95 rounded-lg px-3 py-2 border border-slate-700 text-slate-300 z-20">
+            <span className="text-slate-500">Pan:</span> Space+drag or scroll
+            <span className="mx-2 text-slate-600">•</span>
+            <span className="text-slate-500">Zoom:</span> Ctrl+scroll or pinch
           </div>
 
-          {/* Scale chip */}
-          <div className="absolute right-4 bottom-4 text-xs bg-slate-800/90 rounded-full px-3 py-1 border border-slate-600 text-white">
-            1 ft = {currentFloor?.scalePxPerFt || 16} px
+          {/* Zoom indicator - Shows current zoom level */}
+          <div className="absolute right-4 bottom-4 text-xs bg-slate-800/95 rounded-lg px-3 py-2 border border-slate-700 text-white z-20 flex items-center gap-2">
+            <span className="text-slate-400">Zoom:</span>
+            <span className="font-medium tabular-nums">{Math.round(zoom * 100)}%</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-slate-400">Scale:</span>
+            <span className="font-medium">{currentFloor?.scalePxPerFt || 16} px/ft</span>
           </div>
         </div>
 
