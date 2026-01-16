@@ -337,6 +337,37 @@ const QuoteBuilder: React.FC = () => {
     }
   }, [hasStarted]);
 
+  // Client Intelligence state
+  const [linkedLeadId, setLinkedLeadId] = usePersistentState<string | null>(LS_KEY + ":linkedLeadId", null);
+  const [linkedClientId, setLinkedClientId] = usePersistentState<string | null>(LS_KEY + ":linkedClientId", null);
+  const [intelligenceData, setIntelligenceData] = useState<{
+    source: string;
+    confidence: number;
+    name?: string;
+    address?: string;
+    service_style?: string;
+    cuisine_type?: string;
+    bar_program?: string;
+    menu_complexity?: string;
+    pos_system?: string;
+    seating_capacity?: number;
+  } | null>(null);
+  const [showLeadSearch, setShowLeadSearch] = useState(false);
+  const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [leadSearchResults, setLeadSearchResults] = useState<Array<{
+    id: string;
+    type: 'client' | 'lead';
+    name: string;
+    contact?: string;
+    email?: string;
+    address?: string;
+    service_style?: string;
+    cuisine_type?: string;
+    pos_system?: string;
+    score?: number;
+  }>>([]);
+  const [leadSearchLoading, setLeadSearchLoading] = useState(false);
+
   // PDF Import Modal State
   const [showImportModal, setShowImportModal] = useState(false);
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
@@ -1075,6 +1106,84 @@ const QuoteBuilder: React.FC = () => {
     });
   };
 
+  // Client Intelligence - Lead/Client Search
+  const searchLeads = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setLeadSearchResults([]);
+      return;
+    }
+
+    setLeadSearchLoading(true);
+    try {
+      const response = await fetch(`/api/quote/search-leads?q=${encodeURIComponent(query)}&limit=10`);
+      const data = await response.json();
+      if (data.success) {
+        setLeadSearchResults(data.results || []);
+      }
+    } catch (e) {
+      console.error('Lead search error:', e);
+    } finally {
+      setLeadSearchLoading(false);
+    }
+  }, []);
+
+  // Debounced lead search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (showLeadSearch && leadSearchQuery) {
+        searchLeads(leadSearchQuery);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [leadSearchQuery, showLeadSearch, searchLeads]);
+
+  // Load intelligence data when a lead/client is selected
+  const loadIntelligence = useCallback(async (item: typeof leadSearchResults[0]) => {
+    // Store the linked ID
+    if (item.type === 'client') {
+      setLinkedClientId(item.id);
+      setLinkedLeadId(null);
+    } else {
+      setLinkedLeadId(item.id);
+      setLinkedClientId(null);
+    }
+
+    // Update current location with intelligence data
+    updateCurrentLocation(loc => ({
+      ...loc,
+      name: item.name || loc.name,
+      address: item.address || loc.address
+    }));
+
+    // Apply address classification if we have an address
+    if (item.address) {
+      setAddress(item.address);
+    }
+
+    // Store intelligence metadata
+    setIntelligenceData({
+      source: item.type,
+      confidence: item.type === 'client' ? 0.9 : 0.6,
+      name: item.name,
+      address: item.address,
+      service_style: item.service_style || undefined,
+      cuisine_type: item.cuisine_type || undefined,
+      pos_system: item.pos_system || undefined
+    });
+
+    // Close the search modal
+    setShowLeadSearch(false);
+    setLeadSearchQuery('');
+    setLeadSearchResults([]);
+  }, [setAddress, updateCurrentLocation]);
+
+  // Clear intelligence link
+  const clearIntelligenceLink = () => {
+    setLinkedLeadId(null);
+    setLinkedClientId(null);
+    setIntelligenceData(null);
+  };
+
   // Cable runs
   const canvasClick = (e: React.MouseEvent) => {
     if (mode !== "addCable" || activeLayer?.type !== "network") return;
@@ -1454,6 +1563,13 @@ const QuoteBuilder: React.FC = () => {
     setShowImportModal(true);
   };
 
+  // Start from lead search (intelligence)
+  const handleStartWithIntelligence = () => {
+    setHasStarted(true);
+    setShowOnboarding(false);
+    setShowLeadSearch(true);
+  };
+
   // Continue with existing
   const handleContinueExisting = () => {
     setShowOnboarding(false);
@@ -1502,6 +1618,19 @@ const QuoteBuilder: React.FC = () => {
                 </div>
               </button>
 
+              <button
+                onClick={handleStartWithIntelligence}
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition-colors text-left group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500/30 transition-colors">
+                  <MapPin size={24} className="text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-white font-medium">Search Existing Lead</div>
+                  <div className="text-sm text-gray-400">Find a client or prospect to pre-populate data</div>
+                </div>
+              </button>
+
               {hasStarted && (
                 <button
                   onClick={handleContinueExisting}
@@ -1542,9 +1671,31 @@ const QuoteBuilder: React.FC = () => {
 
           <div className="w-px h-6 bg-gray-700 mx-1 flex-shrink-0" />
 
-          {/* Location name - editable */}
+          {/* Location name with Intelligence Link */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Building2 size={14} className="text-gray-400" />
+            {/* Intelligence indicator */}
+            {(linkedLeadId || linkedClientId) && intelligenceData ? (
+              <button
+                className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                  linkedClientId ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                }`}
+                onClick={() => setShowLeadSearch(true)}
+                title={`Linked to ${linkedClientId ? 'client' : 'lead'}: ${intelligenceData.name}`}
+              >
+                <Building2 size={12} />
+                <span className="max-w-24 truncate">{intelligenceData.name}</span>
+                <X size={10} className="opacity-60 hover:opacity-100" onClick={e => { e.stopPropagation(); clearIntelligenceLink(); }} />
+              </button>
+            ) : (
+              <button
+                className="flex items-center gap-1 px-2 py-1.5 rounded text-xs bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 transition-colors"
+                onClick={() => setShowLeadSearch(true)}
+                title="Link to client or lead"
+              >
+                <Building2 size={12} />
+                <span>Link Client</span>
+              </button>
+            )}
             <input
               className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white w-40"
               placeholder="Restaurant Name"
@@ -2790,6 +2941,118 @@ const QuoteBuilder: React.FC = () => {
                   </div>
                 </form>
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lead/Client Search Modal */}
+      {showLeadSearch && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 backdrop-blur-sm pt-20">
+          <div className="bg-gray-800 rounded-xl w-full max-w-md shadow-2xl border border-gray-700">
+            {/* Search Header */}
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-medium">Link to Client or Lead</h3>
+                <button
+                  onClick={() => { setShowLeadSearch(false); setLeadSearchQuery(''); setLeadSearchResults([]); }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none"
+                  placeholder="Search by name, email, or location..."
+                  value={leadSearchQuery}
+                  onChange={e => setLeadSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                {leadSearchLoading && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 size={16} className="animate-spin text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Link a client or lead to auto-populate intelligence data for accurate pricing
+              </p>
+            </div>
+
+            {/* Search Results */}
+            <div className="max-h-80 overflow-y-auto">
+              {leadSearchResults.length === 0 && leadSearchQuery.length >= 2 && !leadSearchLoading && (
+                <div className="p-4 text-center text-gray-400 text-sm">
+                  No matches found. Try a different search term.
+                </div>
+              )}
+              {leadSearchResults.map(result => (
+                <button
+                  key={`${result.type}-${result.id}`}
+                  onClick={() => loadIntelligence(result)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-700/50 border-b border-gray-700/50 last:border-0 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      result.type === 'client' ? 'bg-emerald-500/20' : 'bg-blue-500/20'
+                    }`}>
+                      <Building2 size={16} className={result.type === 'client' ? 'text-emerald-400' : 'text-blue-400'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white truncate">{result.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          result.type === 'client' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {result.type === 'client' ? 'Client' : 'Lead'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 truncate">
+                        {result.address || result.email || 'No address'}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        {result.pos_system && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                            {result.pos_system}
+                          </span>
+                        )}
+                        {result.cuisine_type && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                            {result.cuisine_type}
+                          </span>
+                        )}
+                        {result.service_style && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">
+                            {result.service_style.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {result.score && (
+                      <div className="text-xs text-gray-500">
+                        Score: {result.score}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Intelligence Info */}
+            {intelligenceData && (
+              <div className="p-4 border-t border-gray-700 bg-gray-800/50">
+                <div className="text-xs text-gray-400 mb-2">Currently linked:</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-medium">{intelligenceData.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    intelligenceData.source === 'client' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'
+                  }`}>
+                    {Math.round(intelligenceData.confidence * 100)}% confidence
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </div>

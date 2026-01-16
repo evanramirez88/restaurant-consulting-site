@@ -6,10 +6,265 @@
  * SECURITY: All proprietary pricing logic is kept server-side.
  * The client sends the floor plan configuration, and this API returns
  * calculated prices without exposing the underlying formulas.
+ *
+ * INTEGRATION: Supports client_id or lead_id to auto-populate from
+ * Client Intelligence system (client_profiles, restaurant_leads, client_atomic_facts)
  */
 
 import { getCorsOrigin } from '../../_shared/auth.js';
 import { rateLimit, RATE_LIMITS } from '../../_shared/rate-limit.js';
+
+// ============================================
+// CLIENT INTELLIGENCE INTEGRATION
+// ============================================
+
+/**
+ * Map cuisine types to likely service styles
+ */
+const CUISINE_TO_SERVICE_STYLE = {
+  'italian': 'full_service',
+  'french': 'fine_dining',
+  'japanese': 'upscale_casual',
+  'sushi': 'upscale_casual',
+  'mexican': 'fast_casual',
+  'chinese': 'full_service',
+  'thai': 'fast_casual',
+  'indian': 'full_service',
+  'american': 'full_service',
+  'seafood': 'upscale_casual',
+  'steakhouse': 'fine_dining',
+  'pizza': 'fast_casual',
+  'cafe': 'cafe',
+  'coffee': 'cafe',
+  'bakery': 'counter',
+  'deli': 'counter',
+  'sandwich': 'quick_service',
+  'burger': 'quick_service',
+  'fast food': 'quick_service',
+  'food truck': 'food_truck',
+  'bar': 'full_service',
+  'pub': 'full_service',
+  'brewery': 'full_service',
+};
+
+/**
+ * Estimate station count from seating capacity
+ */
+function estimateStationsFromSeating(seatingCapacity) {
+  const seats = parseInt(seatingCapacity, 10);
+  if (isNaN(seats) || seats <= 0) return null;
+
+  // Rule of thumb: 1 server station per 20-30 seats, plus bar, plus kitchen stations
+  const serverStations = Math.ceil(seats / 25);
+  const hasBar = seats > 50; // Assume bar for larger venues
+  const kitchenStations = seats > 100 ? 3 : seats > 50 ? 2 : 1;
+
+  return {
+    estimated: serverStations + (hasBar ? 1 : 0) + kitchenStations,
+    breakdown: {
+      server: serverStations,
+      bar: hasBar ? 1 : 0,
+      kitchen: kitchenStations
+    }
+  };
+}
+
+/**
+ * Fetch intelligence data from client_profiles, restaurant_leads, or client_atomic_facts
+ */
+async function fetchClientIntelligence(env, config) {
+  const { client_id, lead_id } = config;
+
+  if (!client_id && !lead_id) {
+    return { found: false, source: null, data: null };
+  }
+
+  // Try client_profiles first (for known clients)
+  if (client_id) {
+    try {
+      // Get client profile with extended intelligence
+      const profile = await env.DB.prepare(`
+        SELECT
+          cp.*,
+          c.name as client_name,
+          c.company as company_name,
+          c.email,
+          c.phone,
+          c.address
+        FROM client_profiles cp
+        JOIN clients c ON c.id = cp.client_id
+        WHERE cp.client_id = ?
+      `).bind(client_id).first();
+
+      if (profile) {
+        // Also get approved atomic facts for this client
+        const facts = await env.DB.prepare(`
+          SELECT field_name, field_value, confidence
+          FROM client_atomic_facts
+          WHERE client_id = ? AND status = 'approved'
+          ORDER BY confidence DESC
+        `).bind(client_id).all();
+
+        return {
+          found: true,
+          source: 'client_profile',
+          data: {
+            name: profile.company_name || profile.client_name,
+            address: profile.address || profile.full_address,
+            cuisine_type: profile.cuisine_type,
+            service_style: profile.service_style,
+            bar_program: profile.bar_program,
+            menu_complexity: profile.menu_complexity,
+            seating_capacity: profile.seating_capacity,
+            employee_count: profile.employee_count,
+            pos_system: profile.pos_system,
+            client_score: profile.client_score,
+            facts: facts.results || []
+          },
+          confidence: 0.9 // High confidence for client profiles
+        };
+      }
+    } catch (e) {
+      console.log('Client profile lookup failed:', e.message);
+    }
+  }
+
+  // Try restaurant_leads (for prospects)
+  if (lead_id) {
+    try {
+      const lead = await env.DB.prepare(`
+        SELECT
+          id,
+          company_name,
+          contact_name,
+          email,
+          phone,
+          website,
+          city,
+          state,
+          full_address,
+          vertical as category,
+          current_pos as pos_system,
+          employee_estimate,
+          revenue_estimate,
+          lead_score,
+          cuisine_hint,
+          service_style_hint
+        FROM restaurant_leads
+        WHERE id = ?
+      `).bind(lead_id).first();
+
+      if (lead) {
+        // Infer service style from cuisine if not explicitly set
+        let inferredServiceStyle = lead.service_style_hint;
+        if (!inferredServiceStyle && lead.cuisine_hint) {
+          const lowerCuisine = lead.cuisine_hint.toLowerCase();
+          for (const [cuisine, style] of Object.entries(CUISINE_TO_SERVICE_STYLE)) {
+            if (lowerCuisine.includes(cuisine)) {
+              inferredServiceStyle = style;
+              break;
+            }
+          }
+        }
+
+        // Infer from category/vertical
+        if (!inferredServiceStyle && lead.category) {
+          const lowerCat = lead.category.toLowerCase();
+          if (lowerCat.includes('fast') || lowerCat.includes('quick')) {
+            inferredServiceStyle = 'quick_service';
+          } else if (lowerCat.includes('cafe') || lowerCat.includes('coffee')) {
+            inferredServiceStyle = 'cafe';
+          } else if (lowerCat.includes('bar') || lowerCat.includes('pub')) {
+            inferredServiceStyle = 'full_service';
+          }
+        }
+
+        return {
+          found: true,
+          source: 'restaurant_lead',
+          data: {
+            name: lead.company_name,
+            address: lead.full_address || `${lead.city || ''}, ${lead.state || ''}`.trim(),
+            cuisine_type: lead.cuisine_hint,
+            service_style: inferredServiceStyle,
+            bar_program: null, // Not in leads table yet
+            menu_complexity: null,
+            seating_capacity: null,
+            employee_count: lead.employee_estimate,
+            pos_system: lead.pos_system,
+            lead_score: lead.lead_score,
+            facts: []
+          },
+          confidence: inferredServiceStyle ? 0.6 : 0.4 // Lower confidence for inferred data
+        };
+      }
+    } catch (e) {
+      console.log('Lead lookup failed:', e.message);
+    }
+  }
+
+  return { found: false, source: null, data: null };
+}
+
+/**
+ * Apply intelligence data to quote configuration
+ */
+function applyIntelligenceToConfig(config, intelligence) {
+  if (!intelligence.found) return config;
+
+  const enhanced = { ...config };
+  const data = intelligence.data;
+
+  // Apply service style if not already set
+  if (data.service_style && !config.serviceStyle) {
+    enhanced.serviceStyle = data.service_style;
+    enhanced._intelligenceApplied = enhanced._intelligenceApplied || [];
+    enhanced._intelligenceApplied.push({
+      field: 'serviceStyle',
+      value: data.service_style,
+      source: intelligence.source,
+      confidence: intelligence.confidence
+    });
+  }
+
+  // Apply menu complexity if not already set
+  if (data.menu_complexity && !config.menuComplexity) {
+    enhanced.menuComplexity = data.menu_complexity;
+    enhanced._intelligenceApplied = enhanced._intelligenceApplied || [];
+    enhanced._intelligenceApplied.push({
+      field: 'menuComplexity',
+      value: data.menu_complexity,
+      source: intelligence.source,
+      confidence: intelligence.confidence
+    });
+  }
+
+  // Apply bar program if not already set
+  if (data.bar_program && !config.barProgram) {
+    enhanced.barProgram = data.bar_program;
+    enhanced._intelligenceApplied = enhanced._intelligenceApplied || [];
+    enhanced._intelligenceApplied.push({
+      field: 'barProgram',
+      value: data.bar_program,
+      source: intelligence.source,
+      confidence: intelligence.confidence
+    });
+  }
+
+  // Mark as existing client if from client_profiles
+  if (intelligence.source === 'client_profile' && data.client_score >= 70) {
+    enhanced.isExistingClient = true;
+    enhanced._intelligenceApplied = enhanced._intelligenceApplied || [];
+    enhanced._intelligenceApplied.push({
+      field: 'isExistingClient',
+      value: true,
+      source: intelligence.source,
+      confidence: 0.95
+    });
+  }
+
+  return enhanced;
+}
 
 function getCorsHeaders(request) {
   return {
@@ -509,13 +764,56 @@ export async function onRequestPost(context) {
       });
     }
 
-    const quote = calculateQuote(config);
+    // ============================================
+    // CLIENT INTELLIGENCE INTEGRATION
+    // Fetch and apply intelligence if client_id or lead_id provided
+    // ============================================
+    let intelligence = { found: false, source: null, data: null };
+    let enhancedConfig = config;
 
-    return new Response(JSON.stringify({
+    if ((config.client_id || config.lead_id) && env.DB) {
+      try {
+        intelligence = await fetchClientIntelligence(env, config);
+        if (intelligence.found) {
+          enhancedConfig = applyIntelligenceToConfig(config, intelligence);
+        }
+      } catch (e) {
+        console.log('Intelligence lookup error (non-fatal):', e.message);
+      }
+    }
+
+    const quote = calculateQuote(enhancedConfig);
+
+    // Add intelligence metadata to response
+    const response = {
       success: true,
       quote,
       generatedAt: new Date().toISOString()
-    }), {
+    };
+
+    // Include intelligence data if found
+    if (intelligence.found) {
+      response.intelligence = {
+        source: intelligence.source,
+        confidence: intelligence.confidence,
+        applied: enhancedConfig._intelligenceApplied || [],
+        profile: {
+          name: intelligence.data.name,
+          address: intelligence.data.address,
+          cuisine_type: intelligence.data.cuisine_type,
+          service_style: intelligence.data.service_style,
+          bar_program: intelligence.data.bar_program,
+          menu_complexity: intelligence.data.menu_complexity,
+          seating_capacity: intelligence.data.seating_capacity,
+          pos_system: intelligence.data.pos_system
+        },
+        stationEstimate: intelligence.data.seating_capacity
+          ? estimateStationsFromSeating(intelligence.data.seating_capacity)
+          : null
+      };
+    }
+
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: corsHeaders
     });
