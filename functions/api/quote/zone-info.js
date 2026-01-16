@@ -23,13 +23,15 @@ function getCorsHeaders(request) {
 }
 
 // Zone definitions with travel costs and characteristics
+// Based on ~1.5-1.75 hour drive from Brewster, MA (02631)
+// Outer limits: Providence - Worcester - Boston triangle
 const ZONES = {
   cape: {
     id: 'cape',
     name: 'Cape Cod',
-    description: 'Primary service area - no travel fee',
+    description: 'Home base - no travel fee',
     travelCost: 0,
-    estimatedDrive: '0-60 min',
+    estimatedDrive: '0-45 min',
     seasonal: true,
     towns: [
       'barnstable', 'bourne', 'brewster', 'chatham', 'dennis', 'eastham',
@@ -44,12 +46,13 @@ const ZONES = {
     id: 'island',
     name: 'Islands',
     description: 'Nantucket & Martha\'s Vineyard - ferry required',
-    travelCost: 300,
-    vehicleFee: 200,
-    lodgingFee: 250,
+    travelCost: 150,           // Base ferry + time (walk-on)
+    vehicleFee: 150,           // Additional if bringing vehicle
+    lodgingFee: 250,           // If overnight stay needed
     estimatedDrive: 'Ferry + 30 min',
     seasonal: true,
     requiresFerry: true,
+    note: 'Vehicle and lodging optional - depends on scope of work',
     subzones: {
       nantucket: {
         name: 'Nantucket',
@@ -68,91 +71,101 @@ const ZONES = {
       }
     }
   },
-  southShore: {
-    id: 'southShore',
-    name: 'South Shore',
-    description: 'Plymouth to Quincy corridor',
-    travelCost: 100,
-    estimatedDrive: '45-90 min',
+  // Everything within ~1.5-1.75 hours of Brewster - NO CHARGE
+  // This includes South Shore, SouthCoast, most of SE Mass
+  driveZone: {
+    id: 'driveZone',
+    name: 'Drive Zone',
+    description: 'Within ~1.5-1.75 hours of Brewster - no travel fee',
+    travelCost: 0,
+    estimatedDrive: '45-105 min',
     seasonal: false,
     towns: [
+      // South Shore
       'plymouth', 'kingston', 'duxbury', 'marshfield', 'scituate', 'cohasset',
       'norwell', 'hanover', 'hingham', 'hull', 'weymouth', 'braintree',
       'quincy', 'abington', 'rockland', 'whitman', 'halifax', 'pembroke',
-      'carver', 'wareham', 'middleborough', 'lakeville'
+      'carver', 'wareham', 'middleborough', 'lakeville',
+      // SouthCoast
+      'fall river', 'new bedford', 'dartmouth', 'westport', 'fairhaven',
+      'mattapoisett', 'marion', 'rochester', 'acushnet', 'freetown',
+      'somerset', 'swansea', 'seekonk', 'rehoboth',
+      // Metro South
+      'taunton', 'raynham', 'easton', 'mansfield', 'foxborough', 'norton',
+      'attleboro', 'north attleboro', 'sharon', 'canton', 'stoughton',
+      'randolph', 'holbrook', 'avon', 'brockton', 'bridgewater', 'west bridgewater',
+      // MetroWest (within range)
+      'franklin', 'milford', 'bellingham', 'medway', 'millis', 'norfolk',
+      'wrentham', 'plainville', 'medfield', 'walpole', 'norwood', 'dedham'
     ]
   },
-  southernNE: {
-    id: 'southernNE',
-    name: 'Southern New England',
-    description: 'Greater Boston, RI, CT, South NH',
-    travelCost: 250,
-    estimatedDrive: '1.5-3 hours',
+  // Rhode Island - part of the triangle, no problem
+  rhodeIsland: {
+    id: 'rhodeIsland',
+    name: 'Rhode Island',
+    description: 'Providence area - within the triangle',
+    travelCost: 0,             // Fine with RI, it's within limits
+    estimatedDrive: '1-1.5 hours',
     seasonal: false,
-    subzones: {
-      boston: {
-        name: 'Greater Boston',
-        towns: [
-          'boston', 'cambridge', 'somerville', 'brookline', 'newton',
-          'watertown', 'waltham', 'medford', 'malden', 'everett', 'chelsea',
-          'revere', 'arlington', 'belmont', 'lexington', 'woburn', 'stoneham'
-        ]
-      },
-      metrowest: {
-        name: 'MetroWest',
-        towns: [
-          'framingham', 'natick', 'wellesley', 'needham', 'dedham', 'norwood',
-          'sharon', 'canton', 'stoughton', 'easton', 'foxborough', 'mansfield',
-          'attleboro', 'taunton', 'fall river', 'new bedford'
-        ]
-      },
-      rhode_island: {
-        name: 'Rhode Island',
-        towns: [
-          'providence', 'warwick', 'cranston', 'pawtucket', 'east providence',
-          'newport', 'bristol', 'narragansett', 'westerly', 'block island'
-        ]
-      },
-      connecticut: {
-        name: 'Connecticut',
-        towns: [
-          'stamford', 'norwalk', 'bridgeport', 'new haven', 'hartford',
-          'greenwich', 'westport', 'fairfield', 'milford', 'new london',
-          'mystic', 'old saybrook', 'madison', 'guilford'
-        ]
-      }
-    }
+    towns: [
+      'providence', 'warwick', 'cranston', 'pawtucket', 'east providence',
+      'newport', 'bristol', 'narragansett', 'westerly', 'woonsocket',
+      'cumberland', 'lincoln', 'smithfield', 'johnston', 'north providence',
+      'barrington', 'warren', 'portsmouth', 'middletown', 'tiverton',
+      'little compton', 'jamestown', 'north kingstown', 'south kingstown',
+      'charlestown', 'hopkinton', 'richmond', 'exeter', 'west greenwich',
+      'east greenwich', 'coventry', 'west warwick', 'scituate'
+    ],
+    note: 'Block Island may need ferry consideration'
   },
-  'ne100+': {
-    id: 'ne100+',
-    name: 'Northern New England',
-    description: 'Vermont, NH, Maine - 100+ miles',
-    travelCost: 400,
-    estimatedDrive: '2-4 hours',
+  // Boston - special case, parking/traffic hassle
+  boston: {
+    id: 'boston',
+    name: 'Greater Boston',
+    description: 'City parking & traffic consideration',
+    travelCost: 50,            // Small fee for parking/hassle, optional
+    parkingNote: 'Parking in the city is a pain - small fee to cover it',
+    estimatedDrive: '1-1.5 hours + parking',
     seasonal: false,
-    subzones: {
-      new_hampshire: {
-        name: 'New Hampshire',
-        regions: ['seacoast', 'lakes region', 'white mountains', 'upper valley']
-      },
-      maine: {
-        name: 'Maine',
-        regions: ['southern maine', 'portland area', 'midcoast', 'downeast']
-      },
-      vermont: {
-        name: 'Vermont',
-        regions: ['southern vt', 'central vt', 'burlington', 'ski country']
-      }
-    }
+    towns: [
+      'boston', 'cambridge', 'somerville', 'brookline', 'chelsea',
+      'revere', 'everett', 'malden', 'medford', 'charlestown'
+    ],
+    note: 'Not a fan of big apartment buildings and corporate stuff, but will do it'
   },
-  outOfRegion: {
-    id: 'outOfRegion',
-    name: 'Out of Region',
-    description: 'National - remote support prioritized',
-    travelCost: 800,
-    estimatedDrive: '4+ hours or flight',
+  // Worcester area - edge of the triangle
+  worcester: {
+    id: 'worcester',
+    name: 'Worcester Area',
+    description: 'Western edge of service area',
+    travelCost: 0,             // Still within the triangle
+    estimatedDrive: '1.25-1.75 hours',
     seasonal: false,
-    remotePreferred: true
+    towns: [
+      'worcester', 'shrewsbury', 'westborough', 'northborough', 'southborough',
+      'grafton', 'millbury', 'auburn', 'oxford', 'webster', 'dudley',
+      'sturbridge', 'charlton', 'southbridge', 'spencer', 'leicester',
+      'holden', 'rutland', 'paxton', 'princeton', 'sterling'
+    ]
+  },
+  // Beyond the triangle - client pays
+  extended: {
+    id: 'extended',
+    name: 'Extended Travel',
+    description: 'Beyond Providence-Worcester-Boston - client covers travel',
+    travelCost: null,          // Quote based on actual travel
+    travelNote: 'Will travel anywhere if you\'re paying for it',
+    estimatedDrive: '2+ hours',
+    seasonal: false,
+    clientPays: true,
+    includes: [
+      'Connecticut',
+      'New Hampshire',
+      'Vermont',
+      'Maine',
+      'Western MA',
+      'Anywhere nationally'
+    ]
   }
 };
 
@@ -187,7 +200,18 @@ function classifyAddress(address) {
     }
   }
 
-  // Check Cape Cod
+  // Block Island is special
+  if (a.includes('block island')) {
+    return {
+      zone: 'island',
+      subzone: 'block_island',
+      town: 'block island',
+      ...ZONES.island,
+      note: 'Block Island - ferry from Point Judith, RI'
+    };
+  }
+
+  // Check Cape Cod (home base)
   for (const town of ZONES.cape.towns) {
     if (a.includes(town)) {
       return {
@@ -201,65 +225,95 @@ function classifyAddress(address) {
     return { zone: 'cape', ...ZONES.cape };
   }
 
-  // Check South Shore
-  for (const town of ZONES.southShore.towns) {
+  // Check Boston (special - parking/traffic fee)
+  for (const town of ZONES.boston.towns) {
     if (a.includes(town)) {
       return {
-        zone: 'southShore',
+        zone: 'boston',
         town: town,
-        ...ZONES.southShore
+        ...ZONES.boston
       };
     }
   }
 
-  // Check Southern NE subzones
-  for (const [subzoneId, subzone] of Object.entries(ZONES.southernNE.subzones)) {
-    for (const town of subzone.towns) {
-      if (a.includes(town)) {
-        return {
-          zone: 'southernNE',
-          subzone: subzoneId,
-          town: town,
-          ...ZONES.southernNE,
-          subzoneInfo: subzone
-        };
-      }
+  // Check Drive Zone (South Shore, SouthCoast, Metro South - all free)
+  for (const town of ZONES.driveZone.towns) {
+    if (a.includes(town)) {
+      return {
+        zone: 'driveZone',
+        town: town,
+        ...ZONES.driveZone
+      };
     }
   }
 
-  // Check state-level matches
-  if (a.includes('massachusetts') || a.includes(', ma')) {
-    // Default to southernNE for unrecognized MA towns
-    return { zone: 'southernNE', ...ZONES.southernNE };
-  }
-  if (a.includes('rhode island') || a.includes(', ri')) {
-    return {
-      zone: 'southernNE',
-      subzone: 'rhode_island',
-      ...ZONES.southernNE,
-      subzoneInfo: ZONES.southernNE.subzones.rhode_island
-    };
-  }
-  if (a.includes('connecticut') || a.includes(', ct')) {
-    return {
-      zone: 'southernNE',
-      subzone: 'connecticut',
-      ...ZONES.southernNE,
-      subzoneInfo: ZONES.southernNE.subzones.connecticut
-    };
-  }
-  if (a.includes('new hampshire') || a.includes(', nh')) {
-    return { zone: 'ne100+', subzone: 'new_hampshire', ...ZONES['ne100+'] };
-  }
-  if (a.includes('maine') || a.includes(', me')) {
-    return { zone: 'ne100+', subzone: 'maine', ...ZONES['ne100+'] };
-  }
-  if (a.includes('vermont') || a.includes(', vt')) {
-    return { zone: 'ne100+', subzone: 'vermont', ...ZONES['ne100+'] };
+  // Check Rhode Island (within the triangle - free)
+  for (const town of ZONES.rhodeIsland.towns) {
+    if (a.includes(town)) {
+      return {
+        zone: 'rhodeIsland',
+        town: town,
+        ...ZONES.rhodeIsland
+      };
+    }
   }
 
-  // Default to out of region
-  return { zone: 'outOfRegion', ...ZONES.outOfRegion };
+  // Check Worcester area (edge of triangle - free)
+  for (const town of ZONES.worcester.towns) {
+    if (a.includes(town)) {
+      return {
+        zone: 'worcester',
+        town: town,
+        ...ZONES.worcester
+      };
+    }
+  }
+
+  // State-level matching for unrecognized towns
+  if (a.includes('rhode island') || a.includes(', ri')) {
+    return { zone: 'rhodeIsland', ...ZONES.rhodeIsland };
+  }
+
+  // Massachusetts - try to figure out if it's within range
+  if (a.includes('massachusetts') || a.includes(', ma')) {
+    // Check if it might be within the triangle
+    // MetroWest towns not explicitly listed
+    const metroWestExtra = ['framingham', 'natick', 'wellesley', 'needham', 'newton',
+      'watertown', 'waltham', 'lexington', 'arlington', 'belmont', 'woburn',
+      'burlington', 'bedford', 'concord', 'sudbury', 'wayland', 'wellesley'];
+    for (const town of metroWestExtra) {
+      if (a.includes(town)) {
+        return {
+          zone: 'driveZone',
+          town: town,
+          ...ZONES.driveZone,
+          note: 'MetroWest - within drive range'
+        };
+      }
+    }
+    // Default MA to drive zone (most of eastern MA is reachable)
+    return { zone: 'driveZone', ...ZONES.driveZone };
+  }
+
+  // Beyond the Providence-Worcester-Boston triangle = extended
+  if (a.includes('connecticut') || a.includes(', ct')) {
+    return { zone: 'extended', state: 'Connecticut', ...ZONES.extended };
+  }
+  if (a.includes('new hampshire') || a.includes(', nh')) {
+    return { zone: 'extended', state: 'New Hampshire', ...ZONES.extended };
+  }
+  if (a.includes('maine') || a.includes(', me')) {
+    return { zone: 'extended', state: 'Maine', ...ZONES.extended };
+  }
+  if (a.includes('vermont') || a.includes(', vt')) {
+    return { zone: 'extended', state: 'Vermont', ...ZONES.extended };
+  }
+  if (a.includes('new york') || a.includes(', ny')) {
+    return { zone: 'extended', state: 'New York', ...ZONES.extended };
+  }
+
+  // Default to extended for anywhere else
+  return { zone: 'extended', ...ZONES.extended };
 }
 
 export async function onRequestGet(context) {
