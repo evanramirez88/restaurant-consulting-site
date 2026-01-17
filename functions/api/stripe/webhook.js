@@ -8,14 +8,16 @@
  * - Idempotent event processing
  * - Background processing via waitUntil
  * - HubSpot sync for subscription changes
+ * - Email notifications via Resend for payment failures and cancellations
+ * - Admin alerts for payment failures and subscription changes
  *
  * Required webhook events to configure in Stripe Dashboard:
  * - checkout.session.completed
  * - customer.subscription.created
  * - customer.subscription.updated
- * - customer.subscription.deleted
+ * - customer.subscription.deleted (sends cancellation confirmation email)
  * - invoice.paid
- * - invoice.payment_failed
+ * - invoice.payment_failed (sends payment failure notification + admin alert)
  * - invoice.upcoming
  * - quote.accepted
  * - customer.created
@@ -28,6 +30,11 @@ import {
   getBillingInterval,
   mapSubscriptionStatus
 } from '../_shared/stripe.js';
+
+import {
+  enrollFromStripeSubscription,
+  enrollForPaymentFailure
+} from '../_shared/email-enrollment.js';
 
 // CORS headers for webhook responses
 const corsHeaders = {
@@ -281,6 +288,24 @@ async function handleSubscriptionCreated(subscription, env) {
   // Sync to HubSpot
   await syncSubscriptionToHubSpot(subscription, 'created', env);
 
+  // Enroll new subscriber in welcome email sequence
+  try {
+    const stripe = getStripeClient(env);
+    const customer = await stripe.customers.retrieve(customerId);
+
+    if (customer && customer.email) {
+      const enrollResult = await enrollFromStripeSubscription(env, subscription, customer);
+      if (enrollResult.enrolled) {
+        console.log(`New subscriber ${customer.email} enrolled in welcome sequence: ${enrollResult.sequenceName}`);
+      } else if (enrollResult.reason) {
+        console.log(`Subscriber ${customer.email} not enrolled: ${enrollResult.reason}`);
+      }
+    }
+  } catch (enrollError) {
+    console.error('Email enrollment failed for new subscription:', enrollError);
+    // Non-critical - don't fail the webhook
+  }
+
   console.log(`Subscription created: ${subscription.id} for customer ${customerId}`);
 }
 
@@ -337,6 +362,10 @@ async function handleSubscriptionUpdated(subscription, env) {
  * Revoke access, mark commitment status
  */
 async function handleSubscriptionDeleted(subscription, env) {
+  const customerId = typeof subscription.customer === 'string'
+    ? subscription.customer
+    : subscription.customer.id;
+
   await env.DB.prepare(`
     UPDATE stripe_subscriptions SET
       status = 'canceled',
@@ -359,7 +388,7 @@ async function handleSubscriptionDeleted(subscription, env) {
 
   // Update client record
   const subRecord = await env.DB.prepare(
-    'SELECT client_id FROM stripe_subscriptions WHERE subscription_id = ?'
+    'SELECT client_id, plan_tier FROM stripe_subscriptions WHERE subscription_id = ?'
   ).bind(subscription.id).first();
 
   if (subRecord?.client_id) {
@@ -372,6 +401,111 @@ async function handleSubscriptionDeleted(subscription, env) {
         updated_at = datetime('now')
       WHERE id = ?
     `).bind(subRecord.client_id).run();
+  }
+
+  // Get customer email and send cancellation confirmation
+  const customerEmail = await getCustomerEmail(env, customerId);
+  const planName = subRecord?.plan_tier
+    ? `Restaurant Guardian ${subRecord.plan_tier}`
+    : 'your subscription';
+
+  if (customerEmail) {
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #6b7280; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background: #f9f9f9; }
+    .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Subscription Cancelled</h1>
+    </div>
+    <div class="content">
+      <p>Hi there,</p>
+
+      <p>Your <strong>${planName}</strong> subscription has been cancelled as requested.</p>
+
+      <p>We're sorry to see you go! If this was a mistake or you'd like to resubscribe in the future, you can always sign up again on our website.</p>
+
+      <p><strong>What you'll miss:</strong></p>
+      <ul>
+        <li>Priority Toast POS support</li>
+        <li>24/7 emergency assistance</li>
+        <li>Quarterly system audits</li>
+        <li>Dedicated account manager</li>
+      </ul>
+
+      <p>If you have any questions or feedback about your experience, we'd love to hear from you:</p>
+
+      <a href="mailto:ramirezconsulting.rg@gmail.com" class="button">Contact Us</a>
+
+      <p>Best regards,<br>R&G Consulting Team</p>
+    </div>
+    <div class="footer">
+      <p>R&G Consulting LLC | Cape Cod Restaurant Consulting</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const emailText = `
+Subscription Cancelled
+
+Hi there,
+
+Your ${planName} subscription has been cancelled as requested.
+
+We're sorry to see you go! If this was a mistake or you'd like to resubscribe in the future, you can always sign up again on our website.
+
+If you have any questions or feedback about your experience, we'd love to hear from you.
+
+Contact us at: ramirezconsulting.rg@gmail.com or 774-408-0083
+
+Best regards,
+R&G Consulting Team
+    `;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'R&G Consulting <billing@ccrestaurantconsulting.com>',
+        to: [customerEmail],
+        subject: `Your ${planName} Subscription Has Been Cancelled`,
+        html: emailHtml,
+        text: emailText,
+        reply_to: 'ramirezconsulting.rg@gmail.com'
+      })
+    });
+
+    console.log('[Stripe] Cancellation confirmation email sent to:', customerEmail);
+
+    // Notify admin of cancellation
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'R&G Consulting <alerts@ccrestaurantconsulting.com>',
+        to: ['ramirezconsulting.rg@gmail.com'],
+        subject: `[ALERT] Subscription Cancelled: ${customerEmail}`,
+        text: `Subscription cancelled for ${customerEmail}\n\nPlan: ${planName}\nSubscription ID: ${subscription.id}\nCustomer ID: ${customerId}`
+      })
+    });
   }
 
   await syncSubscriptionToHubSpot(subscription, 'canceled', env);
@@ -400,24 +534,180 @@ async function handleInvoicePaid(invoice, env) {
 
 /**
  * Handle invoice.payment_failed
- * Notify customer, update status
+ * Notify customer, update status, send payment failure email
  */
 async function handlePaymentFailed(invoice, env) {
-  if (!invoice.subscription) return;
+  const customerId = invoice.customer;
+  const invoiceId = invoice.id;
+  const amountDue = invoice.amount_due;
+  const attemptCount = invoice.attempt_count;
 
-  const subscriptionId = typeof invoice.subscription === 'string'
-    ? invoice.subscription
-    : invoice.subscription.id;
+  console.log(`[Stripe] Payment failed for customer ${customerId}, invoice ${invoiceId}`);
 
+  // Update subscription status if subscription exists
+  if (invoice.subscription) {
+    const subscriptionId = typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription.id;
+
+    await env.DB.prepare(`
+      UPDATE stripe_subscriptions SET
+        status = 'past_due',
+        updated_at = datetime('now')
+      WHERE subscription_id = ?
+    `).bind(subscriptionId).run();
+  }
+
+  // Get customer email from Stripe
+  let customerEmail = invoice.customer_email;
+
+  if (!customerEmail) {
+    // Fetch from Stripe if not in invoice
+    const customerResponse = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`
+      }
+    });
+    const customer = await customerResponse.json();
+    customerEmail = customer.email;
+  }
+
+  if (!customerEmail) {
+    console.error('[Stripe] No email found for customer:', customerId);
+    return;
+  }
+
+  // Get subscription details
+  const subscriptionId = invoice.subscription
+    ? (typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id)
+    : null;
+  let planName = 'your subscription';
+
+  if (subscriptionId) {
+    const sub = await env.DB.prepare(
+      'SELECT plan_tier FROM stripe_subscriptions WHERE subscription_id = ?'
+    ).bind(subscriptionId).first();
+    if (sub && sub.plan_tier) planName = `Restaurant Guardian ${sub.plan_tier}`;
+  }
+
+  // Send payment failure email via Resend
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #dc2626; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background: #f9f9f9; }
+    .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Payment Failed</h1>
+    </div>
+    <div class="content">
+      <p>Hi there,</p>
+
+      <p>We were unable to process your payment for <strong>${planName}</strong>.</p>
+
+      <p><strong>Amount:</strong> $${(amountDue / 100).toFixed(2)}</p>
+      <p><strong>Attempt:</strong> ${attemptCount} of 4</p>
+
+      <p>This could be due to:</p>
+      <ul>
+        <li>Insufficient funds</li>
+        <li>Expired card</li>
+        <li>Card declined by your bank</li>
+      </ul>
+
+      <p>Please update your payment method to avoid service interruption:</p>
+
+      <a href="https://ccrestaurantconsulting.com/#/portal" class="button">Update Payment Method</a>
+
+      <p>If you have any questions, reply to this email or call us at 774-408-0083.</p>
+
+      <p>Best regards,<br>R&G Consulting Team</p>
+    </div>
+    <div class="footer">
+      <p>R&G Consulting LLC | Cape Cod Restaurant Consulting</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const emailText = `
+Payment Failed
+
+Hi there,
+
+We were unable to process your payment for ${planName}.
+
+Amount: $${(amountDue / 100).toFixed(2)}
+Attempt: ${attemptCount} of 4
+
+Please update your payment method at: https://ccrestaurantconsulting.com/#/portal
+
+If you have any questions, reply to this email or call us at 774-408-0083.
+
+Best regards,
+R&G Consulting Team
+  `;
+
+  // Send via Resend
+  const resendResponse = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'R&G Consulting <billing@ccrestaurantconsulting.com>',
+      to: [customerEmail],
+      subject: `Action Required: Payment Failed for ${planName}`,
+      html: emailHtml,
+      text: emailText,
+      reply_to: 'ramirezconsulting.rg@gmail.com'
+    })
+  });
+
+  if (!resendResponse.ok) {
+    const error = await resendResponse.json();
+    console.error('[Stripe] Failed to send payment failure email:', error);
+  } else {
+    console.log('[Stripe] Payment failure email sent to:', customerEmail);
+  }
+
+  // Log in database
+  const now = Math.floor(Date.now() / 1000);
   await env.DB.prepare(`
-    UPDATE stripe_subscriptions SET
-      status = 'past_due',
-      updated_at = datetime('now')
-    WHERE subscription_id = ?
-  `).bind(subscriptionId).run();
+    INSERT INTO stripe_subscription_events (stripe_event_id, event_type, payload, processing_status, api_version)
+    VALUES (?, 'payment_failed_notification', ?, 'completed', '')
+  `).bind(
+    `notif_${invoiceId}_${now}`,
+    JSON.stringify({ amountDue, attemptCount, email: customerEmail, customerId })
+  ).run();
 
-  // TODO: Send notification email to customer via Resend
-  console.log(`Payment failed for subscription ${subscriptionId}, invoice ${invoice.id}`);
+  // Also notify admin
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'R&G Consulting <alerts@ccrestaurantconsulting.com>',
+      to: ['ramirezconsulting.rg@gmail.com'],
+      subject: `[ALERT] Payment Failed: ${customerEmail}`,
+      text: `Payment failed for ${customerEmail}\n\nAmount: $${(amountDue / 100).toFixed(2)}\nAttempt: ${attemptCount}\nPlan: ${planName}\nCustomer ID: ${customerId}\nInvoice ID: ${invoiceId}`
+    })
+  });
+
+  console.log(`[Stripe] Admin notification sent for payment failure: ${customerEmail}`);
 }
 
 /**
@@ -671,5 +961,36 @@ async function updateHubSpotDeal(dealId, properties, env) {
     });
   } catch (error) {
     console.error('HubSpot deal update failed:', error);
+  }
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Get customer email from Stripe API
+ * @param {Object} env - Environment variables
+ * @param {string} customerId - Stripe customer ID
+ * @returns {Promise<string|null>} Customer email or null
+ */
+async function getCustomerEmail(env, customerId) {
+  try {
+    const customerResponse = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`
+      }
+    });
+
+    if (!customerResponse.ok) {
+      console.error('[Stripe] Failed to fetch customer:', customerId, customerResponse.status);
+      return null;
+    }
+
+    const customer = await customerResponse.json();
+    return customer.email || null;
+  } catch (error) {
+    console.error('[Stripe] Error fetching customer email:', error);
+    return null;
   }
 }

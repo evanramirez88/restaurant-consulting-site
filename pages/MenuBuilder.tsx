@@ -19,7 +19,11 @@ import {
   Tag,
   Layers,
   FileUp,
-  Zap
+  Zap,
+  Save,
+  FolderOpen,
+  Clock,
+  Check
 } from 'lucide-react';
 import DeployToToastModal from '../src/components/admin/automation/DeployToToastModal';
 import { useSEO } from '../src/components/SEO';
@@ -58,6 +62,23 @@ interface ParsedMenu {
   items: MenuItem[];
   categories: string[];
   modifierGroups: string[];
+}
+
+interface SavedMenu {
+  id: string;
+  name: string;
+  clientId?: string;
+  clientName?: string;
+  itemCount: number;
+  status: 'draft' | 'deployed' | 'archived';
+  categories: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ToastNotification {
+  type: 'success' | 'error' | 'info';
+  message: string;
 }
 
 type OCRStatus = 'idle' | 'uploading' | 'processing' | 'parsing' | 'complete' | 'error';
@@ -432,6 +453,18 @@ const MenuBuilderTool: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [actualFiles, setActualFiles] = useState<File[]>([]);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
+
+  // ============================================================
+  // SAVE/LOAD MENU STATE
+  // ============================================================
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [menuName, setMenuName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savedMenus, setSavedMenus] = useState<SavedMenu[]>([]);
+  const [loadingMenus, setLoadingMenus] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [loadingMenuData, setLoadingMenuData] = useState(false);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
 
   // Generate mock parsed data (simulated)
   const generateMockParsedData = (): ParsedMenu => {

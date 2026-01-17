@@ -1,10 +1,13 @@
 /**
  * HubSpot → D1 Contact Sync Endpoint
  * Syncs HubSpot contacts with emails to D1 restaurant_leads table
- * 
+ * Also enrolls synced contacts into email sequences based on segment/POS
+ *
  * POST /api/sync/hubspot-contacts
- * Body: { mode: 'full' | 'incremental', limit?: number }
+ * Body: { mode: 'full' | 'incremental', limit?: number, enrollInSequences?: boolean }
  */
+
+import { enrollFromHubSpotSync } from '../_shared/email-enrollment.js';
 
 interface Env {
   DB: D1Database;
@@ -35,6 +38,7 @@ interface SyncResult {
   success: boolean;
   synced: number;
   skipped: number;
+  enrolled: number;
   errors: Array<{ id: string; error: string }>;
   total: number;
   hasMore: boolean;
@@ -43,10 +47,16 @@ interface SyncResult {
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
   try {
-    const body = await request.json().catch(() => ({})) as { mode?: string; limit?: number; after?: string };
+    const body = await request.json().catch(() => ({})) as {
+      mode?: string;
+      limit?: number;
+      after?: string;
+      enrollInSequences?: boolean;
+    };
     const mode = body.mode || 'incremental';
     const limit = Math.min(body.limit || 100, 100);
     const after = body.after;
+    const enrollInSequences = body.enrollInSequences !== false; // Default to true
 
     // Build HubSpot search request
     const searchBody: any = {
@@ -96,6 +106,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
 
     let synced = 0;
     let skipped = 0;
+    let enrolled = 0;
     const errors: Array<{ id: string; error: string }> = [];
 
     // Process each contact
@@ -170,6 +181,20 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
         }
 
         synced++;
+
+        // Enroll in email sequence if enabled
+        if (enrollInSequences) {
+          try {
+            const enrollResult = await enrollFromHubSpotSync(env, contact);
+            if (enrollResult.enrolled) {
+              enrolled++;
+              console.log(`Enrolled ${email} in sequence from HubSpot sync`);
+            }
+          } catch (enrollErr: any) {
+            // Non-critical - log but don't add to errors
+            console.log(`Email enrollment skipped for ${email}: ${enrollErr.message}`);
+          }
+        }
       } catch (e: any) {
         errors.push({ id: contact.id, error: e.message });
       }
@@ -179,6 +204,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
       success: true,
       synced,
       skipped,
+      enrolled,
       errors,
       total: hubspotData.total,
       hasMore: !!hubspotData.paging?.next?.after,

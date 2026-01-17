@@ -1,0 +1,37 @@
+name = "rg-intelligence-scheduler"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Cron triggers for Core 4 Intelligence Agents
+# All times are in UTC (EST = UTC-5)
+# Hunter: 4 AM EST = 9 AM UTC
+# Analyst: 5 AM EST = 10 AM UTC
+# Operator: 6 AM EST = 11 AM UTC
+# Strategist: 7 AM EST = 12 PM UTC
+[triggers]
+crons = [
+  "0 9 * * *",   # Hunter at 4 AM EST (9 AM UTC)
+  "0 10 * * *",  # Analyst at 5 AM EST (10 AM UTC)
+  "0 11 * * *",  # Operator at 6 AM EST (11 AM UTC)
+  "0 12 * * *"   # Strategist at 7 AM EST (12 PM UTC)
+]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "rg-consulting-forms"
+database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
+
+# KV for rate limiting and caching
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "57fda5bf0515423db01df17ed5b335e6"
+
+[vars]
+API_BASE_URL = "https://ccrestaurantconsulting.com"
+ADMIN_EMAIL = "ramirezconsulting.rg@gmail.com"
+
+# Secrets to be set via `wrangler secret put`:
+# WORKER_API_KEY - API key for authenticating with main API
+# RESEND_API_KEY - For sending daily brief emails
+# BRAVE_API_KEY - For gap-fill web searches

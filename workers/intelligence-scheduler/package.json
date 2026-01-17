@@ -1,0 +1,25 @@
+{
+  "name": "rg-intelligence-scheduler",
+  "version": "1.0.0",
+  "description": "Scheduled cron jobs for R&G Consulting Core 4 Intelligence Agents",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "intelligence-agents",
+    "cron",
+    "scheduling"
+  ],
+  "author": "R&G Consulting LLC",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.22.1"
+  }
+}

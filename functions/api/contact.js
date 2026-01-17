@@ -4,10 +4,13 @@
  * Environment Variables Required (set in Cloudflare Pages dashboard):
  * - RESEND_API_KEY: Your Resend API key
  * - HUBSPOT_API_KEY: Your HubSpot private app access token
+ *
+ * Also enrolls contacts in email sequences based on service selection.
  */
 
 import { getCorsOrigin } from '../_shared/auth.js';
 import { rateLimit, RATE_LIMITS } from '../_shared/rate-limit.js';
+import { enrollFromContactForm } from './_shared/email-enrollment.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -189,10 +192,31 @@ export async function onRequestPost(context) {
       }
     }
 
+    // Enroll in email sequence based on service selection
+    let emailEnrolled = false;
+    let enrollmentInfo = null;
+    if (env.DB) {
+      try {
+        const enrollResult = await enrollFromContactForm(env, data);
+        emailEnrolled = enrollResult.enrolled === true;
+        enrollmentInfo = enrollResult;
+        if (enrollResult.enrolled) {
+          console.log(`Contact ${data.email} enrolled in sequence: ${enrollResult.sequenceName}`);
+        } else if (enrollResult.reason) {
+          console.log(`Contact ${data.email} not enrolled: ${enrollResult.reason}`);
+        }
+      } catch (enrollError) {
+        console.error('Email enrollment failed:', enrollError);
+        // Non-critical - don't fail the form submission
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       emailSent,
       hubspotCreated,
+      emailEnrolled,
+      enrollmentInfo,
       message: 'Thank you! Your message has been received. We\'ll be in touch soon.'
     }), {
       status: 200,

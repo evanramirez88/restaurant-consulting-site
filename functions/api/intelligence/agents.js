@@ -414,6 +414,7 @@ async function runStrategistTasks(env, options = {}) {
     tasks: [],
     scoredLeads: 0,
     gapsIdentified: 0,
+    gapsFilled: 0,
     dailyBrief: null
   };
 
@@ -426,6 +427,7 @@ async function runStrategistTasks(env, options = {}) {
 
   let scored = 0;
   let totalGaps = 0;
+  const leadsWithGaps = [];
 
   for (const lead of unscoredLeads.results || []) {
     const scoreResult = calculateLeadScore(lead);
@@ -440,6 +442,15 @@ async function runStrategistTasks(env, options = {}) {
 
     scored++;
     totalGaps += gapResult.gapCount;
+
+    // Collect leads with fillable gaps for Brave Search
+    if (gapResult.searchQueries.length > 0) {
+      leadsWithGaps.push({
+        lead,
+        gaps: gapResult.gaps,
+        searchQueries: gapResult.searchQueries
+      });
+    }
   }
 
   results.scoredLeads = scored;
@@ -450,6 +461,30 @@ async function runStrategistTasks(env, options = {}) {
     scored,
     gapsIdentified: totalGaps
   });
+
+  // Task: Execute gap-fill searches using Brave Search API
+  let gapsFilled = 0;
+  if (env.BRAVE_API_KEY && leadsWithGaps.length > 0) {
+    const gapFillResult = await runGapFillSearches(env, leadsWithGaps.slice(0, 10));
+    gapsFilled = gapFillResult.filled;
+    results.gapsFilled = gapsFilled;
+
+    results.tasks.push({
+      task: 'gap_fill_searches',
+      status: 'completed',
+      searched: gapFillResult.searched,
+      filled: gapFillResult.filled,
+      leads_processed: gapFillResult.leadsProcessed
+    });
+  } else {
+    results.tasks.push({
+      task: 'gap_fill_searches',
+      status: env.BRAVE_API_KEY ? 'skipped_no_gaps' : 'skipped_no_api_key',
+      message: env.BRAVE_API_KEY ?
+        'No leads with fillable gaps found' :
+        'BRAVE_API_KEY not configured - set via wrangler secret'
+    });
+  }
 
   // Task: Generate daily brief
   const highValueLeads = await env.DB.prepare(`
@@ -488,14 +523,18 @@ async function runStrategistTasks(env, options = {}) {
       acc[row.tier] = row.count;
       return acc;
     }, {}),
+    gapsFilled,
     recommendations: [
       highValueLeads.results?.length > 5 ?
         'Multiple high-value leads ready for outreach' :
         'Focus on nurturing warm leads',
       totalGaps > 50 ?
         'Run gap-filling queries to enrich lead data' :
-        'Lead data quality is good'
-    ]
+        'Lead data quality is good',
+      gapsFilled > 0 ?
+        `${gapsFilled} lead records enriched via web search` :
+        null
+    ].filter(Boolean)
   };
 
   results.tasks.push({
@@ -505,6 +544,229 @@ async function runStrategistTasks(env, options = {}) {
   });
 
   results.ended = Date.now();
+  return results;
+}
+
+// ============================================
+// BRAVE SEARCH GAP-FILL INTEGRATION
+// ============================================
+
+/**
+ * POS patterns for detection from search results
+ */
+const POS_PATTERNS = [
+  { pattern: /toast|toasttab/i, value: 'Toast' },
+  { pattern: /square.*pos|powered by square|squareup/i, value: 'Square' },
+  { pattern: /clover\s*(pos)?/i, value: 'Clover' },
+  { pattern: /aloha/i, value: 'Aloha' },
+  { pattern: /micros|oracle.*micros/i, value: 'MICROS' },
+  { pattern: /revel/i, value: 'Revel' },
+  { pattern: /lightspeed/i, value: 'Lightspeed' },
+  { pattern: /touchbistro/i, value: 'TouchBistro' },
+  { pattern: /upserve|breadcrumb/i, value: 'Upserve' },
+  { pattern: /harbortouch/i, value: 'Harbortouch' },
+  { pattern: /cake.*pos/i, value: 'CAKE' },
+  { pattern: /shift4|skytab/i, value: 'Shift4/SkyTab' },
+  { pattern: /ncr.*aloha|ncr.*pos/i, value: 'NCR' },
+  { pattern: /par.*brink/i, value: 'PAR Brink' },
+  { pattern: /focus.*pos/i, value: 'Focus POS' },
+  { pattern: /spoton/i, value: 'SpotOn' },
+  { pattern: /talech/i, value: 'Talech' },
+  { pattern: /heartland/i, value: 'Heartland' }
+];
+
+/**
+ * Extract relevant data from search results based on gap type
+ */
+function extractFromSearchResults(results, gapType, companyName) {
+  const combinedText = results.map(r => `${r.title} ${r.description}`).join(' ');
+
+  switch (gapType) {
+    case 'email': {
+      // Look for email patterns, prioritize ones that seem related to the company
+      const emailMatches = combinedText.match(/[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/g) || [];
+      for (const email of emailMatches) {
+        const lowerEmail = email.toLowerCase();
+        // Filter out common non-contact emails and generic addresses
+        if (
+          !lowerEmail.includes('noreply') &&
+          !lowerEmail.includes('donotreply') &&
+          !lowerEmail.includes('support@google') &&
+          !lowerEmail.includes('support@yelp') &&
+          !lowerEmail.includes('@example.') &&
+          !lowerEmail.includes('webmaster')
+        ) {
+          return { value: lowerEmail, confidence: 0.6 };
+        }
+      }
+      break;
+    }
+    case 'phone': {
+      // Look for phone patterns
+      const phoneMatches = combinedText.match(/(?:\+1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}/g) || [];
+      if (phoneMatches.length > 0) {
+        // Clean the phone number
+        const phone = phoneMatches[0].replace(/[^\d]/g, '').slice(-10);
+        if (phone.length === 10) {
+          return { value: phone, confidence: 0.7 };
+        }
+      }
+      break;
+    }
+    case 'current_pos': {
+      // Look for POS system mentions
+      for (const { pattern, value } of POS_PATTERNS) {
+        if (pattern.test(combinedText)) {
+          return { value, confidence: 0.8 };
+        }
+      }
+      break;
+    }
+    case 'website': {
+      // Look for URLs that might be the restaurant's website
+      const urlMatches = combinedText.match(/https?:\/\/[^\s<>"]+/g) || [];
+      for (const url of urlMatches) {
+        // Skip common non-restaurant URLs
+        if (
+          !url.includes('yelp.com') &&
+          !url.includes('google.com') &&
+          !url.includes('facebook.com') &&
+          !url.includes('tripadvisor.com') &&
+          !url.includes('doordash.com') &&
+          !url.includes('ubereats.com')
+        ) {
+          return { value: url.split('?')[0], confidence: 0.5 };
+        }
+      }
+      break;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Run gap-fill searches using Brave Search API
+ */
+async function runGapFillSearches(env, leadsWithGaps) {
+  const results = {
+    searched: 0,
+    filled: 0,
+    leadsProcessed: 0,
+    errors: []
+  };
+
+  if (!env.BRAVE_API_KEY) {
+    return results;
+  }
+
+  for (const { lead, searchQueries } of leadsWithGaps) {
+    results.leadsProcessed++;
+
+    // Limit to top 3 queries per lead to avoid rate limiting
+    for (const queryInfo of searchQueries.slice(0, 3)) {
+      if (results.searched >= 50) break; // Rate limit per run
+
+      try {
+        const searchResponse = await fetch(
+          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(queryInfo.query)}&count=5`,
+          {
+            headers: {
+              'X-Subscription-Token': env.BRAVE_API_KEY,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        results.searched++;
+
+        if (!searchResponse.ok) {
+          const errorText = await searchResponse.text();
+          console.error(`[GapFill] Brave API error: ${searchResponse.status} - ${errorText}`);
+          results.errors.push({
+            lead_id: lead.id,
+            field: queryInfo.field,
+            error: `API error: ${searchResponse.status}`
+          });
+          continue;
+        }
+
+        const searchData = await searchResponse.json();
+        const webResults = searchData.web?.results || [];
+
+        if (webResults.length > 0) {
+          const extractedData = extractFromSearchResults(
+            webResults,
+            queryInfo.field,
+            lead.company_name || lead.name
+          );
+
+          if (extractedData) {
+            // Determine the correct column name
+            const columnMap = {
+              'email': 'primary_email',
+              'phone': 'primary_phone',
+              'current_pos': 'current_pos',
+              'website': 'website_url'
+            };
+            const columnName = columnMap[queryInfo.field] || queryInfo.field;
+
+            // Update the lead with found data
+            await env.DB.prepare(`
+              UPDATE restaurant_leads
+              SET ${columnName} = ?,
+                  gap_fill_attempted_at = unixepoch(),
+                  gap_fill_source = 'brave',
+                  updated_at = unixepoch()
+              WHERE id = ?
+            `).bind(extractedData.value, lead.id).run();
+
+            // Log the gap-fill result
+            try {
+              await env.DB.prepare(`
+                INSERT INTO gap_fill_results (id, lead_id, field_name, old_value, new_value, source, search_query, confidence)
+                VALUES (?, ?, ?, ?, ?, 'brave', ?, ?)
+              `).bind(
+                `gf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                lead.id,
+                queryInfo.field,
+                lead[columnName] || null,
+                extractedData.value,
+                queryInfo.query,
+                extractedData.confidence
+              ).run();
+            } catch (logError) {
+              // Table might not exist yet, continue anyway
+              console.log('[GapFill] Could not log result (table may not exist):', logError.message);
+            }
+
+            results.filled++;
+            console.log(`[GapFill] Found ${queryInfo.field} for ${lead.company_name || lead.name}: ${extractedData.value}`);
+          }
+        }
+
+        // Rate limiting - wait 200ms between requests
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+      } catch (searchError) {
+        console.error(`[GapFill] Search error for ${lead.company_name}:`, searchError);
+        results.errors.push({
+          lead_id: lead.id,
+          field: queryInfo.field,
+          error: searchError.message
+        });
+      }
+    }
+
+    // Mark that we attempted gap fill for this lead
+    await env.DB.prepare(`
+      UPDATE restaurant_leads
+      SET gap_fill_attempted_at = unixepoch()
+      WHERE id = ? AND gap_fill_attempted_at IS NULL
+    `).bind(lead.id).run();
+  }
+
+  console.log(`[GapFill] Completed: ${results.searched} searches, ${results.filled} gaps filled`);
   return results;
 }
 

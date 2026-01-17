@@ -1444,3 +1444,98 @@ All 22 email steps now have full HTML content:
 
 ---
 
+## PHASE Z.6: COMPREHENSIVE PLATFORM AUDIT (2026-01-17)
+
+**Completed:** 2026-01-17
+**Documentation:** `docs/COMPREHENSIVE_AUDIT_REPORT.md`
+
+### Overview
+
+Full platform audit following Rep Portal Enhancement completion (Sessions A-D). Assessed all systems for production readiness and client acquisition launch.
+
+### Platform Health Summary
+
+| System | Status | Readiness | Notes |
+|--------|--------|-----------|-------|
+| **Rep Portal** | COMPLETE | 95% | All 4 sessions complete, 17 API endpoints |
+| **Client Portal** | COMPLETE | 90% | Slug-based portal production-ready |
+| **Quote Builder** | LIVE | 95% | DCI algorithm active |
+| **Menu Builder** | GATED | 60% | Use internally via `?demo=true` |
+| **Toast ABO** | GATED | 20% | Backend not implemented |
+| **Stripe Billing** | LIVE | 95% | 18 prices, all tiers active |
+| **Email Automation** | **DISABLED** | 50% | CRITICAL BLOCKER |
+| **Lead Pipeline** | PARTIAL | 40% | Manual intervention required |
+
+### CRITICAL BLOCKERS IDENTIFIED
+
+#### 1. EMAIL AUTOMATION DISABLED (HIGHEST PRIORITY)
+```sql
+-- MUST RUN IMMEDIATELY:
+UPDATE feature_flags SET enabled = 1 WHERE key = 'email_automation_enabled';
+UPDATE feature_flags SET enabled = 1 WHERE key = 'email_sequences_enabled';
+```
+**Impact:** Lead nurturing pipeline is completely dead.
+
+#### 2. CONTACT FORM → EMAIL ENROLLMENT DISCONNECTED
+- Website leads create HubSpot contacts but receive NO automated follow-up
+- Requires modification to `functions/api/contact.js`
+
+#### 3. PAYMENT FAILURE NOTIFICATIONS MISSING
+- `functions/api/stripe/webhook.js` line 419 has TODO
+- Customers not notified when payments fail
+
+### Rep Portal Sessions Summary
+
+| Session | Description | Commit | Files |
+|---------|-------------|--------|-------|
+| A | Database & API Foundation | 4b625f1 | Migration 0034, 4 API endpoints |
+| B | Quote Builder Integration | 8add220 | RepQuoteBuilder, RepQuotes |
+| C | Lead Conversion & Dashboard | 0867c8d | RepLeads, Enhanced Dashboard |
+| D | Menu Builder & Referrals | c7fca13 | RepMenuBuilder, RepReferrals |
+
+### Tool Naming Clarification
+
+| Original Name | Current Name | Status |
+|---------------|--------------|--------|
+| Quote Builder | Quote Builder | LIVE |
+| Menu Builder | Menu Builder | GATED (internal use OK) |
+| Toast Automate / Toast ABL | **Toast Auto-Back-Office (ABO)** | GATED |
+
+### Immediate Action Items (This Week)
+
+| Priority | Task | Effort | Impact |
+|----------|------|--------|--------|
+| 1 | Enable email automation flags | 2 min | CRITICAL |
+| 2 | Create 3 core email sequences | 2 hrs | HIGH |
+| 3 | Contact form → email enrollment | 2 hrs | HIGH |
+| 4 | Test full lead pipeline | 1 hr | HIGH |
+| 5 | Payment failure notifications | 2 hrs | MEDIUM |
+
+### Database Indexes Needed (Migration 0036)
+
+```sql
+CREATE INDEX idx_rep_quotes_rep_status ON rep_quotes(rep_id, status);
+CREATE INDEX idx_portal_notif_client_read ON portal_notifications(client_id, is_read, expires_at DESC);
+CREATE INDEX idx_beacon_items_priority ON beacon_content_items(status, ai_priority_score DESC);
+```
+
+### Strategic Notes
+
+**Internal Tool Usage:**
+- Menu Builder: Use internally to serve clients
+- Quote Builder: Fully operational for proposals
+- Toast ABO: Not ready - use manual Toast back-office
+
+**Market Exposure:**
+- Don't expose proprietary algorithms yet
+- Automate internal processes to scale
+- Consider IP protection before public launch
+
+---
+
+**Audit Complete:** 2026-01-17
+**Next Session Focus:** Enable email automation, fix lead pipeline
+**Revenue Blockers:** Email automation must be enabled for outreach
+
+---
+
