@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Loader2,
   Gift,
-  Plus,
   DollarSign,
   Clock,
   CheckCircle,
@@ -11,11 +10,10 @@ import {
   AlertTriangle,
   ChevronDown,
   Building2,
-  User,
-  Mail,
-  Phone,
   Calendar,
-  X
+  TrendingUp,
+  Award,
+  Wallet
 } from 'lucide-react';
 import { useSEO } from '../../src/components/SEO';
 import RepLayout from './RepLayout';
@@ -29,55 +27,87 @@ interface RepInfo {
   slug: string;
 }
 
-interface Referral {
+interface ReferralCredit {
   id: string;
-  referral_name: string;
-  referral_company: string;
-  referral_email: string;
-  referral_phone: string | null;
-  notes: string | null;
-  status: 'pending' | 'approved' | 'converted' | 'paid' | 'rejected';
-  commission_amount: number | null;
-  created_at: number;
+  rep_id: string;
+  client_id: string | null;
+  lead_id: string | null;
+  quote_id: string | null;
+  project_id: string | null;
+  credit_type: 'referral_bonus' | 'project_commission' | 'support_plan_bonus' | 'upsell_commission' | 'lead_conversion' | 'recurring_bonus';
+  amount: number;
+  description: string | null;
+  status: 'pending' | 'approved' | 'paid' | 'voided';
+  approved_by: string | null;
   approved_at: number | null;
-  converted_at: number | null;
+  approval_notes: string | null;
   paid_at: number | null;
+  payment_method: string | null;
+  payment_reference: string | null;
+  created_at: number;
+  updated_at: number;
+  // Joined fields
+  client_name: string | null;
+  client_company: string | null;
 }
 
-type FilterStatus = 'all' | 'pending' | 'approved' | 'converted' | 'paid' | 'rejected';
+interface CreditsSummary {
+  pending: number;
+  approved: number;
+  paid: number;
+  total: number;
+  pendingCount: number;
+  approvedCount: number;
+  paidCount: number;
+  thisYear: {
+    paid: number;
+    projected: number;
+  };
+}
+
+type FilterStatus = 'all' | 'pending' | 'approved' | 'paid' | 'voided';
+type FilterType = 'all' | 'referral_bonus' | 'project_commission' | 'support_plan_bonus' | 'upsell_commission' | 'lead_conversion' | 'recurring_bonus';
+
+const CREDIT_TYPE_LABELS: Record<string, string> = {
+  referral_bonus: 'Referral Bonus',
+  project_commission: 'Project Commission',
+  support_plan_bonus: 'Support Plan Bonus',
+  upsell_commission: 'Upsell Commission',
+  lead_conversion: 'Lead Conversion',
+  recurring_bonus: 'Recurring Bonus'
+};
+
+const CREDIT_TYPE_ICONS: Record<string, React.FC<{ className?: string }>> = {
+  referral_bonus: Gift,
+  project_commission: Award,
+  support_plan_bonus: CheckCircle,
+  upsell_commission: TrendingUp,
+  lead_conversion: Building2,
+  recurring_bonus: Calendar
+};
 
 const RepReferrals: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
   useSEO({
-    title: 'Referrals | Rep Portal | Cape Cod Restaurant Consulting',
-    description: 'Track your referrals and commissions.',
+    title: 'Referral Credits | Rep Portal | Cape Cod Restaurant Consulting',
+    description: 'Track your referral credits, commissions, and bonuses.',
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [rep, setRep] = useState<RepInfo | null>(null);
-  const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [filteredReferrals, setFilteredReferrals] = useState<Referral[]>([]);
+  const [credits, setCredits] = useState<ReferralCredit[]>([]);
+  const [filteredCredits, setFilteredCredits] = useState<ReferralCredit[]>([]);
+  const [summary, setSummary] = useState<CreditsSummary | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [error, setError] = useState<string | null>(null);
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // New referral form state
-  const [newReferral, setNewReferral] = useState({
-    referral_name: '',
-    referral_company: '',
-    referral_email: '',
-    referral_phone: '',
-    notes: ''
-  });
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Check for demo mode (supports hash routing: /#/path?demo=true)
+        // Check for demo mode
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
         const isDemoMode = urlParams.get('demo') === 'true' || hashParams.get('demo') === 'true';
@@ -115,17 +145,18 @@ const RepReferrals: React.FC = () => {
 
         setRep(repData.data);
 
-        // Load referrals
-        const referralsRes = await fetch(`/api/rep/${slug}/referrals`);
-        const referralsData = await referralsRes.json();
+        // Load referral credits
+        const creditsRes = await fetch(`/api/rep/${slug}/referrals`);
+        const creditsData = await creditsRes.json();
 
-        if (referralsData.success) {
-          setReferrals(referralsData.data || []);
-          setFilteredReferrals(referralsData.data || []);
+        if (creditsData.success) {
+          setCredits(creditsData.data || []);
+          setFilteredCredits(creditsData.data || []);
+          setSummary(creditsData.summary || null);
         }
       } catch (err) {
         console.error('Load error:', err);
-        setError('Failed to load referrals');
+        setError('Failed to load referral credits');
       } finally {
         setIsLoading(false);
       }
@@ -134,54 +165,23 @@ const RepReferrals: React.FC = () => {
     loadData();
   }, [slug, navigate]);
 
-  // Filter referrals
+  // Filter credits
   useEffect(() => {
-    let result = [...referrals];
+    let result = [...credits];
 
     if (filterStatus !== 'all') {
-      result = result.filter((r) => r.status === filterStatus);
+      result = result.filter((c) => c.status === filterStatus);
+    }
+
+    if (filterType !== 'all') {
+      result = result.filter((c) => c.credit_type === filterType);
     }
 
     // Sort by created_at descending (newest first)
     result.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
-    setFilteredReferrals(result);
-  }, [referrals, filterStatus]);
-
-  const handleSubmitReferral = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const response = await fetch(`/api/rep/${slug}/referrals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newReferral)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setReferrals((prev) => [result.data, ...prev]);
-        setNewReferral({
-          referral_name: '',
-          referral_company: '',
-          referral_email: '',
-          referral_phone: '',
-          notes: ''
-        });
-        setShowNewForm(false);
-      } else {
-        setSubmitError(result.error || 'Failed to submit referral');
-      }
-    } catch (err) {
-      console.error('Submit error:', err);
-      setSubmitError('Failed to submit referral');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    setFilteredCredits(result);
+  }, [credits, filterStatus, filterType]);
 
   const formatDate = (timestamp: number | null) => {
     if (!timestamp) return 'N/A';
@@ -193,20 +193,20 @@ const RepReferrals: React.FC = () => {
   };
 
   const formatCurrency = (amount: number | null) => {
-    if (!amount) return '$0.00';
+    if (amount === null || amount === undefined) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
   };
 
-  const getStatusBadge = (status: Referral['status']) => {
+  const getStatusBadge = (status: ReferralCredit['status']) => {
     switch (status) {
       case 'pending':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400">
             <Clock className="w-3 h-3" />
-            Pending Review
+            Pending Approval
           </span>
         );
       case 'approved':
@@ -216,13 +216,6 @@ const RepReferrals: React.FC = () => {
             Approved
           </span>
         );
-      case 'converted':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400">
-            <Gift className="w-3 h-3" />
-            Converted
-          </span>
-        );
       case 'paid':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400">
@@ -230,27 +223,24 @@ const RepReferrals: React.FC = () => {
             Paid
           </span>
         );
-      case 'rejected':
+      case 'voided':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400">
             <XCircle className="w-3 h-3" />
-            Rejected
+            Voided
           </span>
         );
     }
   };
 
-  // Calculate stats
-  const stats = {
-    total: referrals.length,
-    pending: referrals.filter((r) => r.status === 'pending').length,
-    converted: referrals.filter((r) => r.status === 'converted' || r.status === 'paid').length,
-    totalEarned: referrals
-      .filter((r) => r.status === 'paid')
-      .reduce((sum, r) => sum + (r.commission_amount || 0), 0),
-    pendingEarnings: referrals
-      .filter((r) => r.status === 'approved' || r.status === 'converted')
-      .reduce((sum, r) => sum + (r.commission_amount || 0), 0)
+  const getCreditTypeBadge = (type: ReferralCredit['credit_type']) => {
+    const Icon = CREDIT_TYPE_ICONS[type] || Gift;
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-gray-700 text-gray-300">
+        <Icon className="w-3 h-3" />
+        {CREDIT_TYPE_LABELS[type] || type}
+      </span>
+    );
   };
 
   if (isLoading) {
@@ -277,48 +267,72 @@ const RepReferrals: React.FC = () => {
     <RepLayout rep={rep}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-white">Referrals</h2>
-            <p className="text-gray-400 mt-1">
-              Track and manage your referrals and commissions
+        <div>
+          <h2 className="text-2xl font-display font-bold text-white">Referral Credits</h2>
+          <p className="text-gray-400 mt-1">
+            Track your commissions, bonuses, and referral credits
+          </p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="admin-card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Total Earned</p>
+                <p className="text-2xl font-bold text-green-400">{formatCurrency(summary?.paid || 0)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">All time paid credits</p>
+          </div>
+
+          <div className="admin-card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Pending Approval</p>
+                <p className="text-2xl font-bold text-amber-400">{formatCurrency(summary?.pending || 0)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">{summary?.pendingCount || 0} credits awaiting review</p>
+          </div>
+
+          <div className="admin-card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Awaiting Payment</p>
+                <p className="text-2xl font-bold text-blue-400">{formatCurrency(summary?.approved || 0)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">{summary?.approvedCount || 0} credits approved</p>
+          </div>
+
+          <div className="admin-card p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Paid This Year</p>
+                <p className="text-2xl font-bold text-purple-400">{formatCurrency(summary?.thisYear?.paid || 0)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              Projected: {formatCurrency(summary?.thisYear?.projected || 0)}
             </p>
           </div>
-          <button
-            onClick={() => setShowNewForm(true)}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
-          >
-            <Plus className="w-5 h-5" />
-            New Referral
-          </button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="admin-card p-4">
-            <p className="text-gray-400 text-sm mb-1">Total Referrals</p>
-            <p className="text-2xl font-bold text-white">{stats.total}</p>
-          </div>
-          <div className="admin-card p-4">
-            <p className="text-gray-400 text-sm mb-1">Pending</p>
-            <p className="text-2xl font-bold text-amber-400">{stats.pending}</p>
-          </div>
-          <div className="admin-card p-4">
-            <p className="text-gray-400 text-sm mb-1">Converted</p>
-            <p className="text-2xl font-bold text-green-400">{stats.converted}</p>
-          </div>
-          <div className="admin-card p-4">
-            <p className="text-gray-400 text-sm mb-1">Total Earned</p>
-            <p className="text-2xl font-bold text-green-400">{formatCurrency(stats.totalEarned)}</p>
-          </div>
-          <div className="admin-card p-4">
-            <p className="text-gray-400 text-sm mb-1">Pending Earnings</p>
-            <p className="text-2xl font-bold text-amber-400">{formatCurrency(stats.pendingEarnings)}</p>
-          </div>
-        </div>
-
-        {/* Filter */}
-        <div className="flex items-center gap-4">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <select
               value={filterStatus}
@@ -328,255 +342,136 @@ const RepReferrals: React.FC = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
-              <option value="converted">Converted</option>
               <option value="paid">Paid</option>
-              <option value="rejected">Rejected</option>
+              <option value="voided">Voided</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
+
+          <div className="relative">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as FilterType)}
+              className="pl-4 pr-10 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              <option value="referral_bonus">Referral Bonus</option>
+              <option value="project_commission">Project Commission</option>
+              <option value="support_plan_bonus">Support Plan Bonus</option>
+              <option value="upsell_commission">Upsell Commission</option>
+              <option value="lead_conversion">Lead Conversion</option>
+              <option value="recurring_bonus">Recurring Bonus</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+
           <p className="text-gray-500 text-sm">
-            Showing {filteredReferrals.length} of {referrals.length} referrals
+            Showing {filteredCredits.length} of {credits.length} credits
           </p>
         </div>
 
-        {/* Referrals List */}
-        {filteredReferrals.length === 0 ? (
+        {/* Credits List */}
+        {filteredCredits.length === 0 ? (
           <div className="admin-card p-12 text-center">
             <Gift className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Referrals Found</h3>
-            <p className="text-gray-400 mb-6">
-              {filterStatus !== 'all'
-                ? 'Try selecting a different status filter'
-                : 'Start earning commissions by submitting your first referral!'}
+            <h3 className="text-xl font-semibold text-white mb-2">No Credits Found</h3>
+            <p className="text-gray-400">
+              {filterStatus !== 'all' || filterType !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Credits from referrals, commissions, and bonuses will appear here.'}
             </p>
-            {filterStatus === 'all' && (
-              <button
-                onClick={() => setShowNewForm(true)}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
-              >
-                <Plus className="w-5 h-5" />
-                Submit Referral
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredReferrals.map((referral) => (
-              <div
-                key={referral.id}
-                className="admin-card p-6 hover:border-gray-600 transition-all"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Referral Info */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Gift className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-lg font-semibold text-white">
-                          {referral.referral_company}
-                        </h3>
-                        {getStatusBadge(referral.status)}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {referral.referral_name}
-                        </span>
-                        <a
-                          href={`mailto:${referral.referral_email}`}
-                          className="flex items-center gap-1 hover:text-green-400 transition-colors"
-                        >
-                          <Mail className="w-4 h-4" />
-                          {referral.referral_email}
-                        </a>
-                        {referral.referral_phone && (
-                          <a
-                            href={`tel:${referral.referral_phone}`}
-                            className="flex items-center gap-1 hover:text-green-400 transition-colors"
-                          >
-                            <Phone className="w-4 h-4" />
-                            {referral.referral_phone}
-                          </a>
-                        )}
-                      </div>
-                      {referral.notes && (
-                        <p className="text-gray-500 text-sm mt-2 line-clamp-2">{referral.notes}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Commission & Dates */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-                    <div className="text-sm">
-                      <p className="text-gray-500">Submitted</p>
-                      <p className="text-white">{formatDate(referral.created_at)}</p>
-                    </div>
-                    {referral.status === 'paid' && (
-                      <div className="text-sm">
-                        <p className="text-gray-500">Paid</p>
-                        <p className="text-white">{formatDate(referral.paid_at)}</p>
-                      </div>
-                    )}
-                    <div className="text-sm">
-                      <p className="text-gray-500">Commission</p>
-                      <p className={`text-lg font-bold ${
-                        referral.status === 'paid' ? 'text-green-400' : 'text-gray-400'
-                      }`}>
-                        {formatCurrency(referral.commission_amount)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* New Referral Modal */}
-        {showNewForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-lg bg-gray-800 border border-gray-700 rounded-xl shadow-2xl">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h3 className="text-xl font-semibold text-white">Submit New Referral</h3>
-                <button
-                  onClick={() => {
-                    setShowNewForm(false);
-                    setSubmitError(null);
-                  }}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            {filteredCredits.map((credit) => {
+              const Icon = CREDIT_TYPE_ICONS[credit.credit_type] || Gift;
+              return (
+                <div
+                  key={credit.id}
+                  className="admin-card p-6 hover:border-gray-600 transition-all"
                 >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Credit Info */}
+                    <div className="flex items-start gap-4">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        credit.status === 'paid' ? 'bg-green-500/20' :
+                        credit.status === 'approved' ? 'bg-blue-500/20' :
+                        credit.status === 'pending' ? 'bg-amber-500/20' :
+                        'bg-gray-700'
+                      }`}>
+                        <Icon className={`w-6 h-6 ${
+                          credit.status === 'paid' ? 'text-green-400' :
+                          credit.status === 'approved' ? 'text-blue-400' :
+                          credit.status === 'pending' ? 'text-amber-400' :
+                          'text-gray-500'
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-3 mb-1">
+                          {getCreditTypeBadge(credit.credit_type)}
+                          {getStatusBadge(credit.status)}
+                        </div>
+                        {credit.description && (
+                          <p className="text-white font-medium mt-2">{credit.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mt-2">
+                          {credit.client_company && (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="w-4 h-4" />
+                              {credit.client_company}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            Created {formatDate(credit.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-              <form onSubmit={handleSubmitReferral} className="p-6 space-y-4">
-                <div>
-                  <label htmlFor="referral_company" className="block text-sm font-medium text-gray-300 mb-2">
-                    Restaurant/Company Name *
-                  </label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <input
-                      type="text"
-                      id="referral_company"
-                      value={newReferral.referral_company}
-                      onChange={(e) => setNewReferral({ ...newReferral, referral_company: e.target.value })}
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="The Lobster Pot"
-                    />
+                    {/* Amount & Dates */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
+                      {credit.approved_at && (
+                        <div className="text-sm">
+                          <p className="text-gray-500">Approved</p>
+                          <p className="text-white">{formatDate(credit.approved_at)}</p>
+                        </div>
+                      )}
+                      {credit.paid_at && (
+                        <div className="text-sm">
+                          <p className="text-gray-500">Paid</p>
+                          <p className="text-white">{formatDate(credit.paid_at)}</p>
+                          {credit.payment_reference && (
+                            <p className="text-xs text-gray-500">Ref: {credit.payment_reference}</p>
+                          )}
+                        </div>
+                      )}
+                      <div className="text-right">
+                        <p className="text-gray-500 text-xs uppercase">Amount</p>
+                        <p className={`text-2xl font-bold ${
+                          credit.status === 'paid' ? 'text-green-400' :
+                          credit.status === 'voided' ? 'text-gray-500 line-through' :
+                          'text-white'
+                        }`}>
+                          {formatCurrency(credit.amount)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <label htmlFor="referral_name" className="block text-sm font-medium text-gray-300 mb-2">
-                    Contact Name *
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <input
-                      type="text"
-                      id="referral_name"
-                      value={newReferral.referral_name}
-                      onChange={(e) => setNewReferral({ ...newReferral, referral_name: e.target.value })}
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="John Smith"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="referral_email" className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <input
-                      type="email"
-                      id="referral_email"
-                      value={newReferral.referral_email}
-                      onChange={(e) => setNewReferral({ ...newReferral, referral_email: e.target.value })}
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="john@lobsterpot.com"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="referral_phone" className="block text-sm font-medium text-gray-300 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <input
-                      type="tel"
-                      id="referral_phone"
-                      value={newReferral.referral_phone}
-                      onChange={(e) => setNewReferral({ ...newReferral, referral_phone: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="(508) 555-0123"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-2">
-                    Notes (optional)
-                  </label>
-                  <textarea
-                    id="notes"
-                    value={newReferral.notes}
-                    onChange={(e) => setNewReferral({ ...newReferral, notes: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                    placeholder="Any additional details about the referral..."
-                  />
-                </div>
-
-                {submitError && (
-                  <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-400 text-sm">{submitError}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowNewForm(false);
-                      setSubmitError(null);
-                    }}
-                    className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Gift className="w-5 h-5" />
-                        Submit Referral
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+              );
+            })}
           </div>
         )}
+
+        {/* Info Note */}
+        <div className="admin-card p-4 border-l-4 border-l-blue-500">
+          <p className="text-gray-400 text-sm">
+            <strong className="text-white">Note:</strong> Credits are created and approved by the admin team.
+            Pending credits will be reviewed and approved based on verified referrals and completed projects.
+            Payments are typically processed monthly.
+          </p>
+        </div>
       </div>
     </RepLayout>
   );

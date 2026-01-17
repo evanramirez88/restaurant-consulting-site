@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Eye,
   Send,
-  Edit3
+  Edit3,
+  Utensils
 } from 'lucide-react';
 import { useSEO } from '../../src/components/SEO';
 import RepLayout from './RepLayout';
@@ -370,6 +371,20 @@ const RepClientDetail: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   Create Quote
                 </button>
+              )}
+              {client.can_menu_build ? (
+                <button
+                  onClick={() => navigate(`/rep/${slug}/clients/${clientId}/menu`)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors font-medium"
+                >
+                  <Utensils className="w-4 h-4" />
+                  Menu Builder
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed" title="Contact admin to enable Menu Builder access">
+                  <Utensils className="w-4 h-4" />
+                  Menu Builder
+                </div>
               )}
               {client.portal_enabled && client.slug && (
                 <a

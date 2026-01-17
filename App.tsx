@@ -41,8 +41,10 @@ const RepLogin = lazy(() => import('./pages/rep/RepLogin'));
 const RepDashboard = lazy(() => import('./pages/rep/RepDashboard'));
 const RepClients = lazy(() => import('./pages/rep/RepClients'));
 const RepClientDetail = lazy(() => import('./pages/rep/RepClientDetail'));
+const RepLeads = lazy(() => import('./pages/rep/RepLeads'));
 const RepQuotes = lazy(() => import('./pages/rep/RepQuotes'));
 const RepQuoteBuilder = lazy(() => import('./pages/rep/RepQuoteBuilder'));
+const RepMenuBuilder = lazy(() => import('./pages/rep/RepMenuBuilder'));
 const RepTickets = lazy(() => import('./pages/rep/RepTickets'));
 const RepIntelSubmission = lazy(() => import('./pages/rep/RepIntelSubmission'));
 const RepReferrals = lazy(() => import('./pages/rep/RepReferrals'));
@@ -169,6 +171,11 @@ const App: React.FC = () => {
           <Route path="/rep/:slug/clients/:clientId/quote" element={
             <RepProtectedRoute>
               <RepQuoteBuilder />
+            </RepProtectedRoute>
+          } />
+          <Route path="/rep/:slug/clients/:clientId/menu" element={
+            <RepProtectedRoute>
+              <RepMenuBuilder />
             </RepProtectedRoute>
           } />
           <Route path="/rep/:slug/quotes" element={

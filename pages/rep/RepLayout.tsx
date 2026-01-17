@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Ticket,
   Lightbulb,
-  FileText
+  FileText,
+  Target
 } from 'lucide-react';
 
 interface RepInfo {
@@ -25,24 +26,49 @@ interface RepInfo {
 interface RepLayoutProps {
   rep?: RepInfo | null;
   isLoading?: boolean;
+  children?: React.ReactNode;
 }
 
-const RepLayout: React.FC<RepLayoutProps> = ({ rep, isLoading = false }) => {
+const RepLayout: React.FC<RepLayoutProps> = ({ rep, isLoading = false, children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
 
+  // State for badges/notifications
+  const [pendingCreditsCount, setPendingCreditsCount] = useState<number>(0);
+
+  // Fetch pending credits count for badge
+  useEffect(() => {
+    const fetchBadgeCounts = async () => {
+      if (!slug) return;
+
+      try {
+        const response = await fetch(`/api/rep/${slug}/referrals`);
+        const data = await response.json();
+
+        if (data.success && data.summary) {
+          setPendingCreditsCount(data.summary.pendingCount || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch badge counts:', error);
+      }
+    };
+
+    fetchBadgeCounts();
+  }, [slug]);
+
   const navItems = [
     { path: `/rep/${slug}/dashboard`, label: 'Dashboard', icon: LayoutDashboard },
     { path: `/rep/${slug}/clients`, label: 'My Clients', icon: Users },
+    { path: `/rep/${slug}/leads`, label: 'Leads', icon: Target },
     { path: `/rep/${slug}/quotes`, label: 'Quotes', icon: FileText },
     { path: `/rep/${slug}/tickets`, label: 'Tickets', icon: Ticket },
     { path: `/rep/${slug}/intel`, label: 'Intel', icon: Lightbulb },
-    { path: `/rep/${slug}/referrals`, label: 'Referrals', icon: Gift },
+    { path: `/rep/${slug}/referrals`, label: 'Referrals', icon: Gift, badge: pendingCreditsCount > 0 ? pendingCreditsCount : undefined },
     { path: `/rep/${slug}/messages`, label: 'Messages', icon: MessageSquare },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const handleLogout = async () => {
     try {
@@ -118,19 +144,25 @@ const RepLayout: React.FC<RepLayoutProps> = ({ rep, isLoading = false }) => {
           <div className="flex gap-1 py-2">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const active = isActive(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap min-h-[44px] ${
-                    isActive(item.path)
+                  className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap min-h-[44px] ${
+                    active
                       ? 'bg-green-500/20 text-green-400 border border-green-500/50'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
                   }`}
-                  aria-current={isActive(item.path) ? 'page' : undefined}
+                  aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="hidden sm:inline">{item.label}</span>
+                  {item.badge && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -153,7 +185,7 @@ const RepLayout: React.FC<RepLayoutProps> = ({ rep, isLoading = false }) => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 pb-6">
-        <Outlet />
+        {children || <Outlet />}
       </main>
 
       {/* Footer */}
