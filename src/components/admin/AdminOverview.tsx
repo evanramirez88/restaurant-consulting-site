@@ -3,8 +3,9 @@ import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
   Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
   ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity,
-  Zap, Play, Pause, Loader2
+  Zap, Play, Pause, Loader2, Wifi, WifiOff, Globe, Home, RefreshCw
 } from 'lucide-react';
+import AvailabilityManager from './availability/AvailabilityManager';
 
 interface AvailabilityData {
   status: 'available' | 'busy' | 'offline';
@@ -62,6 +63,7 @@ interface AdminOverviewProps {
   repCount: number;
   onNavigateToTab: (tab: string) => void;
   formatTimeAgo: (timestamp: number | null) => string;
+  onAvailabilityChange?: (data: AvailabilityData) => void;
 }
 
 const AdminOverview: React.FC<AdminOverviewProps> = ({
@@ -69,7 +71,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   clientCount,
   repCount,
   onNavigateToTab,
-  formatTimeAgo
+  formatTimeAgo,
+  onAvailabilityChange
 }) => {
   const [clients, setClients] = useState<ClientPortal[]>([]);
   const [reps, setReps] = useState<RepPortal[]>([]);
@@ -78,6 +81,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const [showAllReps, setShowAllReps] = useState(false);
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
   const [isLoadingAutomation, setIsLoadingAutomation] = useState(true);
+  const [showAvailabilityEditor, setShowAvailabilityEditor] = useState(false);
 
   useEffect(() => {
     const loadPortals = async () => {
@@ -139,13 +143,279 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const displayedClients = showAllClients ? clients : clients.slice(0, 5);
   const displayedReps = showAllReps ? reps : reps.slice(0, 5);
 
+  const getAvailabilityColor = (status: string) => {
+    switch (status) {
+      case 'available': return 'bg-green-500';
+      case 'busy': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getLocationIcon = (type: string) => {
+    switch (type) {
+      case 'remote': return <Globe className="w-4 h-4" />;
+      case 'onsite': return <Home className="w-4 h-4" />;
+      default: return <MapPin className="w-4 h-4" />;
+    }
+  };
+
   return (
     <>
-      {/* Cumulative Portal Overview */}
+      {/* ================================================== */}
+      {/* TOP PRIORITY: Availability + Status + Analytics Row */}
+      {/* ================================================== */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Availability Card - PROMINENT */}
+        <section className="admin-card p-6 lg:col-span-1" aria-labelledby="availability-heading">
+          <div className="flex items-center justify-between mb-4">
+            <h2 id="availability-heading" className="text-lg font-display font-bold text-white flex items-center gap-2">
+              {availability.status === 'available' ? (
+                <Wifi className="w-5 h-5 text-green-400" />
+              ) : availability.status === 'busy' ? (
+                <Wifi className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <WifiOff className="w-5 h-5 text-gray-400" />
+              )}
+              Availability
+            </h2>
+            <button
+              onClick={() => setShowAvailabilityEditor(!showAvailabilityEditor)}
+              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+            >
+              <Settings className="w-3 h-3" />
+              {showAvailabilityEditor ? 'Close' : 'Edit'}
+            </button>
+          </div>
+
+          {showAvailabilityEditor ? (
+            <div className="bg-gray-800/50 rounded-lg p-4 -mx-2">
+              <AvailabilityManager compact onUpdate={onAvailabilityChange} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Status Indicator */}
+              <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+                <div className={`w-4 h-4 rounded-full ${getAvailabilityColor(availability.status)} ${
+                  availability.status === 'available' ? 'animate-pulse' : ''
+                }`} />
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-lg capitalize">{availability.status}</p>
+                  <p className="text-gray-400 text-sm flex items-center gap-1">
+                    {getLocationIcon(availability.locationType)}
+                    {availability.locationType === 'remote' ? 'Remote Only' :
+                     availability.locationType === 'onsite' ? (availability.town || 'On-Site') :
+                     `Remote & ${availability.town || 'On-Site'}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Current Status Card */}
+        <section className="admin-card p-6" aria-labelledby="status-heading">
+          <h2 id="status-heading" className="text-lg font-display font-bold text-white flex items-center gap-2 mb-4">
+            <Activity className="w-5 h-5 text-amber-400" />
+            System Status
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-gray-400 text-sm">Website</span>
+              </div>
+              <span className="text-green-400 text-sm font-medium">Online</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${automationStatus?.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+                <span className="text-gray-400 text-sm">Automation</span>
+              </div>
+              <span className={`text-sm font-medium ${automationStatus?.isOnline ? 'text-green-400' : 'text-gray-500'}`}>
+                {automationStatus?.isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-gray-400 text-sm">Email System</span>
+              </div>
+              <span className="text-green-400 text-sm font-medium">Active</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Site Analytics Card */}
+        <section className="admin-card p-6" aria-labelledby="analytics-quick-heading">
+          <div className="flex items-center justify-between mb-4">
+            <h2 id="analytics-quick-heading" className="text-lg font-display font-bold text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-amber-400" />
+              Site Analytics
+            </h2>
+            <a
+              href="https://dash.cloudflare.com/373a6cef1f9ccf5d26bfd9687a91c0a6/web-analytics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+            >
+              Cloudflare <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <Eye className="w-4 h-4" />
+                Today's Visits
+              </div>
+              <span className="text-white font-semibold">--</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <TrendingUp className="w-4 h-4" />
+                This Week
+              </div>
+              <span className="text-white font-semibold">--</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <UserPlus className="w-4 h-4" />
+                New Leads
+              </div>
+              <span className="text-white font-semibold">--</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Recent Activity - Full Width */}
+      <section className="admin-card p-6" aria-labelledby="recent-activity-heading">
+        <div className="flex items-center justify-between mb-4">
+          <h2 id="recent-activity-heading" className="text-lg font-display font-bold text-white flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-400" />
+            Recent Activity
+          </h2>
+          <button className="text-xs text-gray-500 hover:text-gray-400 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3" />
+            Refresh
+          </button>
+        </div>
+        <div className="space-y-2">
+          {/* Placeholder activity items */}
+          <div className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
+            <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm">System initialized</p>
+              <p className="text-gray-500 text-xs">Admin dashboard loaded</p>
+            </div>
+            <span className="text-gray-500 text-xs whitespace-nowrap">Just now</span>
+          </div>
+          <div className="text-center py-4 text-gray-500 text-sm">
+            Activity tracking will populate as you manage clients, send emails, and update settings.
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================== */}
+      {/* SECONDARY: Counts and Quick Actions */}
+      {/* ================================================== */}
+
+      {/* Portal Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="admin-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{clientCount}</p>
+              <p className="text-gray-400 text-xs">Clients</p>
+            </div>
+          </div>
+        </div>
+        <div className="admin-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <Briefcase className="w-5 h-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{repCount}</p>
+              <p className="text-gray-400 text-xs">Reps</p>
+            </div>
+          </div>
+        </div>
+        <div className="admin-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+              <Ticket className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">0</p>
+              <p className="text-gray-400 text-xs">Open Tickets</p>
+            </div>
+          </div>
+        </div>
+        <div className="admin-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">0</p>
+              <p className="text-gray-400 text-xs">Pending</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <section className="admin-card p-6" aria-labelledby="quick-actions-heading">
+        <h2 id="quick-actions-heading" className="text-lg font-display font-bold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button
+            onClick={() => onNavigateToTab('contacts')}
+            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all"
+          >
+            <Users className="w-5 h-5 text-amber-400" />
+            <span className="text-xs text-gray-300">Manage Contacts</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('email')}
+            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all"
+          >
+            <MessageSquare className="w-5 h-5 text-amber-400" />
+            <span className="text-xs text-gray-300">Email Campaigns</span>
+          </button>
+          <button
+            onClick={() => onNavigateToTab('tools')}
+            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all"
+          >
+            <FileText className="w-5 h-5 text-amber-400" />
+            <span className="text-xs text-gray-300">Platform Tools</span>
+          </button>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all"
+          >
+            <ExternalLink className="w-5 h-5 text-amber-400" />
+            <span className="text-xs text-gray-300">View Live Site</span>
+          </a>
+        </div>
+      </section>
+
+      {/* ================================================== */}
+      {/* DETAIL SECTIONS: Portal Lists, Automation */}
+      {/* ================================================== */}
+
+      {/* Portal Overview */}
       <section className="admin-card p-6" aria-labelledby="portal-overview-heading">
         <div className="flex items-center justify-between mb-6">
-          <h2 id="portal-overview-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-400" aria-hidden="true" />
+          <h2 id="portal-overview-heading" className="text-lg font-display font-bold text-white flex items-center gap-2">
+            <Users className="w-5 h-5 text-amber-400" />
             Portal Overview
           </h2>
           <div className="flex gap-2">
@@ -167,7 +437,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 Client Portals
               </h3>
               <button
-                onClick={() => onNavigateToTab('clients')}
+                onClick={() => onNavigateToTab('contacts')}
                 className="text-xs text-amber-400 hover:text-amber-300"
               >
                 Manage All
@@ -246,7 +516,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 Rep Portals
               </h3>
               <button
-                onClick={() => onNavigateToTab('reps')}
+                onClick={() => onNavigateToTab('contacts')}
                 className="text-xs text-amber-400 hover:text-amber-300"
               >
                 Manage All
@@ -337,8 +607,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       {/* Toast ABO Status Widget */}
       <section className="admin-card p-6" aria-labelledby="automation-heading">
         <div className="flex items-center justify-between mb-6">
-          <h2 id="automation-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400" aria-hidden="true" />
+          <h2 id="automation-heading" className="text-lg font-display font-bold text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-amber-400" />
             Toast Auto-Back-Office
           </h2>
           <a
@@ -419,161 +689,13 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           </div>
         ) : (
           <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
-            <Zap className="w-10 h-10 text-gray-600 mx-auto mb-3" aria-hidden="true" />
+            <Zap className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="text-white font-semibold mb-2">Automation Server Not Connected</h3>
             <p className="text-gray-500 text-sm max-w-md mx-auto">
-              The Toast ABO automation server is not currently running. Start the server to enable browser automation features.
+              The Toast ABO automation server is not currently running.
             </p>
           </div>
         )}
-      </section>
-
-      {/* Analytics Overview - Empty State */}
-      <section className="admin-card p-6" aria-labelledby="analytics-heading">
-        <div className="flex items-center justify-between mb-6">
-          <h2 id="analytics-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-amber-400" aria-hidden="true" />
-            Site Analytics
-          </h2>
-          <span className="text-xs text-gray-500">Coming Soon</span>
-        </div>
-        <div className="text-center py-8 bg-gray-900/30 rounded-lg border border-gray-700">
-          <BarChart3 className="w-12 h-12 text-gray-600 mx-auto mb-3" aria-hidden="true" />
-          <h3 className="text-white font-semibold mb-2">Analytics Not Configured</h3>
-          <p className="text-gray-500 text-sm max-w-md mx-auto">
-            Site analytics will be available once connected to your analytics provider (e.g., Cloudflare Web Analytics, Google Analytics).
-          </p>
-        </div>
-      </section>
-
-      {/* Portal Stats */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="admin-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Client Portals</h3>
-                <p className="text-gray-400 text-sm">Active client accounts</p>
-              </div>
-            </div>
-            <span className="text-3xl font-bold text-white">{clientCount}</span>
-          </div>
-          <button
-            onClick={() => onNavigateToTab('clients')}
-            className="w-full py-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
-          >
-            Manage Clients
-          </button>
-        </div>
-        <div className="admin-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-green-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Rep Portals</h3>
-                <p className="text-gray-400 text-sm">Active sales reps</p>
-              </div>
-            </div>
-            <span className="text-3xl font-bold text-white">{repCount}</span>
-          </div>
-          <button
-            onClick={() => onNavigateToTab('reps')}
-            className="w-full py-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
-          >
-            Manage Reps
-          </button>
-        </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section className="admin-card p-6" aria-labelledby="quick-actions-heading">
-        <h2 id="quick-actions-heading" className="text-xl font-display font-bold text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => onNavigateToTab('availability')}
-            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all min-h-[100px]"
-            aria-label="Update availability status"
-          >
-            <Calendar className="w-6 h-6 text-amber-400" aria-hidden="true" />
-            <span className="text-sm text-gray-300 text-center">Update Availability</span>
-          </button>
-          <button
-            onClick={() => onNavigateToTab('config')}
-            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all min-h-[100px]"
-            aria-label="Manage site settings"
-          >
-            <Settings className="w-6 h-6 text-amber-400" aria-hidden="true" />
-            <span className="text-sm text-gray-300 text-center">Site Settings</span>
-          </button>
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all min-h-[100px]"
-            aria-label="View live site in new tab"
-          >
-            <ExternalLink className="w-6 h-6 text-amber-400" aria-hidden="true" />
-            <span className="text-sm text-gray-300 text-center">View Live Site</span>
-          </a>
-          <button
-            onClick={() => onNavigateToTab('tools')}
-            className="flex flex-col items-center gap-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-amber-500/50 hover:bg-gray-800/50 transition-all min-h-[100px]"
-            aria-label="Access tools in demo mode"
-          >
-            <FileText className="w-6 h-6 text-amber-400" aria-hidden="true" />
-            <span className="text-sm text-gray-300 text-center">Demo Tools</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Current Status Summary */}
-      <section className="admin-card p-6" aria-labelledby="status-summary-heading">
-        <h2 id="status-summary-heading" className="text-xl font-display font-bold text-white mb-4">Current Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
-            <div className={`w-4 h-4 rounded-full ${
-              availability.status === 'available' ? 'bg-green-500' :
-              availability.status === 'busy' ? 'bg-yellow-500' : 'bg-gray-500'
-            }`} aria-hidden="true" />
-            <div>
-              <p className="text-gray-400 text-sm">Availability</p>
-              <p className="text-white font-medium capitalize">{availability.status}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
-            <MapPin className="w-5 h-5 text-amber-400" aria-hidden="true" />
-            <div>
-              <p className="text-gray-400 text-sm">Location</p>
-              <p className="text-white font-medium">
-                {availability.locationType === 'remote' ? 'Remote Only' :
-                 availability.locationType === 'onsite' ? availability.town || 'On-Site' :
-                 `${availability.town || 'Both'}`}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Recent Activity - Empty State */}
-      <section className="admin-card p-6" aria-labelledby="recent-activity-heading">
-        <div className="flex items-center justify-between mb-4">
-          <h2 id="recent-activity-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-amber-400" aria-hidden="true" />
-            Recent Activity
-          </h2>
-        </div>
-        <div className="text-center py-6 bg-gray-900/30 rounded-lg border border-gray-700">
-          <Clock className="w-10 h-10 text-gray-600 mx-auto mb-3" aria-hidden="true" />
-          <h3 className="text-white font-semibold mb-2">No Recent Activity</h3>
-          <p className="text-gray-500 text-sm">
-            Activity logs will appear here as you manage clients, reps, and settings.
-          </p>
-        </div>
       </section>
     </>
   );

@@ -31,7 +31,7 @@ import {
 } from '../src/components/admin/email';
 import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
 
-type TabType = 'overview' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'availability' | 'config';
+type TabType = 'overview' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
 type ContactSubTab = 'clients' | 'reps' | 'leads';
@@ -282,7 +282,6 @@ const AdminDashboard: React.FC = () => {
     { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
     { id: 'intelligence', label: 'Intel', icon: <Brain className="w-4 h-4" /> },
     { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> },
-    { id: 'availability', label: 'Availability', icon: <Calendar className="w-4 h-4" /> },
     { id: 'config', label: 'Config', icon: <Settings className="w-4 h-4" /> },
   ];
 
@@ -602,11 +601,6 @@ const AdminDashboard: React.FC = () => {
           />
         )}
 
-
-        {/* Availability Tab */}
-        {activeTab === 'availability' && (
-          <AvailabilityManager />
-        )}
 
         {/* Config Tab */}
         {activeTab === 'config' && (

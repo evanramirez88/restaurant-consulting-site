@@ -1521,26 +1521,429 @@ const QuoteBuilder: React.FC = () => {
   // Coming Soon overlay - shows when feature is disabled via API or local flag
   if (!isFeatureEnabled) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-xl px-6">
-          <div className="text-amber-400 text-6xl mb-6">
-            <Wrench className="w-16 h-16 mx-auto" />
+      <div className="bg-primary-dark min-h-screen flex items-center justify-center relative hero-grain">
+        {/* Full page centered content */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center relative z-10">
+
+          {/* Animated Preview Mockup */}
+          <div className="hero-fade-in mb-12">
+            <div className="quote-preview-container">
+              {/* Floating animated mockup showing floor plan → quote */}
+              <div className="quote-preview-mockup">
+                {/* Left side - "floor plan" being analyzed */}
+                <div className="floor-plan-doc">
+                  <div className="floor-grid">
+                    <div className="floor-station station-1"></div>
+                    <div className="floor-station station-2"></div>
+                    <div className="floor-station station-3"></div>
+                    <div className="floor-cable cable-1"></div>
+                    <div className="floor-cable cable-2"></div>
+                  </div>
+                  {/* Scanning animation */}
+                  <div className="scan-overlay"></div>
+                </div>
+
+                {/* Arrow showing transformation */}
+                <div className="transform-arrow-quote">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+
+                {/* Right side - quote summary */}
+                <div className="quote-summary">
+                  <div className="quote-line quote-line-1">
+                    <div className="line-label"></div>
+                    <div className="line-value"></div>
+                  </div>
+                  <div className="quote-line quote-line-2">
+                    <div className="line-label"></div>
+                    <div className="line-value"></div>
+                  </div>
+                  <div className="quote-line quote-line-3">
+                    <div className="line-label"></div>
+                    <div className="line-value"></div>
+                  </div>
+                  <div className="quote-total">
+                    <div className="total-label"></div>
+                    <div className="total-value"></div>
+                  </div>
+                </div>
+
+                {/* Status indicator */}
+                <div className="preview-status-badge-quote">
+                  <div className="status-dot-quote"></div>
+                  <span>Calculating</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <h1 className="text-4xl font-serif text-white mb-4">Quote Builder</h1>
-          <p className="text-xl text-amber-400 mb-6">Coming Soon</p>
-          <p className="text-gray-400 mb-8">
-            We're building an intelligent quoting tool that configures your
-            Toast POS installation in minutes. Get accurate pricing based on
-            your specific restaurant layout and needs.
-          </p>
-          <Link
-            to="/contact"
-            className="inline-block px-6 py-3 rounded transition-colors"
-            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
-          >
-            Contact for Custom Quote
-          </Link>
+
+          {/* Headline */}
+          <h1 className="hero-fade-in hero-fade-in-delay-1 font-display text-5xl md:text-6xl font-bold text-amber-400 mb-4">
+            Quote Builder
+          </h1>
+
+          {/* Subheadline */}
+          <div className="hero-fade-in hero-fade-in-delay-1 mb-10">
+            <p className="text-2xl md:text-3xl text-white font-display mb-3">
+              Intelligent POS Quoting
+            </p>
+            <div className="brass-underline mx-auto"></div>
+          </div>
+
+          {/* Body Copy */}
+          <div className="hero-fade-in hero-fade-in-delay-2 mb-12 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-300 leading-relaxed mb-6">
+              Design your restaurant floor plan, place stations, and get instant accurate quotes
+              for your Toast POS installation. Our DCI algorithm factors in complexity,
+              hardware needs, and travel to deliver precise pricing.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-400 mt-8">
+              <div className="flex items-center justify-center gap-2">
+                <Layers className="w-4 h-4 text-amber-400" />
+                <span>Floor Plan Mapping</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <Building2 className="w-4 h-4 text-amber-400" />
+                <span>DCI Algorithm</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <Download className="w-4 h-4 text-amber-400" />
+                <span>PDF Export</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CTAs */}
+          <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <a
+              href="https://cal.com/r-g-consulting"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 shadow-lg"
+              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
+            >
+              <Calendar size={20} />
+              Schedule a Quote Consultation
+            </a>
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 cta-secondary-dark"
+            >
+              Get Notified at Launch
+            </Link>
+          </div>
+
+          {/* Back to Home Link */}
+          <div className="hero-fade-in hero-fade-in-delay-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <ChevronLeft size={18} />
+              Back to Home
+            </Link>
+          </div>
         </div>
+
+        {/* Inline styles for the preview mockup */}
+        <style>{`
+          .quote-preview-container {
+            display: flex;
+            justify-content: center;
+            perspective: 1000px;
+          }
+
+          .quote-preview-mockup {
+            position: relative;
+            width: 360px;
+            height: 200px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #374151;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: quote-float 6s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 20px;
+          }
+
+          @keyframes quote-float {
+            0%, 100% {
+              transform: translateY(0) rotateX(5deg) rotateY(-3deg);
+            }
+            50% {
+              transform: translateY(-12px) rotateX(5deg) rotateY(-3deg);
+            }
+          }
+
+          .floor-plan-doc {
+            width: 100px;
+            height: 100px;
+            background: #1a1f2e;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .floor-grid {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            padding: 8px;
+          }
+
+          .floor-station {
+            position: absolute;
+            background: linear-gradient(135deg, #ea580c, #f59e0b);
+            border-radius: 3px;
+          }
+
+          .station-1 {
+            width: 24px;
+            height: 18px;
+            top: 12px;
+            left: 12px;
+            animation: station-pulse 3s ease-in-out infinite;
+          }
+
+          .station-2 {
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            animation: station-pulse 3s ease-in-out infinite 0.5s;
+          }
+
+          .station-3 {
+            width: 28px;
+            height: 16px;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: station-pulse 3s ease-in-out infinite 1s;
+          }
+
+          @keyframes station-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+          }
+
+          .floor-cable {
+            position: absolute;
+            background: #3b82f6;
+            opacity: 0.6;
+          }
+
+          .cable-1 {
+            width: 2px;
+            height: 30px;
+            top: 30px;
+            left: 23px;
+            animation: cable-draw 2s ease-in-out infinite;
+          }
+
+          .cable-2 {
+            width: 25px;
+            height: 2px;
+            top: 50%;
+            left: 40px;
+            animation: cable-draw 2s ease-in-out infinite 0.5s;
+          }
+
+          @keyframes cable-draw {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+          }
+
+          .scan-overlay {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+            animation: scan-floor 2.5s ease-in-out infinite;
+          }
+
+          @keyframes scan-floor {
+            0%, 100% {
+              top: 0;
+              opacity: 0;
+            }
+            10% {
+              opacity: 1;
+            }
+            90% {
+              opacity: 1;
+            }
+            100% {
+              top: calc(100% - 3px);
+              opacity: 0;
+            }
+          }
+
+          .transform-arrow-quote {
+            width: 32px;
+            height: 32px;
+            color: #f59e0b;
+            animation: arrow-pulse-quote 2s ease-in-out infinite;
+          }
+
+          @keyframes arrow-pulse-quote {
+            0%, 100% {
+              transform: translateX(0);
+              opacity: 0.5;
+            }
+            50% {
+              transform: translateX(4px);
+              opacity: 1;
+            }
+          }
+
+          .quote-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 120px;
+          }
+
+          .quote-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            animation: line-appear 2.5s ease-in-out infinite;
+          }
+
+          .quote-line-1 { animation-delay: 0.2s; }
+          .quote-line-2 { animation-delay: 0.4s; }
+          .quote-line-3 { animation-delay: 0.6s; }
+
+          @keyframes line-appear {
+            0%, 20% {
+              opacity: 0.3;
+              transform: translateX(-3px);
+            }
+            40%, 80% {
+              opacity: 1;
+              transform: translateX(0);
+            }
+            100% {
+              opacity: 0.3;
+              transform: translateX(-3px);
+            }
+          }
+
+          .line-label {
+            width: 40px;
+            height: 5px;
+            background: #6b7280;
+            border-radius: 2px;
+          }
+
+          .line-value {
+            width: 28px;
+            height: 5px;
+            background: #9ca3af;
+            border-radius: 2px;
+          }
+
+          .quote-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 4px;
+            margin-top: 4px;
+            animation: total-glow 2s ease-in-out infinite;
+          }
+
+          @keyframes total-glow {
+            0%, 100% {
+              box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+            }
+            50% {
+              box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+            }
+          }
+
+          .total-label {
+            width: 35px;
+            height: 6px;
+            background: #f59e0b;
+            border-radius: 2px;
+          }
+
+          .total-value {
+            width: 35px;
+            height: 6px;
+            background: #f59e0b;
+            border-radius: 2px;
+          }
+
+          .preview-status-badge-quote {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #374151;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 10px;
+            color: #9ca3af;
+          }
+
+          .status-dot-quote {
+            width: 6px;
+            height: 6px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: dot-pulse-quote 1s ease-in-out infinite;
+          }
+
+          @keyframes dot-pulse-quote {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.4;
+            }
+          }
+
+          @media (min-width: 640px) {
+            .quote-preview-mockup {
+              width: 460px;
+              height: 220px;
+              gap: 24px;
+            }
+
+            .floor-plan-doc {
+              width: 120px;
+              height: 120px;
+            }
+
+            .quote-summary {
+              width: 150px;
+            }
+
+            .quote-line {
+              padding: 8px 10px;
+            }
+          }
+        `}</style>
       </div>
     );
   }
