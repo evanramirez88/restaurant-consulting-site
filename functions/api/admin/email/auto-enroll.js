@@ -84,24 +84,25 @@ export async function onRequestPost({ request, env }) {
     } = body;
 
     // Build query to find enrollable leads
+    // Note: restaurant_leads uses 'name' for company, 'primary_email' for email
     let query = `
       SELECT
         rl.id,
         rl.domain,
-        rl.company,
+        rl.name as company,
         rl.city,
         rl.state,
-        rl.email,
-        rl.phone,
+        rl.primary_email as email,
+        rl.primary_phone as phone,
         rl.current_pos,
         rl.lead_score
       FROM restaurant_leads rl
-      WHERE rl.email IS NOT NULL
-        AND rl.email != ''
+      WHERE rl.primary_email IS NOT NULL
+        AND rl.primary_email != ''
         AND rl.lead_score >= ?
         AND NOT EXISTS (
           SELECT 1 FROM email_subscribers es
-          WHERE LOWER(es.email) = LOWER(rl.email)
+          WHERE LOWER(es.email) = LOWER(rl.primary_email)
         )
     `;
 
@@ -316,7 +317,7 @@ export async function onRequestGet({ env }) {
     // Count total leads with email
     const totalWithEmail = await env.DB.prepare(`
       SELECT COUNT(*) as count FROM restaurant_leads
-      WHERE email IS NOT NULL AND email != ''
+      WHERE primary_email IS NOT NULL AND primary_email != ''
     `).first();
 
     // Count already enrolled
@@ -333,11 +334,11 @@ export async function onRequestGet({ env }) {
         SUM(CASE WHEN lead_score >= 80 THEN 1 ELSE 0 END) as high_value,
         AVG(lead_score) as avg_score
       FROM restaurant_leads
-      WHERE email IS NOT NULL
-        AND email != ''
+      WHERE primary_email IS NOT NULL
+        AND primary_email != ''
         AND NOT EXISTS (
           SELECT 1 FROM email_subscribers es
-          WHERE LOWER(es.email) = LOWER(restaurant_leads.email)
+          WHERE LOWER(es.email) = LOWER(restaurant_leads.primary_email)
         )
       GROUP BY current_pos
       ORDER BY count DESC
@@ -347,12 +348,12 @@ export async function onRequestGet({ env }) {
     const localLeads = await env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM restaurant_leads
-      WHERE email IS NOT NULL
-        AND email != ''
+      WHERE primary_email IS NOT NULL
+        AND primary_email != ''
         AND UPPER(state) IN ('MA', 'RI')
         AND NOT EXISTS (
           SELECT 1 FROM email_subscribers es
-          WHERE LOWER(es.email) = LOWER(restaurant_leads.email)
+          WHERE LOWER(es.email) = LOWER(restaurant_leads.primary_email)
         )
     `).first();
 
