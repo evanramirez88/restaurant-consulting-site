@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
-  Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp
+  Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp, Radio
 } from 'lucide-react';
 import ToastHubManager from '../toasthub/ToastHubManager';
+import { BeaconDashboard } from '../beacon';
 
 interface ToolsDemoProps {
   onOpenQuoteBuilder: () => void;
@@ -21,6 +22,7 @@ interface FeatureFlags {
   rep_portal_enabled: boolean;
   toast_hub_enabled: boolean;
   toast_automate_enabled?: boolean;
+  beacon_enabled?: boolean;
 }
 
 interface ToolConfig {
@@ -54,7 +56,8 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
     client_portal_enabled: false,
     rep_portal_enabled: false,
     toast_hub_enabled: false,
-    toast_automate_enabled: false
+    toast_automate_enabled: false,
+    beacon_enabled: false
   });
   const [loadingFlags, setLoadingFlags] = useState(true);
   const [togglingFlag, setTogglingFlag] = useState<string | null>(null);
@@ -191,6 +194,25 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
       output: 'Full Rep Experience',
       onOpen: onOpenRepPortalDemo,
       settingsPath: '/admin/settings/rep-portal'
+    },
+    {
+      id: 'beacon',
+      name: 'Beacon Content Platform',
+      description: 'Aggregate, curate, and publish Toast POS content from Reddit and other sources for SEO',
+      icon: <Radio className="w-7 h-7 text-rose-400" />,
+      iconBgColor: 'bg-rose-500/20',
+      buttonColor: 'bg-rose-500',
+      buttonHoverColor: 'hover:bg-rose-600',
+      featureFlagKey: 'beacon_enabled' as keyof FeatureFlags,
+      features: 'Reddit, AI Categorization, Curation',
+      output: 'Blog Posts, Solutions, SEO Content',
+      onOpen: () => {
+        // Beacon opens inline in settings
+        setSettingsOpen('beacon');
+      },
+      settingsPath: '/admin/settings/beacon',
+      hasFullSettings: true,
+      SettingsComponent: <BeaconDashboard />
     }
   ];
 
