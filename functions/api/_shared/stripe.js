@@ -13,7 +13,7 @@
  * STRIPE CONFIGURATION NOTES
  * ==========================================================================
  *
- * Support Plans (Toast Guardian):
+ * Support Plans (Restaurant Guardian):
  * - Core: $350/month, $1,050/quarter, $3,850/year (11 months)
  * - Professional: $500/month, $1,500/quarter, $5,500/year
  * - Premium: $800/month, $2,400/quarter, $8,800/year
@@ -52,7 +52,7 @@ export function getStripeClient(env) {
     httpClient: Stripe.createFetchHttpClient(),
     apiVersion: '2024-12-18.acacia',
     appInfo: {
-      name: 'R&G Consulting Toast Guardian',
+      name: 'R&G Consulting Restaurant Guardian',
       version: '1.0.0',
       url: 'https://ccrestaurantconsulting.com'
     },
@@ -429,7 +429,7 @@ export async function createStripeQuote(env, {
     customer: customer,
     line_items: processedLineItems,
     expires_at: Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60),
-    header: header || 'Toast Guardian Support Quote',
+    header: header || 'Restaurant Guardian Support Quote',
     footer: footer || 'Valid for 30 days. Contact support@ccrestaurantconsulting.com with questions.',
     metadata: {
       ...metadata,

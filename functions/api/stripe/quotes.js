@@ -123,7 +123,7 @@ export async function onRequestPost(context) {
       lineItems: processedItems,
       commitmentMonths: commitment_months,
       expirationDays: expiration_days,
-      header: header || 'Toast Guardian Custom Support Quote',
+      header: header || 'Restaurant Guardian Custom Support Quote',
       footer: footer || `Valid for ${expiration_days} days. Questions? Contact support@ccrestaurantconsulting.com`,
       metadata: {
         client_id: client_id || '',

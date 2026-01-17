@@ -22,7 +22,7 @@
 
 ## CALIBRATED SUPPORT PLAN PRICING
 
-### Toast Guardian Plans (Quarterly Billing Standard)
+### Restaurant Guardian Plans (Quarterly Billing Standard)
 
 | Plan | Monthly | Quarterly | Annual (11 mo) | Target Clients |
 |------|---------|-----------|----------------|----------------|

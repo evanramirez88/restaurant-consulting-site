@@ -5,7 +5,7 @@
 --
 -- This migration updates the stripe_products and stripe_subscriptions
 -- tables to support Lane A (Local Networking) support plans in addition
--- to Lane B (Toast Guardian) plans.
+-- to Lane B (Restaurant Guardian) plans.
 --
 -- Network Support Plans:
 -- - Basic: $150/month (48-hour response, business hours)
@@ -170,7 +170,7 @@ SELECT
     billing_interval,
     COUNT(*) as subscription_count,
     SUM(CASE
-        -- Toast Guardian Plans
+        -- Restaurant Guardian Plans
         WHEN billing_interval = 'monthly' THEN
             CASE plan_tier
                 WHEN 'core' THEN 35000

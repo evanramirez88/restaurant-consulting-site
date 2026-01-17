@@ -20,7 +20,7 @@ Types of projects I take on:
 - Toast implementations (new installs)
 - Toast optimization (fixing broken setups)
 - Menu builds and audits
-- Ongoing support (Toast Guardian plans)
+- Ongoing support (Restaurant Guardian plans)
 - POS switches from Clover, Square, etc.
 
 If anyone comes to mind, just reply with their name and contact info. I'll mention you sent me (unless you'd rather I didn't).

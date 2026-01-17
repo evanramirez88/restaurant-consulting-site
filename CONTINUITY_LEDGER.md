@@ -1863,7 +1863,7 @@ All 4 external integrations tested and working:
 1. **IMMEDIATE:** Prepare for Discovery Call with Toria @ 1:15 PM EST
 2. Create HubSpot email sequences (Week 1 task)
 3. Import first lead batch from G:\My Drive\RG OPS\70_LEADS_BUILTWITH\
-4. Set up Square catalog products for Toast Guardian plans
+4. Set up Square catalog products for Restaurant Guardian plans
 
 ### Handoff Context
 - All infrastructure operational

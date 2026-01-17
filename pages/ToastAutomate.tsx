@@ -284,7 +284,7 @@ const ComingSoonOverlay: React.FC = () => {
             to="/support-plans"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all shadow-lg"
           >
-            Learn About Toast Guardian
+            Learn About Restaurant Guardian
             <ChevronRight className="w-5 h-5" />
           </Link>
         </div>

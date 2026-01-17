@@ -26,7 +26,7 @@ Common post-install fixes:
 
 **If something feels off** — let's talk: https://app.acuityscheduling.com/schedule.php?owner=34242148
 
-I also offer ongoing support plans (Toast Guardian) starting at $350/month with quarterly billing. Think of it as insurance against Toast disasters.
+I also offer ongoing support plans (Restaurant Guardian) starting at $350/month with quarterly billing. Think of it as insurance against Toast disasters.
 
 Good luck with the new system.
 

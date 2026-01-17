@@ -34,7 +34,7 @@ All critical business services are operational. The platform is ready to accept 
 | Customer Portal | ✅ AVAILABLE | `/api/stripe/portal` |
 
 **Stripe Products Available:**
-- Toast Guardian: Core, Professional, Premium (monthly/quarterly/annual)
+- Restaurant Guardian: Core, Professional, Premium (monthly/quarterly/annual)
 - Network Support: Basic, Premium, Enterprise (monthly/quarterly/annual)
 
 ### 3. Email Engine
@@ -107,7 +107,7 @@ All critical business services are operational. The platform is ready to accept 
 |------|-------|--------|
 | Home | `/` | ✅ Production ready |
 | Services | `/services` | ✅ Pricing displayed |
-| Support Plans | `/support-plans` | ✅ Toast Guardian plans |
+| Support Plans | `/support-plans` | ✅ Restaurant Guardian plans |
 | Local Networking | `/local-networking` | ✅ **Stripe Checkout wired** |
 | Schedule | `/schedule` | ✅ Cal.com embed |
 | Contact | `/contact` | ✅ Form functional |

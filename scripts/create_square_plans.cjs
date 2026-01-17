@@ -1,5 +1,5 @@
 /**
- * Create Square Subscription Plans for Toast Guardian Support Tiers
+ * Create Square Subscription Plans for Restaurant Guardian Support Tiers
  * 
  * Usage:
  *   node scripts/create_square_plans.cjs --token <SQUARE_ACCESS_TOKEN> [--dry-run]
@@ -165,7 +165,7 @@ function generateCodeUpdate(createdPlans) {
 async function main() {
   console.log("================================================================");
   console.log("       Square Subscription Plans Setup                          ");
-  console.log("       Toast Guardian Support Tiers                             ");
+  console.log("       Restaurant Guardian Support Tiers                             ");
   console.log("================================================================");
   
   if (!SQUARE_ACCESS_TOKEN) {

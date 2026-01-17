@@ -20,6 +20,7 @@ const DEFAULT_FLAGS = {
   client_portal_enabled: false,
   rep_portal_enabled: false,
   toast_hub_enabled: false,
+  toast_automate_enabled: false,
   // Mode Flags
   maintenance_mode: false,
   // "Coming Soon" Mode Flags - shows placeholder when feature is disabled
@@ -27,7 +28,8 @@ const DEFAULT_FLAGS = {
   menu_builder_coming_soon: false,
   client_portal_coming_soon: false,
   rep_portal_coming_soon: false,
-  toast_hub_coming_soon: false
+  toast_hub_coming_soon: false,
+  toast_automate_coming_soon: false
 };
 
 // Allowed flag keys (whitelist for security)

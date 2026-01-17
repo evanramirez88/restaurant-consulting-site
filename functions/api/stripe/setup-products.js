@@ -1,10 +1,10 @@
 /**
  * Stripe Products Setup API (Admin Only - One-time use)
  *
- * POST /api/stripe/setup-products - Create Toast Guardian products and prices
+ * POST /api/stripe/setup-products - Create Restaurant Guardian products and prices
  *
  * This endpoint creates the required Stripe products and prices for
- * Toast Guardian support plans, then updates the D1 database.
+ * Restaurant Guardian support plans, then updates the D1 database.
  *
  * IMPORTANT: This is a one-time setup endpoint. After products are created,
  * this endpoint can be deleted or disabled.
@@ -13,10 +13,10 @@
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { getStripeClient } from '../_shared/stripe.js';
 
-// Toast Guardian product definitions (Lane B - Remote Support)
+// Restaurant Guardian product definitions (Lane B - Remote Support)
 const TOAST_GUARDIAN_PRODUCTS = [
   {
-    name: 'Toast Guardian - Core',
+    name: 'Restaurant Guardian - Core',
     description: 'Essential Toast POS support for small restaurants. 5 hours/month included.',
     tier: 'core',
     prices: [
@@ -26,7 +26,7 @@ const TOAST_GUARDIAN_PRODUCTS = [
     ]
   },
   {
-    name: 'Toast Guardian - Professional',
+    name: 'Restaurant Guardian - Professional',
     description: 'Enhanced Toast POS support for growing restaurants. 10 hours/month included.',
     tier: 'professional',
     prices: [
@@ -36,7 +36,7 @@ const TOAST_GUARDIAN_PRODUCTS = [
     ]
   },
   {
-    name: 'Toast Guardian - Premium',
+    name: 'Restaurant Guardian - Premium',
     description: 'Priority Toast POS support for high-volume restaurants. 20 hours/month included.',
     tier: 'premium',
     prices: [
@@ -86,7 +86,7 @@ const PRODUCT_DEFINITIONS = [...TOAST_GUARDIAN_PRODUCTS, ...NETWORKING_SUPPORT_P
 
 /**
  * POST /api/stripe/setup-products
- * Create all Toast Guardian products and prices in Stripe
+ * Create all Restaurant Guardian products and prices in Stripe
  *
  * For initial setup, use header: X-Setup-Token: <first 8 chars of STRIPE_SECRET_KEY>
  */
@@ -212,7 +212,7 @@ export async function onRequestPost(context) {
 
     // Insert real price IDs
     for (const price of createdPrices) {
-      // Get included hours based on tier (Toast Guardian and Network Support)
+      // Get included hours based on tier (Restaurant Guardian and Network Support)
       const includedHoursMap = {
         core: 5,
         professional: 10,
@@ -225,9 +225,9 @@ export async function onRequestPost(context) {
 
       // Format tier name for description
       const tierNameMap = {
-        core: 'Toast Guardian Core',
-        professional: 'Toast Guardian Professional',
-        premium: 'Toast Guardian Premium',
+        core: 'Restaurant Guardian Core',
+        professional: 'Restaurant Guardian Professional',
+        premium: 'Restaurant Guardian Premium',
         network_basic: 'Network Support Basic',
         network_premium: 'Network Support Premium',
         network_enterprise: 'Network Support Enterprise'
@@ -252,7 +252,7 @@ export async function onRequestPost(context) {
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Toast Guardian products and prices created successfully',
+      message: 'Restaurant Guardian products and prices created successfully',
       data: {
         products: results,
         prices: createdPrices,

@@ -254,6 +254,10 @@ const AdminDashboard: React.FC = () => {
     window.open('/#/rep/demo-rep/dashboard?demo=true', '_blank');
   };
 
+  const handleOpenToastHub = () => {
+    window.open('/#/toast-hub?demo=true', '_blank');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-dark to-gray-900 flex items-center justify-center">
@@ -516,6 +520,7 @@ const AdminDashboard: React.FC = () => {
             onOpenQuoteBuilder={handleOpenQuoteBuilder}
             onOpenMenuBuilder={handleOpenMenuBuilder}
             onOpenToastAutomate={handleOpenToastAutomate}
+            onOpenToastHub={handleOpenToastHub}
             onOpenClientPortalDemo={handleOpenClientPortalDemo}
             onOpenRepPortalDemo={handleOpenRepPortalDemo}
           />

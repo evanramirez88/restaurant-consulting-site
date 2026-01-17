@@ -596,9 +596,9 @@ export const SUPPORT_PLAN_CATALOG_IDS = {
 | 1 | Log into Square Dashboard | https://squareup.com/dashboard |
 | 2 | Navigate to Items & Orders → Subscriptions | Left sidebar |
 | 3 | Click "Create Subscription Plan" | Top right button |
-| 4 | Create "Toast Guardian Core" | Monthly: $350, Annual: $3,850 |
-| 5 | Create "Toast Guardian Professional" | Monthly: $500, Annual: $5,500 |
-| 6 | Create "Toast Guardian Premium" | Monthly: $800, Annual: $8,800 |
+| 4 | Create "Restaurant Guardian Core" | Monthly: $350, Annual: $3,850 |
+| 5 | Create "Restaurant Guardian Professional" | Monthly: $500, Annual: $5,500 |
+| 6 | Create "Restaurant Guardian Premium" | Monthly: $800, Annual: $8,800 |
 | 7 | Copy each Plan Variation ID | Found in plan details → URL or API response |
 | 8 | Provide IDs to Claude | For code update |
 
@@ -830,7 +830,7 @@ The website can go live TODAY using manual Square invoicing:
 **Square Dashboard Manual Invoice:**
 - Log in: https://squareup.com/dashboard/invoices
 - Click "Create Invoice"
-- Add line item: "Toast Guardian [Tier] - Quarterly"
+- Add line item: "Restaurant Guardian [Tier] - Quarterly"
 - Set amount: $1,050 / $1,500 / $2,400
 - Send to client email
 - Payment captured on acceptance

@@ -57,9 +57,9 @@ Create these subscription plans in Square Dashboard:
 
 | Plan | Monthly | Annual | Location |
 |------|---------|--------|----------|
-| Toast Guardian Core | $350 | $3,850 | LB8GE5HYZJYB7 |
-| Toast Guardian Professional | $500 | $5,500 | LB8GE5HYZJYB7 |
-| Toast Guardian Premium | $800 | $8,800 | LB8GE5HYZJYB7 |
+| Restaurant Guardian Core | $350 | $3,850 | LB8GE5HYZJYB7 |
+| Restaurant Guardian Professional | $500 | $5,500 | LB8GE5HYZJYB7 |
+| Restaurant Guardian Premium | $800 | $8,800 | LB8GE5HYZJYB7 |
 
 **After creation:** Provide catalog IDs to Claude for code update
 

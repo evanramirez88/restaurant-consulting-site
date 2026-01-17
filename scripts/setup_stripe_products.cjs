@@ -1,7 +1,7 @@
 /**
  * Setup Stripe Products and Prices
  *
- * Creates Toast Guardian support plan products and prices in Stripe,
+ * Creates Restaurant Guardian support plan products and prices in Stripe,
  * then updates the D1 database with the real price IDs.
  *
  * Usage: node scripts/setup_stripe_products.cjs
@@ -28,10 +28,10 @@ if (!stripeKey) {
   process.exit(1);
 }
 
-// Product definitions based on Toast Guardian pricing
+// Product definitions based on Restaurant Guardian pricing
 const products = [
   {
-    name: 'Toast Guardian - Core',
+    name: 'Restaurant Guardian - Core',
     description: 'Essential Toast POS support for small restaurants. 5 hours/month included.',
     tier: 'core',
     prices: [
@@ -41,7 +41,7 @@ const products = [
     ]
   },
   {
-    name: 'Toast Guardian - Professional',
+    name: 'Restaurant Guardian - Professional',
     description: 'Enhanced Toast POS support for growing restaurants. 10 hours/month included.',
     tier: 'professional',
     prices: [
@@ -51,7 +51,7 @@ const products = [
     ]
   },
   {
-    name: 'Toast Guardian - Premium',
+    name: 'Restaurant Guardian - Premium',
     description: 'Priority Toast POS support for high-volume restaurants. 20 hours/month included.',
     tier: 'premium',
     prices: [
@@ -173,7 +173,7 @@ async function createProduct(productDef) {
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('Toast Guardian - Stripe Products Setup');
+  console.log('Restaurant Guardian - Stripe Products Setup');
   console.log('='.repeat(60));
 
   const allPrices = [];

@@ -140,7 +140,7 @@ const ComingSoonOverlay: React.FC = () => {
           <WidgetCard
             icon={<Shield className="w-6 h-6" />}
             title="Support Plan"
-            description="Manage your Toast Guardian subscription and benefits"
+            description="Manage your Restaurant Guardian subscription and benefits"
             stats={[
               { label: "Plan", value: "Pro" },
               { label: "Hours Left", value: "3.5" }

@@ -12,7 +12,7 @@ Create these 3 templates in PandaDoc:
 | Template Name | Environment Variable | Use Case |
 |--------------|---------------------|----------|
 | Implementation Services Contract | `PANDADOC_TEMPLATE_IMPLEMENTATION` | On-site Toast installations, networking |
-| Support Plan Agreement | `PANDADOC_TEMPLATE_SUPPORT_PLAN` | Monthly Toast Guardian support plans |
+| Support Plan Agreement | `PANDADOC_TEMPLATE_SUPPORT_PLAN` | Monthly Restaurant Guardian support plans |
 | Remote Services Contract | `PANDADOC_TEMPLATE_REMOTE_SERVICES` | National/remote consulting services |
 
 ---

@@ -47,7 +47,7 @@ Square was initially considered for subscription billing because it was already 
 
 ## Products and Pricing
 
-### Toast Guardian Plans (Lane B - Remote)
+### Restaurant Guardian Plans (Lane B - Remote)
 
 | Tier | Monthly | Quarterly | Annual | Hours/Month |
 |------|---------|-----------|--------|-------------|
@@ -65,7 +65,7 @@ Square was initially considered for subscription billing because it was already 
 
 ### Stripe Price IDs
 
-#### Toast Guardian
+#### Restaurant Guardian
 | Tier | Interval | Price ID |
 |------|----------|----------|
 | Core | Monthly | price_1SpzcVGbzgCk7YTGENWMj4yH |
@@ -311,7 +311,7 @@ const handleSubscribe = async (tier: string) => {
 
 ### SupportPlans Page
 
-Similar integration for Toast Guardian plans at `/support-plans`.
+Similar integration for Restaurant Guardian plans at `/support-plans`.
 
 ---
 
@@ -442,7 +442,7 @@ curl -s "https://ccrestaurantconsulting.com/api/stripe/health"
 
 ## Next Steps
 
-1. **Integrate Toast Guardian page** with Stripe Checkout (same pattern as LocalNetworking)
+1. **Integrate Restaurant Guardian page** with Stripe Checkout (same pattern as LocalNetworking)
 2. **Set up Stripe Customer Portal** configuration in dashboard
 3. **Configure commitment period portal restrictions** in Stripe
 4. **Add overage billing** automation for exceeded hours

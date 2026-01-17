@@ -67,7 +67,7 @@ const FAQ_DATA = [
   },
   {
     question: "What support options are available for Toast POS users?",
-    answer: "Toast offers 24/7 phone and email support. Additionally, certified Toast consultants like R&G Consulting provide hands-on implementation support, custom menu configuration, and ongoing maintenance through Toast Guardian support plans starting at $350/month."
+    answer: "Toast offers 24/7 phone and email support. Additionally, certified Toast consultants like R&G Consulting provide hands-on implementation support, custom menu configuration, and ongoing maintenance through Restaurant Guardian support plans starting at $350/month."
   }
 ];
 

@@ -10,7 +10,7 @@
 -- - commitment_tracking: Enforces minimum commitment periods
 -- - subscription_overages: Quarterly overage tracking and billing
 --
--- Support Plans (Toast Guardian):
+-- Support Plans (Restaurant Guardian):
 -- - Core: $350/month, 5 hours
 -- - Professional: $500/month, 10 hours
 -- - Premium: $800/month, 20 hours

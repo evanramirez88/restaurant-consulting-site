@@ -22,12 +22,12 @@ const FAQ_DATA = [
     answer: "Installation costs vary based on the number of terminals, complexity of your menu, and training requirements. Use our Quote Builder tool for an instant estimate, or schedule a free 15-minute discovery call for a custom quote."
   },
   {
-    question: "What is Toast Guardian?",
-    answer: "Toast Guardian is our comprehensive support plan for Toast POS systems. It provides ongoing maintenance, troubleshooting, menu updates, and emergency support to keep your restaurant running smoothly."
+    question: "What is Restaurant Guardian?",
+    answer: "Restaurant Guardian is our comprehensive support plan for Toast POS systems. It provides ongoing maintenance, troubleshooting, menu updates, and emergency support to keep your restaurant running smoothly."
   },
   {
     question: "How much do Toast support plans cost?",
-    answer: "Toast Guardian plans start at $350/month for Core tier (1.5 hours included, 24-48hr response), $500/month for Professional tier (3 hours, 4-hour SLA, includes GMB management), and $800/month for Premium tier (5 hours, 2-hour SLA, includes website hosting and emergency support). Annual prepay saves one month free."
+    answer: "Restaurant Guardian plans start at $350/month for Core tier (1.5 hours included, 24-48hr response), $500/month for Professional tier (3 hours, 4-hour SLA, includes GMB management), and $800/month for Premium tier (5 hours, 2-hour SLA, includes website hosting and emergency support). Annual prepay saves one month free."
   },
   {
     question: "Do you offer emergency Toast POS support?",
@@ -38,7 +38,7 @@ const FAQ_DATA = [
 const Services: React.FC = () => {
   useSEO({
     title: 'Toast POS Installation & Support Plans | Cape Cod Restaurant Consulting',
-    description: 'Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Toast Guardian support starting at $350/month with quarterly billing. Cape Cod & nationwide remote support.',
+    description: 'Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Restaurant Guardian support starting at $350/month with quarterly billing. Cape Cod & nationwide remote support.',
     canonical: 'https://ccrestaurantconsulting.com/#/services',
   });
 
@@ -341,12 +341,12 @@ const Services: React.FC = () => {
           <div className="text-center mb-12 animate-on-scroll">
             <div className="inline-flex items-center gap-3 mb-4">
               <Shield className="w-12 h-12 text-amber-500" />
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">Toast Guardian</h2>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">Restaurant Guardian</h2>
             </div>
             <div className="brass-line-draw short mb-6" />
             <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
               When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone.
-              Toast Guardian provides reliable support plans built for Cape Cod restaurants.
+              Restaurant Guardian provides reliable support plans built for Cape Cod restaurants.
             </p>
           </div>
 

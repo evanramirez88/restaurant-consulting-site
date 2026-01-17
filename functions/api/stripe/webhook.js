@@ -636,7 +636,7 @@ async function syncSubscriptionToHubSpot(subscription, action, env) {
         },
         body: JSON.stringify({
           properties: {
-            dealname: `Toast Guardian - ${customer.email}`,
+            dealname: `Restaurant Guardian - ${customer.email}`,
             amount: String(mrr * 12),
             dealstage: 'closedwon',
             pipeline: 'default',

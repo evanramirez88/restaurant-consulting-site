@@ -235,12 +235,12 @@ These values appear across multiple pages:
 | S37 | Feature 3 | Emergency hardware replacement | | |
 | S38 | Feature 4 | Crisis management | | |
 
-## Toast Guardian Support Plans Header
+## Restaurant Guardian Support Plans Header
 
 | ID | Element | CURRENT TEXT | CHANGE TO | Priority |
 |----|---------|--------------|-----------|----------|
-| S39 | Section Title | Toast Guardian | | |
-| S40 | Section Description | When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone. Toast Guardian provides reliable support plans built for Cape Cod restaurants. | | |
+| S39 | Section Title | Restaurant Guardian | | |
+| S40 | Section Description | When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone. Restaurant Guardian provides reliable support plans built for Cape Cod restaurants. | | |
 
 ## Support Plan: Core ($350/mo)
 
@@ -408,7 +408,7 @@ These values appear across multiple pages:
 | SEO1 | Home | Title | Toast POS Consultant Cape Cod \| R&G Consulting LLC | | |
 | SEO2 | Home | Description | Expert Toast POS installation, menu configuration, and restaurant networking in Cape Cod, MA. Get your free quote today! Call (508) 247-4936. | | |
 | SEO3 | Services | Title | Toast POS Installation & Support Plans \| Cape Cod Restaurant Consulting | | |
-| SEO4 | Services | Description | Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Toast Guardian support starting at $350/month with quarterly billing. Cape Cod & nationwide remote support. | | |
+| SEO4 | Services | Description | Professional Toast POS installation, menu configuration, restaurant networking, and ongoing support plans. Restaurant Guardian support starting at $350/month with quarterly billing. Cape Cod & nationwide remote support. | | |
 | SEO5 | About | Title | About & Contact \| Toast POS Consultant Cape Cod | | |
 | SEO6 | About | Description | Meet Evan Ramirez, Cape Cod's trusted Toast POS consultant with real restaurant experience. Contact us for POS installation, menu configuration, or networking. Call (508) 247-4936. | | |
 | SEO7 | Contact | Title | Contact Toast POS Consultant \| Cape Cod Restaurant Tech | | |

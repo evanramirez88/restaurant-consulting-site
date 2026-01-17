@@ -355,7 +355,7 @@ const PortalBilling: React.FC = () => {
           <Shield className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">No Active Support Plan</h3>
           <p className="text-gray-400 mb-6 max-w-md mx-auto">
-            Get priority support, dedicated hours, and exclusive benefits with a Toast Guardian support plan.
+            Get priority support, dedicated hours, and exclusive benefits with a Restaurant Guardian support plan.
           </p>
           <Link
             to="/support-plans"

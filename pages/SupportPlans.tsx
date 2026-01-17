@@ -7,15 +7,15 @@ import { useSEO } from '../src/components/SEO';
 // MUST match website pricing in pages/Services.tsx
 const SUPPORT_FAQ_DATA = [
   {
-    question: "What is Toast Guardian?",
-    answer: "Toast Guardian is our comprehensive support plan for Toast POS systems. It provides ongoing maintenance, troubleshooting, menu updates, and emergency support to keep your restaurant running smoothly."
+    question: "What is Restaurant Guardian?",
+    answer: "Restaurant Guardian is our comprehensive support plan for Toast POS systems. It provides ongoing maintenance, troubleshooting, menu updates, and emergency support to keep your restaurant running smoothly."
   },
   {
     question: "How much do Toast support plans cost?",
-    answer: "Toast Guardian plans start at $350/month for Core tier (1.5 hours included, 24-48hr response), $500/month for Professional tier (3 hours, 4-hour SLA, includes GMB management), and $800/month for Premium tier (5 hours, 2-hour SLA, includes website hosting and emergency support). Annual prepay saves one month free."
+    answer: "Restaurant Guardian plans start at $350/month for Core tier (1.5 hours included, 24-48hr response), $500/month for Professional tier (3 hours, 4-hour SLA, includes GMB management), and $800/month for Premium tier (5 hours, 2-hour SLA, includes website hosting and emergency support). Annual prepay saves one month free."
   },
   {
-    question: "What's included in Toast Guardian support?",
+    question: "What's included in Restaurant Guardian support?",
     answer: "All plans include remote troubleshooting, menu updates, system monitoring, and email support. Higher tiers add phone support, priority response SLAs, Google Business Profile management, on-site visits, and dedicated Slack channels."
   },
   {
@@ -30,7 +30,7 @@ const SUPPORT_FAQ_DATA = [
 
 const SupportPlans: React.FC = () => {
   useSEO({
-    title: 'Toast Guardian Support Plans | Cape Cod Restaurant Consulting',
+    title: 'Restaurant Guardian Support Plans | Cape Cod Restaurant Consulting',
     description: 'Never get caught off guard again. Toast POS support plans starting at $350/month with quarterly billing. Core, Professional, and Premium tiers available.',
     canonical: 'https://ccrestaurantconsulting.com/#/support-plans',
   });
@@ -144,7 +144,7 @@ const SupportPlans: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-on-scroll">
           <div className="inline-flex items-center gap-3 mb-4">
             <Shield className="w-12 h-12 text-amber-500" />
-            <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Toast Guardian</h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-white">Restaurant Guardian</h1>
           </div>
           <div className="brass-line-draw short mb-6" />
           <p className="text-amber-400 text-xl sm:text-2xl font-semibold mb-4">
@@ -152,7 +152,7 @@ const SupportPlans: React.FC = () => {
           </p>
           <p className="text-gray-400 max-w-2xl mx-auto text-base sm:text-lg">
             When your POS goes down at 7 PM on a Saturday, you need someone who answers the phone.
-            Toast Guardian provides reliable support plans built for Cape Cod restaurants.
+            Restaurant Guardian provides reliable support plans built for Cape Cod restaurants.
           </p>
         </div>
       </div>
@@ -354,7 +354,7 @@ const SupportPlans: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ready to protect your restaurant?</h2>
             <div className="brass-line-draw short mb-4" />
             <p className="text-gray-300 mb-6 text-sm sm:text-base">
-              Let's discuss which Toast Guardian plan is right for your operation.
+              Let's discuss which Restaurant Guardian plan is right for your operation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

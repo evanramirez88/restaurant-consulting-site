@@ -217,7 +217,7 @@
 
 | Use Case | Platform | Notes |
 |----------|----------|-------|
-| Recurring Subscriptions | **Stripe** | Toast Guardian + Network Support plans |
+| Recurring Subscriptions | **Stripe** | Restaurant Guardian + Network Support plans |
 | One-time Invoices | Square | Project work, hourly billing |
 | Custom Quotes | **Stripe Quotes** | Bespoke pricing with PDF generation |
 | Customer Portal | **Stripe** | Self-service subscription management |
