@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Loader2,
   Search,
@@ -404,6 +404,12 @@ const RepClients: React.FC = () => {
                         View Portal
                       </a>
                     )}
+                    <Link
+                      to={`/rep/${slug}/clients/${client.id}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      View Details
+                    </Link>
                   </div>
                 </div>
               </div>

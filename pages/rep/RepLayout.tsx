@@ -9,7 +9,8 @@ import {
   Briefcase,
   ChevronRight,
   Ticket,
-  Lightbulb
+  Lightbulb,
+  FileText
 } from 'lucide-react';
 
 interface RepInfo {
@@ -34,6 +35,7 @@ const RepLayout: React.FC<RepLayoutProps> = ({ rep, isLoading = false }) => {
   const navItems = [
     { path: `/rep/${slug}/dashboard`, label: 'Dashboard', icon: LayoutDashboard },
     { path: `/rep/${slug}/clients`, label: 'My Clients', icon: Users },
+    { path: `/rep/${slug}/quotes`, label: 'Quotes', icon: FileText },
     { path: `/rep/${slug}/tickets`, label: 'Tickets', icon: Ticket },
     { path: `/rep/${slug}/intel`, label: 'Intel', icon: Lightbulb },
     { path: `/rep/${slug}/referrals`, label: 'Referrals', icon: Gift },
