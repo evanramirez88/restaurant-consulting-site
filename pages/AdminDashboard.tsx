@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Loader2, LogOut, UtensilsCrossed, LayoutDashboard, Building2, Briefcase,
-  Wrench, FileText, Calendar, Settings, Users, Ticket, Mail, Brain, Contact
+  Loader2, LogOut, UtensilsCrossed, LayoutDashboard,
+  Wrench, Settings, Users, Ticket, Mail, Brain, Contact
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 

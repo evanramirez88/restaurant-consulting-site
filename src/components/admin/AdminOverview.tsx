@@ -3,7 +3,7 @@ import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
   Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
   ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity,
-  Zap, Play, Pause, Loader2, Wifi, WifiOff, Globe, Home, RefreshCw
+  Zap, Play, Pause, Loader2, Wifi, WifiOff, Globe, Home, RefreshCw, Ticket
 } from 'lucide-react';
 import AvailabilityManager from './availability/AvailabilityManager';
 
