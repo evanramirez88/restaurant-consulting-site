@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Loader2, LogOut, UtensilsCrossed, LayoutDashboard, Building2, Briefcase,
-  Wrench, FileText, Calendar, Settings, Users, Ticket, Mail, Brain
+  Wrench, FileText, Calendar, Settings, Users, Ticket, Mail, Brain, Contact
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
@@ -31,9 +31,10 @@ import {
 } from '../src/components/admin/email';
 import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
 
-type TabType = 'overview' | 'portals' | 'clients' | 'reps' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'toasthub' | 'availability' | 'config';
+type TabType = 'overview' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'availability' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
+type ContactSubTab = 'clients' | 'reps' | 'leads';
 type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics' | 'ab-testing' | 'enrollment' | 'errors' | 'schedule';
 
 interface Client {
@@ -89,6 +90,9 @@ const AdminDashboard: React.FC = () => {
 
   // Email sub-tab state
   const [emailSubTab, setEmailSubTab] = useState<EmailSubTab>('campaigns');
+
+  // Contacts sub-tab state
+  const [contactSubTab, setContactSubTab] = useState<ContactSubTab>('clients');
 
   // Availability state (for overview)
   const [availability, setAvailability] = useState({
@@ -273,13 +277,11 @@ const AdminDashboard: React.FC = () => {
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'portals', label: 'Portals', icon: <Users className="w-4 h-4" /> },
-    { id: 'clients', label: 'Clients', icon: <Building2 className="w-4 h-4" /> },
-    { id: 'reps', label: 'Reps', icon: <Briefcase className="w-4 h-4" /> },
+    { id: 'contacts', label: 'Contacts', icon: <Contact className="w-4 h-4" /> },
     { id: 'tickets', label: 'Tickets', icon: <Ticket className="w-4 h-4" /> },
     { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
     { id: 'intelligence', label: 'Intel', icon: <Brain className="w-4 h-4" /> },
     { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> },
-    { id: 'toasthub', label: 'Toast Hub', icon: <FileText className="w-4 h-4" /> },
     { id: 'availability', label: 'Availability', icon: <Calendar className="w-4 h-4" /> },
     { id: 'config', label: 'Config', icon: <Settings className="w-4 h-4" /> },
   ];
@@ -319,8 +321,10 @@ const AdminDashboard: React.FC = () => {
                 onClick={() => {
                   setActiveTab(tab.id);
                   // Reset sub-views when changing tabs
-                  if (tab.id === 'clients') setClientView('list');
-                  if (tab.id === 'reps') setRepView('list');
+                  if (tab.id === 'contacts') {
+                    setClientView('list');
+                    setRepView('list');
+                  }
                 }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap min-h-[44px] ${
                   activeTab === tab.id
@@ -354,46 +358,118 @@ const AdminDashboard: React.FC = () => {
           <PortalManagement />
         )}
 
-        {/* Clients Tab */}
-        {activeTab === 'clients' && (
+        {/* Contacts Tab */}
+        {activeTab === 'contacts' && (
           <>
-            {clientView === 'list' && (
-              <ClientList
-                onSelectClient={handleSelectClient}
-                onCreateClient={handleCreateClient}
-              />
-            )}
-            {clientView === 'form' && (
-              <ClientForm
-                client={selectedClient}
-                onSave={handleSaveClient}
-                onCancel={() => {
+            {/* Contacts Sub-tabs */}
+            <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
+              <button
+                onClick={() => {
+                  setContactSubTab('clients');
                   setClientView('list');
-                  setSelectedClient(null);
                 }}
-              />
-            )}
-          </>
-        )}
-
-        {/* Reps Tab */}
-        {activeTab === 'reps' && (
-          <>
-            {repView === 'list' && (
-              <RepList
-                onSelectRep={handleSelectRep}
-                onCreateRep={handleCreateRep}
-              />
-            )}
-            {repView === 'form' && (
-              <RepForm
-                rep={selectedRep}
-                onSave={handleSaveRep}
-                onCancel={() => {
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  contactSubTab === 'clients'
+                    ? 'bg-purple-500/20 text-purple-400 border-b-2 border-purple-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                Clients
+                {clientCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded">
+                    {clientCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setContactSubTab('reps');
                   setRepView('list');
-                  setSelectedRep(null);
                 }}
-              />
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  contactSubTab === 'reps'
+                    ? 'bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Briefcase className="w-4 h-4" />
+                Reps
+                {repCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded">
+                    {repCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setContactSubTab('leads')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  contactSubTab === 'leads'
+                    ? 'bg-amber-500/20 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <UserPlus className="w-4 h-4" />
+                Leads
+              </button>
+            </div>
+
+            {/* Clients Sub-tab Content */}
+            {contactSubTab === 'clients' && (
+              <>
+                {clientView === 'list' && (
+                  <ClientList
+                    onSelectClient={handleSelectClient}
+                    onCreateClient={handleCreateClient}
+                  />
+                )}
+                {clientView === 'form' && (
+                  <ClientForm
+                    client={selectedClient}
+                    onSave={handleSaveClient}
+                    onCancel={() => {
+                      setClientView('list');
+                      setSelectedClient(null);
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Reps Sub-tab Content */}
+            {contactSubTab === 'reps' && (
+              <>
+                {repView === 'list' && (
+                  <RepList
+                    onSelectRep={handleSelectRep}
+                    onCreateRep={handleCreateRep}
+                  />
+                )}
+                {repView === 'form' && (
+                  <RepForm
+                    rep={selectedRep}
+                    onSave={handleSaveRep}
+                    onCancel={() => {
+                      setRepView('list');
+                      setSelectedRep(null);
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Leads Sub-tab Content */}
+            {contactSubTab === 'leads' && (
+              <div className="admin-card p-8 text-center">
+                <UserPlus className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Lead Management</h3>
+                <p className="text-gray-400 mb-4">
+                  View and manage leads from BuiltWith imports, HubSpot sync, and website forms.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Use the Intel tab for lead scoring and segmentation, or Email tab for enrollment.
+                </p>
+              </div>
             )}
           </>
         )}
@@ -526,10 +602,6 @@ const AdminDashboard: React.FC = () => {
           />
         )}
 
-        {/* Toast Hub Tab */}
-        {activeTab === 'toasthub' && (
-          <ToastHubManager />
-        )}
 
         {/* Availability Tab */}
         {activeTab === 'availability' && (

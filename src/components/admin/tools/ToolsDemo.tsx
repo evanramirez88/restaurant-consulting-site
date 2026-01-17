@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
-  Settings, ToggleLeft, ToggleRight, Loader2, Layers
+  Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp
 } from 'lucide-react';
+import ToastHubManager from '../toasthub/ToastHubManager';
 
 interface ToolsDemoProps {
   onOpenQuoteBuilder: () => void;
@@ -35,6 +36,8 @@ interface ToolConfig {
   output: string;
   onOpen: () => void;
   settingsPath?: string;
+  hasFullSettings?: boolean; // If true, shows full management component in settings
+  SettingsComponent?: React.ReactNode;
 }
 
 const ToolsDemo: React.FC<ToolsDemoProps> = ({
@@ -157,7 +160,9 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
       features: 'Multi-location, Analytics, Alerts',
       output: 'Dashboard, Reports, KPIs',
       onOpen: onOpenToastHub,
-      settingsPath: '/admin/settings/toast-hub'
+      settingsPath: '/admin/settings/toast-hub',
+      hasFullSettings: true,
+      SettingsComponent: <ToastHubManager />
     },
     {
       id: 'client-portal',
@@ -265,29 +270,46 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
         {/* Settings Panel (expandable) */}
         {settingsOpen === tool.id && (
           <div className="mt-4 pt-4 border-t border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              {tool.name} Settings
-            </h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                <span className="text-gray-400">Demo Mode</span>
-                <span className="text-gray-300">Enabled</span>
-              </div>
-              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                <span className="text-gray-400">API Integration</span>
-                <span className="text-green-400">Connected</span>
-              </div>
-              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                <span className="text-gray-400">Last Updated</span>
-                <span className="text-gray-300">--</span>
-              </div>
-              <a
-                href={`/#${tool.settingsPath}`}
-                className="block w-full text-center py-2 px-3 text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded transition-colors"
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                {tool.name} Settings
+              </h4>
+              <button
+                onClick={() => setSettingsOpen(null)}
+                className="text-gray-500 hover:text-gray-300 text-sm"
               >
-                Open Full Settings →
-              </a>
+                <ChevronUp className="w-4 h-4" />
+              </button>
             </div>
+
+            {/* Full Settings Component (if available) */}
+            {tool.hasFullSettings && tool.SettingsComponent ? (
+              <div className="bg-gray-800/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                {tool.SettingsComponent}
+              </div>
+            ) : (
+              /* Basic Settings */
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                  <span className="text-gray-400">Demo Mode</span>
+                  <span className="text-gray-300">Enabled</span>
+                </div>
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                  <span className="text-gray-400">API Integration</span>
+                  <span className="text-green-400">Connected</span>
+                </div>
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                  <span className="text-gray-400">Last Updated</span>
+                  <span className="text-gray-300">--</span>
+                </div>
+                <a
+                  href={`/#${tool.settingsPath}`}
+                  className="block w-full text-center py-2 px-3 text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded transition-colors"
+                >
+                  Open Full Settings →
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>
