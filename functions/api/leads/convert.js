@@ -11,7 +11,7 @@
  * Returns: Lead data and conversion preview
  */
 
-import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 
 /**
  * Generate a unique client ID

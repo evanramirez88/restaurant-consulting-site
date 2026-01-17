@@ -1,7 +1,7 @@
 // Rep Client Menu API - Get and save menu data for a client
 // Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
-import { getCorsOrigin } from '../../../../_shared/auth.js';
+import { getCorsOrigin } from '../../../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
 

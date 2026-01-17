@@ -1,7 +1,7 @@
 // Admin API - Send notification for referral credit status change
 // POST /api/admin/credits/notify
 // Requires admin authentication
-import { verifyAuth, getCorsOrigin } from '../../_shared/auth.js';
+import { verifyAuth, getCorsOrigin } from '../../../_shared/auth.js';
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json'
