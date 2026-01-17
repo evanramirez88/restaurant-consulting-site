@@ -1,14 +1,23 @@
-// Rep Referrals API - Get and create referrals for a rep
+// Rep Referrals API - View referral credits and earnings
 // Supports demo mode for slugs starting with "demo-"
 import jwt from '@tsndr/cloudflare-worker-jwt';
 import { getCorsOrigin } from '../../../_shared/auth.js';
 
 const REP_COOKIE_NAME = 'ccrc_rep_token';
 
+const CREDIT_TYPES = [
+  'referral_bonus',
+  'project_commission',
+  'support_plan_bonus',
+  'upsell_commission',
+  'lead_conversion',
+  'recurring_bonus'
+];
+
 function getCorsHeaders(request) {
   return {
     'Access-Control-Allow-Origin': getCorsOrigin(request),
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json'
@@ -18,33 +27,80 @@ function getCorsHeaders(request) {
 // Demo referrals data
 const DEMO_REFERRALS = [
   {
-    id: 'demo-referral-001',
+    id: 'demo-credit-001',
     rep_id: 'demo-rep-001',
-    referral_name: 'Jane Doe',
-    referral_company: 'Seaside Grill',
-    referral_email: 'jane@seasidegrill.com',
-    referral_phone: '508-555-9999',
-    notes: 'Interested in Toast POS system',
+    client_id: 'demo-client-001',
+    credit_type: 'referral_bonus',
+    amount: 500,
+    description: 'New client referral - Demo Seafood Shack',
     status: 'pending',
-    commission_amount: 500,
+    approved_by: null,
+    approved_at: null,
+    paid_at: null,
     created_at: Date.now() - 5 * 24 * 60 * 60 * 1000,
-    updated_at: Date.now() - 5 * 24 * 60 * 60 * 1000
+    client_name: 'Demo User',
+    client_company: 'Demo Seafood Shack'
   },
   {
-    id: 'demo-referral-002',
+    id: 'demo-credit-002',
     rep_id: 'demo-rep-001',
-    referral_name: 'Bob Johnson',
-    referral_company: 'Harbor Cafe',
-    referral_email: 'bob@harborcafe.com',
-    referral_phone: '508-555-8888',
-    notes: 'Converting from Square',
+    client_id: 'demo-client-002',
+    credit_type: 'support_plan_bonus',
+    amount: 250,
+    description: 'Professional plan signup bonus',
+    status: 'approved',
+    approved_by: 'admin',
+    approved_at: Date.now() - 10 * 24 * 60 * 60 * 1000,
+    paid_at: null,
+    created_at: Date.now() - 15 * 24 * 60 * 60 * 1000,
+    client_name: 'John Smith',
+    client_company: 'Cape Cod Bistro'
+  },
+  {
+    id: 'demo-credit-003',
+    rep_id: 'demo-rep-001',
+    client_id: null,
+    credit_type: 'project_commission',
+    amount: 800,
+    description: 'Menu build commission - Chatham Grill',
     status: 'paid',
-    commission_amount: 750,
-    paid_at: Date.now() - 10 * 24 * 60 * 60 * 1000,
-    created_at: Date.now() - 30 * 24 * 60 * 60 * 1000,
-    updated_at: Date.now() - 10 * 24 * 60 * 60 * 1000
+    approved_by: 'admin',
+    approved_at: Date.now() - 45 * 24 * 60 * 60 * 1000,
+    paid_at: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    created_at: Date.now() - 60 * 24 * 60 * 60 * 1000,
+    client_name: null,
+    client_company: 'Chatham Grill'
+  },
+  {
+    id: 'demo-credit-004',
+    rep_id: 'demo-rep-001',
+    client_id: null,
+    credit_type: 'referral_bonus',
+    amount: 400,
+    description: 'Q4 2025 referral - Old Harbor Inn',
+    status: 'paid',
+    approved_by: 'admin',
+    approved_at: Date.now() - 90 * 24 * 60 * 60 * 1000,
+    paid_at: Date.now() - 75 * 24 * 60 * 60 * 1000,
+    created_at: Date.now() - 100 * 24 * 60 * 60 * 1000,
+    client_name: null,
+    client_company: 'Old Harbor Inn'
   }
 ];
+
+const DEMO_SUMMARY = {
+  pending: 500,
+  approved: 250,
+  paid: 1200,
+  total: 1950,
+  pendingCount: 1,
+  approvedCount: 1,
+  paidCount: 2,
+  thisYear: {
+    paid: 1200,
+    projected: 1950
+  }
+};
 
 function parseCookies(cookieHeader) {
   const cookies = {};
@@ -89,24 +145,36 @@ async function verifyRepAuth(request, env, slug) {
   }
 }
 
+// GET /api/rep/[slug]/referrals - List referral credits
 export async function onRequestGet(context) {
   const corsHeaders = getCorsHeaders(context.request);
 
   try {
     const db = context.env.DB;
     const { slug } = context.params;
-
-    // Check for demo mode - slug starts with "demo-"
     const url = new URL(context.request.url);
+
+    // Check for demo mode
     const isDemoMode = slug.startsWith('demo-') || url.searchParams.get('demo') === 'true';
 
     if (isDemoMode) {
+      const status = url.searchParams.get('status');
+      const type = url.searchParams.get('type');
+      let filtered = DEMO_REFERRALS;
+
+      if (status) {
+        filtered = filtered.filter(r => r.status === status);
+      }
+      if (type) {
+        filtered = filtered.filter(r => r.credit_type === type);
+      }
+
       return new Response(JSON.stringify({
         success: true,
-        data: DEMO_REFERRALS
-      }), {
-        headers: corsHeaders
-      });
+        data: filtered,
+        summary: DEMO_SUMMARY,
+        creditTypes: CREDIT_TYPES
+      }), { headers: corsHeaders });
     }
 
     // Verify authentication
@@ -115,152 +183,88 @@ export async function onRequestGet(context) {
       return new Response(JSON.stringify({
         success: false,
         error: auth.error
-      }), {
-        status: 401,
-        headers: corsHeaders
-      });
+      }), { status: 401, headers: corsHeaders });
     }
 
     // Get rep ID from slug
-    const rep = await db.prepare('SELECT id FROM reps WHERE slug = ?').bind(slug).first();
+    const rep = await db.prepare('SELECT id, name FROM reps WHERE slug = ?').bind(slug).first();
     if (!rep) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Rep not found'
-      }), {
-        status: 404,
-        headers: corsHeaders
-      });
+      }), { status: 404, headers: corsHeaders });
     }
 
-    // Get referrals - check if table exists first
-    try {
-      const { results } = await db.prepare(`
-        SELECT *
-        FROM rep_referrals
-        WHERE rep_id = ?
-        ORDER BY created_at DESC
-      `).bind(rep.id).all();
+    // Build query with filters
+    const status = url.searchParams.get('status');
+    const type = url.searchParams.get('type');
 
-      return new Response(JSON.stringify({
-        success: true,
-        data: results || []
-      }), {
-        headers: corsHeaders
-      });
-    } catch (tableError) {
-      // Table might not exist yet, return empty array
-      console.log('rep_referrals table may not exist:', tableError.message);
-      return new Response(JSON.stringify({
-        success: true,
-        data: []
-      }), {
-        headers: corsHeaders
-      });
+    let query = `
+      SELECT
+        rrc.*,
+        c.name as client_name,
+        c.company as client_company
+      FROM rep_referral_credits rrc
+      LEFT JOIN clients c ON rrc.client_id = c.id
+      WHERE rrc.rep_id = ?
+    `;
+    const params = [rep.id];
+
+    if (status) {
+      query += ' AND rrc.status = ?';
+      params.push(status);
     }
-  } catch (error) {
-    console.error('Rep referrals error:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message
-    }), {
-      status: 500,
-      headers: corsHeaders
-    });
-  }
-}
-
-export async function onRequestPost(context) {
-  const corsHeaders = getCorsHeaders(context.request);
-
-  try {
-    const db = context.env.DB;
-    const { slug } = context.params;
-
-    // Verify authentication
-    const auth = await verifyRepAuth(context.request, context.env, slug);
-    if (!auth.authenticated) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: auth.error
-      }), {
-        status: 401,
-        headers: corsHeaders
-      });
+    if (type) {
+      query += ' AND rrc.credit_type = ?';
+      params.push(type);
     }
 
-    // Get rep ID from slug
-    const rep = await db.prepare('SELECT id FROM reps WHERE slug = ?').bind(slug).first();
-    if (!rep) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Rep not found'
-      }), {
-        status: 404,
-        headers: corsHeaders
-      });
-    }
+    query += ' ORDER BY rrc.created_at DESC';
 
-    const body = await context.request.json();
-    const id = crypto.randomUUID();
-    const now = Math.floor(Date.now() / 1000);
+    const { results } = await db.prepare(query).bind(...params).all();
 
-    // Ensure referrals table exists
-    await db.prepare(`
-      CREATE TABLE IF NOT EXISTS rep_referrals (
-        id TEXT PRIMARY KEY,
-        rep_id TEXT NOT NULL REFERENCES reps(id) ON DELETE CASCADE,
-        referral_name TEXT NOT NULL,
-        referral_company TEXT NOT NULL,
-        referral_email TEXT NOT NULL,
-        referral_phone TEXT,
-        notes TEXT,
-        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'converted', 'paid', 'rejected')),
-        commission_amount REAL DEFAULT 0,
-        client_id TEXT REFERENCES clients(id) ON DELETE SET NULL,
-        approved_at INTEGER,
-        converted_at INTEGER,
-        paid_at INTEGER,
-        created_at INTEGER DEFAULT (unixepoch()),
-        updated_at INTEGER DEFAULT (unixepoch())
-      )
-    `).run();
+    // Get summary
+    const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
 
-    // Create referral
-    await db.prepare(`
-      INSERT INTO rep_referrals (
-        id, rep_id, referral_name, referral_company, referral_email, referral_phone,
-        notes, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    `).bind(
-      id,
-      rep.id,
-      body.referral_name,
-      body.referral_company,
-      body.referral_email,
-      body.referral_phone || null,
-      body.notes || null,
-      now,
-      now
-    ).run();
+    const summaryResult = await db.prepare(`
+      SELECT
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending,
+        COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0) as approved,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as paid,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_count,
+        COALESCE(SUM(CASE WHEN status = 'paid' AND paid_at >= ? THEN amount ELSE 0 END), 0) as paid_this_year
+      FROM rep_referral_credits
+      WHERE rep_id = ?
+    `).bind(yearStart, rep.id).first();
 
-    const referral = await db.prepare('SELECT * FROM rep_referrals WHERE id = ?').bind(id).first();
+    const summary = {
+      pending: summaryResult?.pending || 0,
+      approved: summaryResult?.approved || 0,
+      paid: summaryResult?.paid || 0,
+      total: (summaryResult?.pending || 0) + (summaryResult?.approved || 0) + (summaryResult?.paid || 0),
+      pendingCount: summaryResult?.pending_count || 0,
+      approvedCount: summaryResult?.approved_count || 0,
+      paidCount: summaryResult?.paid_count || 0,
+      thisYear: {
+        paid: summaryResult?.paid_this_year || 0,
+        projected: (summaryResult?.pending || 0) + (summaryResult?.approved || 0) + (summaryResult?.paid_this_year || 0)
+      }
+    };
 
     return new Response(JSON.stringify({
       success: true,
-      data: referral
-    }), {
-      headers: corsHeaders
-    });
+      data: results || [],
+      summary,
+      creditTypes: CREDIT_TYPES
+    }), { headers: corsHeaders });
   } catch (error) {
-    console.error('Create referral error:', error);
+    console.error('Rep referrals GET error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
-    }), {
-      status: 500,
-      headers: corsHeaders
-    });
+    }), { status: 500, headers: corsHeaders });
   }
 }
 
@@ -269,7 +273,7 @@ export async function onRequestOptions(context) {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': getCorsOrigin(context.request),
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400'
