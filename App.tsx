@@ -178,6 +178,11 @@ const App: React.FC = () => {
               <RepMenuBuilder />
             </RepProtectedRoute>
           } />
+          <Route path="/rep/:slug/leads" element={
+            <RepProtectedRoute>
+              <RepLeads />
+            </RepProtectedRoute>
+          } />
           <Route path="/rep/:slug/quotes" element={
             <RepProtectedRoute>
               <RepQuotes />

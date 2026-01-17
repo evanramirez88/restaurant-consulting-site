@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Loader2,
   Search,
@@ -20,7 +20,9 @@ import {
   ChevronUp,
   AlertTriangle,
   X,
-  Send
+  Send,
+  Target,
+  ArrowRight
 } from 'lucide-react';
 import { useSEO } from '../../src/components/SEO';
 
@@ -60,6 +62,7 @@ interface Client {
 // ============================================
 const RepIntelSubmission: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
   const [submissions, setSubmissions] = useState<IntelSubmission[]>([]);
@@ -76,6 +79,9 @@ const RepIntelSubmission: React.FC = () => {
   const [showNewSubmissionModal, setShowNewSubmissionModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+
+  // Convert to lead state
+  const [isConverting, setIsConverting] = useState<string | null>(null);
 
   // New submission form
   const [newSubmission, setNewSubmission] = useState({
@@ -197,6 +203,58 @@ const RepIntelSubmission: React.FC = () => {
       client_id: '',
       opportunity_type: ''
     });
+  };
+
+  // Convert intel submission to lead
+  const handleConvertToLead = async (submission: IntelSubmission) => {
+    if (!slug || isConverting) return;
+
+    setIsConverting(submission.id);
+    try {
+      const response = await fetch(`/api/rep/${slug}/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intelId: submission.id,
+          restaurantName: submission.restaurant_name || submission.subject,
+          contactName: submission.contact_name,
+          email: submission.contact_email,
+          phone: submission.contact_phone,
+          city: submission.city,
+          state: submission.state,
+          currentPos: submission.current_pos,
+          estimatedValue: submission.estimated_value,
+          notes: submission.body
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the local submission status
+        setSubmissions(prev => prev.map(s =>
+          s.id === submission.id ? { ...s, status: 'converted' as const } : s
+        ));
+        // Navigate to the leads page
+        navigate(`/rep/${slug}/leads`);
+      } else {
+        alert(data.error || 'Failed to convert to lead');
+      }
+    } catch (err) {
+      console.error('Convert error:', err);
+      alert('Failed to convert to lead');
+    } finally {
+      setIsConverting(null);
+    }
+  };
+
+  // Check if submission can be converted to lead
+  const canConvertToLead = (submission: IntelSubmission) => {
+    return (
+      submission.submission_type === 'lead' &&
+      (submission.status === 'pending' || submission.status === 'reviewed') &&
+      submission.restaurant_name
+    );
   };
 
   // Utility functions
@@ -477,6 +535,51 @@ const RepIntelSubmission: React.FC = () => {
                           </div>
                         ) : (
                           <p className="text-gray-500 text-sm italic">Awaiting admin review</p>
+                        )}
+
+                        {/* Convert to Lead Button */}
+                        {canConvertToLead(submission) && (
+                          <div className="mt-4 pt-4 border-t border-gray-700">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConvertToLead(submission);
+                              }}
+                              disabled={isConverting === submission.id}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                              {isConverting === submission.id ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Converting...
+                                </>
+                              ) : (
+                                <>
+                                  <Target className="w-4 h-4" />
+                                  Convert to Lead
+                                  <ArrowRight className="w-4 h-4" />
+                                </>
+                              )}
+                            </button>
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                              This will add "{submission.restaurant_name}" to your lead pipeline
+                            </p>
+                          </div>
+                        )}
+
+                        {submission.status === 'converted' && (
+                          <div className="mt-4 pt-4 border-t border-gray-700">
+                            <div className="flex items-center gap-2 text-green-400 text-sm">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Already converted to lead</span>
+                            </div>
+                            <button
+                              onClick={() => navigate(`/rep/${slug}/leads`)}
+                              className="mt-2 text-sm text-green-400 hover:text-green-300 underline"
+                            >
+                              View in Lead Pipeline
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
