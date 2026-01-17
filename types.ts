@@ -175,6 +175,10 @@ export interface Location {
   subscriptionPct: number;
   integrationIds: string[];
   floors: Floor[];
+  // Go-Live Support options
+  goLiveSupportEnabled?: boolean;
+  goLiveSupportDays?: number;
+  goLiveSupportDate?: string; // ISO date string
 }
 
 export interface TravelRates {

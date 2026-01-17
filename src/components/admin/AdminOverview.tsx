@@ -190,7 +190,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
           {showAvailabilityEditor ? (
             <div className="bg-gray-800/50 rounded-lg p-4 -mx-2">
-              <AvailabilityManager compact onUpdate={onAvailabilityChange} />
+              <AvailabilityManager />
             </div>
           ) : (
             <div className="space-y-4">

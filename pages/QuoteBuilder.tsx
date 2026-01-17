@@ -84,7 +84,8 @@ import {
   STATION_OVERHEAD_MIN,
   SUPPORT_TIERS,
   LS_KEY,
-  TRAVEL_ZONE_LABELS
+  TRAVEL_ZONE_LABELS,
+  GO_LIVE_SUPPORT_OPTIONS
 } from '../constants';
 
 // ============================================
@@ -1423,7 +1424,10 @@ const QuoteBuilder: React.FC = () => {
             travel: currentLocation.travel,
             integrationIds: currentLocation.integrationIds,
             supportTier,
-            supportPeriod
+            supportPeriod,
+            goLiveSupportEnabled: currentLocation.goLiveSupportEnabled,
+            goLiveSupportDays: currentLocation.goLiveSupportDays,
+            goLiveSupportDate: currentLocation.goLiveSupportDate
           })
         });
 
@@ -1455,6 +1459,8 @@ const QuoteBuilder: React.FC = () => {
       travelCost: 0,
       supportMonthly: 0,
       supportAnnual: 0,
+      goLiveSupportCost: 0,
+      goLiveSupportDays: 0,
       combinedFirst: 0
     };
 
@@ -1477,6 +1483,8 @@ const QuoteBuilder: React.FC = () => {
       travelCost: serverQuote.summary.travelCost,
       supportMonthly: serverQuote.summary.supportMonthly,
       supportAnnual: serverQuote.summary.supportAnnual,
+      goLiveSupportCost: serverQuote.summary.goLiveSupportCost || 0,
+      goLiveSupportDays: serverQuote.summary.goLiveSupportDays || 0,
       combinedFirst: serverQuote.summary.totalFirst
     };
   }, [serverQuote]);
@@ -2983,6 +2991,78 @@ const QuoteBuilder: React.FC = () => {
                   )}
                 </div>
 
+                {/* Go-Live Support */}
+                <div className="pt-3 border-t border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!currentLocation?.goLiveSupportEnabled}
+                        onChange={e => updateCurrentLocation(loc => {
+                          loc.goLiveSupportEnabled = e.target.checked;
+                          if (!e.target.checked) {
+                            loc.goLiveSupportDays = undefined;
+                            loc.goLiveSupportDate = undefined;
+                          } else if (!loc.goLiveSupportDays) {
+                            loc.goLiveSupportDays = 1; // Default to 1 day
+                          }
+                          return loc;
+                        })}
+                        className="accent-emerald-500"
+                      />
+                      Go-Live Support
+                    </label>
+                    <span className="text-[10px] text-gray-500">On-site opening support</span>
+                  </div>
+
+                  {currentLocation?.goLiveSupportEnabled && (
+                    <div className="space-y-2 pl-4">
+                      {/* Duration selection */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {GO_LIVE_SUPPORT_OPTIONS.map(opt => (
+                          <button
+                            key={opt.days}
+                            className={`px-2 py-1 text-xs rounded-lg border transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none ${
+                              currentLocation.goLiveSupportDays === opt.days
+                                ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300'
+                                : 'border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                            }`}
+                            onClick={() => updateCurrentLocation(loc => {
+                              loc.goLiveSupportDays = opt.days;
+                              return loc;
+                            })}
+                            title={opt.description}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Date picker */}
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Go-Live Date</label>
+                        <input
+                          type="date"
+                          value={currentLocation.goLiveSupportDate || ''}
+                          onChange={e => updateCurrentLocation(loc => {
+                            loc.goLiveSupportDate = e.target.value || undefined;
+                            return loc;
+                          })}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+
+                      {/* Description of selected option */}
+                      {currentLocation.goLiveSupportDays && (
+                        <div className="text-[10px] text-gray-500 italic">
+                          {GO_LIVE_SUPPORT_OPTIONS.find(o => o.days === currentLocation.goLiveSupportDays)?.description}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Support Tiers */}
                 <div className="pt-3 border-t border-gray-700">
                   <div className="text-xs text-gray-400 mb-2">Support Plan</div>
@@ -3049,6 +3129,12 @@ const QuoteBuilder: React.FC = () => {
                     label={`Support (${supportPeriod === 'monthly' ? 'Mo' : 'Yr'})`}
                     dollars={supportPeriod === 'monthly' ? estimate.supportMonthly : estimate.supportAnnual}
                   />
+                  {estimate.goLiveSupportCost > 0 && (
+                    <SummaryRow
+                      label={`Go-Live Support (${estimate.goLiveSupportDays} day${estimate.goLiveSupportDays !== 1 ? 's' : ''})`}
+                      dollars={estimate.goLiveSupportCost}
+                    />
+                  )}
                   <div className="h-px bg-gray-700 my-2" />
                   <SummaryRow label="Install + Travel" dollars={estimate.installCost + estimate.travelCost} strong />
                   <SummaryRow

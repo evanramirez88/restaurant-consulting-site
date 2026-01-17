@@ -390,6 +390,16 @@ const STATION_OVERHEAD_MIN = 15;
 // Support plan discount for annual
 const ANNUAL_DISCOUNT = 0.95;
 
+// Go-Live Support Pricing (on-site support during restaurant opening)
+// Pricing includes 8-hour days of on-site technical support
+const GO_LIVE_SUPPORT_RATES = {
+  1: 1200,   // 1 day - Opening day support
+  2: 2000,   // 2 days - Opening weekend
+  3: 2800,   // 3 days - Extended opening support
+  5: 4200,   // 5 days - Full work week
+  7: 5500    // 7 days - Complete opening week
+};
+
 // ============================================
 // DCI ALGORITHM - PROPRIETARY PRICING INTELLIGENCE
 // ============================================
@@ -929,9 +939,20 @@ function calculateQuote(config) {
   const supportAnnual = supportMonthly * 12 * ANNUAL_DISCOUNT;
   const supportNow = supportPeriod === 'annual' ? supportAnnual : supportMonthly;
 
+  // Go-Live Support calculation
+  const goLiveSupportEnabled = config.goLiveSupportEnabled || false;
+  const goLiveSupportDays = config.goLiveSupportDays || 0;
+  const goLiveSupportDate = config.goLiveSupportDate || null;
+  let goLiveSupportCost = 0;
+  if (goLiveSupportEnabled && goLiveSupportDays > 0) {
+    // Use predefined rate or calculate based on daily rate for custom durations
+    goLiveSupportCost = GO_LIVE_SUPPORT_RATES[goLiveSupportDays] ||
+      (goLiveSupportDays * 800); // $800/day fallback for unlisted durations
+  }
+
   // Final totals
   const installAfterDiscount = discountResult.finalTotal;
-  const combinedFirst = installAfterDiscount + supportNow;
+  const combinedFirst = installAfterDiscount + supportNow + goLiveSupportCost;
 
   // Calculate time range from Variability Database
   const totalExpected = timeVariance.hardware.expected +
@@ -982,6 +1003,9 @@ function calculateQuote(config) {
       installAfterDiscount,
       supportMonthly,
       supportAnnual,
+      goLiveSupportCost,
+      goLiveSupportDays: goLiveSupportEnabled ? goLiveSupportDays : 0,
+      goLiveSupportDate,
       totalFirst: combinedFirst
     },
     // DCI Intelligence breakdown (for transparency)

@@ -361,3 +361,21 @@ export const TRAVEL_ZONE_LABELS: Record<string, string> = {
   island: "Islands (MV/Nantucket)",
   outOfRegion: "Outside New England"
 };
+
+// Go-Live Support Options
+// SECURITY: Actual pricing is calculated server-side via /api/quote/calculate
+// These are placeholder values for UI display - real pricing is protected server-side
+export interface GoLiveSupportOption {
+  days: number;
+  label: string;
+  description: string;
+  price: number; // Placeholder for UI - actual pricing server-side
+}
+
+export const GO_LIVE_SUPPORT_OPTIONS: GoLiveSupportOption[] = [
+  { days: 1, label: "1 Day", description: "Opening day support (8 hours)", price: 0 },
+  { days: 2, label: "2 Days", description: "Opening weekend coverage", price: 0 },
+  { days: 3, label: "3 Days", description: "Extended opening support", price: 0 },
+  { days: 5, label: "5 Days", description: "Full work week coverage", price: 0 },
+  { days: 7, label: "7 Days", description: "Complete opening week support", price: 0 }
+];

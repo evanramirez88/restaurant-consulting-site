@@ -13,7 +13,6 @@ import ClientForm from '../src/components/admin/clients/ClientForm';
 import RepList from '../src/components/admin/reps/RepList';
 import RepForm from '../src/components/admin/reps/RepForm';
 import ToolsDemo from '../src/components/admin/tools/ToolsDemo';
-import ToastHubManager from '../src/components/admin/toasthub/ToastHubManager';
 import AvailabilityManager from '../src/components/admin/availability/AvailabilityManager';
 import ConfigManager from '../src/components/admin/config/ConfigManager';
 import PortalManagement from '../src/components/admin/portals/PortalManagement';
