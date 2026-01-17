@@ -160,11 +160,15 @@ export interface Floor {
   scalePxPerFt: number;
 }
 
+export type ServiceMode = 'onsite' | 'hybrid' | 'remote';
+
 export interface TravelSettings {
   zone: 'cape' | 'southShore' | 'southernNE' | 'ne100+' | 'island' | 'outOfRegion';
+  serviceMode: ServiceMode;
   islandVehicle: boolean;
   lodging: boolean;
-  remote: boolean;
+  remote: boolean; // Legacy - kept for backwards compatibility, use serviceMode instead
+  travelDiscussionRequired?: boolean; // True when on-site selected for distant location
 }
 
 export interface Location {

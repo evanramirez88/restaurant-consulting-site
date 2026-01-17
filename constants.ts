@@ -362,6 +362,31 @@ export const TRAVEL_ZONE_LABELS: Record<string, string> = {
   outOfRegion: "Outside New England"
 };
 
+// Service mode labels and configuration
+export const SERVICE_MODE_LABELS: Record<string, { label: string; description: string; icon: string }> = {
+  onsite: { label: "On-Site", description: "Full on-site installation and support", icon: "Building2" },
+  hybrid: { label: "Hybrid", description: "Remote configuration + on-site installation", icon: "Globe" },
+  remote: { label: "Remote Only", description: "Fully remote setup and support", icon: "Wifi" }
+};
+
+// Recommended service mode by travel zone
+// Cape Cod = on-site (local), distant zones = remote recommended
+export const ZONE_RECOMMENDED_MODE: Record<string, 'onsite' | 'hybrid' | 'remote'> = {
+  cape: "onsite",
+  southShore: "hybrid",
+  southernNE: "hybrid",
+  "ne100+": "remote",
+  island: "hybrid", // Islands can be on-site but need discussion
+  outOfRegion: "remote"
+};
+
+// Zones that require travel discussion if on-site is selected
+export const ZONES_REQUIRING_TRAVEL_DISCUSSION: string[] = [
+  "ne100+",
+  "island",
+  "outOfRegion"
+];
+
 // Go-Live Support Options
 // SECURITY: Actual pricing is calculated server-side via /api/quote/calculate
 // These are placeholder values for UI display - real pricing is protected server-side

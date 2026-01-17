@@ -36,7 +36,10 @@ import {
   Upload,
   FileText,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Wifi,
+  Globe,
+  AlertTriangle
 } from 'lucide-react';
 
 // ============================================
@@ -62,6 +65,7 @@ import {
   HardwareAssociation,
   CableRun,
   TravelSettings,
+  ServiceMode,
   ExtractedHardware,
   ImportStatus,
   StationGroup,
@@ -85,7 +89,10 @@ import {
   SUPPORT_TIERS,
   LS_KEY,
   TRAVEL_ZONE_LABELS,
-  GO_LIVE_SUPPORT_OPTIONS
+  GO_LIVE_SUPPORT_OPTIONS,
+  SERVICE_MODE_LABELS,
+  ZONE_RECOMMENDED_MODE,
+  ZONES_REQUIRING_TRAVEL_DISCUSSION
 } from '../constants';
 
 // ============================================
@@ -166,7 +173,14 @@ const createDefaultLocation = (): Location => {
     id: uid(),
     name: "My Restaurant",
     address: "",
-    travel: { zone: "cape", islandVehicle: false, lodging: false, remote: false },
+    travel: {
+      zone: "cape",
+      serviceMode: "onsite", // Default to on-site for Cape Cod
+      islandVehicle: false,
+      lodging: false,
+      remote: false,
+      travelDiscussionRequired: false
+    },
     subscriptionPct: 0,
     integrationIds: [],
     floors: [floor]
@@ -183,16 +197,32 @@ function classifyAddress(addr: string): Partial<TravelSettings> {
   const isMV = a.includes("martha") || a.includes("oak bluffs") || a.includes("edgartown") || a.includes("vineyard");
   const isCape = a.includes("cape cod") || ["barnstable", "falmouth", "provincetown", "hyannis", "sandwich", "dennis", "yarmouth", "brewster", "chatham", "wellfleet", "eastham", "harwich"].some(t => a.includes(t));
 
-  if (isNantucket || isMV) return { zone: "island" };
-  if (isCape) return { zone: "cape" };
+  let zone: TravelSettings['zone'] = "outOfRegion";
 
-  const south = ["plymouth", "kingston", "duxbury", "marshfield", "scituate", "hingham", "quincy", "weymouth", "braintree", "norwell", "hanover", "cohasset"];
-  if (south.some(t => a.includes(t))) return { zone: "southShore" };
+  if (isNantucket || isMV) {
+    zone = "island";
+  } else if (isCape) {
+    zone = "cape";
+  } else {
+    const south = ["plymouth", "kingston", "duxbury", "marshfield", "scituate", "hingham", "quincy", "weymouth", "braintree", "norwell", "hanover", "cohasset"];
+    if (south.some(t => a.includes(t))) {
+      zone = "southShore";
+    } else {
+      const ne = ["connecticut", "rhode", "new hampshire", "vermont", "maine", "massachusetts"];
+      if (ne.some(t => a.includes(t))) {
+        zone = "southernNE";
+      }
+    }
+  }
 
-  const ne = ["connecticut", "rhode", "new hampshire", "vermont", "maine", "massachusetts"];
-  if (ne.some(t => a.includes(t))) return { zone: "southernNE" };
+  // Get recommended service mode for this zone
+  const serviceMode = ZONE_RECOMMENDED_MODE[zone] || 'remote';
 
-  return { zone: "outOfRegion" };
+  return {
+    zone,
+    serviceMode,
+    travelDiscussionRequired: false // Will be set if user overrides to on-site for distant zones
+  };
 }
 
 // ============================================
@@ -1100,9 +1130,32 @@ const QuoteBuilder: React.FC = () => {
   const setAddress = (addr: string) => {
     updateCurrentLocation(loc => {
       loc.address = addr;
-      if (!loc.travel.remote) {
-        loc.travel = { ...loc.travel, ...classifyAddress(addr) };
+      // Only auto-classify if not locked to remote mode
+      if (loc.travel.serviceMode !== 'remote') {
+        const classification = classifyAddress(addr);
+        loc.travel = {
+          ...loc.travel,
+          ...classification,
+          // Sync legacy remote flag with serviceMode
+          remote: classification.serviceMode === 'remote'
+        };
       }
+      return loc;
+    });
+  };
+
+  // Service Mode setter with travel discussion logic
+  const setServiceMode = (mode: ServiceMode) => {
+    updateCurrentLocation(loc => {
+      const zone = loc.travel?.zone || 'cape';
+      const requiresDiscussion = mode !== 'remote' && ZONES_REQUIRING_TRAVEL_DISCUSSION.includes(zone);
+
+      loc.travel = {
+        ...loc.travel,
+        serviceMode: mode,
+        remote: mode === 'remote',
+        travelDiscussionRequired: requiresDiscussion
+      };
       return loc;
     });
   };
@@ -1371,7 +1424,13 @@ const QuoteBuilder: React.FC = () => {
   // ============================================
 
   const computeTravelCost = useCallback((loc: Location) => {
-    if (loc.travel?.remote) return 0;
+    // Remote mode = no travel cost
+    const isRemote = loc.travel?.serviceMode === 'remote' || loc.travel?.remote;
+    if (isRemote) return 0;
+
+    // Travel discussion required = travel TBD (return 0, will be quoted separately)
+    if (loc.travel?.travelDiscussionRequired) return 0;
+
     const z = loc.travel?.zone || 'cape';
     if (z === 'cape') return travel.capeCod;
     if (z === 'southShore') return travel.southShore;
@@ -2936,10 +2995,22 @@ const QuoteBuilder: React.FC = () => {
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white"
                     value={currentLocation?.travel?.zone || 'cape'}
                     onChange={e => updateCurrentLocation(loc => {
-                      loc.travel = { ...loc.travel, zone: e.target.value as TravelSettings['zone'] };
+                      const newZone = e.target.value as TravelSettings['zone'];
+                      const recommendedMode = ZONE_RECOMMENDED_MODE[newZone] || 'remote';
+                      const currentMode = loc.travel?.serviceMode || 'onsite';
+                      // Check if we need travel discussion (on-site for distant zone)
+                      const requiresDiscussion = currentMode !== 'remote' && ZONES_REQUIRING_TRAVEL_DISCUSSION.includes(newZone);
+
+                      loc.travel = {
+                        ...loc.travel,
+                        zone: newZone,
+                        serviceMode: recommendedMode, // Auto-switch to recommended mode
+                        remote: recommendedMode === 'remote',
+                        travelDiscussionRequired: requiresDiscussion
+                      };
                       return loc;
                     })}
-                    disabled={currentLocation?.travel?.remote}
+                    disabled={currentLocation?.travel?.serviceMode === 'remote'}
                   >
                     {Object.entries(TRAVEL_ZONE_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
@@ -2947,49 +3018,80 @@ const QuoteBuilder: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Travel Options */}
-                <div className="flex flex-wrap gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={!!currentLocation?.travel?.remote}
-                      onChange={e => updateCurrentLocation(loc => {
-                        loc.travel = { ...loc.travel, remote: e.target.checked };
-                        return loc;
-                      })}
-                      className="accent-emerald-500"
-                    />
-                    Remote Only
-                  </label>
-                  {currentLocation?.travel?.zone === 'island' && !currentLocation?.travel?.remote && (
-                    <>
-                      <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={!!currentLocation?.travel?.islandVehicle}
-                          onChange={e => updateCurrentLocation(loc => {
-                            loc.travel = { ...loc.travel, islandVehicle: e.target.checked };
-                            return loc;
-                          })}
-                          className="accent-emerald-500"
-                        />
-                        Vehicle Ferry
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={!!currentLocation?.travel?.lodging}
-                          onChange={e => updateCurrentLocation(loc => {
-                            loc.travel = { ...loc.travel, lodging: e.target.checked };
-                            return loc;
-                          })}
-                          className="accent-emerald-500"
-                        />
-                        Lodging
-                      </label>
-                    </>
-                  )}
+                {/* Service Mode Selection */}
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">Service Mode</label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['onsite', 'hybrid', 'remote'] as ServiceMode[]).map(mode => {
+                      const config = SERVICE_MODE_LABELS[mode];
+                      const isSelected = (currentLocation?.travel?.serviceMode || 'onsite') === mode;
+                      const isRecommended = ZONE_RECOMMENDED_MODE[currentLocation?.travel?.zone || 'cape'] === mode;
+                      const Icon = mode === 'onsite' ? Building2 : mode === 'hybrid' ? Globe : Wifi;
+
+                      return (
+                        <button
+                          key={mode}
+                          onClick={() => setServiceMode(mode)}
+                          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg border text-xs transition-all ${
+                            isSelected
+                              ? 'border-emerald-400 bg-emerald-900/30 text-emerald-300'
+                              : 'border-gray-600 text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'
+                          }`}
+                          title={config.description}
+                        >
+                          <Icon size={16} className={isSelected ? 'text-emerald-400' : ''} />
+                          <span className="font-medium">{config.label}</span>
+                          {isRecommended && !isSelected && (
+                            <span className="text-[9px] text-amber-400 -mt-0.5">Recommended</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Travel Discussion Required Notice */}
+                {currentLocation?.travel?.travelDiscussionRequired && (
+                  <div className="flex items-start gap-2 p-2 bg-amber-900/30 border border-amber-700/50 rounded-lg">
+                    <AlertTriangle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-amber-200">
+                      <span className="font-medium">Travel discussion required</span>
+                      <p className="text-amber-300/80 mt-0.5">
+                        On-site service for this location requires a travel consultation. Final travel costs will be quoted separately.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Island Options (show when not remote and island zone) */}
+                {currentLocation?.travel?.zone === 'island' && currentLocation?.travel?.serviceMode !== 'remote' && (
+                  <div className="flex flex-wrap gap-2">
+                    <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={!!currentLocation?.travel?.islandVehicle}
+                        onChange={e => updateCurrentLocation(loc => {
+                          loc.travel = { ...loc.travel, islandVehicle: e.target.checked };
+                          return loc;
+                        })}
+                        className="accent-emerald-500"
+                      />
+                      Vehicle Ferry
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-white bg-gray-700/50 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={!!currentLocation?.travel?.lodging}
+                        onChange={e => updateCurrentLocation(loc => {
+                          loc.travel = { ...loc.travel, lodging: e.target.checked };
+                          return loc;
+                        })}
+                        className="accent-emerald-500"
+                      />
+                      Lodging
+                    </label>
+                  </div>
+                )}
 
                 {/* Go-Live Support */}
                 <div className="pt-3 border-t border-gray-700">
