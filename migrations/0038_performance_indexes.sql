@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_subscribers_segment ON email_subscribers(segment,
 -- Restaurant Leads
 -- =============================================================================
 CREATE INDEX IF NOT EXISTS idx_leads_score_pos ON restaurant_leads(lead_score DESC, current_pos);
-CREATE INDEX IF NOT EXISTS idx_leads_segment_score ON restaurant_leads(lead_segment, lead_score DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_stage_score ON restaurant_leads(lead_stage, lead_score DESC);
 CREATE INDEX IF NOT EXISTS idx_leads_source_rep ON restaurant_leads(source_rep_id, lead_stage);
 CREATE INDEX IF NOT EXISTS idx_leads_state_city ON restaurant_leads(state, city);
 CREATE INDEX IF NOT EXISTS idx_leads_created ON restaurant_leads(created_at DESC);
@@ -48,7 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_auto_jobs_scheduled ON automation_jobs(scheduled_
 -- =============================================================================
 -- Client Assignments
 -- =============================================================================
-CREATE INDEX IF NOT EXISTS idx_client_rep_assign_rep ON client_rep_assignments(rep_id, is_primary);
+CREATE INDEX IF NOT EXISTS idx_client_rep_assign_rep ON client_rep_assignments(rep_id, role);
 CREATE INDEX IF NOT EXISTS idx_client_rep_assign_client ON client_rep_assignments(client_id, role);
 
 -- =============================================================================
@@ -78,8 +78,8 @@ CREATE INDEX IF NOT EXISTS idx_menu_jobs_created ON menu_jobs(created_at DESC);
 -- =============================================================================
 -- Stripe
 -- =============================================================================
-CREATE INDEX IF NOT EXISTS idx_stripe_subs_customer ON stripe_subscriptions(customer_id, status);
-CREATE INDEX IF NOT EXISTS idx_stripe_events_type ON stripe_events(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_stripe_subs_customer ON stripe_subscriptions(stripe_customer_id, status);
+CREATE INDEX IF NOT EXISTS idx_stripe_events_type ON stripe_subscription_events(event_type, created_at DESC);
 
 -- =============================================================================
 -- Feature Flags (small table, but for completeness)
