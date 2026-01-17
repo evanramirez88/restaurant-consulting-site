@@ -13,7 +13,8 @@ import {
   Bell,
   User,
   ChevronRight,
-  Loader2
+  Loader2,
+  Ticket
 } from 'lucide-react';
 
 // ============================================
@@ -54,14 +55,16 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Navigation items
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', path: `/portal/${slug}/dashboard`, icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'projects', label: 'Projects', path: `/portal/${slug}/projects`, icon: <FileText className="w-5 h-5" /> },
+    { id: 'tickets', label: 'Support', path: `/portal/${slug}/tickets`, icon: <Ticket className="w-5 h-5" /> },
     { id: 'files', label: 'Files', path: `/portal/${slug}/files`, icon: <FolderOpen className="w-5 h-5" /> },
     { id: 'messages', label: 'Messages', path: `/portal/${slug}/messages`, icon: <MessageSquare className="w-5 h-5" /> },
-    { id: 'billing', label: 'Billing & Support', path: `/portal/${slug}/billing`, icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'billing', label: 'Billing', path: `/portal/${slug}/billing`, icon: <CreditCard className="w-5 h-5" /> },
   ];
 
   // Check authentication and load client info
@@ -141,6 +144,27 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
 
     checkAuth();
   }, [slug, navigate]);
+
+  // Load notification count
+  useEffect(() => {
+    const loadNotificationCount = async () => {
+      if (!slug || !isAuthenticated) return;
+      try {
+        const response = await fetch(`/api/portal/${slug}/notifications?unread=true`);
+        const data = await response.json();
+        if (data.success) {
+          setUnreadNotifications(data.unreadCount || 0);
+        }
+      } catch (err) {
+        console.error('Failed to load notification count:', err);
+      }
+    };
+
+    loadNotificationCount();
+    // Refresh every 60 seconds
+    const interval = setInterval(loadNotificationCount, 60000);
+    return () => clearInterval(interval);
+  }, [slug, isAuthenticated]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -241,10 +265,17 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
             {/* Right side actions */}
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <button className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+              <Link
+                to={`/portal/${slug}/notifications`}
+                className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
-              </button>
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 bg-amber-500 rounded-full text-xs text-white font-bold flex items-center justify-center px-1">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </Link>
 
               {/* User menu (desktop) */}
               <div className="hidden md:flex items-center gap-3">

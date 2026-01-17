@@ -30,6 +30,8 @@ const PortalLanding = lazy(() => import('./pages/portal/PortalLanding'));
 const PortalLogin = lazy(() => import('./pages/portal/PortalLogin'));
 const PortalDashboard = lazy(() => import('./pages/portal/PortalDashboard'));
 const PortalProjects = lazy(() => import('./pages/portal/PortalProjects'));
+const PortalTickets = lazy(() => import('./pages/portal/PortalTickets'));
+const PortalNotifications = lazy(() => import('./pages/portal/PortalNotifications'));
 const PortalFiles = lazy(() => import('./pages/portal/PortalFiles'));
 const PortalMessages = lazy(() => import('./pages/portal/PortalMessages'));
 const PortalBilling = lazy(() => import('./pages/portal/PortalBilling'));
@@ -38,6 +40,8 @@ const PortalBilling = lazy(() => import('./pages/portal/PortalBilling'));
 const RepLogin = lazy(() => import('./pages/rep/RepLogin'));
 const RepDashboard = lazy(() => import('./pages/rep/RepDashboard'));
 const RepClients = lazy(() => import('./pages/rep/RepClients'));
+const RepTickets = lazy(() => import('./pages/rep/RepTickets'));
+const RepIntelSubmission = lazy(() => import('./pages/rep/RepIntelSubmission'));
 const RepReferrals = lazy(() => import('./pages/rep/RepReferrals'));
 const RepMessages = lazy(() => import('./pages/rep/RepMessages'));
 
@@ -115,6 +119,16 @@ const App: React.FC = () => {
               <PortalProjects />
             </PortalLayoutWrapper>
           } />
+          <Route path="/portal/:slug/tickets" element={
+            <PortalLayoutWrapper>
+              <PortalTickets />
+            </PortalLayoutWrapper>
+          } />
+          <Route path="/portal/:slug/notifications" element={
+            <PortalLayoutWrapper>
+              <PortalNotifications />
+            </PortalLayoutWrapper>
+          } />
           <Route path="/portal/:slug/files" element={
             <PortalLayoutWrapper>
               <PortalFiles />
@@ -142,6 +156,16 @@ const App: React.FC = () => {
           <Route path="/rep/:slug/clients" element={
             <RepProtectedRoute>
               <RepClients />
+            </RepProtectedRoute>
+          } />
+          <Route path="/rep/:slug/tickets" element={
+            <RepProtectedRoute>
+              <RepTickets />
+            </RepProtectedRoute>
+          } />
+          <Route path="/rep/:slug/intel" element={
+            <RepProtectedRoute>
+              <RepIntelSubmission />
             </RepProtectedRoute>
           } />
           <Route path="/rep/:slug/referrals" element={
