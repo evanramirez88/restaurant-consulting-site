@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
   Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp, Radio
 } from 'lucide-react';
 import ToastHubManager from '../toasthub/ToastHubManager';
-import { BeaconDashboard } from '../beacon';
+
+// Lazy load BeaconDashboard to prevent issues during initial render
+const BeaconDashboard = lazy(() => import('../beacon/BeaconDashboard'));
 
 interface ToolsDemoProps {
   onOpenQuoteBuilder: () => void;
@@ -212,7 +214,11 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
       },
       settingsPath: '/admin/settings/beacon',
       hasFullSettings: true,
-      SettingsComponent: <BeaconDashboard />
+      SettingsComponent: (
+        <Suspense fallback={<div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 text-amber-400 animate-spin" /></div>}>
+          <BeaconDashboard />
+        </Suspense>
+      )
     }
   ];
 
