@@ -154,22 +154,30 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
 
     // Get first step of sequence for scheduling
     const firstStep = await env.DB.prepare(`
-      SELECT id, delay_minutes 
-      FROM sequence_steps 
-      WHERE sequence_id = ? 
-      ORDER BY step_order ASC 
+      SELECT id, delay_value, delay_unit
+      FROM sequence_steps
+      WHERE sequence_id = ?
+      ORDER BY step_number ASC
       LIMIT 1
-    `).bind(sequenceId).first() as { id: string; delay_minutes: number } | null;
+    `).bind(sequenceId).first() as { id: string; delay_value: number; delay_unit: string } | null;
 
     if (!firstStep) {
-      return Response.json({ 
-        success: false, 
+      return Response.json({
+        success: false,
         error: 'Sequence has no steps configured'
       }, { status: 500 });
     }
 
-    // Calculate next execution time
-    const delayMs = (firstStep.delay_minutes || 0) * 60 * 1000;
+    // Calculate delay in milliseconds based on delay_value and delay_unit
+    const delayValue = firstStep.delay_value || 0;
+    const delayUnit = firstStep.delay_unit || 'hours';
+    let delayMs = 0;
+    switch (delayUnit) {
+      case 'minutes': delayMs = delayValue * 60 * 1000; break;
+      case 'hours': delayMs = delayValue * 60 * 60 * 1000; break;
+      case 'days': delayMs = delayValue * 24 * 60 * 60 * 1000; break;
+      default: delayMs = delayValue * 60 * 60 * 1000;
+    }
     const nextExecutionTime = Date.now() + delayMs;
 
     // Enroll subscriber in sequence

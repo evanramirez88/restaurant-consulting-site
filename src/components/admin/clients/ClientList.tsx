@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, Plus, Building2, MapPin, Shield, ExternalLink, ChevronRight,
   Loader2, RefreshCw, Users, Mail, Phone, FolderOpen, MoreVertical,
-  Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle, Power, Brain
+  Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle, Power, Brain,
+  FileText
 } from 'lucide-react';
 
 interface Client {
@@ -30,9 +31,10 @@ type ViewMode = 'cards' | 'table';
 interface ClientListProps {
   onSelectClient: (client: Client) => void;
   onCreateClient: () => void;
+  onCreateInvoice?: (clientId: string) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient }) => {
+const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient, onCreateInvoice }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,17 +151,26 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
         <div className="flex items-center gap-2">
           <button
             onClick={loadClients}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors min-h-[44px] min-w-[44px]"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
+          {onCreateInvoice && (
+            <button
+              onClick={() => onCreateInvoice('')}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors min-h-[44px]"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Invoice</span>
+            </button>
+          )}
           <button
             onClick={onCreateClient}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
-            Add Client
+            <span className="hidden sm:inline">Add Client</span>
           </button>
         </div>
       </div>
@@ -296,6 +307,18 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient 
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        {onCreateInvoice && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCreateInvoice(client.id);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-green-400 hover:bg-green-500/10 rounded transition-colors"
+                            title="Create Invoice"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        )}
                         {client.portal_enabled && client.slug && (
                           <a
                             href={`/#/portal/${client.slug}/dashboard?demo=true`}

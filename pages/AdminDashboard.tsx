@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Loader2, LogOut, UtensilsCrossed, LayoutDashboard,
-  Wrench, Settings, Users, Ticket, Mail, Brain, Contact
+  Wrench, Settings, Users, Ticket, Mail, Brain, Contact, FileText,
+  Building2, Briefcase
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
+import { InvoiceModal } from '../src/components/admin/billing';
 
 // Admin Components
 import AdminOverview from '../src/components/admin/AdminOverview';
@@ -92,6 +94,10 @@ const AdminDashboard: React.FC = () => {
 
   // Contacts sub-tab state
   const [contactSubTab, setContactSubTab] = useState<ContactSubTab>('clients');
+
+  // Invoice modal state
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceClientId, setInvoiceClientId] = useState<string | undefined>(undefined);
 
   // Availability state (for overview)
   const [availability, setAvailability] = useState({
@@ -261,6 +267,17 @@ const AdminDashboard: React.FC = () => {
     window.open('/#/toast-hub?demo=true', '_blank');
   };
 
+  // Invoice handlers
+  const handleCreateInvoice = (clientId?: string) => {
+    setInvoiceClientId(clientId);
+    setInvoiceModalOpen(true);
+  };
+
+  const handleInvoiceSuccess = (invoice: any) => {
+    console.log('Invoice created:', invoice);
+    // Could add toast notification here
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-dark to-gray-900 flex items-center justify-center">
@@ -419,6 +436,7 @@ const AdminDashboard: React.FC = () => {
                   <ClientList
                     onSelectClient={handleSelectClient}
                     onCreateClient={handleCreateClient}
+                    onCreateInvoice={handleCreateInvoice}
                   />
                 )}
                 {clientView === 'form' && (
@@ -611,6 +629,17 @@ const AdminDashboard: React.FC = () => {
           <p>Cape Cod Restaurant Consulting Admin v2.0</p>
         </footer>
       </main>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        isOpen={invoiceModalOpen}
+        onClose={() => {
+          setInvoiceModalOpen(false);
+          setInvoiceClientId(undefined);
+        }}
+        preselectedClientId={invoiceClientId}
+        onSuccess={handleInvoiceSuccess}
+      />
     </div>
   );
 };
