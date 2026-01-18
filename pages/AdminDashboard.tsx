@@ -30,6 +30,8 @@ import {
   ErrorRecovery,
   SendTimeOptimizer
 } from '../src/components/admin/email';
+import { LeadsList } from '../src/components/admin/leads';
+import CommandCenter from '../src/components/admin/CommandCenter';
 import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
 
 type TabType = 'overview' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
@@ -359,13 +361,19 @@ const AdminDashboard: React.FC = () => {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <AdminOverview
-            availability={availability}
-            clientCount={clientCount}
-            repCount={repCount}
-            onNavigateToTab={(tab) => setActiveTab(tab as TabType)}
-            formatTimeAgo={formatTimeAgo}
-          />
+          <>
+            {/* Command Center - Daily Briefing */}
+            <CommandCenter />
+
+            {/* Standard Overview */}
+            <AdminOverview
+              availability={availability}
+              clientCount={clientCount}
+              repCount={repCount}
+              onNavigateToTab={(tab) => setActiveTab(tab as TabType)}
+              formatTimeAgo={formatTimeAgo}
+            />
+          </>
         )}
 
         {/* Portals Tab */}
@@ -476,16 +484,7 @@ const AdminDashboard: React.FC = () => {
 
             {/* Leads Sub-tab Content */}
             {contactSubTab === 'leads' && (
-              <div className="admin-card p-8 text-center">
-                <UserPlus className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Lead Management</h3>
-                <p className="text-gray-400 mb-4">
-                  View and manage leads from BuiltWith imports, HubSpot sync, and website forms.
-                </p>
-                <p className="text-sm text-gray-500">
-                  Use the Intel tab for lead scoring and segmentation, or Email tab for enrollment.
-                </p>
-              </div>
+              <LeadsList />
             )}
           </>
         )}
