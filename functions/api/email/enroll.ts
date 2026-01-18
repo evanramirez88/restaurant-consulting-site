@@ -29,7 +29,11 @@ const SEGMENT_SEQUENCES: Record<string, string> = {
   'menu': 'seq_menu_work_001',      // Remote Menu Work
   'booking': 'seq_booking_confirm_001',  // Booking Confirmation
   'post_meeting': 'seq_post_meeting_001', // Post-Meeting Follow-up
-  'noshow': 'seq_noshow_001'        // No-Show Re-engagement
+  'noshow': 'seq_noshow_001',       // No-Show Re-engagement
+  'welcome': 'seq_welcome_001',     // Welcome sequence for new subscribers
+  'new_subscriber': 'seq_welcome_001',
+  'subscription_created': 'seq_welcome_001',
+  'payment_failed': 'seq_payment_failed_001' // Payment failure recovery
 };
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
