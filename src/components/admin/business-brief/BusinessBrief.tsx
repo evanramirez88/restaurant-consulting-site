@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
-  LayoutDashboard, Activity, Target, Brain, FileBarChart, MessageSquare,
-  TrendingUp
+  LayoutDashboard, Activity, Target, Brain, FileBarChart, MessageSquare
 } from 'lucide-react';
 import BusinessBriefDashboard from './BusinessBriefDashboard';
 import BusinessBriefPulse from './BusinessBriefPulse';
 import BusinessBriefStrategy from './BusinessBriefStrategy';
 import BusinessBriefIntelligence from './BusinessBriefIntelligence';
+import BusinessBriefReports from './BusinessBriefReports';
+import BusinessBriefAIConsole from './BusinessBriefAIConsole';
 
 type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'reports' | 'ai';
 
@@ -54,15 +55,15 @@ export default function BusinessBrief() {
       id: 'reports',
       label: 'Reports',
       icon: <FileBarChart className="w-4 h-4" />,
-      available: false,
-      description: 'Generated reports (Coming Soon)'
+      available: true,
+      description: 'Generate and schedule business reports'
     },
     {
       id: 'ai',
       label: 'AI Console',
       icon: <MessageSquare className="w-4 h-4" />,
-      available: false,
-      description: 'Claude integration (Coming Soon)'
+      available: true,
+      description: 'AI-powered business insights and analysis'
     }
   ];
 
@@ -104,44 +105,8 @@ export default function BusinessBrief() {
         {activeSubTab === 'pulse' && <BusinessBriefPulse />}
         {activeSubTab === 'strategy' && <BusinessBriefStrategy />}
         {activeSubTab === 'intelligence' && <BusinessBriefIntelligence />}
-
-        {/* Coming Soon placeholders */}
-        {activeSubTab === 'reports' && (
-          <ComingSoonPlaceholder
-            title="Reports"
-            description="Pre-built and custom reports with automated scheduling and delivery options."
-            icon={<FileBarChart className="w-12 h-12" />}
-          />
-        )}
-        {activeSubTab === 'ai' && (
-          <ComingSoonPlaceholder
-            title="AI Console"
-            description="Direct interaction with Claude for business analysis, insights, and assistance."
-            icon={<MessageSquare className="w-12 h-12" />}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface ComingSoonProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-function ComingSoonPlaceholder({ title, description, icon }: ComingSoonProps) {
-  return (
-    <div className="admin-card p-12 text-center">
-      <div className="text-gray-600 mb-4 flex justify-center">
-        {icon}
-      </div>
-      <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-      <p className="text-gray-400 max-w-md mx-auto mb-6">{description}</p>
-      <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-400 rounded-lg">
-        <TrendingUp className="w-4 h-4" />
-        <span>Phase 5 Implementation</span>
+        {activeSubTab === 'reports' && <BusinessBriefReports />}
+        {activeSubTab === 'ai' && <BusinessBriefAIConsole />}
       </div>
     </div>
   );
