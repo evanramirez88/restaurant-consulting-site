@@ -96,35 +96,36 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     // Find or create subscriber
     let subscriber = await env.DB.prepare(
       'SELECT id, status FROM email_subscribers WHERE email = ?'
-    ).bind(email).first() as { id: number; status: string } | null;
+    ).bind(email).first() as { id: string; status: string } | null;
 
     if (!subscriber) {
-      // Create new subscriber
-      const result = await env.DB.prepare(`
+      // Create new subscriber with UUID
+      const subscriberId = crypto.randomUUID();
+      await env.DB.prepare(`
         INSERT INTO email_subscribers (
-          email, 
-          first_name, 
-          last_name, 
+          id,
+          email,
+          first_name,
+          last_name,
           company,
-          status, 
+          status,
           segment,
           source,
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, unixepoch(), unixepoch())
       `).bind(
+        subscriberId,
         email,
         body.firstName || null,
         body.lastName || null,
         body.company || null,
         body.segment || null,
-        body.source || 'api',
-        Date.now(),
-        Date.now()
+        body.source || 'api'
       ).run();
 
-      subscriber = { id: result.meta.last_row_id as number, status: 'active' };
+      subscriber = { id: subscriberId, status: 'active' };
     }
 
     // Check if subscriber is active

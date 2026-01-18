@@ -21,45 +21,55 @@ function generateId() {
   return 'lead_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-// Demo leads data
+// Demo leads data - field names match frontend Lead interface
 const DEMO_LEADS = [
   {
     id: 'demo-lead-001',
-    name: 'The Lobster Pot',
+    restaurant_name: 'The Lobster Pot',
     dba_name: 'Lobster Pot Restaurant',
     domain: 'lobsterpot.com',
+    restaurant_address: '321 Commercial St',
     city: 'Provincetown',
     state: 'MA',
-    primary_phone: '508-555-2345',
-    primary_email: 'info@lobsterpot.com',
+    phone: '508-555-2345',
+    email: 'info@lobsterpot.com',
+    contact_name: 'Mike Peterson',
+    contact_role: 'Owner',
     lead_stage: 'qualified',
     source_rep_id: 'demo-rep-001',
     converted_from_intel_id: 'demo-intel-001',
-    stage_changed_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    stage_changed_at: Math.floor(Date.now() / 1000) - 3 * 24 * 60 * 60,
     days_in_stage: 3,
     estimated_value: 12000,
     current_pos: 'Toast',
-    created_at: Date.now() - 10 * 24 * 60 * 60 * 1000,
+    notes: 'Interested in menu optimization and staff training',
+    created_at: Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60,
+    updated_at: Math.floor(Date.now() / 1000) - 3 * 24 * 60 * 60,
     rep_name: 'Demo Rep',
     intel_subject: 'Needs menu rebuild'
   },
   {
     id: 'demo-lead-002',
-    name: 'Beachside Grill',
+    restaurant_name: 'Beachside Grill',
     dba_name: null,
     domain: 'beachsidegrill.com',
+    restaurant_address: '45 Ocean Ave',
     city: 'Chatham',
     state: 'MA',
-    primary_phone: '508-555-6789',
-    primary_email: 'contact@beachsidegrill.com',
+    phone: '508-555-6789',
+    email: 'contact@beachsidegrill.com',
+    contact_name: 'Sarah Williams',
+    contact_role: 'General Manager',
     lead_stage: 'new',
     source_rep_id: 'demo-rep-001',
     converted_from_intel_id: null,
-    stage_changed_at: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    stage_changed_at: Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60,
     days_in_stage: 1,
     estimated_value: 8500,
     current_pos: 'Square',
-    created_at: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    notes: 'Looking to switch from Square to Toast',
+    created_at: Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60,
+    updated_at: Math.floor(Date.now() / 1000) - 1 * 24 * 60 * 60,
     rep_name: 'Demo Rep',
     intel_subject: null
   }
@@ -159,7 +169,34 @@ export async function onRequestGet(context) {
 
     let query = `
       SELECT
-        rl.*,
+        rl.id,
+        rl.name as restaurant_name,
+        rl.dba_name,
+        rl.domain,
+        rl.address_line1 as restaurant_address,
+        rl.city,
+        rl.state,
+        rl.zip,
+        rl.primary_phone as phone,
+        rl.primary_email as email,
+        rl.website_url,
+        rl.cuisine_primary,
+        rl.service_style,
+        rl.current_pos,
+        rl.lead_stage,
+        rl.lead_score,
+        rl.notes,
+        rl.source_rep_id,
+        rl.converted_from_intel_id,
+        rl.converted_to_client_id,
+        rl.stage_changed_at,
+        rl.stage_changed_by,
+        rl.days_in_stage,
+        rl.created_at,
+        rl.updated_at,
+        COALESCE(ris.estimated_value, 0) as estimated_value,
+        lc.first_name || ' ' || COALESCE(lc.last_name, '') as contact_name,
+        lc.role as contact_role,
         r.name as rep_name,
         r.email as rep_email,
         ris.subject as intel_subject,
@@ -167,6 +204,7 @@ export async function onRequestGet(context) {
       FROM restaurant_leads rl
       JOIN reps r ON rl.source_rep_id = r.id
       LEFT JOIN rep_intel_submissions ris ON rl.converted_from_intel_id = ris.id
+      LEFT JOIN lead_contacts lc ON rl.id = lc.lead_id AND lc.is_primary = 1
       WHERE rl.source_rep_id = ?
     `;
     const params = [rep.id];

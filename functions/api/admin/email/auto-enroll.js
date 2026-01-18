@@ -199,9 +199,11 @@ export async function onRequestPost({ request, env }) {
           continue;
         }
 
-        // Create subscriber record
-        const subscriberResult = await env.DB.prepare(`
+        // Create subscriber record with UUID
+        const subscriberId = crypto.randomUUID();
+        await env.DB.prepare(`
           INSERT INTO email_subscribers (
+            id,
             email,
             first_name,
             company,
@@ -216,21 +218,17 @@ export async function onRequestPost({ request, env }) {
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, 'active', ?, ?, ?, ?, 'builtwith_import', 'auto_enroll', ?, ?, ?)
+          VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, 'builtwith_import', 'auto_enroll', unixepoch(), unixepoch(), unixepoch())
         `).bind(
+          subscriberId,
           lead.email.toLowerCase(),
           lead.company ? lead.company.split(' ')[0] : null, // Use first word of company as name
           lead.company || null,
           segment,
           door,
           lead.current_pos || null,
-          lead.lead_score || 0,
-          Date.now(),
-          Date.now(),
-          Date.now()
+          lead.lead_score || 0
         ).run();
-
-        const subscriberId = subscriberResult.meta.last_row_id;
 
         // Get first step of sequence
         const firstStep = await env.DB.prepare(`

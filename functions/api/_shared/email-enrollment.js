@@ -180,9 +180,11 @@ export async function enrollContact(env, params) {
     ).bind(normalizedEmail).first();
 
     if (!subscriber) {
-      // Create new subscriber
-      const result = await env.DB.prepare(`
+      // Create new subscriber with UUID
+      const subscriberId = crypto.randomUUID();
+      await env.DB.prepare(`
         INSERT INTO email_subscribers (
+          id,
           email,
           first_name,
           last_name,
@@ -193,19 +195,18 @@ export async function enrollContact(env, params) {
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, unixepoch(), unixepoch())
       `).bind(
+        subscriberId,
         normalizedEmail,
         firstName || null,
         lastName || null,
         company || null,
         segment || null,
-        source,
-        Date.now(),
-        Date.now()
+        source
       ).run();
 
-      subscriber = { id: result.meta.last_row_id, status: 'active' };
+      subscriber = { id: subscriberId, status: 'active' };
     } else if (subscriber.status !== 'active') {
       return {
         success: true,
