@@ -6,6 +6,7 @@ import {
 import BusinessBriefDashboard from './BusinessBriefDashboard';
 import BusinessBriefPulse from './BusinessBriefPulse';
 import BusinessBriefStrategy from './BusinessBriefStrategy';
+import BusinessBriefIntelligence from './BusinessBriefIntelligence';
 
 type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'reports' | 'ai';
 
@@ -46,8 +47,8 @@ export default function BusinessBrief() {
       id: 'intelligence',
       label: 'Intelligence',
       icon: <Brain className="w-4 h-4" />,
-      available: false,
-      description: 'Deep analysis (Coming Soon)'
+      available: true,
+      description: 'Deep analysis & insights'
     },
     {
       id: 'reports',
@@ -102,15 +103,9 @@ export default function BusinessBrief() {
         {activeSubTab === 'dashboard' && <BusinessBriefDashboard />}
         {activeSubTab === 'pulse' && <BusinessBriefPulse />}
         {activeSubTab === 'strategy' && <BusinessBriefStrategy />}
+        {activeSubTab === 'intelligence' && <BusinessBriefIntelligence />}
 
         {/* Coming Soon placeholders */}
-        {activeSubTab === 'intelligence' && (
-          <ComingSoonPlaceholder
-            title="Intelligence"
-            description="Lead intelligence, client health scoring, Core 4 agent feed, and Beacon content insights."
-            icon={<Brain className="w-12 h-12" />}
-          />
-        )}
         {activeSubTab === 'reports' && (
           <ComingSoonPlaceholder
             title="Reports"
@@ -146,7 +141,7 @@ function ComingSoonPlaceholder({ title, description, icon }: ComingSoonProps) {
       <p className="text-gray-400 max-w-md mx-auto mb-6">{description}</p>
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-400 rounded-lg">
         <TrendingUp className="w-4 h-4" />
-        <span>Phase 4-5 Implementation</span>
+        <span>Phase 5 Implementation</span>
       </div>
     </div>
   );
