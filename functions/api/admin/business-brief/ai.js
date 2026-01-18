@@ -2,8 +2,20 @@
 // GET: Returns context and quick actions
 // POST: Process AI queries
 
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../_shared/auth.js';
+
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
+}
+
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -108,6 +120,12 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const body = await request.json();

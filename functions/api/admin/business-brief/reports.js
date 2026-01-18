@@ -2,8 +2,20 @@
 // GET: Returns report library and history
 // POST: Generate a new report
 
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../_shared/auth.js';
+
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
+}
+
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -210,6 +222,12 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const body = await request.json();
@@ -555,8 +573,8 @@ async function generateEmailPerformance(env) {
         COUNT(*) as total_sent,
         COUNT(CASE WHEN opened_at IS NOT NULL THEN 1 END) as opened,
         COUNT(CASE WHEN clicked_at IS NOT NULL THEN 1 END) as clicked,
-        COUNT(CASE WHEN bounced = 1 THEN 1 END) as bounced
-      FROM email_log
+        COUNT(CASE WHEN status = 'bounced' THEN 1 END) as bounced
+      FROM email_queue
       WHERE sent_at > ?
     `).bind(sevenDaysAgo).first().catch(() => ({}))
   ]);

@@ -148,7 +148,7 @@ export default function BusinessBriefStrategy() {
     return () => clearInterval(interval);
   }, [fetchStrategy]);
 
-  const calculateScenario = async () => {
+  const calculateScenario = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/business-brief/strategy', {
         method: 'POST',
@@ -172,7 +172,7 @@ export default function BusinessBriefStrategy() {
     } catch (err) {
       console.error('Scenario calculation failed:', err);
     }
-  };
+  }, [scenarioInputs, data?.pipeline.pipelineValue]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -1,8 +1,21 @@
 // Business Brief Strategy API - Planning, Goals & Lane Strategy
 // GET: Returns strategy data (goals, support plan mix, lane breakdown, scenarios)
+// POST: Calculate scenario projections
+
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../_shared/auth.js';
+
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
+}
 
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -352,6 +365,12 @@ export async function onRequestGet(context) {
 // POST: Run scenario analysis
 export async function onRequestPost(context) {
   const { env, request } = context;
+
+  // Verify authentication
+  const auth = await verifyAuth(request, env);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error, request);
+  }
 
   try {
     const body = await request.json();
