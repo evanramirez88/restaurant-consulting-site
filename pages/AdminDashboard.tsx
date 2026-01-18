@@ -31,10 +31,10 @@ import {
   SendTimeOptimizer
 } from '../src/components/admin/email';
 import { LeadsList } from '../src/components/admin/leads';
-import CommandCenter from '../src/components/admin/CommandCenter';
-import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock } from 'lucide-react';
+import { BusinessBriefDashboard } from '../src/components/admin/business-brief';
+import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 
-type TabType = 'overview' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
+type TabType = 'overview' | 'brief' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
 type ClientView = 'list' | 'form' | 'detail';
 type RepView = 'list' | 'form' | 'detail';
 type ContactSubTab = 'clients' | 'reps' | 'leads';
@@ -294,6 +294,7 @@ const AdminDashboard: React.FC = () => {
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'brief', label: 'Business Brief', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'portals', label: 'Portals', icon: <Users className="w-4 h-4" /> },
     { id: 'contacts', label: 'Contacts', icon: <Contact className="w-4 h-4" /> },
     { id: 'tickets', label: 'Tickets', icon: <Ticket className="w-4 h-4" /> },
@@ -361,19 +362,18 @@ const AdminDashboard: React.FC = () => {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <>
-            {/* Command Center - Daily Briefing */}
-            <CommandCenter />
+          <AdminOverview
+            availability={availability}
+            clientCount={clientCount}
+            repCount={repCount}
+            onNavigateToTab={(tab) => setActiveTab(tab as TabType)}
+            formatTimeAgo={formatTimeAgo}
+          />
+        )}
 
-            {/* Standard Overview */}
-            <AdminOverview
-              availability={availability}
-              clientCount={clientCount}
-              repCount={repCount}
-              onNavigateToTab={(tab) => setActiveTab(tab as TabType)}
-              formatTimeAgo={formatTimeAgo}
-            />
-          </>
+        {/* Business Brief Tab */}
+        {activeTab === 'brief' && (
+          <BusinessBriefDashboard />
         )}
 
         {/* Portals Tab */}
