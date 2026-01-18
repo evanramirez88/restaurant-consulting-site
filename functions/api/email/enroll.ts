@@ -178,28 +178,28 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
       case 'days': delayMs = delayValue * 24 * 60 * 60 * 1000; break;
       default: delayMs = delayValue * 60 * 60 * 1000;
     }
-    const nextExecutionTime = Date.now() + delayMs;
+    const nextStepScheduledAt = Math.floor((Date.now() + delayMs) / 1000); // Unix timestamp in seconds
 
     // Enroll subscriber in sequence
     await env.DB.prepare(`
       INSERT INTO subscriber_sequences (
-        subscriber_id, 
-        sequence_id, 
-        status, 
-        current_step,
+        id,
+        subscriber_id,
+        sequence_id,
+        status,
+        current_step_number,
         current_step_id,
-        next_execution_time,
+        next_step_scheduled_at,
         enrolled_at,
         updated_at
       )
-      VALUES (?, ?, 'active', 1, ?, ?, ?, ?)
+      VALUES (?, ?, ?, 'queued', 1, ?, ?, unixepoch(), unixepoch())
     `).bind(
+      crypto.randomUUID(),
       subscriber.id,
       sequenceId,
       firstStep.id,
-      nextExecutionTime,
-      Date.now(),
-      Date.now()
+      nextStepScheduledAt
     ).run();
 
     return Response.json({

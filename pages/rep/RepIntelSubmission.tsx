@@ -640,14 +640,14 @@ const RepIntelSubmission: React.FC = () => {
               {/* Lead-specific fields */}
               {newSubmission.submission_type === 'lead' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">Restaurant Name</label>
                       <input
                         type="text"
                         value={newSubmission.restaurant_name}
                         onChange={(e) => setNewSubmission({ ...newSubmission, restaurant_name: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div>
@@ -656,18 +656,18 @@ const RepIntelSubmission: React.FC = () => {
                         type="text"
                         value={newSubmission.contact_name}
                         onChange={(e) => setNewSubmission({ ...newSubmission, contact_name: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                       <input
                         type="email"
                         value={newSubmission.contact_email}
                         onChange={(e) => setNewSubmission({ ...newSubmission, contact_email: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div>
@@ -676,7 +676,7 @@ const RepIntelSubmission: React.FC = () => {
                         type="tel"
                         value={newSubmission.contact_phone}
                         onChange={(e) => setNewSubmission({ ...newSubmission, contact_phone: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                   </div>
@@ -687,7 +687,7 @@ const RepIntelSubmission: React.FC = () => {
                         type="text"
                         value={newSubmission.city}
                         onChange={(e) => setNewSubmission({ ...newSubmission, city: e.target.value })}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div>
@@ -697,11 +697,11 @@ const RepIntelSubmission: React.FC = () => {
                         value={newSubmission.state}
                         onChange={(e) => setNewSubmission({ ...newSubmission, state: e.target.value })}
                         maxLength={2}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">Current POS</label>
                       <input
@@ -709,7 +709,7 @@ const RepIntelSubmission: React.FC = () => {
                         value={newSubmission.current_pos}
                         onChange={(e) => setNewSubmission({ ...newSubmission, current_pos: e.target.value })}
                         placeholder="e.g., Square, Clover, None"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                     <div>
@@ -719,7 +719,7 @@ const RepIntelSubmission: React.FC = () => {
                         value={newSubmission.estimated_value}
                         onChange={(e) => setNewSubmission({ ...newSubmission, estimated_value: e.target.value })}
                         placeholder="e.g., 5000"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                   </div>
