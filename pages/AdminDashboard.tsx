@@ -31,7 +31,7 @@ import {
   SendTimeOptimizer
 } from '../src/components/admin/email';
 import { LeadsList } from '../src/components/admin/leads';
-import { BusinessBriefDashboard } from '../src/components/admin/business-brief';
+import { BusinessBrief } from '../src/components/admin/business-brief';
 import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 
 type TabType = 'overview' | 'brief' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
@@ -373,7 +373,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Business Brief Tab */}
         {activeTab === 'brief' && (
-          <BusinessBriefDashboard />
+          <BusinessBrief />
         )}
 
         {/* Portals Tab */}
