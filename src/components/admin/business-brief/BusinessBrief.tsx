@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import BusinessBriefDashboard from './BusinessBriefDashboard';
 import BusinessBriefPulse from './BusinessBriefPulse';
+import BusinessBriefStrategy from './BusinessBriefStrategy';
 
 type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'reports' | 'ai';
 
@@ -38,8 +39,8 @@ export default function BusinessBrief() {
       id: 'strategy',
       label: 'Strategy',
       icon: <Target className="w-4 h-4" />,
-      available: false,
-      description: 'Goals & planning (Coming Soon)'
+      available: true,
+      description: 'Goals, planning & scenarios'
     },
     {
       id: 'intelligence',
@@ -100,15 +101,9 @@ export default function BusinessBrief() {
       <div>
         {activeSubTab === 'dashboard' && <BusinessBriefDashboard />}
         {activeSubTab === 'pulse' && <BusinessBriefPulse />}
+        {activeSubTab === 'strategy' && <BusinessBriefStrategy />}
 
         {/* Coming Soon placeholders */}
-        {activeSubTab === 'strategy' && (
-          <ComingSoonPlaceholder
-            title="Strategy"
-            description="Goal tracking, support plan mix visualization, Lane A/B strategy dashboards, and scenario planning."
-            icon={<Target className="w-12 h-12" />}
-          />
-        )}
         {activeSubTab === 'intelligence' && (
           <ComingSoonPlaceholder
             title="Intelligence"
@@ -151,7 +146,7 @@ function ComingSoonPlaceholder({ title, description, icon }: ComingSoonProps) {
       <p className="text-gray-400 max-w-md mx-auto mb-6">{description}</p>
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-400 rounded-lg">
         <TrendingUp className="w-4 h-4" />
-        <span>Phase 3-5 Implementation</span>
+        <span>Phase 4-5 Implementation</span>
       </div>
     </div>
   );
