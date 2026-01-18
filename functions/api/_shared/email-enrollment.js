@@ -291,7 +291,7 @@ export async function enrollContact(env, params) {
       subscriberId: subscriber.id,
       sequenceId: sequenceId,
       sequenceName: sequence.name,
-      firstEmailScheduled: new Date(nextExecutionTime).toISOString()
+      firstEmailScheduled: new Date(nextStepScheduledAt * 1000).toISOString() // Convert Unix seconds to Date
     };
 
   } catch (error) {
