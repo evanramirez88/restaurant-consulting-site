@@ -10,9 +10,15 @@
  * POST /api/intelligence/agents/run?agent=hunter|analyst|operator|strategist|all
  * GET /api/intelligence/agents/status
  * GET /api/intelligence/agents/queue
+ *
+ * Search Providers:
+ * - Primary: Tavily (1,000 credits/month, resets)
+ * - Fallback: Exa (1,000 credits total)
+ * - Legacy: Brave (if configured)
  */
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+import { unifiedSearch, batchSearch, getBudgetReport, SearchPriority } from '../../_shared/search-providers.js';
 
 // ============================================
 // AGENT DEFINITIONS
@@ -462,9 +468,11 @@ async function runStrategistTasks(env, options = {}) {
     gapsIdentified: totalGaps
   });
 
-  // Task: Execute gap-fill searches using Brave Search API
+  // Task: Execute gap-fill searches using Multi-Source Search (Tavily + Exa)
   let gapsFilled = 0;
-  if (env.BRAVE_API_KEY && leadsWithGaps.length > 0) {
+  const hasSearchKeys = env.TAVILY_API_KEY || env.EXA_API_KEY || env.BRAVE_API_KEY;
+
+  if (hasSearchKeys && leadsWithGaps.length > 0) {
     const gapFillResult = await runGapFillSearches(env, leadsWithGaps.slice(0, 10));
     gapsFilled = gapFillResult.filled;
     results.gapsFilled = gapsFilled;
@@ -474,15 +482,21 @@ async function runStrategistTasks(env, options = {}) {
       status: 'completed',
       searched: gapFillResult.searched,
       filled: gapFillResult.filled,
-      leads_processed: gapFillResult.leadsProcessed
+      leads_processed: gapFillResult.leadsProcessed,
+      providers: gapFillResult.providers,
+      budget: gapFillResult.budgetStatus
     });
   } else {
+    const missingKeys = [];
+    if (!env.TAVILY_API_KEY) missingKeys.push('TAVILY_API_KEY');
+    if (!env.EXA_API_KEY) missingKeys.push('EXA_API_KEY');
+
     results.tasks.push({
       task: 'gap_fill_searches',
-      status: env.BRAVE_API_KEY ? 'skipped_no_gaps' : 'skipped_no_api_key',
-      message: env.BRAVE_API_KEY ?
+      status: hasSearchKeys ? 'skipped_no_gaps' : 'skipped_no_api_key',
+      message: hasSearchKeys ?
         'No leads with fillable gaps found' :
-        'BRAVE_API_KEY not configured - set via wrangler secret'
+        `Missing search API keys: ${missingKeys.join(', ')} - set via wrangler secret`
     });
   }
 
@@ -646,57 +660,117 @@ function extractFromSearchResults(results, gapType, companyName) {
 }
 
 /**
- * Run gap-fill searches using Brave Search API
+ * Run gap-fill searches using Multi-Source Search (Tavily + Exa)
+ * Falls back to Brave if configured and primary sources unavailable
+ *
+ * Budget Strategy:
+ * - Use NORMAL priority for routine enrichment (Tavily only)
+ * - Use HIGH priority for high-value leads (Tavily + Exa fallback)
+ * - Reserve CRITICAL for manual runs on priority leads
  */
 async function runGapFillSearches(env, leadsWithGaps) {
   const results = {
     searched: 0,
     filled: 0,
     leadsProcessed: 0,
-    errors: []
+    providers: { tavily: 0, exa: 0, brave: 0, cache: 0 },
+    errors: [],
+    budgetStatus: null
   };
 
-  if (!env.BRAVE_API_KEY) {
+  // Check if any search providers are configured
+  const hasSearchProviders = env.TAVILY_API_KEY || env.EXA_API_KEY || env.BRAVE_API_KEY;
+  if (!hasSearchProviders) {
+    console.log('[GapFill] No search providers configured (TAVILY_API_KEY, EXA_API_KEY, or BRAVE_API_KEY)');
     return results;
+  }
+
+  // Get initial budget status
+  if (env.TAVILY_API_KEY || env.EXA_API_KEY) {
+    try {
+      results.budgetStatus = await getBudgetReport(env);
+      console.log('[GapFill] Budget status:', JSON.stringify(results.budgetStatus, null, 2));
+    } catch (e) {
+      console.log('[GapFill] Could not get budget status:', e.message);
+    }
   }
 
   for (const { lead, searchQueries } of leadsWithGaps) {
     results.leadsProcessed++;
 
-    // Limit to top 3 queries per lead to avoid rate limiting
-    for (const queryInfo of searchQueries.slice(0, 3)) {
-      if (results.searched >= 50) break; // Rate limit per run
+    // Determine search priority based on lead score
+    const leadScore = lead.lead_score || 0;
+    const searchPriority = leadScore >= 70 ? SearchPriority.HIGH :
+                           leadScore >= 50 ? SearchPriority.NORMAL :
+                           SearchPriority.LOW;
+
+    // Limit queries per lead based on priority
+    const maxQueriesPerLead = searchPriority === SearchPriority.HIGH ? 5 :
+                              searchPriority === SearchPriority.NORMAL ? 3 : 1;
+
+    // Limit total searches per run
+    if (results.searched >= 30) {
+      console.log('[GapFill] Search limit reached (30 searches per run)');
+      break;
+    }
+
+    for (const queryInfo of searchQueries.slice(0, maxQueriesPerLead)) {
+      if (results.searched >= 30) break;
 
       try {
-        const searchResponse = await fetch(
-          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(queryInfo.query)}&count=5`,
-          {
-            headers: {
-              'X-Subscription-Token': env.BRAVE_API_KEY,
-              'Accept': 'application/json'
-            }
+        let searchResult = null;
+        let provider = 'unknown';
+
+        // Try multi-source search first (Tavily + Exa)
+        if (env.TAVILY_API_KEY || env.EXA_API_KEY) {
+          searchResult = await unifiedSearch(queryInfo.query, env, {
+            priority: searchPriority,
+            maxResults: 5,
+            topic: 'general'
+          });
+
+          if (searchResult.success) {
+            provider = searchResult.fromCache ? 'cache' : searchResult.provider;
+            results.providers[provider] = (results.providers[provider] || 0) + 1;
+          } else if (searchResult.error === 'Search budget exhausted') {
+            console.log('[GapFill] Search budget exhausted, falling back to Brave if available');
           }
-        );
+        }
+
+        // Fallback to Brave if multi-source failed and Brave is configured
+        if ((!searchResult || !searchResult.success) && env.BRAVE_API_KEY) {
+          const braveResponse = await fetch(
+            `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(queryInfo.query)}&count=5`,
+            {
+              headers: {
+                'X-Subscription-Token': env.BRAVE_API_KEY,
+                'Accept': 'application/json'
+              }
+            }
+          );
+
+          if (braveResponse.ok) {
+            const braveData = await braveResponse.json();
+            searchResult = {
+              success: true,
+              provider: 'brave',
+              results: (braveData.web?.results || []).map(r => ({
+                title: r.title,
+                url: r.url,
+                content: r.description
+              }))
+            };
+            provider = 'brave';
+            results.providers.brave++;
+          }
+        }
 
         results.searched++;
 
-        if (!searchResponse.ok) {
-          const errorText = await searchResponse.text();
-          console.error(`[GapFill] Brave API error: ${searchResponse.status} - ${errorText}`);
-          results.errors.push({
-            lead_id: lead.id,
-            field: queryInfo.field,
-            error: `API error: ${searchResponse.status}`
-          });
-          continue;
-        }
-
-        const searchData = await searchResponse.json();
-        const webResults = searchData.web?.results || [];
-
-        if (webResults.length > 0) {
+        // Process results if we got any
+        if (searchResult?.success && searchResult.results?.length > 0) {
           const extractedData = extractFromSearchResults(
-            webResults,
+            searchResult.results,
             queryInfo.field,
             lead.company_name || lead.name
           );
@@ -716,37 +790,37 @@ async function runGapFillSearches(env, leadsWithGaps) {
               UPDATE restaurant_leads
               SET ${columnName} = ?,
                   gap_fill_attempted_at = unixepoch(),
-                  gap_fill_source = 'brave',
+                  gap_fill_source = ?,
                   updated_at = unixepoch()
               WHERE id = ?
-            `).bind(extractedData.value, lead.id).run();
+            `).bind(extractedData.value, provider, lead.id).run();
 
             // Log the gap-fill result
             try {
               await env.DB.prepare(`
                 INSERT INTO gap_fill_results (id, lead_id, field_name, old_value, new_value, source, search_query, confidence)
-                VALUES (?, ?, ?, ?, ?, 'brave', ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
               `).bind(
                 `gf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 lead.id,
                 queryInfo.field,
                 lead[columnName] || null,
                 extractedData.value,
+                provider,
                 queryInfo.query,
                 extractedData.confidence
               ).run();
             } catch (logError) {
-              // Table might not exist yet, continue anyway
-              console.log('[GapFill] Could not log result (table may not exist):', logError.message);
+              console.log('[GapFill] Could not log result:', logError.message);
             }
 
             results.filled++;
-            console.log(`[GapFill] Found ${queryInfo.field} for ${lead.company_name || lead.name}: ${extractedData.value}`);
+            console.log(`[GapFill] [${provider}] Found ${queryInfo.field} for ${lead.company_name || lead.name}: ${extractedData.value}`);
           }
         }
 
-        // Rate limiting - wait 200ms between requests
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 150));
 
       } catch (searchError) {
         console.error(`[GapFill] Search error for ${lead.company_name}:`, searchError);
@@ -766,7 +840,17 @@ async function runGapFillSearches(env, leadsWithGaps) {
     `).bind(lead.id).run();
   }
 
+  // Get final budget status
+  if (env.TAVILY_API_KEY || env.EXA_API_KEY) {
+    try {
+      results.budgetStatus = await getBudgetReport(env);
+    } catch (e) {
+      console.log('[GapFill] Could not get final budget status:', e.message);
+    }
+  }
+
   console.log(`[GapFill] Completed: ${results.searched} searches, ${results.filled} gaps filled`);
+  console.log(`[GapFill] Provider breakdown: Tavily=${results.providers.tavily}, Exa=${results.providers.exa}, Brave=${results.providers.brave}, Cache=${results.providers.cache}`);
   return results;
 }
 
