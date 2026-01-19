@@ -1,6 +1,7 @@
 name = "rg-intelligence-scheduler"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+account_id = "373a6cef1f9ccf5d26bfd9687a91c0a6"
 
 # Cron triggers for Core 4 Intelligence Agents
 # All times are in UTC (EST = UTC-5)
