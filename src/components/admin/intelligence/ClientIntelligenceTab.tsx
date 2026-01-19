@@ -278,46 +278,45 @@ const ClientIntelligenceTab: React.FC = () => {
     setIsResearching(true);
     setResearchMessage('Starting research...');
     try {
+      // Build website URL from domain if not present
+      const websiteUrl = prospect.website || (prospect.domain ? `https://${prospect.domain}` : null);
+
       // Try to research by website first
-      if (prospect.website) {
+      if (websiteUrl) {
         const response = await fetch('/api/admin/intelligence/discover', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'single_website',
-            website: prospect.website
+            website: websiteUrl
           })
         });
         const result = await response.json();
         if (result.success) {
-          setResearchMessage(`Research complete! Found ${result.data?.found || 0} facts for ${prospect.company}`);
+          const action = result.action || 'researched';
+          const scrapedName = result.scraped_data?.name || prospect.company;
+          const techStack = result.scraped_data?.tech_stack;
+          let message = `Research complete for ${scrapedName}!`;
+          if (techStack?.pos_system) {
+            message += ` POS: ${techStack.pos_system}.`;
+          }
+          if (result.scraped_data?.email) {
+            message += ` Email found.`;
+          }
+          setResearchMessage(message);
           await loadData(); // Refresh data
           setTimeout(() => setResearchMessage(null), 5000);
           return;
+        } else {
+          // Website scrape failed, show the error but continue
+          setResearchMessage(`Could not scrape website: ${result.errors?.join(', ') || 'Access denied'}`);
+          setTimeout(() => setResearchMessage(null), 5000);
         }
-      }
-
-      // Fallback: Search by company name
-      const searchResponse = await fetch('/api/admin/intelligence/research', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_id: prospect.id,
-          company_name: prospect.company,
-          website: prospect.website || null,
-          location: prospect.town || null
-        })
-      });
-      const searchResult = await searchResponse.json();
-
-      if (searchResult.success) {
-        const factsFound = searchResult.data?.facts_created || searchResult.facts_created || 0;
-        setResearchMessage(`Research complete! Created ${factsFound} facts for ${prospect.company}`);
-        await loadData();
       } else {
-        setResearchMessage(`Research failed: ${searchResult.error || 'Unknown error'}`);
+        // No website available
+        setResearchMessage(`No website available for ${prospect.company}. Add a website URL to enable research.`);
+        setTimeout(() => setResearchMessage(null), 5000);
       }
-      setTimeout(() => setResearchMessage(null), 5000);
     } catch (error) {
       console.error('Research failed:', error);
       setResearchMessage(`Research error: ${error instanceof Error ? error.message : 'Unknown error'}`);

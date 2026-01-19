@@ -50,8 +50,8 @@ export async function onRequestPost(context) {
     await env.DB.prepare(`
       INSERT INTO clients (
         id, name, email, phone, company, address, city, state,
-        current_pos, source, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'intelligence_conversion', ?, ?)
+        notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       clientId,
       name || email.split('@')[0],
@@ -61,7 +61,7 @@ export async function onRequestPost(context) {
       address || null,
       town || null,
       state || 'MA',
-      pos_system || null,
+      pos_system ? `POS: ${pos_system}. Source: Intelligence conversion` : 'Source: Intelligence conversion',
       Date.now(),
       Date.now()
     ).run();
