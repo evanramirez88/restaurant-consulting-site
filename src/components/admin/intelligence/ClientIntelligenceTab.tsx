@@ -1288,8 +1288,8 @@ const ClientIntelligenceTab: React.FC = () => {
                         body: JSON.stringify({
                           email: selectedProspect.email,
                           name: selectedProspect.name,
-                          sequence_id: selectedProspect.pos_system === 'Toast' ? 'seq_toast_support_001' : 'seq_pos_switcher_001',
-                          lead_id: selectedProspect.id
+                          sequenceId: selectedProspect.pos_system === 'Toast' ? 'seq_toast_support_001' : 'seq_pos_switcher_001',
+                          leadId: selectedProspect.id
                         })
                       });
                       const result = await response.json();

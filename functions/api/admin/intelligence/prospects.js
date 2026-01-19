@@ -94,11 +94,12 @@ export async function onRequestGet(context) {
           AND primary_email NOT LIKE '%@upserve.com'
           AND primary_email NOT LIKE '%@ncr.com'
         ))
-        -- EXCLUDE garbage domains
+        -- EXCLUDE garbage domains (directories, platforms, social media, tourism)
         AND (domain IS NULL OR (
           domain NOT LIKE '%reddit.com%'
           AND domain NOT LIKE '%assembly.com%'
           AND domain NOT LIKE '%rezi.%'
+          AND domain NOT LIKE '%resy.com%'
           AND domain NOT LIKE '%facebook.com%'
           AND domain NOT LIKE '%instagram.com%'
           AND domain NOT LIKE '%twitter.com%'
@@ -106,14 +107,53 @@ export async function onRequestGet(context) {
           AND domain NOT LIKE '%yelp.com%'
           AND domain NOT LIKE '%tripadvisor.com%'
           AND domain NOT LIKE '%google.com%'
+          AND domain NOT LIKE '%bostonchefs.com%'
+          AND domain NOT LIKE '%ptowntourism.com%'
+          AND domain NOT LIKE '%ptownchamber.com%'
+          AND domain NOT LIKE '%capecod.com%'
+          AND domain NOT LIKE '%capecodchamber.org%'
+          AND domain NOT LIKE '%larkhotels.com%'
+          AND domain NOT LIKE '%opentable.com%'
+          AND domain NOT LIKE '%doordash.com%'
+          AND domain NOT LIKE '%grubhub.com%'
+          AND domain NOT LIKE '%ubereats.com%'
+          AND domain NOT LIKE '%seamless.com%'
+          AND domain NOT LIKE '%timeout.com%'
+          AND domain NOT LIKE '%eater.com%'
+          AND domain NOT LIKE '%thrillist.com%'
+          AND domain NOT LIKE '%patch.com%'
+          AND domain NOT LIKE '%wickedlocal.com%'
+          AND domain NOT LIKE '%capecodtimes.com%'
+          AND domain NOT LIKE '%wikipedia.org%'
         ))
-        -- EXCLUDE non-restaurant names
+        -- EXCLUDE non-restaurant names (guides, lists, directories, generic)
         AND (name IS NULL OR (
           name NOT LIKE '%Reddit%'
           AND name NOT LIKE '%Assembly%'
           AND name NOT LIKE '%Rezi%'
+          AND name NOT LIKE '%Resy%'
           AND name NOT LIKE '%Quincy%Adams%'
           AND name NOT LIKE 'Restaurants Near%'
+          AND name NOT LIKE '%Restaurants in%'
+          AND name NOT LIKE '%Year Round Restaurants%'
+          AND name NOT LIKE '%Favorite%Restaurants%'
+          AND name NOT LIKE '%Best%Restaurants%'
+          AND name NOT LIKE '%Top%Restaurants%'
+          AND name NOT LIKE '%Guide%'
+          AND name NOT LIKE '%Winter Guide%'
+          AND name NOT LIKE '%Visitor Guide%'
+          AND name NOT LIKE 'Home'
+          AND name NOT LIKE 'QUINCY'
+          AND name NOT LIKE 'BOSTON'
+          AND name NOT LIKE 'PLYMOUTH'
+          AND name NOT LIKE '%bostonchefs%'
+          AND name NOT LIKE '%&#8212;%'
+          AND name NOT LIKE '%&#8211;%'
+          AND name NOT LIKE '%&#%'
+          AND name NOT LIKE '%Tourism%'
+          AND name NOT LIKE '%Chamber%'
+          AND name NOT LIKE '%Seafood, Brunch%'
+          AND LENGTH(name) > 2
         ))
     `;
     const params = [];
@@ -195,11 +235,12 @@ export async function onRequestGet(context) {
         AND primary_email NOT LIKE '%@upserve.com'
         AND primary_email NOT LIKE '%@ncr.com'
       ))
-      -- EXCLUDE garbage domains
+      -- EXCLUDE garbage domains (directories, platforms, social media, tourism)
       AND (domain IS NULL OR (
         domain NOT LIKE '%reddit.com%'
         AND domain NOT LIKE '%assembly.com%'
         AND domain NOT LIKE '%rezi.%'
+        AND domain NOT LIKE '%resy.com%'
         AND domain NOT LIKE '%facebook.com%'
         AND domain NOT LIKE '%instagram.com%'
         AND domain NOT LIKE '%twitter.com%'
@@ -207,14 +248,53 @@ export async function onRequestGet(context) {
         AND domain NOT LIKE '%yelp.com%'
         AND domain NOT LIKE '%tripadvisor.com%'
         AND domain NOT LIKE '%google.com%'
+        AND domain NOT LIKE '%bostonchefs.com%'
+        AND domain NOT LIKE '%ptowntourism.com%'
+        AND domain NOT LIKE '%ptownchamber.com%'
+        AND domain NOT LIKE '%capecod.com%'
+        AND domain NOT LIKE '%capecodchamber.org%'
+        AND domain NOT LIKE '%larkhotels.com%'
+        AND domain NOT LIKE '%opentable.com%'
+        AND domain NOT LIKE '%doordash.com%'
+        AND domain NOT LIKE '%grubhub.com%'
+        AND domain NOT LIKE '%ubereats.com%'
+        AND domain NOT LIKE '%seamless.com%'
+        AND domain NOT LIKE '%timeout.com%'
+        AND domain NOT LIKE '%eater.com%'
+        AND domain NOT LIKE '%thrillist.com%'
+        AND domain NOT LIKE '%patch.com%'
+        AND domain NOT LIKE '%wickedlocal.com%'
+        AND domain NOT LIKE '%capecodtimes.com%'
+        AND domain NOT LIKE '%wikipedia.org%'
       ))
-      -- EXCLUDE non-restaurant names
+      -- EXCLUDE non-restaurant names (guides, lists, directories, generic)
       AND (name IS NULL OR (
         name NOT LIKE '%Reddit%'
         AND name NOT LIKE '%Assembly%'
         AND name NOT LIKE '%Rezi%'
+        AND name NOT LIKE '%Resy%'
         AND name NOT LIKE '%Quincy%Adams%'
         AND name NOT LIKE 'Restaurants Near%'
+        AND name NOT LIKE '%Restaurants in%'
+        AND name NOT LIKE '%Year Round Restaurants%'
+        AND name NOT LIKE '%Favorite%Restaurants%'
+        AND name NOT LIKE '%Best%Restaurants%'
+        AND name NOT LIKE '%Top%Restaurants%'
+        AND name NOT LIKE '%Guide%'
+        AND name NOT LIKE '%Winter Guide%'
+        AND name NOT LIKE '%Visitor Guide%'
+        AND name NOT LIKE 'Home'
+        AND name NOT LIKE 'QUINCY'
+        AND name NOT LIKE 'BOSTON'
+        AND name NOT LIKE 'PLYMOUTH'
+        AND name NOT LIKE '%bostonchefs%'
+        AND name NOT LIKE '%&#8212;%'
+        AND name NOT LIKE '%&#8211;%'
+        AND name NOT LIKE '%&#%'
+        AND name NOT LIKE '%Tourism%'
+        AND name NOT LIKE '%Chamber%'
+        AND name NOT LIKE '%Seafood, Brunch%'
+        AND LENGTH(name) > 2
       ))`;
     const countParams = [];
 
