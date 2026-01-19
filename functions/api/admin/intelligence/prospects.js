@@ -36,7 +36,7 @@ export async function onRequestGet(context) {
     // Column mapping: name (company name), primary_email, primary_phone, website_url
     let query = `
       SELECT
-        id,
+        COALESCE(id, 'lead_' || CAST(rowid AS TEXT)) as id,
         name as company,
         COALESCE(dba_name, name, '') as name,
         primary_email as email,
@@ -46,15 +46,18 @@ export async function onRequestGet(context) {
         state as region,
         cuisine_primary as category,
         current_pos as pos_system,
-        COALESCE(location_count, 1) as location_count,
+        1 as location_count,
         COALESCE(service_style, '') as service_style,
-        lead_score,
+        COALESCE(lead_score, 0) as lead_score,
         CASE
           WHEN EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email) THEN 'client'
           WHEN lead_score >= 70 THEN 'lead'
           ELSE 'prospect'
         END as status,
-        created_at
+        created_at,
+        domain,
+        hubspot_id,
+        source
       FROM restaurant_leads
       WHERE 1=1
     `;

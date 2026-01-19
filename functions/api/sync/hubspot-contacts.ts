@@ -126,13 +126,17 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
         // Parse lead score
         const leadScore = parseInt(contact.properties.rg_lead_score || '0') || 0;
 
+        // Generate unique lead ID
+        const leadId = 'lead_hs_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+
         // Upsert to restaurant_leads
         await env.DB.prepare(`
           INSERT INTO restaurant_leads (
-            hubspot_id, 
-            primary_email, 
-            name, 
-            current_pos, 
+            id,
+            hubspot_id,
+            primary_email,
+            name,
+            current_pos,
             lead_score,
             status,
             source,
@@ -140,8 +144,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, 'lead', 'hubspot', ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, 'lead', 'hubspot', ?, ?, ?)
           ON CONFLICT(hubspot_id) DO UPDATE SET
+            id = COALESCE(restaurant_leads.id, excluded.id),
             primary_email = excluded.primary_email,
             name = excluded.name,
             current_pos = COALESCE(excluded.current_pos, restaurant_leads.current_pos),
@@ -149,6 +154,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
             hubspot_synced_at = excluded.hubspot_synced_at,
             updated_at = excluded.updated_at
         `).bind(
+          leadId,
           contact.id,
           email,
           fullName,
