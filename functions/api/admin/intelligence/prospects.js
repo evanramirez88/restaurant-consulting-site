@@ -33,6 +33,7 @@ export async function onRequestGet(context) {
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
     // Build query for restaurant_leads (main prospects source)
+    // CRITICAL: Exclude existing clients, reps, and garbage data
     // Column mapping: name (company name), primary_email, primary_phone, website_url
     let query = `
       SELECT
@@ -42,24 +43,78 @@ export async function onRequestGet(context) {
         primary_email as email,
         primary_phone as phone,
         website_url as website,
+        -- Full address from address_line1 + address_line2
+        CASE
+          WHEN address_line2 IS NOT NULL AND address_line2 != ''
+          THEN COALESCE(address_line1, '') || ', ' || address_line2
+          ELSE address_line1
+        END as address,
         city as town,
-        state as region,
+        state,
+        zip,
+        CASE
+          WHEN city IN ('Provincetown', 'Truro', 'Wellfleet', 'Eastham') THEN 'Outer Cape'
+          WHEN city IN ('Orleans', 'Chatham', 'Brewster', 'Harwich') THEN 'Lower Cape'
+          WHEN city IN ('Dennis', 'Yarmouth', 'Barnstable', 'Hyannis') THEN 'Mid Cape'
+          WHEN city IN ('Mashpee', 'Falmouth', 'Sandwich', 'Bourne') THEN 'Upper Cape'
+          WHEN city IN ('Plymouth', 'Duxbury', 'Kingston', 'Marshfield', 'Scituate', 'Cohasset', 'Hingham', 'Weymouth', 'Braintree', 'Quincy') THEN 'South Shore'
+          WHEN city IN ('Nantucket', 'Edgartown', 'Oak Bluffs', 'Vineyard Haven', 'West Tisbury', 'Chilmark', 'Aquinnah') THEN 'Islands'
+          ELSE 'Other'
+        END as region,
         cuisine_primary as category,
         current_pos as pos_system,
-        1 as location_count,
         COALESCE(service_style, '') as service_style,
         COALESCE(lead_score, 0) as lead_score,
         CASE
-          WHEN EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email) THEN 'client'
           WHEN lead_score >= 70 THEN 'lead'
           ELSE 'prospect'
         END as status,
         created_at,
         domain,
         hubspot_id,
-        source
+        source,
+        -- Business intelligence fields (use existing columns or placeholders)
+        license_number,
+        license_type,
+        actual_seat_count as seating_capacity,
+        health_score,
+        last_inspection_date,
+        online_ordering_provider as online_ordering,
+        seasonal
       FROM restaurant_leads
       WHERE 1=1
+        -- EXCLUDE existing clients
+        AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email)
+        -- EXCLUDE Toast reps and other vendor emails
+        AND (primary_email IS NULL OR (
+          primary_email NOT LIKE '%@toasttab.com'
+          AND primary_email NOT LIKE '%@squareup.com'
+          AND primary_email NOT LIKE '%@clover.com'
+          AND primary_email NOT LIKE '%@lightspeedhq.com'
+          AND primary_email NOT LIKE '%@upserve.com'
+          AND primary_email NOT LIKE '%@ncr.com'
+        ))
+        -- EXCLUDE garbage domains
+        AND (domain IS NULL OR (
+          domain NOT LIKE '%reddit.com%'
+          AND domain NOT LIKE '%assembly.com%'
+          AND domain NOT LIKE '%rezi.%'
+          AND domain NOT LIKE '%facebook.com%'
+          AND domain NOT LIKE '%instagram.com%'
+          AND domain NOT LIKE '%twitter.com%'
+          AND domain NOT LIKE '%linkedin.com%'
+          AND domain NOT LIKE '%yelp.com%'
+          AND domain NOT LIKE '%tripadvisor.com%'
+          AND domain NOT LIKE '%google.com%'
+        ))
+        -- EXCLUDE non-restaurant names
+        AND (name IS NULL OR (
+          name NOT LIKE '%Reddit%'
+          AND name NOT LIKE '%Assembly%'
+          AND name NOT LIKE '%Rezi%'
+          AND name NOT LIKE '%Quincy%Adams%'
+          AND name NOT LIKE 'Restaurants Near%'
+        ))
     `;
     const params = [];
 
@@ -75,22 +130,31 @@ export async function onRequestGet(context) {
       params.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    // Region filter (using state)
+    // Region filter - Cape Cod sub-regions, South Shore, and Islands (NO BOSTON)
     if (region && region !== 'all') {
-      // Map friendly names to state codes or patterns
+      // Map to Cape Cod sub-regions as defined in the demo prototype
       const regionMap = {
-        'Cape Cod': "city LIKE '%cape%' OR city IN ('Hyannis', 'Sandwich', 'Provincetown', 'Chatham', 'Falmouth', 'Barnstable', 'Dennis', 'Yarmouth', 'Brewster', 'Orleans', 'Eastham', 'Wellfleet', 'Truro')",
-        'South Shore': "city IN ('Plymouth', 'Quincy', 'Weymouth', 'Braintree', 'Marshfield', 'Scituate', 'Duxbury', 'Kingston')",
-        'Boston': "city IN ('Boston', 'Cambridge', 'Somerville', 'Brookline', 'Newton', 'Allston', 'Brighton')",
-        'Islands': "city IN ('Nantucket', 'Martha''s Vineyard', 'Edgartown', 'Oak Bluffs', 'Vineyard Haven')",
+        // Cape Cod sub-regions
+        'Outer Cape': "city IN ('Provincetown', 'Truro', 'Wellfleet', 'Eastham')",
+        'Lower Cape': "city IN ('Orleans', 'Chatham', 'Brewster', 'Harwich')",
+        'Mid Cape': "city IN ('Dennis', 'Yarmouth', 'Barnstable', 'Hyannis')",
+        'Upper Cape': "city IN ('Mashpee', 'Falmouth', 'Sandwich', 'Bourne')",
+        // All of Cape Cod
+        'Cape Cod': "city IN ('Provincetown', 'Truro', 'Wellfleet', 'Eastham', 'Orleans', 'Chatham', 'Brewster', 'Harwich', 'Dennis', 'Yarmouth', 'Barnstable', 'Hyannis', 'Mashpee', 'Falmouth', 'Sandwich', 'Bourne')",
+        // South Shore (IN service area)
+        'South Shore': "city IN ('Plymouth', 'Duxbury', 'Kingston', 'Marshfield', 'Scituate', 'Cohasset', 'Hingham', 'Weymouth', 'Braintree', 'Quincy')",
+        // Islands
+        'Islands': "city IN ('Nantucket', 'Edgartown', 'Oak Bluffs', 'Vineyard Haven', 'West Tisbury', 'Chilmark', 'Aquinnah')",
       };
 
       if (regionMap[region]) {
         query += ` AND (${regionMap[region]})`;
       } else if (region.length === 2) {
-        // Assume state code
-        query += ` AND state = ?`;
-        params.push(region);
+        // State code - only allow MA
+        if (region === 'MA') {
+          query += ` AND state = ?`;
+          params.push(region);
+        }
       }
     }
 
@@ -118,8 +182,40 @@ export async function onRequestGet(context) {
     // Execute query
     const results = await env.DB.prepare(query).bind(...params).all();
 
-    // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) as total FROM restaurant_leads WHERE 1=1';
+    // Get total count for pagination (with same exclusion filters)
+    let countQuery = `SELECT COUNT(*) as total FROM restaurant_leads WHERE 1=1
+      -- EXCLUDE existing clients
+      AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email)
+      -- EXCLUDE Toast reps and vendor emails
+      AND (primary_email IS NULL OR (
+        primary_email NOT LIKE '%@toasttab.com'
+        AND primary_email NOT LIKE '%@squareup.com'
+        AND primary_email NOT LIKE '%@clover.com'
+        AND primary_email NOT LIKE '%@lightspeedhq.com'
+        AND primary_email NOT LIKE '%@upserve.com'
+        AND primary_email NOT LIKE '%@ncr.com'
+      ))
+      -- EXCLUDE garbage domains
+      AND (domain IS NULL OR (
+        domain NOT LIKE '%reddit.com%'
+        AND domain NOT LIKE '%assembly.com%'
+        AND domain NOT LIKE '%rezi.%'
+        AND domain NOT LIKE '%facebook.com%'
+        AND domain NOT LIKE '%instagram.com%'
+        AND domain NOT LIKE '%twitter.com%'
+        AND domain NOT LIKE '%linkedin.com%'
+        AND domain NOT LIKE '%yelp.com%'
+        AND domain NOT LIKE '%tripadvisor.com%'
+        AND domain NOT LIKE '%google.com%'
+      ))
+      -- EXCLUDE non-restaurant names
+      AND (name IS NULL OR (
+        name NOT LIKE '%Reddit%'
+        AND name NOT LIKE '%Assembly%'
+        AND name NOT LIKE '%Rezi%'
+        AND name NOT LIKE '%Quincy%Adams%'
+        AND name NOT LIKE 'Restaurants Near%'
+      ))`;
     const countParams = [];
 
     if (search) {
@@ -130,7 +226,7 @@ export async function onRequestGet(context) {
 
     const countResult = await env.DB.prepare(countQuery).bind(...countParams).first();
 
-    // Transform results to match UI expected format
+    // Transform results to match UI expected format (matching demo prototype)
     const prospects = (results.results || []).map((row, index) => ({
       id: row.id || `lead_${index}`,
       name: row.name || 'Unknown Contact',
@@ -138,19 +234,38 @@ export async function onRequestGet(context) {
       email: row.email || '',
       phone: row.phone || null,
       website: row.website || null,
+      // Location fields
+      address: row.address || null,
       town: row.town || null,
-      region: row.region || null,
+      state: row.state || 'MA',
+      zip: row.zip || null,
+      region: row.region || 'Other',
+      // Business classification
       category: row.category || null,
+      service_style: row.service_style || null,
+      seasonal: row.seasonal === 1 || row.seasonal === true,
+      // Technology
       pos_system: row.pos_system || 'Unknown',
-      revenue_estimate: row.revenue_estimate || null,
-      employee_count: row.employee_count || null,
-      seasonal: false,
-      rating: null,
+      online_ordering: row.online_ordering || null,
+      // Licensure & Compliance (from demo prototype)
+      license_number: row.license_number || null,
+      license_type: row.license_type || null,
+      seating_capacity: row.seating_capacity || null,
+      // Health & Safety
+      health_score: row.health_score || null,
+      last_inspection_date: row.last_inspection_date || null,
+      // Scoring & Status
       lead_score: row.lead_score || 50,
       status: row.status || 'prospect',
+      // Metadata
+      domain: row.domain || null,
+      hubspot_id: row.hubspot_id || null,
+      source: row.source || null,
+      created_at: row.created_at || Date.now(),
+      // Placeholder for future enrichment
       tags: [],
       notes: null,
-      created_at: row.created_at || Date.now(),
+      rating: null,
     }));
 
     return new Response(JSON.stringify({
