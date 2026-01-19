@@ -5,8 +5,8 @@
  * POST /api/admin/search-budget/test - Test search with specified provider
  */
 
-import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
-import { unifiedSearch, getBudgetReport, SearchPriority } from '../_shared/search-providers.js';
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
+import { unifiedSearch, getBudgetReport, SearchPriority } from '../../_shared/search-providers.js';
 
 export async function onRequestGet(context) {
   try {
