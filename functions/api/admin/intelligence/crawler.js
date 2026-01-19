@@ -12,6 +12,18 @@
 import { scrapeRestaurantWebsite } from './_lib/scraper.js';
 import { fetchAllPublicRecords, scrapeYelpBusiness } from './_lib/public-records.js';
 
+// CORS headers for admin APIs
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 // Queue item types
 const QUEUE_TYPES = {
   WEBSITE_SCRAPE: 'website_scrape',
@@ -48,11 +60,11 @@ export async function onRequestPost(context) {
       case 'bulk_add':
         return await bulkAddToQueue(env, body);
       default:
-        return Response.json({ success: false, error: 'Unknown action' }, { status: 400 });
+        return new Response(JSON.stringify({ success: false, error: 'Unknown action' }), { status: 400, headers: corsHeaders });
     }
   } catch (error) {
     console.error('Crawler error:', error);
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500, headers: corsHeaders });
   }
 }
 
@@ -97,7 +109,7 @@ export async function onRequestGet(context) {
       LIMIT 10
     `).all();
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       stats: {
         pending: pending?.count || 0,
@@ -107,17 +119,17 @@ export async function onRequestGet(context) {
         by_type: groupStats(stats.results || []),
       },
       next_items: nextItems.results || [],
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     // If table doesn't exist, create it
     if (error.message.includes('no such table')) {
       await ensureQueueTable(env);
-      return Response.json({
+      return new Response(JSON.stringify({
         success: true,
         stats: { pending: 0, processing: 0, completed_24h: 0, failed_24h: 0 },
         next_items: [],
         message: 'Queue table created',
-      });
+      }), { headers: corsHeaders });
     }
     throw error;
   }
@@ -169,10 +181,10 @@ async function addToQueue(env, body) {
   } = body;
 
   if (!type || !QUEUE_TYPES[type.toUpperCase()]) {
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: 'Valid type required: ' + Object.values(QUEUE_TYPES).join(', '),
-    }, { status: 400 });
+    }), { status: 400, headers: corsHeaders });
   }
 
   await ensureQueueTable(env);
@@ -192,11 +204,11 @@ async function addToQueue(env, body) {
     scheduled_for || null
   ).run();
 
-  return Response.json({
+  return new Response(JSON.stringify({
     success: true,
     queue_id: id,
     message: `Added to ${type} queue with priority ${priority}`,
-  });
+  }), { headers: corsHeaders });
 }
 
 /**
@@ -206,7 +218,7 @@ async function bulkAddToQueue(env, body) {
   const { items, type, priority = PRIORITY.NORMAL } = body;
 
   if (!items || !Array.isArray(items)) {
-    return Response.json({ success: false, error: 'items array required' }, { status: 400 });
+    return new Response(JSON.stringify({ success: false, error: 'items array required' }), { status: 400, headers: corsHeaders });
   }
 
   await ensureQueueTable(env);
@@ -236,12 +248,12 @@ async function bulkAddToQueue(env, body) {
     }
   }
 
-  return Response.json({
+  return new Response(JSON.stringify({
     success: true,
     added,
     errors: errors.length > 0 ? errors : undefined,
     message: `Added ${added} items to queue`,
-  });
+  }), { headers: corsHeaders });
 }
 
 /**
@@ -330,10 +342,10 @@ async function processQueue(env, body) {
     }
   }
 
-  return Response.json({
+  return new Response(JSON.stringify({
     success: true,
     ...results,
-  });
+  }), { headers: corsHeaders });
 }
 
 /**
@@ -618,9 +630,9 @@ async function clearQueue(env, body) {
     WHERE status = ? AND completed_at < ?
   `).bind(status, cutoff).run();
 
-  return Response.json({
+  return new Response(JSON.stringify({
     success: true,
     deleted: result.meta?.changes || 0,
     message: `Cleared ${status} items older than ${older_than_days} days`,
-  });
+  }), { headers: corsHeaders });
 }

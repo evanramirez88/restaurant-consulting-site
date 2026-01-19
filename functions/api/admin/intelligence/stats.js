@@ -6,6 +6,18 @@
  * Returns statistics in the format expected by ClientIntelligenceTab.tsx
  */
 
+// CORS headers for admin APIs
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function onRequestGet(context) {
   const { env } = context;
 
@@ -94,7 +106,7 @@ export async function onRequestGet(context) {
       byCategory[row.category] = row.count;
     });
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: {
         total_prospects: statusCounts?.total_prospects || 0,
@@ -105,12 +117,12 @@ export async function onRequestGet(context) {
         by_pos: byPOS,
         by_category: byCategory,
       },
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     console.error('Stats API error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }

@@ -25,6 +25,25 @@ interface CrawlerStats {
   failed_24h: number;
 }
 
+interface RunnerStatus {
+  status: string;
+  budget: {
+    tavily: { dayRemaining: number; monthRemaining: number; canUse: boolean };
+    exa: { remaining: number; canUse: boolean };
+    searches_today: number;
+    daily_limit: number;
+    can_search: boolean;
+  };
+  lead_stats: {
+    total: number;
+    auto_discovered: number;
+    enriched: number;
+    last_24h: number;
+    last_7d: number;
+  };
+  recent_runs: any[];
+}
+
 interface DiscoveryResult {
   method: string;
   discovered?: any[];
@@ -61,11 +80,29 @@ const ResearchPanel: React.FC = () => {
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichResult, setEnrichResult] = useState<EnrichmentResult | null>(null);
 
-  // Load crawler stats on mount
+  // Intelligence Runner state
+  const [runnerStatus, setRunnerStatus] = useState<RunnerStatus | null>(null);
+  const [isRunningIntelligence, setIsRunningIntelligence] = useState(false);
+  const [runResult, setRunResult] = useState<any>(null);
+
+  // Load all stats on mount
   useEffect(() => {
     loadCrawlerStats();
     loadEnrichmentStats();
+    loadRunnerStatus();
   }, []);
+
+  const loadRunnerStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/intelligence/runner');
+      const data = await response.json();
+      if (data.success) {
+        setRunnerStatus(data);
+      }
+    } catch (error) {
+      console.error('Failed to load runner status:', error);
+    }
+  };
 
   const loadCrawlerStats = async () => {
     try {
@@ -237,8 +274,235 @@ const ResearchPanel: React.FC = () => {
     }
   };
 
+  // Handle manual intelligence run
+  const handleRunIntelligence = async (location?: string) => {
+    setIsRunningIntelligence(true);
+    setRunResult(null);
+
+    try {
+      const response = await fetch('/api/admin/intelligence/runner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'run',
+          location: location || null,
+          max_searches: 3,
+          max_enrichments: 5,
+        }),
+      });
+
+      const data = await response.json();
+      setRunResult(data);
+      loadRunnerStatus(); // Refresh status
+      loadCrawlerStats(); // Refresh crawler stats
+      loadEnrichmentStats(); // Refresh enrichment stats
+    } catch (error) {
+      setRunResult({ success: false, error: (error as Error).message });
+    } finally {
+      setIsRunningIntelligence(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Intelligence Runner - Autonomous System Status */}
+      <div className="admin-card p-6 border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-500/20 rounded-xl">
+              <Zap className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Intelligence Runner</h3>
+              <p className="text-sm text-gray-400">Autonomous restaurant discovery system</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              runnerStatus?.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+            }`}>
+              {runnerStatus?.status === 'active' ? '● Active' : '○ Idle'}
+            </span>
+            <button
+              onClick={() => loadRunnerStatus()}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Refresh Status"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Budget & Stats Grid */}
+        {runnerStatus && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+              <p className="text-2xl font-bold text-blue-400">
+                {runnerStatus.budget?.tavily?.dayRemaining || 0}
+              </p>
+              <p className="text-xs text-gray-400">Searches Left Today</p>
+            </div>
+            <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+              <p className="text-2xl font-bold text-green-400">
+                {runnerStatus.lead_stats?.total || 0}
+              </p>
+              <p className="text-xs text-gray-400">Total Leads</p>
+            </div>
+            <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+              <p className="text-2xl font-bold text-purple-400">
+                {runnerStatus.lead_stats?.last_24h || 0}
+              </p>
+              <p className="text-xs text-gray-400">New Last 24h</p>
+            </div>
+            <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+              <p className="text-2xl font-bold text-amber-400">
+                {runnerStatus.lead_stats?.enriched || 0}
+              </p>
+              <p className="text-xs text-gray-400">Enriched</p>
+            </div>
+          </div>
+        )}
+
+        {/* Run Controls */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <button
+            onClick={() => handleRunIntelligence()}
+            disabled={isRunningIntelligence || !runnerStatus?.budget?.can_search}
+            className="flex-1 min-w-[200px] py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {isRunningIntelligence ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Running Intelligence...
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5" />
+                Run Intelligence Now
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => handleRunIntelligence('Provincetown MA')}
+            disabled={isRunningIntelligence}
+            className="px-4 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white rounded-lg transition-colors flex items-center gap-2"
+            title="Search Provincetown area"
+          >
+            <MapPin className="w-4 h-4" />
+            P-Town
+          </button>
+          <button
+            onClick={() => handleRunIntelligence('Hyannis MA')}
+            disabled={isRunningIntelligence}
+            className="px-4 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white rounded-lg transition-colors flex items-center gap-2"
+            title="Search Hyannis area"
+          >
+            <MapPin className="w-4 h-4" />
+            Hyannis
+          </button>
+          <button
+            onClick={() => handleRunIntelligence('Boston MA')}
+            disabled={isRunningIntelligence}
+            className="px-4 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white rounded-lg transition-colors flex items-center gap-2"
+            title="Search Boston area"
+          >
+            <MapPin className="w-4 h-4" />
+            Boston
+          </button>
+        </div>
+
+        {/* Run Result */}
+        {runResult && (
+          <div className={`p-4 rounded-lg border ${runResult.success ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50'}`}>
+            <div className="flex items-start gap-3">
+              {runResult.success ? (
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-400 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className={`font-medium ${runResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                  {runResult.message || runResult.error || 'Run complete'}
+                </p>
+                {runResult.success && (
+                  <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Searches:</span>{' '}
+                      <span className="text-white">{runResult.searches_performed || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Leads Created:</span>{' '}
+                      <span className="text-green-400">{runResult.leads_created || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Enriched:</span>{' '}
+                      <span className="text-purple-400">{runResult.leads_enriched || 0}</span>
+                    </div>
+                  </div>
+                )}
+                {runResult.new_leads?.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm text-gray-300 font-medium">New Leads Found:</p>
+                    {runResult.new_leads.slice(0, 5).map((lead: any, i: number) => (
+                      <div key={i} className="text-sm text-gray-400 flex items-center gap-2">
+                        <Building2 className="w-3 h-3" />
+                        {lead.name}
+                        {lead.pos && <span className="text-amber-400 text-xs">({lead.pos})</span>}
+                        {lead.score && <span className="text-blue-400 text-xs">Score: {lead.score}</span>}
+                      </div>
+                    ))}
+                    {runResult.new_leads.length > 5 && (
+                      <p className="text-xs text-gray-500">...and {runResult.new_leads.length - 5} more</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Runs */}
+        {runnerStatus?.recent_runs?.length > 0 && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-400 mb-2">Recent Runs:</p>
+            <div className="space-y-1">
+              {runnerStatus.recent_runs.slice(0, 3).map((run: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-xs p-2 bg-gray-900/30 rounded">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-gray-500" />
+                    <span className="text-gray-400">
+                      {new Date(run.started_at * 1000).toLocaleString()}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded ${
+                      run.run_type === 'scheduled' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
+                    }`}>
+                      {run.run_type}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <span>{run.searches_performed} searches</span>
+                    <span className="text-green-400">+{run.leads_created} leads</span>
+                    <span className="text-purple-400">{run.leads_enriched} enriched</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Schedule Info */}
+        <div className="mt-4 pt-4 border-t border-gray-700/50 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2 text-gray-400">
+            <Clock className="w-4 h-4" />
+            <span>Scheduled: Every 4 hours (automatic)</span>
+          </div>
+          <div className="flex items-center gap-2 text-gray-400">
+            <Target className="w-4 h-4" />
+            <span>{runnerStatus?.service_areas || 0} service areas configured</span>
+          </div>
+        </div>
+      </div>
+
       {/* Crawler Queue Status */}
       <div className="admin-card p-4">
         <div className="flex items-center justify-between mb-4">

@@ -8,6 +8,18 @@
  * 2. clients table (converted leads)
  */
 
+// CORS headers for admin APIs
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
 
@@ -138,18 +150,18 @@ export async function onRequestGet(context) {
       created_at: row.created_at || Date.now(),
     }));
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: prospects,
       total: countResult?.total || 0,
       limit,
       offset,
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     console.error('Prospects API error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }

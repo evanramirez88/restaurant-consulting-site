@@ -13,6 +13,18 @@
 import { unifiedSearch, SearchPriority } from '../../../_shared/search-providers.js';
 import { scrapeRestaurantWebsite } from './_lib/scraper.js';
 
+// CORS headers for admin APIs
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function onRequestGet(context) {
   const { env, request } = context;
   const url = new URL(request.url);
@@ -48,16 +60,16 @@ export async function onRequestGet(context) {
 
     const sessions = await env.DB.prepare(query).bind(...params).all();
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       sessions: sessions.results || [],
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     console.error('Research GET error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }
 
@@ -69,10 +81,10 @@ export async function onRequestPost(context) {
     const { client_id, research_type, query: searchQuery } = body;
 
     if (!client_id || !research_type) {
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: 'client_id and research_type are required',
-      }, { status: 400 });
+      }), { status: 400, headers: corsHeaders });
     }
 
     // Get client info
@@ -81,10 +93,10 @@ export async function onRequestPost(context) {
     ).bind(client_id).first();
 
     if (!client) {
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: 'Client not found',
-      }, { status: 404 });
+      }), { status: 404, headers: corsHeaders });
     }
 
     // Get default AI provider
@@ -130,7 +142,7 @@ export async function onRequestPost(context) {
       WHERE id = ?
     `).bind(researchResults.facts.length, sessionId).run();
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       session_id: sessionId,
       facts_found: researchResults.facts.length,
@@ -138,13 +150,13 @@ export async function onRequestPost(context) {
       scrape_results: researchResults.scrapeData,
       search_results: researchResults.searchData,
       message: `Research completed. Found ${researchResults.facts.length} facts from ${researchResults.sources.length} sources.`,
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     console.error('Research POST error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }
 

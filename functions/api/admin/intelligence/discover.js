@@ -16,6 +16,18 @@
 import { scrapeRestaurantWebsite, detectTechStack } from './_lib/scraper.js';
 import { unifiedSearch, SearchPriority } from '../../../_shared/search-providers.js';
 
+// CORS headers for admin APIs
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -52,22 +64,22 @@ export async function onRequestPost(context) {
         results = await researchCompetitor(env, competitor_url);
         break;
       default:
-        return Response.json({
+        return new Response(JSON.stringify({
           success: false,
           error: 'Invalid discovery method. Use: location, technology, bulk_websites, single_website, or competitor',
-        }, { status: 400 });
+        }), { status: 400, headers: corsHeaders });
     }
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       ...results,
-    });
+    }), { headers: corsHeaders });
   } catch (error) {
     console.error('Discovery error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }
 
@@ -560,25 +572,34 @@ export async function onRequestGet(context) {
   const { env, request } = context;
   const url = new URL(request.url);
 
-  // Return discovery statistics
-  const stats = await env.DB.prepare(`
-    SELECT
-      COUNT(*) as total_leads,
-      COUNT(DISTINCT source) as sources,
-      SUM(CASE WHEN source = 'web_discovery' THEN 1 ELSE 0 END) as web_discovered,
-      SUM(CASE WHEN current_pos IS NOT NULL THEN 1 ELSE 0 END) as with_pos,
-      SUM(CASE WHEN website_url IS NOT NULL THEN 1 ELSE 0 END) as with_website
-    FROM restaurant_leads
-  `).first();
+  try {
+    // Return discovery statistics
+    const stats = await env.DB.prepare(`
+      SELECT
+        COUNT(*) as total_leads,
+        COUNT(DISTINCT source) as sources,
+        SUM(CASE WHEN source = 'web_discovery' THEN 1 ELSE 0 END) as web_discovered,
+        SUM(CASE WHEN current_pos IS NOT NULL THEN 1 ELSE 0 END) as with_pos,
+        SUM(CASE WHEN website_url IS NOT NULL THEN 1 ELSE 0 END) as with_website
+      FROM restaurant_leads
+    `).first();
 
-  return Response.json({
-    success: true,
-    stats,
-    available_methods: [
-      { method: 'location', description: 'Find restaurants in a specific location' },
-      { method: 'technology', description: 'Find restaurants using/not using specific POS' },
-      { method: 'bulk_websites', description: 'Scan multiple restaurant websites' },
-      { method: 'competitor', description: 'Deep research on a competitor restaurant' },
-    ],
-  });
+    return new Response(JSON.stringify({
+      success: true,
+      stats,
+      available_methods: [
+        { method: 'location', description: 'Find restaurants in a specific location' },
+        { method: 'technology', description: 'Find restaurants using/not using specific POS' },
+        { method: 'bulk_websites', description: 'Scan multiple restaurant websites' },
+        { method: 'single_website', description: 'Scan a single restaurant website' },
+        { method: 'competitor', description: 'Deep research on a competitor restaurant' },
+      ],
+    }), { headers: corsHeaders });
+  } catch (error) {
+    console.error('Discovery GET error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+    }), { status: 500, headers: corsHeaders });
+  }
 }

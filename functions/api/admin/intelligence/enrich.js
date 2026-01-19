@@ -13,6 +13,18 @@
 
 import { scrapeRestaurantWebsite, enrichLead } from './_lib/scraper.js';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -30,21 +42,21 @@ export async function onRequestPost(context) {
     const targetType = lead_id ? 'lead' : 'client';
 
     if (!targetId) {
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: 'lead_id, client_id, or bulk_ids is required',
-      }, { status: 400 });
+      }), { status: 400, headers: corsHeaders });
     }
 
     const result = await enrichSingle(env, targetId, targetType, options);
 
-    return Response.json(result);
+    return new Response(JSON.stringify(result), { headers: corsHeaders });
   } catch (error) {
     console.error('Enrichment error:', error);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
-    }, { status: 500 });
+    }), { status: 500, headers: corsHeaders });
   }
 }
 
@@ -477,7 +489,7 @@ export async function onRequestGet(context) {
     ).bind(leadId).first();
 
     if (!lead) {
-      return Response.json({ success: false, error: 'Lead not found' }, { status: 404 });
+      return new Response(JSON.stringify({ success: false, error: 'Lead not found' }), { status: 404, headers: corsHeaders });
     }
 
     const potential = {
@@ -493,11 +505,11 @@ export async function onRequestGet(context) {
     if (!lead.email) potential.missing_fields.push('email');
     if (!lead.phone) potential.missing_fields.push('phone');
 
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       lead_id: leadId,
       potential,
-    });
+    }), { headers: corsHeaders });
   }
 
   // Return stats on enrichable leads
@@ -518,7 +530,7 @@ export async function onRequestGet(context) {
     AND (current_pos IS NULL OR primary_email IS NULL OR primary_phone IS NULL)
   `).first();
 
-  return Response.json({
+  return new Response(JSON.stringify({
     success: true,
     stats: {
       ...stats,
@@ -532,5 +544,5 @@ export async function onRequestGet(context) {
       'Cross-database reference matching',
       'Pattern-based inference',
     ],
-  });
+  }), { headers: corsHeaders });
 }
