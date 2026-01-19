@@ -23,17 +23,36 @@ interface IntelClient {
   email: string;
   phone?: string;
   website?: string;
+  // Location fields
+  address?: string;
   town?: string;
+  state?: string;
+  zip?: string;
   region?: string;
+  // Business classification
   category?: string;
+  service_style?: string;
   pos_system?: string;
+  online_ordering?: string;
+  seasonal?: boolean;
+  // Licensure & Compliance (from demo prototype)
+  license_number?: string;
+  license_type?: string;
+  seating_capacity?: number;
+  // Health & Safety
+  health_score?: number;
+  last_inspection_date?: string;
+  // Business metrics
   revenue_estimate?: string;
   employee_count?: number;
-  seasonal?: boolean;
   rating?: number;
   last_contact?: number;
+  // Lead management
   lead_score?: number;
   status: 'prospect' | 'lead' | 'client' | 'churned';
+  hubspot_id?: string;
+  domain?: string;
+  source?: string;
   tags?: string[];
   notes?: string;
   created_at: number;
@@ -64,9 +83,10 @@ interface MarketStats {
 type TabType = 'overview' | 'prospects' | 'research' | 'facts' | 'import';
 type ViewMode = 'table' | 'cards';
 
-const REGIONS = ['Cape Cod', 'South Shore', 'Boston', 'Islands', 'Other'];
-const POS_SYSTEMS = ['Toast', 'Square', 'Clover', 'Aloha', 'Micros', 'Lightspeed', 'Unknown'];
-const CATEGORIES = ['Casual Dining', 'Fine Dining', 'Fast Casual', 'Bar/Pub', 'Cafe', 'Seafood', 'Pizza', 'Other'];
+// Cape Cod sub-regions as defined in demo prototype (NO BOSTON)
+const REGIONS = ['Outer Cape', 'Lower Cape', 'Mid Cape', 'Upper Cape', 'South Shore', 'Islands', 'Other'];
+const POS_SYSTEMS = ['Toast', 'Square', 'Clover', 'Aloha', 'Micros', 'Lightspeed', 'Upserve', 'Unknown'];
+const CATEGORIES = ['Casual Dining', 'Fine Dining', 'Fast Casual', 'Bar/Pub', 'Cafe', 'Seafood', 'Pizza', 'Bakery', 'Other'];
 
 const ClientIntelligenceTab: React.FC = () => {
   // Tab & View State
@@ -1143,11 +1163,74 @@ const ClientIntelligenceTab: React.FC = () => {
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Location</h4>
                   <div className="space-y-2 text-gray-300">
-                    {selectedProspect.town && <p>{selectedProspect.town}</p>}
+                    {selectedProspect.address && <p>{selectedProspect.address}</p>}
+                    {selectedProspect.town && (
+                      <p>
+                        {selectedProspect.town}
+                        {selectedProspect.state && `, ${selectedProspect.state}`}
+                        {selectedProspect.zip && ` ${selectedProspect.zip}`}
+                      </p>
+                    )}
                     {selectedProspect.region && <p className="text-gray-500">{selectedProspect.region}</p>}
                   </div>
                 </div>
               </div>
+
+              {/* Licensure & Compliance - from demo prototype */}
+              {(selectedProspect.license_number || selectedProspect.license_type || selectedProspect.health_score || selectedProspect.seating_capacity) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Business Intel</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProspect.license_type && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">License Type</p>
+                        <p className="text-white font-medium text-sm">{selectedProspect.license_type}</p>
+                        {selectedProspect.license_number && (
+                          <a
+                            href={`https://www.mass.gov/orgs/alcoholic-beverages-control-commission`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-amber-400 hover:text-amber-300"
+                          >
+                            Verify ABCC →
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {selectedProspect.seating_capacity && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Seating Capacity</p>
+                        <p className="text-white font-medium">{selectedProspect.seating_capacity} seats</p>
+                      </div>
+                    )}
+                    {selectedProspect.health_score !== undefined && selectedProspect.health_score !== null && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Health Score</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold ${selectedProspect.health_score >= 90 ? 'text-green-400' : selectedProspect.health_score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                            {selectedProspect.health_score}
+                          </span>
+                          <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${selectedProspect.health_score >= 90 ? 'bg-green-500' : selectedProspect.health_score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
+                              style={{ width: `${selectedProspect.health_score}%` }}
+                            />
+                          </div>
+                        </div>
+                        {selectedProspect.last_inspection_date && (
+                          <p className="text-xs text-gray-500 mt-1">Last: {selectedProspect.last_inspection_date}</p>
+                        )}
+                      </div>
+                    )}
+                    {selectedProspect.seasonal && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Operation</p>
+                        <p className="text-amber-400 font-medium">Seasonal</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Business Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1189,15 +1272,77 @@ const ClientIntelligenceTab: React.FC = () => {
 
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-700">
-                <button className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors">
+                <a
+                  href={`mailto:${selectedProspect.email}?subject=R%26G%20Consulting%20-%20Restaurant%20Technology%20Solutions&body=Hi%20${encodeURIComponent(selectedProspect.name)}%2C%0A%0AI%20noticed%20${encodeURIComponent(selectedProspect.company)}%20and%20wanted%20to%20reach%20out%20about%20your%20restaurant%20technology%20needs.%0A%0ABest%20regards%2C%0AEvan%20Ramirez%0AR%26G%20Consulting`}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+                >
                   <Send className="w-4 h-4" />
                   Send Email
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                </a>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/email/enroll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email: selectedProspect.email,
+                          name: selectedProspect.name,
+                          sequence_id: selectedProspect.pos_system === 'Toast' ? 'seq_toast_support_001' : 'seq_pos_switcher_001',
+                          lead_id: selectedProspect.id
+                        })
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        setResearchMessage(`Added ${selectedProspect.name} to email campaign`);
+                      } else {
+                        setResearchMessage(`Failed to add to campaign: ${result.error}`);
+                      }
+                      setTimeout(() => setResearchMessage(null), 5000);
+                    } catch (error) {
+                      setResearchMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                      setTimeout(() => setResearchMessage(null), 5000);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
                   <Link2 className="w-4 h-4" />
                   Add to Campaign
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/intelligence/convert', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          lead_id: selectedProspect.id,
+                          email: selectedProspect.email,
+                          name: selectedProspect.name,
+                          company: selectedProspect.company,
+                          phone: selectedProspect.phone,
+                          address: selectedProspect.address,
+                          town: selectedProspect.town,
+                          state: selectedProspect.state,
+                          pos_system: selectedProspect.pos_system
+                        })
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        setResearchMessage(`Converted ${selectedProspect.company} to client!`);
+                        await loadData(); // Refresh data
+                        setSelectedProspect(null);
+                      } else {
+                        setResearchMessage(`Conversion failed: ${result.error}`);
+                      }
+                      setTimeout(() => setResearchMessage(null), 5000);
+                    } catch (error) {
+                      setResearchMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                      setTimeout(() => setResearchMessage(null), 5000);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
                   <Building2 className="w-4 h-4" />
                   Convert to Client
                 </button>
