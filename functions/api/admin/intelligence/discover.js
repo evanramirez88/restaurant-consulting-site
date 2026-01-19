@@ -232,11 +232,11 @@ async function scanSingleWebsite(env, url) {
     return { error: 'Invalid URL format', success: false };
   }
 
-  // Check if this is an existing client
+  // Check if this is an existing client (by email domain or company name)
   const existingClient = await env.DB.prepare(`
     SELECT id, name, company, email, phone
     FROM clients
-    WHERE LOWER(company) LIKE ? OR LOWER(website) LIKE ?
+    WHERE LOWER(company) LIKE ? OR LOWER(email) LIKE ?
   `).bind(`%${domain}%`, `%${domain}%`).first();
 
   // Check if this is an existing lead
