@@ -95,6 +95,10 @@ const ClientIntelligenceTab: React.FC = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  // Research State
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchMessage, setResearchMessage] = useState<string | null>(null);
+
   // Sync State
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -140,48 +144,19 @@ const ClientIntelligenceTab: React.FC = () => {
         }
       }
 
-      // Use loaded data or fall back to demo
-      if (loadedProspects.length > 0) {
-        setProspects(loadedProspects);
-      } else {
-        setProspects(getDemoProspects());
-      }
-
-      if (loadedStats) {
-        setStats(loadedStats);
-      } else {
-        setStats(getDemoStats());
-      }
-
+      // Use loaded data - NO demo fallback
+      setProspects(loadedProspects);
+      setStats(loadedStats);
       setPendingFacts(loadedFacts);
     } catch (error) {
       console.error('Failed to load intelligence data:', error);
-      // Use demo data on error
-      setProspects(getDemoProspects());
-      setStats(getDemoStats());
+      // Show empty state on error - NO demo data
+      setProspects([]);
+      setStats(null);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Demo data for development
-  const getDemoProspects = (): IntelClient[] => [
-    { id: '1', name: 'John Smith', company: 'Cape Cod Seafood House', email: 'john@ccseafood.com', phone: '508-555-0101', town: 'Hyannis', region: 'Cape Cod', category: 'Seafood', pos_system: 'Toast', revenue_estimate: '$1M-2M', employee_count: 25, seasonal: true, rating: 4.5, lead_score: 85, status: 'lead', tags: ['hot-lead', 'menu-build'], created_at: Date.now() - 86400000 * 3 },
-    { id: '2', name: 'Sarah Johnson', company: 'The Sandwich Spot', email: 'sarah@sandwichspot.com', phone: '508-555-0102', town: 'Sandwich', region: 'Cape Cod', category: 'Fast Casual', pos_system: 'Square', revenue_estimate: '$500K-1M', employee_count: 12, seasonal: false, rating: 4.2, lead_score: 72, status: 'prospect', tags: ['pos-switch'], created_at: Date.now() - 86400000 * 7 },
-    { id: '3', name: 'Mike Davis', company: 'Provincetown Bistro', email: 'mike@ptownbistro.com', phone: '508-555-0103', town: 'Provincetown', region: 'Cape Cod', category: 'Fine Dining', pos_system: 'Aloha', revenue_estimate: '$2M-5M', employee_count: 40, seasonal: true, rating: 4.8, lead_score: 91, status: 'lead', tags: ['premium', 'networking'], created_at: Date.now() - 86400000 * 1 },
-    { id: '4', name: 'Lisa Chen', company: 'Plymouth Pizza Co', email: 'lisa@plymouthpizza.com', phone: '508-555-0104', town: 'Plymouth', region: 'South Shore', category: 'Pizza', pos_system: 'Clover', revenue_estimate: '$500K-1M', employee_count: 15, seasonal: false, rating: 4.0, lead_score: 65, status: 'prospect', created_at: Date.now() - 86400000 * 14 },
-    { id: '5', name: 'Tom Wilson', company: 'Chatham Oyster Bar', email: 'tom@chathamoyster.com', phone: '508-555-0105', town: 'Chatham', region: 'Cape Cod', category: 'Seafood', pos_system: 'Toast', revenue_estimate: '$1M-2M', employee_count: 20, seasonal: true, rating: 4.6, lead_score: 45, status: 'client', created_at: Date.now() - 86400000 * 30 },
-  ];
-
-  const getDemoStats = (): MarketStats => ({
-    total_prospects: 156,
-    total_leads: 42,
-    total_clients: 12,
-    avg_lead_score: 68,
-    by_region: { 'Cape Cod': 89, 'South Shore': 34, 'Boston': 21, 'Islands': 12 },
-    by_pos: { 'Toast': 45, 'Square': 38, 'Clover': 28, 'Aloha': 15, 'Unknown': 30 },
-    by_category: { 'Casual Dining': 42, 'Seafood': 35, 'Fast Casual': 28, 'Fine Dining': 18, 'Bar/Pub': 15, 'Other': 18 }
-  });
 
   // Filter prospects
   const filteredProspects = prospects.filter(p => {
@@ -275,6 +250,60 @@ const ClientIntelligenceTab: React.FC = () => {
       }
     } catch (error) {
       console.error('Fact action failed:', error);
+    }
+  };
+
+  // Handle research for a prospect
+  const handleResearch = async (prospect: IntelClient) => {
+    setIsResearching(true);
+    setResearchMessage('Starting research...');
+    try {
+      // Try to research by website first
+      if (prospect.website) {
+        const response = await fetch('/api/admin/intelligence/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method: 'single_website',
+            website: prospect.website
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          setResearchMessage(`Research complete! Found ${result.data?.found || 0} facts for ${prospect.company}`);
+          await loadData(); // Refresh data
+          setTimeout(() => setResearchMessage(null), 5000);
+          return;
+        }
+      }
+
+      // Fallback: Search by company name
+      const searchResponse = await fetch('/api/admin/intelligence/research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: prospect.id,
+          company_name: prospect.company,
+          website: prospect.website || null,
+          location: prospect.town || null
+        })
+      });
+      const searchResult = await searchResponse.json();
+
+      if (searchResult.success) {
+        const factsFound = searchResult.data?.facts_created || searchResult.facts_created || 0;
+        setResearchMessage(`Research complete! Created ${factsFound} facts for ${prospect.company}`);
+        await loadData();
+      } else {
+        setResearchMessage(`Research failed: ${searchResult.error || 'Unknown error'}`);
+      }
+      setTimeout(() => setResearchMessage(null), 5000);
+    } catch (error) {
+      console.error('Research failed:', error);
+      setResearchMessage(`Research error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTimeout(() => setResearchMessage(null), 5000);
+    } finally {
+      setIsResearching(false);
     }
   };
 
@@ -412,6 +441,24 @@ const ClientIntelligenceTab: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Overview Tab - Empty State */}
+      {activeTab === 'overview' && !stats && (
+        <div className="admin-card p-12 text-center">
+          <BarChart3 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-white font-semibold mb-2">No Intelligence Data Yet</h3>
+          <p className="text-gray-400 text-sm mb-4">
+            Start by importing leads or researching prospects using the Research tab
+          </p>
+          <button
+            onClick={() => setActiveTab('research')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            Start Research
+          </button>
+        </div>
+      )}
 
       {/* Overview Tab */}
       {activeTab === 'overview' && stats && (
@@ -1031,6 +1078,22 @@ const ClientIntelligenceTab: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Research Message */}
+              {researchMessage && (
+                <div className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
+                  researchMessage.includes('error') || researchMessage.includes('failed')
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/50'
+                    : researchMessage.includes('complete')
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                }`}>
+                  {researchMessage.includes('Starting') && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {researchMessage.includes('complete') && <CheckCircle className="w-4 h-4" />}
+                  {(researchMessage.includes('error') || researchMessage.includes('failed')) && <AlertCircle className="w-4 h-4" />}
+                  {researchMessage}
+                </div>
+              )}
+
               {/* Status & Score */}
               <div className="flex items-center gap-4">
                 {getStatusBadge(selectedProspect.status)}
@@ -1138,9 +1201,17 @@ const ClientIntelligenceTab: React.FC = () => {
                   <Building2 className="w-4 h-4" />
                   Convert to Client
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                  <Search className="w-4 h-4" />
-                  Research
+                <button
+                  onClick={() => handleResearch(selectedProspect)}
+                  disabled={isResearching}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-wait text-white rounded-lg transition-colors"
+                >
+                  {isResearching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  {isResearching ? 'Researching...' : 'Research'}
                 </button>
               </div>
             </div>
