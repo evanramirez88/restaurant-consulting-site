@@ -21,23 +21,24 @@ export async function onRequestGet(context) {
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
     // Build query for restaurant_leads (main prospects source)
+    // Column mapping: name (company name), primary_email, primary_phone, website_url
     let query = `
       SELECT
         id,
-        company_name as company,
-        COALESCE(contact_name, '') as name,
-        email,
-        phone,
-        website,
+        name as company,
+        COALESCE(dba_name, name, '') as name,
+        primary_email as email,
+        primary_phone as phone,
+        website_url as website,
         city as town,
         state as region,
-        vertical as category,
+        cuisine_primary as category,
         current_pos as pos_system,
-        revenue_estimate,
-        employee_estimate as employee_count,
+        COALESCE(location_count, 1) as location_count,
+        COALESCE(service_style, '') as service_style,
         lead_score,
         CASE
-          WHEN EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.email) THEN 'client'
+          WHEN EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email) THEN 'client'
           WHEN lead_score >= 70 THEN 'lead'
           ELSE 'prospect'
         END as status,
@@ -50,9 +51,9 @@ export async function onRequestGet(context) {
     // Search filter
     if (search) {
       query += ` AND (
-        company_name LIKE ? OR
-        contact_name LIKE ? OR
-        email LIKE ? OR
+        name LIKE ? OR
+        dba_name LIKE ? OR
+        primary_email LIKE ? OR
         city LIKE ?
       )`;
       const searchPattern = `%${search}%`;
@@ -87,11 +88,11 @@ export async function onRequestGet(context) {
     // Status filter
     if (status && status !== 'all') {
       if (status === 'client') {
-        query += ` AND EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.email)`;
+        query += ` AND EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email)`;
       } else if (status === 'lead') {
-        query += ` AND lead_score >= 70 AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.email)`;
+        query += ` AND lead_score >= 70 AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email)`;
       } else if (status === 'prospect') {
-        query += ` AND lead_score < 70 AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.email)`;
+        query += ` AND lead_score < 70 AND NOT EXISTS (SELECT 1 FROM clients WHERE clients.email = restaurant_leads.primary_email)`;
       }
     }
 
@@ -107,7 +108,7 @@ export async function onRequestGet(context) {
     const countParams = [];
 
     if (search) {
-      countQuery += ` AND (company_name LIKE ? OR contact_name LIKE ? OR email LIKE ? OR city LIKE ?)`;
+      countQuery += ` AND (name LIKE ? OR dba_name LIKE ? OR primary_email LIKE ? OR city LIKE ?)`;
       const searchPattern = `%${search}%`;
       countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }

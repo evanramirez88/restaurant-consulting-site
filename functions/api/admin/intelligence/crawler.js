@@ -410,8 +410,8 @@ async function processEnrichLead(env, item) {
   let factsCreated = 0;
 
   // If has website, scrape it
-  if (lead.website) {
-    const scrapeResult = await scrapeRestaurantWebsite(lead.website);
+  if (lead.website_url || lead.website) {
+    const scrapeResult = await scrapeRestaurantWebsite(lead.website_url || lead.website);
     if (scrapeResult.success) {
       await updateLeadFromScrape(env, item.target_id, scrapeResult);
       enrichments.website = scrapeResult;
@@ -492,7 +492,7 @@ async function processPublicRecords(env, item) {
   }
 
   const records = await fetchAllPublicRecords({
-    name: lead.company_name,
+    name: lead.name || lead.company_name,
     city: lead.city,
     state: lead.state || 'MA',
   });
@@ -557,12 +557,12 @@ async function updateLeadFromScrape(env, leadId, scrapeResult) {
   }
 
   if (scrapeResult.contacts.phones?.[0]) {
-    updates.push('phone = COALESCE(phone, ?)');
+    updates.push('primary_phone = COALESCE(primary_phone, ?)');
     values.push(scrapeResult.contacts.phones[0]);
   }
 
   if (scrapeResult.contacts.emails?.[0]) {
-    updates.push('email = COALESCE(email, ?)');
+    updates.push('primary_email = COALESCE(primary_email, ?)');
     values.push(scrapeResult.contacts.emails[0]);
   }
 

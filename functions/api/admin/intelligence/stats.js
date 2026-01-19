@@ -67,10 +67,10 @@ export async function onRequestGet(context) {
       ORDER BY count DESC
     `).all();
 
-    // Get breakdown by vertical/category
+    // Get breakdown by cuisine/category
     const categoryBreakdown = await env.DB.prepare(`
       SELECT
-        COALESCE(vertical, 'Other') as category,
+        COALESCE(cuisine_primary, service_style, 'Other') as category,
         COUNT(*) as count
       FROM restaurant_leads
       GROUP BY category

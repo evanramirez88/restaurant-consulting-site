@@ -86,7 +86,7 @@ async function enrichSingle(env, targetId, targetType, options) {
   };
 
   // 1. Website scraping if URL available
-  const website = target.website || target.url;
+  const website = target.website_url || target.website || target.url;
   if (website) {
     enrichmentResults.sources_checked.push('website');
     const scrapeResult = await scrapeRestaurantWebsite(website);
@@ -316,7 +316,7 @@ async function crossReferenceData(env, target) {
     const similar = await env.DB.prepare(`
       SELECT current_pos, COUNT(*) as count
       FROM restaurant_leads
-      WHERE company_name LIKE ?
+      WHERE name LIKE ?
       AND current_pos IS NOT NULL
       GROUP BY current_pos
       ORDER BY count DESC
@@ -405,9 +405,10 @@ async function applyEnrichments(env, targetId, targetType, enrichmentResults) {
     // Map enriched fields to restaurant_leads columns
     const fieldMapping = {
       pos_system: 'current_pos',
-      phone: 'phone',
-      email: 'email',
-      cuisine_type: 'vertical',
+      phone: 'primary_phone',
+      email: 'primary_email',
+      cuisine_type: 'cuisine_primary',
+      website: 'website_url',
     };
 
     const updates = [];
@@ -415,7 +416,7 @@ async function applyEnrichments(env, targetId, targetType, enrichmentResults) {
 
     for (const [field, value] of Object.entries(highConfidenceFields)) {
       const column = fieldMapping[field] || field;
-      if (['current_pos', 'phone', 'email', 'website', 'vertical'].includes(column)) {
+      if (['current_pos', 'primary_phone', 'primary_email', 'website_url', 'cuisine_primary', 'service_style'].includes(column)) {
         updates.push(`${column} = ?`);
         values.push(value);
       }
@@ -503,18 +504,18 @@ export async function onRequestGet(context) {
   const stats = await env.DB.prepare(`
     SELECT
       COUNT(*) as total_leads,
-      SUM(CASE WHEN website IS NOT NULL AND website != '' THEN 1 ELSE 0 END) as with_website,
+      SUM(CASE WHEN website_url IS NOT NULL AND website_url != '' THEN 1 ELSE 0 END) as with_website,
       SUM(CASE WHEN current_pos IS NULL OR current_pos = '' THEN 1 ELSE 0 END) as missing_pos,
-      SUM(CASE WHEN email IS NULL OR email = '' THEN 1 ELSE 0 END) as missing_email,
-      SUM(CASE WHEN phone IS NULL OR phone = '' THEN 1 ELSE 0 END) as missing_phone
+      SUM(CASE WHEN primary_email IS NULL OR primary_email = '' THEN 1 ELSE 0 END) as missing_email,
+      SUM(CASE WHEN primary_phone IS NULL OR primary_phone = '' THEN 1 ELSE 0 END) as missing_phone
     FROM restaurant_leads
   `).first();
 
   const enrichableCount = await env.DB.prepare(`
     SELECT COUNT(*) as count
     FROM restaurant_leads
-    WHERE website IS NOT NULL AND website != ''
-    AND (current_pos IS NULL OR email IS NULL OR phone IS NULL)
+    WHERE website_url IS NOT NULL AND website_url != ''
+    AND (current_pos IS NULL OR primary_email IS NULL OR primary_phone IS NULL)
   `).first();
 
   return Response.json({
