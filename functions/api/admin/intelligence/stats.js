@@ -41,19 +41,33 @@ export async function onRequestGet(context) {
       SELECT AVG(lead_score) as avg_score FROM restaurant_leads WHERE lead_score > 0
     `).first();
 
-    // Get breakdown by region/state (top regions)
+    // Get breakdown by region/state - Cape Cod sub-regions (NO BOSTON)
     const regionBreakdown = await env.DB.prepare(`
       SELECT
         CASE
-          WHEN city LIKE '%cape%' OR city IN ('Hyannis', 'Sandwich', 'Provincetown', 'Chatham', 'Falmouth', 'Barnstable') THEN 'Cape Cod'
-          WHEN city IN ('Plymouth', 'Quincy', 'Weymouth', 'Braintree', 'Marshfield') THEN 'South Shore'
-          WHEN city IN ('Boston', 'Cambridge', 'Somerville', 'Brookline', 'Newton') THEN 'Boston'
+          WHEN city IN ('Provincetown', 'Truro', 'Wellfleet', 'Eastham') THEN 'Outer Cape'
+          WHEN city IN ('Orleans', 'Chatham', 'Brewster', 'Harwich') THEN 'Lower Cape'
+          WHEN city IN ('Dennis', 'Yarmouth', 'Barnstable', 'Hyannis') THEN 'Mid Cape'
+          WHEN city IN ('Mashpee', 'Falmouth', 'Sandwich', 'Bourne') THEN 'Upper Cape'
+          WHEN city IN ('Plymouth', 'Duxbury', 'Kingston', 'Marshfield', 'Scituate', 'Cohasset', 'Hingham', 'Weymouth', 'Braintree', 'Quincy') THEN 'South Shore'
+          WHEN city IN ('Nantucket', 'Edgartown', 'Oak Bluffs', 'Vineyard Haven', 'West Tisbury', 'Chilmark', 'Aquinnah') THEN 'Islands'
           WHEN state = 'MA' THEN 'Massachusetts (Other)'
-          WHEN state IS NOT NULL AND state != '' THEN state
-          ELSE 'Unknown'
+          ELSE 'Other'
         END as region,
         COUNT(*) as count
       FROM restaurant_leads
+      WHERE 1=1
+        -- EXCLUDE Toast reps and vendor emails
+        AND (primary_email IS NULL OR (
+          primary_email NOT LIKE '%@toasttab.com'
+          AND primary_email NOT LIKE '%@squareup.com'
+          AND primary_email NOT LIKE '%@clover.com'
+        ))
+        -- EXCLUDE garbage domains
+        AND (domain IS NULL OR (
+          domain NOT LIKE '%reddit.com%'
+          AND domain NOT LIKE '%assembly.com%'
+        ))
       GROUP BY region
       ORDER BY count DESC
       LIMIT 10
