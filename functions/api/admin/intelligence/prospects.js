@@ -1,10 +1,10 @@
 /**
  * Prospects/Leads API for Intelligence Dashboard
  *
- * GET /api/admin/intelligence/prospects - List prospects from cape_cod_restaurants
+ * GET /api/admin/intelligence/prospects - List Cape Cod prospects from restaurant_leads
  *
- * Data Source: cape_cod_restaurants table (clean, validated Cape Cod restaurant directory)
- * Service Area: Cape Cod ONLY (15 towns - Outer/Lower/Mid/Upper Cape)
+ * Data Source: restaurant_leads table, filtered to ONLY Cape Cod
+ * Service Area: Cape Cod ONLY (15 towns + villages)
  */
 
 const corsHeaders = {
@@ -14,16 +14,68 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-// Cape Cod regions - the 15 towns ONLY
+// Cape Cod regions - the 15 towns + common villages/neighborhoods
 const CAPE_COD_REGIONS = {
-  'Outer Cape': ['Provincetown', 'Truro', 'Wellfleet', 'Eastham'],
-  'Lower Cape': ['Orleans', 'Chatham', 'Brewster', 'Harwich'],
-  'Mid Cape': ['Dennis', 'Yarmouth', 'Barnstable'],
-  'Upper Cape': ['Mashpee', 'Falmouth', 'Sandwich', 'Bourne'],
+  'Outer Cape': ['Provincetown', 'Truro', 'North Truro', 'Wellfleet', 'Eastham', 'North Eastham'],
+  'Lower Cape': ['Orleans', 'East Orleans', 'Chatham', 'West Chatham', 'Brewster', 'East Brewster', 'Harwich', 'Harwich Port', 'West Harwich', 'East Harwich'],
+  'Mid Cape': ['Dennis', 'Dennis Port', 'West Dennis', 'East Dennis', 'Yarmouth', 'South Yarmouth', 'West Yarmouth', 'Yarmouth Port', 'Barnstable', 'Hyannis', 'Centerville', 'Osterville', 'Cotuit', 'Marstons Mills', 'West Barnstable', 'Cummaquid'],
+  'Upper Cape': ['Mashpee', 'New Seabury', 'Popponesset', 'Falmouth', 'East Falmouth', 'West Falmouth', 'North Falmouth', 'Woods Hole', 'Sandwich', 'East Sandwich', 'Forestdale', 'Bourne', 'Buzzards Bay', 'Sagamore', 'Pocasset', 'Cataumet', 'Monument Beach'],
 };
 
-// All Cape Cod towns (flat list for validation)
-const CAPE_COD_TOWNS = Object.values(CAPE_COD_REGIONS).flat();
+// All Cape Cod locations (flat list for filtering)
+const CAPE_COD_LOCATIONS = Object.values(CAPE_COD_REGIONS).flat();
+
+// Map a city/village to its region
+function getRegionForCity(city) {
+  if (!city) return null;
+  const cityLower = city.toLowerCase().trim();
+  for (const [region, towns] of Object.entries(CAPE_COD_REGIONS)) {
+    if (towns.some(t => t.toLowerCase() === cityLower)) {
+      return region;
+    }
+  }
+  return null;
+}
+
+// Check if a name/source looks like garbage data
+function isGarbageData(row) {
+  const garbagePatterns = [
+    /reddit\.com/i,
+    /bostonchefs/i,
+    /quora\.com/i,
+    /tripadvisor/i,
+    /yelp\.com.*(?:list|search|biz\/.*\?)/i,
+    /chamber.*of.*commerce/i,
+    /quicklink.*category/i,
+    /favorite.*restaurants/i,
+    /best.*restaurants.*in/i,
+    /^restaurants$/i,
+    /^home$/i,
+    /where.*to.*eat/i,
+    /top.*\d+.*restaurants/i,
+  ];
+
+  const name = row.name || '';
+  const website = row.website_url || '';
+  const source = row.source || '';
+
+  // Check if name matches garbage patterns
+  if (garbagePatterns.some(p => p.test(name) || p.test(website))) {
+    return true;
+  }
+
+  // Filter out directory/aggregator sites
+  if (name.includes('QuickLink') || name.includes('Category') || name.includes('Restaurants at ')) {
+    return true;
+  }
+
+  // Filter out very generic names
+  if (/^(home|contact|menu|about)$/i.test(name)) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: corsHeaders });
@@ -41,184 +93,197 @@ export async function onRequestGet(context) {
     const limit = parseInt(url.searchParams.get('limit') || '100', 10);
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
-    // Query the CLEAN cape_cod_restaurants table
+    // Build dynamic IN clause for Cape Cod cities
+    const cityPlaceholders = CAPE_COD_LOCATIONS.map(() => '?').join(', ');
+
+    // Query restaurant_leads table with strict Cape Cod filtering
     let query = `
       SELECT
         id,
         name,
         dba_name,
-        address,
-        village,
-        town,
-        region,
+        address_line1 as address,
+        city,
         state,
         zip,
-        phone,
-        email,
-        website,
-        type,
+        primary_phone as phone,
+        primary_email as email,
+        website_url as website,
         cuisine_primary,
         cuisine_secondary,
         service_style,
+        bar_program,
+        menu_complexity,
         price_level,
         seasonal,
-        pos_system,
-        pos_confidence,
-        online_ordering,
-        online_ordering_url,
+        current_pos as pos_system,
+        current_pos_confidence as pos_confidence,
+        online_ordering_provider as online_ordering,
         license_number,
         license_type,
-        seating_capacity,
+        actual_seat_count as seating_capacity,
         health_score,
         last_inspection_date,
-        rating,
-        review_count,
-        description,
-        data_source,
-        data_confidence,
+        lead_score,
+        source,
+        notes,
+        tags,
         created_at,
         updated_at
-      FROM cape_cod_restaurants
-      WHERE 1=1
+      FROM restaurant_leads
+      WHERE state = 'MA'
+        AND city IN (${cityPlaceholders})
     `;
-    const params = [];
+    const params = [...CAPE_COD_LOCATIONS];
 
     // Search filter
     if (search) {
       query += ` AND (
         name LIKE ? OR
         dba_name LIKE ? OR
-        town LIKE ? OR
-        type LIKE ? OR
+        city LIKE ? OR
         cuisine_primary LIKE ?
       )`;
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    // Region filter - only Cape Cod regions
+    // Region filter
     if (region && region !== 'all') {
       if (CAPE_COD_REGIONS[region]) {
         const regionTowns = CAPE_COD_REGIONS[region];
-        const placeholders = regionTowns.map(() => '?').join(', ');
-        query += ` AND town IN (${placeholders})`;
+        const regionPlaceholders = regionTowns.map(() => '?').join(', ');
+        query += ` AND city IN (${regionPlaceholders})`;
         params.push(...regionTowns);
-      } else {
-        // Direct region match
-        query += ` AND region = ?`;
-        params.push(region);
       }
     }
 
     // POS filter
     if (posSystem && posSystem !== 'all') {
       if (posSystem.toLowerCase() === 'unknown') {
-        query += ` AND (pos_system IS NULL OR pos_system = 'Unknown' OR pos_system = '')`;
+        query += ` AND (current_pos IS NULL OR current_pos = 'Unknown' OR current_pos = '')`;
       } else {
-        query += ` AND LOWER(pos_system) LIKE ?`;
+        query += ` AND LOWER(current_pos) LIKE ?`;
         params.push(`%${posSystem.toLowerCase()}%`);
       }
     }
 
-    // Status filter (based on data completeness for now)
+    // Status filter (based on data completeness)
     if (status && status !== 'all') {
       if (status === 'lead') {
         // Leads have more complete data (email or phone or website)
-        query += ` AND (email IS NOT NULL OR phone IS NOT NULL OR website IS NOT NULL)`;
+        query += ` AND (primary_email IS NOT NULL OR primary_phone IS NOT NULL OR website_url IS NOT NULL)`;
       } else if (status === 'prospect') {
         // Prospects have less data
-        query += ` AND (email IS NULL AND phone IS NULL AND website IS NULL)`;
+        query += ` AND (primary_email IS NULL AND primary_phone IS NULL AND website_url IS NULL)`;
       }
     }
 
-    // Ordering and pagination
+    // Ordering: prioritize records with contact info and known POS
     query += ` ORDER BY
-      CASE WHEN pos_system IS NOT NULL AND pos_system != 'Unknown' THEN 0 ELSE 1 END,
-      CASE WHEN email IS NOT NULL THEN 0 ELSE 1 END,
+      CASE WHEN primary_email IS NOT NULL AND primary_email != '' THEN 0 ELSE 1 END,
+      CASE WHEN current_pos IS NOT NULL AND current_pos != 'Unknown' AND current_pos != '' THEN 0 ELSE 1 END,
+      CASE WHEN primary_phone IS NOT NULL THEN 0 ELSE 1 END,
       name ASC
       LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    params.push(limit + 50, offset); // Fetch extra to account for filtering
 
     // Execute query
     const results = await env.DB.prepare(query).bind(...params).all();
 
-    // Get total count
-    let countQuery = `SELECT COUNT(*) as total FROM cape_cod_restaurants WHERE 1=1`;
-    const countParams = [];
+    // Get total count (before garbage filtering)
+    let countQuery = `SELECT COUNT(*) as total FROM restaurant_leads WHERE state = 'MA' AND city IN (${cityPlaceholders})`;
+    const countParams = [...CAPE_COD_LOCATIONS];
 
     if (search) {
-      countQuery += ` AND (name LIKE ? OR dba_name LIKE ? OR town LIKE ? OR type LIKE ? OR cuisine_primary LIKE ?)`;
+      countQuery += ` AND (name LIKE ? OR dba_name LIKE ? OR city LIKE ? OR cuisine_primary LIKE ?)`;
       const searchPattern = `%${search}%`;
-      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     if (region && region !== 'all') {
       if (CAPE_COD_REGIONS[region]) {
         const regionTowns = CAPE_COD_REGIONS[region];
-        const placeholders = regionTowns.map(() => '?').join(', ');
-        countQuery += ` AND town IN (${placeholders})`;
+        const regionPlaceholders = regionTowns.map(() => '?').join(', ');
+        countQuery += ` AND city IN (${regionPlaceholders})`;
         countParams.push(...regionTowns);
-      } else {
-        countQuery += ` AND region = ?`;
-        countParams.push(region);
       }
     }
 
     if (posSystem && posSystem !== 'all') {
       if (posSystem.toLowerCase() === 'unknown') {
-        countQuery += ` AND (pos_system IS NULL OR pos_system = 'Unknown' OR pos_system = '')`;
+        countQuery += ` AND (current_pos IS NULL OR current_pos = 'Unknown' OR current_pos = '')`;
       } else {
-        countQuery += ` AND LOWER(pos_system) LIKE ?`;
+        countQuery += ` AND LOWER(current_pos) LIKE ?`;
         countParams.push(`%${posSystem.toLowerCase()}%`);
       }
     }
 
     const countResult = await env.DB.prepare(countQuery).bind(...countParams).first();
 
-    // Transform results for the UI
-    const prospects = (results.results || []).map((row) => {
-      // Calculate a simple lead score based on data completeness
-      let leadScore = 50;
-      if (row.email) leadScore += 15;
-      if (row.phone) leadScore += 10;
-      if (row.website) leadScore += 10;
-      if (row.pos_system && row.pos_system !== 'Unknown') leadScore += 10;
-      if (row.pos_system === 'Toast') leadScore += 5; // Bonus for Toast users
+    // Transform results for the UI, filtering out garbage data
+    const prospects = (results.results || [])
+      .filter(row => !isGarbageData(row))
+      .slice(0, limit)
+      .map((row) => {
+        // Calculate lead score if not present
+        let leadScore = row.lead_score || 50;
+        if (!row.lead_score) {
+          if (row.email) leadScore += 15;
+          if (row.phone) leadScore += 10;
+          if (row.website) leadScore += 10;
+          if (row.pos_system && row.pos_system !== 'Unknown') leadScore += 10;
+          if (row.pos_system === 'Toast') leadScore += 5;
+        }
 
-      return {
-        id: row.id,
-        name: row.dba_name || row.name,
-        company: row.name,
-        email: row.email || '',
-        phone: row.phone || null,
-        website: row.website || null,
-        address: row.address || null,
-        town: row.town || null,
-        state: row.state || 'MA',
-        zip: row.zip || null,
-        region: row.region || null,
-        category: row.type || row.cuisine_primary || null,
-        service_style: row.service_style || null,
-        seasonal: row.seasonal === 1,
-        pos_system: row.pos_system || 'Unknown',
-        online_ordering: row.online_ordering || null,
-        license_number: row.license_number || null,
-        license_type: row.license_type || null,
-        seating_capacity: row.seating_capacity || null,
-        health_score: row.health_score || null,
-        last_inspection_date: row.last_inspection_date || null,
-        lead_score: Math.min(100, leadScore),
-        status: leadScore >= 70 ? 'lead' : 'prospect',
-        domain: row.website ? new URL(row.website).hostname : null,
-        source: row.data_source || 'directory',
-        created_at: row.created_at || Date.now(),
-        rating: row.rating || null,
-        review_count: row.review_count || null,
-        description: row.description || null,
-        tags: [],
-        notes: null,
-      };
-    });
+        // Compute region from city
+        const computedRegion = getRegionForCity(row.city);
+
+        // Try to extract domain from website
+        let domain = null;
+        if (row.website) {
+          try {
+            domain = new URL(row.website).hostname;
+          } catch (e) {
+            // Invalid URL, skip domain extraction
+          }
+        }
+
+        return {
+          id: row.id,
+          name: row.dba_name || row.name,
+          company: row.name,
+          email: row.email || '',
+          phone: row.phone || null,
+          website: row.website || null,
+          address: row.address || null,
+          town: row.city || null,
+          state: row.state || 'MA',
+          zip: row.zip || null,
+          region: computedRegion,
+          category: row.cuisine_primary || null,
+          cuisine_secondary: row.cuisine_secondary || null,
+          service_style: row.service_style || null,
+          bar_program: row.bar_program || null,
+          menu_complexity: row.menu_complexity || null,
+          seasonal: row.seasonal === 1,
+          pos_system: row.pos_system || 'Unknown',
+          pos_confidence: row.pos_confidence || null,
+          online_ordering: row.online_ordering || null,
+          license_number: row.license_number || null,
+          license_type: row.license_type || null,
+          seating_capacity: row.seating_capacity || null,
+          health_score: row.health_score || null,
+          last_inspection_date: row.last_inspection_date || null,
+          lead_score: Math.min(100, leadScore),
+          status: leadScore >= 70 ? 'lead' : 'prospect',
+          domain: domain,
+          source: row.source || 'builtwith',
+          created_at: row.created_at || Date.now(),
+          tags: row.tags ? JSON.parse(row.tags) : [],
+          notes: row.notes || null,
+        };
+      });
 
     return new Response(JSON.stringify({
       success: true,
@@ -226,6 +291,7 @@ export async function onRequestGet(context) {
       total: countResult?.total || 0,
       limit,
       offset,
+      service_area: 'Cape Cod (15 towns)',
     }), { headers: corsHeaders });
 
   } catch (error) {
@@ -233,7 +299,7 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({
       success: false,
       error: error.message,
-      hint: 'If cape_cod_restaurants table does not exist, run migration 0044a first'
+      hint: 'Check that restaurant_leads table exists and has Cape Cod data'
     }), { status: 500, headers: corsHeaders });
   }
 }
