@@ -11,7 +11,8 @@ import {
   BarChart3, PieChart, Users, Database, FileText, Upload, CheckCircle,
   XCircle, AlertCircle, Clock, Calendar, Settings, Zap, Target, Star,
   DollarSign, Activity, Eye, Edit2, Trash2, MoreVertical, Tag, X,
-  ChevronDown, ChevronUp, List, Grid3X3, Link2, Send, Sparkles
+  ChevronDown, ChevronUp, List, Grid3X3, Link2, Send, Sparkles,
+  ShoppingCart, FileSearch, History, Scale
 } from 'lucide-react';
 import ResearchPanel from './ResearchPanel';
 
@@ -529,24 +530,24 @@ const ClientIntelligenceTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* By Region */}
-            <div className="admin-card p-4">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+          {/* Charts Row - LARGER Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* By Region - LARGER */}
+            <div className="admin-card p-6 min-h-[320px]">
+              <h3 className="text-base font-semibold text-gray-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-amber-400" />
                 By Region
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {Object.entries(stats.by_region).map(([region, count]) => (
                   <div key={region}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-300">{region}</span>
-                      <span className="text-white font-medium">{count}</span>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-200 font-medium">{region}</span>
+                      <span className="text-white font-bold text-lg">{count}</span>
                     </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all"
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all"
                         style={{ width: `${(count / Math.max(...Object.values(stats.by_region))) * 100}%` }}
                       />
                     </div>
@@ -555,24 +556,26 @@ const ClientIntelligenceTab: React.FC = () => {
               </div>
             </div>
 
-            {/* By POS System */}
-            <div className="admin-card p-4">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Database className="w-4 h-4" />
+            {/* By POS System - LARGER */}
+            <div className="admin-card p-6 min-h-[320px]">
+              <h3 className="text-base font-semibold text-gray-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Database className="w-5 h-5 text-green-400" />
                 By POS System
               </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.by_pos).slice(0, 5).map(([pos, count]) => (
+              <div className="space-y-4">
+                {Object.entries(stats.by_pos).slice(0, 6).map(([pos, count]) => (
                   <div key={pos}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-300">{pos}</span>
-                      <span className="text-white font-medium">{count}</span>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-200 font-medium">{pos}</span>
+                      <span className="text-white font-bold text-lg">{count}</span>
                     </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          pos === 'Toast' ? 'bg-green-500' :
-                          pos === 'Square' ? 'bg-blue-500' : 'bg-gray-500'
+                          pos === 'Toast' ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
+                          pos === 'Square' ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+                          pos === 'Clover' ? 'bg-gradient-to-r from-lime-500 to-green-400' :
+                          'bg-gradient-to-r from-gray-500 to-gray-400'
                         }`}
                         style={{ width: `${(count / Math.max(...Object.values(stats.by_pos))) * 100}%` }}
                       />
@@ -582,22 +585,22 @@ const ClientIntelligenceTab: React.FC = () => {
               </div>
             </div>
 
-            {/* By Category */}
-            <div className="admin-card p-4">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Tag className="w-4 h-4" />
+            {/* By Category - LARGER */}
+            <div className="admin-card p-6 min-h-[320px]">
+              <h3 className="text-base font-semibold text-gray-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-purple-400" />
                 By Category
               </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.by_category).slice(0, 5).map(([cat, count]) => (
+              <div className="space-y-4">
+                {Object.entries(stats.by_category).slice(0, 6).map(([cat, count]) => (
                   <div key={cat}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-300">{cat}</span>
-                      <span className="text-white font-medium">{count}</span>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-200 font-medium">{cat}</span>
+                      <span className="text-white font-bold text-lg">{count}</span>
                     </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-purple-500 rounded-full transition-all"
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
                         style={{ width: `${(count / Math.max(...Object.values(stats.by_category))) * 100}%` }}
                       />
                     </div>
@@ -1175,90 +1178,176 @@ const ClientIntelligenceTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Licensure & Compliance - from demo prototype */}
-              {(selectedProspect.license_number || selectedProspect.license_type || selectedProspect.health_score || selectedProspect.seating_capacity) && (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Business Intel</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {selectedProspect.license_type && (
-                      <div className="p-3 bg-gray-900/50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">License Type</p>
-                        <p className="text-white font-medium text-sm">{selectedProspect.license_type}</p>
-                        {selectedProspect.license_number && (
-                          <a
-                            href={`https://www.mass.gov/orgs/alcoholic-beverages-control-commission`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-amber-400 hover:text-amber-300"
-                          >
-                            Verify ABCC →
-                          </a>
-                        )}
+              {/* Business Intel with Public Records Links */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Scale className="w-4 h-4" />
+                  Business Intel & Public Records
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {selectedProspect.license_type && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">License Type</p>
+                      <p className="text-white font-medium text-sm">{selectedProspect.license_type}</p>
+                      <div className="flex flex-col gap-1 mt-2">
+                        <a
+                          href={`https://www.google.com/search?q=site:mass.gov+ABCC+"${encodeURIComponent(selectedProspect.license_number || selectedProspect.company)}"`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                        >
+                          <FileSearch className="w-3 h-3" />
+                          Verify ABCC →
+                        </a>
                       </div>
-                    )}
-                    {selectedProspect.seating_capacity && (
-                      <div className="p-3 bg-gray-900/50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Seating Capacity</p>
-                        <p className="text-white font-medium">{selectedProspect.seating_capacity} seats</p>
-                      </div>
-                    )}
-                    {selectedProspect.health_score !== undefined && selectedProspect.health_score !== null && (
-                      <div className="p-3 bg-gray-900/50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Health Score</p>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${selectedProspect.health_score >= 90 ? 'text-green-400' : selectedProspect.health_score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
-                            {selectedProspect.health_score}
-                          </span>
-                          <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${selectedProspect.health_score >= 90 ? 'bg-green-500' : selectedProspect.health_score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
-                              style={{ width: `${selectedProspect.health_score}%` }}
-                            />
-                          </div>
+                    </div>
+                  )}
+                  {selectedProspect.seating_capacity && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Seating Capacity</p>
+                      <p className="text-white font-medium">{selectedProspect.seating_capacity} seats</p>
+                    </div>
+                  )}
+                  {selectedProspect.health_score !== undefined && selectedProspect.health_score !== null && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Health Score</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-lg font-bold ${selectedProspect.health_score >= 90 ? 'text-green-400' : selectedProspect.health_score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {selectedProspect.health_score}
+                        </span>
+                        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${selectedProspect.health_score >= 90 ? 'bg-green-500' : selectedProspect.health_score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
+                            style={{ width: `${selectedProspect.health_score}%` }}
+                          />
                         </div>
-                        {selectedProspect.last_inspection_date && (
-                          <p className="text-xs text-gray-500 mt-1">Last: {selectedProspect.last_inspection_date}</p>
-                        )}
                       </div>
-                    )}
-                    {selectedProspect.seasonal && (
-                      <div className="p-3 bg-gray-900/50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Operation</p>
-                        <p className="text-amber-400 font-medium">Seasonal</p>
-                      </div>
-                    )}
-                  </div>
+                      {selectedProspect.last_inspection_date && (
+                        <p className="text-xs text-gray-500 mt-1">Last: {selectedProspect.last_inspection_date}</p>
+                      )}
+                      <a
+                        href={`https://www.google.com/search?q="${encodeURIComponent(selectedProspect.company)}"+"${encodeURIComponent(selectedProspect.town || '')}"+"MA"+health+inspection`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 mt-1"
+                      >
+                        <FileSearch className="w-3 h-3" />
+                        Search Inspections →
+                      </a>
+                    </div>
+                  )}
+                  {selectedProspect.seasonal && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Operation</p>
+                      <p className="text-amber-400 font-medium">Seasonal</p>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Business Info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {selectedProspect.pos_system && (
+                {/* Public Records Quick Links */}
+                {selectedProspect.town && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <a
+                      href={`https://www.google.com/search?q=site:${selectedProspect.town.toLowerCase().replace(/\s+/g, '')}-ma.gov+"${encodeURIComponent(selectedProspect.company)}"+license`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 hover:text-white rounded flex items-center gap-1 transition-colors"
+                    >
+                      <FileSearch className="w-3 h-3" />
+                      Town Registry
+                    </a>
+                    <a
+                      href={`https://www.google.com/maps/search/${encodeURIComponent(selectedProspect.company + ' ' + (selectedProspect.address || '') + ' ' + selectedProspect.town + ' MA')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 hover:text-white rounded flex items-center gap-1 transition-colors"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      Google Maps
+                    </a>
+                    <a
+                      href={`https://www.yelp.com/search?find_desc=${encodeURIComponent(selectedProspect.company)}&find_loc=${encodeURIComponent(selectedProspect.town + ', MA')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 hover:text-white rounded flex items-center gap-1 transition-colors"
+                    >
+                      <Star className="w-3 h-3" />
+                      Yelp
+                    </a>
+                    <a
+                      href={`https://www.barnstablecountyhealth.org/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 hover:text-white rounded flex items-center gap-1 transition-colors"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      County Health
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Tech Stack & Business Info */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Database className="w-4 h-4" />
+                  Tech Stack
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 bg-gray-900/50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">POS System</p>
-                    <p className={`font-medium ${selectedProspect.pos_system === 'Toast' ? 'text-green-400' : 'text-white'}`}>
-                      {selectedProspect.pos_system}
+                    <p className={`font-medium ${selectedProspect.pos_system === 'Toast' ? 'text-green-400' : selectedProspect.pos_system === 'Unknown' ? 'text-gray-500' : 'text-white'}`}>
+                      {selectedProspect.pos_system || 'Unknown'}
                     </p>
+                    {selectedProspect.pos_system && selectedProspect.pos_system !== 'Unknown' && (
+                      <a
+                        href={
+                          selectedProspect.pos_system === 'Toast' ? 'https://pos.toasttab.com/' :
+                          selectedProspect.pos_system === 'Square' ? 'https://squareup.com/restaurants' :
+                          selectedProspect.pos_system === 'Clover' ? 'https://www.clover.com/' :
+                          selectedProspect.pos_system === 'Aloha' ? 'https://www.ncr.com/restaurants' :
+                          selectedProspect.pos_system === 'Lightspeed' ? 'https://www.lightspeedhq.com/pos/restaurant/' :
+                          `https://www.google.com/search?q=${encodeURIComponent(selectedProspect.pos_system)}+POS+system`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 mt-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Provider Site →
+                      </a>
+                    )}
+                    {selectedProspect.pos_system === 'Unknown' && (
+                      <a
+                        href={`https://www.google.com/search?q="${encodeURIComponent(selectedProspect.company)}"+"${encodeURIComponent(selectedProspect.town || '')}"+"POS"+OR+"point+of+sale"`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                      >
+                        <Search className="w-3 h-3" />
+                        Lookup POS →
+                      </a>
+                    )}
                   </div>
-                )}
-                {selectedProspect.category && (
-                  <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Category</p>
-                    <p className="text-white font-medium">{selectedProspect.category}</p>
-                  </div>
-                )}
-                {selectedProspect.revenue_estimate && (
-                  <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Est. Revenue</p>
-                    <p className="text-white font-medium">{selectedProspect.revenue_estimate}</p>
-                  </div>
-                )}
-                {selectedProspect.employee_count && (
-                  <div className="p-3 bg-gray-900/50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Employees</p>
-                    <p className="text-white font-medium">{selectedProspect.employee_count}</p>
-                  </div>
-                )}
+                  {selectedProspect.online_ordering && selectedProspect.online_ordering !== 'None' && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Online Ordering</p>
+                      <p className="text-white font-medium">{selectedProspect.online_ordering}</p>
+                    </div>
+                  )}
+                  {selectedProspect.category && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Category</p>
+                      <p className="text-white font-medium">{selectedProspect.category}</p>
+                    </div>
+                  )}
+                  {selectedProspect.revenue_estimate && (
+                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Est. Revenue</p>
+                      <p className="text-white font-medium">{selectedProspect.revenue_estimate}</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Notes */}
@@ -1271,6 +1360,30 @@ const ClientIntelligenceTab: React.FC = () => {
 
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-700">
+                {/* Order Online Button */}
+                {(selectedProspect.online_ordering || selectedProspect.website) && (
+                  <a
+                    href={
+                      selectedProspect.online_ordering === 'Toast' && selectedProspect.website
+                        ? `${selectedProspect.website}/order`
+                        : selectedProspect.online_ordering === 'DoorDash'
+                        ? `https://www.doordash.com/search/?q=${encodeURIComponent(selectedProspect.company + ' ' + (selectedProspect.town || ''))}`
+                        : selectedProspect.online_ordering === 'UberEats'
+                        ? `https://www.ubereats.com/search?q=${encodeURIComponent(selectedProspect.company)}`
+                        : selectedProspect.online_ordering === 'Grubhub'
+                        ? `https://www.grubhub.com/search?orderMethod=delivery&locationMode=DELIVERY&facetSet=uma498&pageSize=20&hideHat498=true&searchTerm=${encodeURIComponent(selectedProspect.company)}`
+                        : selectedProspect.online_ordering === 'Direct' && selectedProspect.website
+                        ? selectedProspect.website
+                        : selectedProspect.website || '#'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Order Online
+                  </a>
+                )}
                 <a
                   href={`mailto:${selectedProspect.email}?subject=R%26G%20Consulting%20-%20Restaurant%20Technology%20Solutions&body=Hi%20${encodeURIComponent(selectedProspect.name)}%2C%0A%0AI%20noticed%20${encodeURIComponent(selectedProspect.company)}%20and%20wanted%20to%20reach%20out%20about%20your%20restaurant%20technology%20needs.%0A%0ABest%20regards%2C%0AEvan%20Ramirez%0AR%26G%20Consulting`}
                   className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors"
