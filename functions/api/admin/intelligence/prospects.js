@@ -280,7 +280,7 @@ export async function onRequestGet(context) {
           domain: domain,
           source: row.source || 'builtwith',
           created_at: row.created_at || Date.now(),
-          tags: row.tags ? JSON.parse(row.tags) : [],
+          tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
           notes: row.notes || null,
         };
       });
