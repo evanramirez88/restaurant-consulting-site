@@ -39,38 +39,63 @@ function getRegionForCity(city) {
 
 // Check if a name/source looks like garbage data
 function isGarbageData(row) {
+  const name = row.name || '';
+  const website = row.website || '';  // Aliased from website_url in query
+  const email = row.email || '';      // Aliased from primary_email in query
+
+  // Exact garbage names to filter
+  const garbageNames = [
+    'resy',
+    'home',
+    'contact',
+    'menu',
+    'about',
+    'best american restaurants',
+  ];
+
+  if (garbageNames.includes(name.toLowerCase().trim())) {
+    return true;
+  }
+
+  // Pattern-based garbage detection
   const garbagePatterns = [
     /reddit\.com/i,
     /bostonchefs/i,
     /quora\.com/i,
     /tripadvisor/i,
-    /yelp\.com.*(?:list|search|biz\/.*\?)/i,
-    /chamber.*of.*commerce/i,
-    /quicklink.*category/i,
-    /favorite.*restaurants/i,
-    /best.*restaurants.*in/i,
-    /^restaurants$/i,
-    /^home$/i,
+    /yelp\.com/i,
+    /chamber/i,
+    /quicklink/i,
+    /category/i,
+    /favorite.*restaurant/i,
+    /best.*restaurant/i,           // "Best restaurant in X"
+    /restaurants.*&.*pubs/i,       // "Restaurants & Pubs"
+    /restaurants.*guide/i,         // "Restaurants guide"
+    /guide.*restaurants/i,         // "Winter Guide ~ Restaurants"
     /where.*to.*eat/i,
-    /top.*\d+.*restaurants/i,
+    /top.*\d+/i,
+    /seafood.*brunch.*beyond/i,    // "Seafood, Brunch, and Beyond"
+    /&#\d+;/,                      // HTML entities like &#8212;
+    /™|®/,                         // Trademark symbols in scraped names
+    /\.com$/i,                     // Names that are just domain names
+    /\.net$/i,
+    /\.org$/i,
   ];
 
-  const name = row.name || '';
-  const website = row.website_url || '';
-  const source = row.source || '';
-
-  // Check if name matches garbage patterns
-  if (garbagePatterns.some(p => p.test(name) || p.test(website))) {
+  if (garbagePatterns.some(p => p.test(name))) {
     return true;
   }
 
-  // Filter out directory/aggregator sites
-  if (name.includes('QuickLink') || name.includes('Category') || name.includes('Restaurants at ')) {
+  // Filter out directory/aggregator content
+  if (name.includes('QuickLink') ||
+      name.includes('Restaurants at ') ||
+      name.toLowerCase().includes('winter guide') ||
+      name.toLowerCase().includes('year round')) {
     return true;
   }
 
-  // Filter out very generic names
-  if (/^(home|contact|menu|about)$/i.test(name)) {
+  // Filter out fake/placeholder emails
+  if (email === 'user@domain.com' || email.includes('falmouthchamber')) {
     return true;
   }
 
