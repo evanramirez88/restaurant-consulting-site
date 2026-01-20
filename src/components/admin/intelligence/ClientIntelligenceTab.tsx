@@ -36,7 +36,7 @@ interface IntelClient {
   pos_system?: string;
   online_ordering?: string;
   seasonal?: boolean;
-  // Licensure & Compliance (from demo prototype)
+  // Licensure & Compliance
   license_number?: string;
   license_type?: string;
   seating_capacity?: number;
@@ -57,6 +57,50 @@ interface IntelClient {
   tags?: string[];
   notes?: string;
   created_at: number;
+
+  // NEW: Menu Analysis Fields
+  menu_item_count?: number;
+  menu_category_count?: number;
+  avg_menu_price?: number;
+  menu_url?: string;
+  menu_complexity?: string;
+  price_level?: number;
+  bar_program?: string;
+
+  // NEW: Financial Estimates
+  estimated_annual_revenue?: number;
+  estimated_daily_covers?: number;
+  avg_check_size?: number;
+  hours_json?: string;
+  days_open?: number;
+
+  // NEW: Property/Assessor Data
+  parcel_id?: string;
+  property_owner?: string;
+  building_sqft?: number;
+  square_footage?: number;
+  property_value?: number;
+  assessor_url?: string;
+  floor_plan_notes?: string;
+
+  // NEW: Owner/Contact Info
+  owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
+  years_in_business?: number;
+  established_date?: string;
+
+  // NEW: Review/Rating Data
+  google_rating?: number;
+  google_review_count?: number;
+  yelp_rating?: number;
+  yelp_review_count?: number;
+  tripadvisor_rating?: number;
+
+  // NEW: Enrichment Tracking
+  data_completeness?: number;
+  enrichment_confidence?: number;
+  last_enriched_at?: number;
 }
 
 interface IntelFact {
@@ -119,6 +163,12 @@ const ClientIntelligenceTab: React.FC = () => {
   // Research State
   const [isResearching, setIsResearching] = useState(false);
   const [researchMessage, setResearchMessage] = useState<string | null>(null);
+
+  // Campaign State
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [availableCampaigns, setAvailableCampaigns] = useState<{id: string, name: string, description: string, target_segment: string}[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [campaignProspect, setCampaignProspect] = useState<IntelClient | null>(null);
 
   // Sync State
   const [lastSync, setLastSync] = useState<number | null>(null);
@@ -274,48 +324,50 @@ const ClientIntelligenceTab: React.FC = () => {
     }
   };
 
-  // Handle research for a prospect
+  // Handle FULL research for a prospect - uses AI enrichment to FIND data
   const handleResearch = async (prospect: IntelClient) => {
     setIsResearching(true);
-    setResearchMessage('Starting research...');
+    setResearchMessage('Starting full research and data enrichment...');
     try {
-      // Build website URL from domain if not present
-      const websiteUrl = prospect.website || (prospect.domain ? `https://${prospect.domain}` : null);
+      // Use the full enrichment API - it will search for data even without a website
+      const response = await fetch('/api/admin/intelligence/enrich-full', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: prospect.id,
+          company: prospect.company,
+          town: prospect.town,
+          address: prospect.address,
+          enrichTypes: ['all'] // Get everything: general, menu, reviews, assessor, license, financial
+        })
+      });
 
-      // Try to research by website first
-      if (websiteUrl) {
-        const response = await fetch('/api/admin/intelligence/discover', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method: 'single_website',
-            website: websiteUrl
-          })
-        });
-        const result = await response.json();
-        if (result.success) {
-          const action = result.action || 'researched';
-          const scrapedName = result.scraped_data?.name || prospect.company;
-          const techStack = result.scraped_data?.tech_stack;
-          let message = `Research complete for ${scrapedName}!`;
-          if (techStack?.pos_system) {
-            message += ` POS: ${techStack.pos_system}.`;
-          }
-          if (result.scraped_data?.email) {
-            message += ` Email found.`;
-          }
-          setResearchMessage(message);
-          await loadData(); // Refresh data
-          setTimeout(() => setResearchMessage(null), 5000);
-          return;
-        } else {
-          // Website scrape failed, show the error but continue
-          setResearchMessage(`Could not scrape website: ${result.errors?.join(', ') || 'Access denied'}`);
-          setTimeout(() => setResearchMessage(null), 5000);
+      const result = await response.json();
+
+      if (result.success) {
+        const fieldsFound = result.fields_updated || 0;
+        const sourcesUsed = result.sources_used || 0;
+
+        let message = `Research complete for ${prospect.company}! `;
+        message += `Found ${fieldsFound} data points from ${sourcesUsed} sources.`;
+
+        // Highlight key findings
+        if (result.data?.owner_name) message += ` Owner: ${result.data.owner_name}.`;
+        if (result.data?.website) message += ` Website found.`;
+        if (result.data?.google_rating) message += ` Rating: ${result.data.google_rating}/5.`;
+        if (result.data?.estimated_annual_revenue) {
+          message += ` Est. Revenue: $${(result.data.estimated_annual_revenue / 1000).toFixed(0)}K.`;
         }
+
+        if (result.errors && result.errors.length > 0) {
+          message += ` (${result.errors.length} sources unavailable)`;
+        }
+
+        setResearchMessage(message);
+        await loadData(); // Refresh data to show new fields
+        setTimeout(() => setResearchMessage(null), 8000);
       } else {
-        // No website available
-        setResearchMessage(`No website available for ${prospect.company}. Add a website URL to enable research.`);
+        setResearchMessage(`Research incomplete: ${result.error || 'Unknown error'}. Try manual lookup.`);
         setTimeout(() => setResearchMessage(null), 5000);
       }
     } catch (error) {
@@ -324,6 +376,69 @@ const ClientIntelligenceTab: React.FC = () => {
       setTimeout(() => setResearchMessage(null), 5000);
     } finally {
       setIsResearching(false);
+    }
+  };
+
+  // Fetch available campaigns
+  const fetchCampaigns = async () => {
+    try {
+      const response = await fetch('/api/admin/intelligence/enrich-full?action=campaigns');
+      const result = await response.json();
+      if (result.success && result.campaigns) {
+        setAvailableCampaigns(result.campaigns);
+      } else {
+        // Fallback default campaigns
+        setAvailableCampaigns([
+          { id: 'camp_toast_support', name: 'Toast Support Outreach', description: 'For existing Toast users', target_segment: 'toast_existing' },
+          { id: 'camp_pos_switcher', name: 'POS Switcher Campaign', description: 'For Clover/Square users looking to switch', target_segment: 'switchers' },
+          { id: 'camp_local_network', name: 'Local Network Campaign', description: 'For Cape Cod restaurants', target_segment: 'local' },
+          { id: 'camp_menu_builder', name: 'Menu Builder Launch', description: 'Promoting menu builder tool', target_segment: 'all' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+    }
+  };
+
+  // Handle adding to campaign with selection
+  const handleAddToCampaign = (prospect: IntelClient) => {
+    setCampaignProspect(prospect);
+    fetchCampaigns();
+    setShowCampaignModal(true);
+  };
+
+  // Confirm adding to selected campaign
+  const confirmAddToCampaign = async () => {
+    if (!campaignProspect || !selectedCampaign) return;
+
+    try {
+      const campaign = availableCampaigns.find(c => c.id === selectedCampaign);
+      const sequenceId = campaign?.id.replace('camp_', 'seq_') + '_001' || 'seq_toast_support_001';
+
+      const response = await fetch('/api/email/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: campaignProspect.email,
+          name: campaignProspect.name,
+          sequenceId: sequenceId,
+          leadId: campaignProspect.id
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setResearchMessage(`Added ${campaignProspect.name} to "${campaign?.name}" campaign`);
+      } else {
+        setResearchMessage(`Failed to add to campaign: ${result.error}`);
+      }
+      setTimeout(() => setResearchMessage(null), 5000);
+    } catch (error) {
+      setResearchMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTimeout(() => setResearchMessage(null), 5000);
+    } finally {
+      setShowCampaignModal(false);
+      setSelectedCampaign(null);
+      setCampaignProspect(null);
     }
   };
 
@@ -783,14 +898,16 @@ const ClientIntelligenceTab: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <a
-                              href={`mailto:${prospect.email}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
-                              title="Send Email"
-                            >
-                              <Mail className="w-4 h-4" />
-                            </a>
+                            {prospect.email && prospect.email.trim() !== '' && (
+                              <a
+                                href={`mailto:${prospect.email}?subject=R%26G%20Consulting%20-%20Restaurant%20Technology&body=Hi%2C%0A%0AI%20noticed%20${encodeURIComponent(prospect.company)}%20and%20wanted%20to%20reach%20out.%0A%0ABest%20regards%2C%0AEvan%20Ramirez`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1.5 text-gray-400 hover:text-amber-400 hover:bg-gray-700 rounded transition-colors"
+                                title={`Email: ${prospect.email}`}
+                              >
+                                <Mail className="w-4 h-4" />
+                              </a>
+                            )}
                             {prospect.phone && (
                               <a
                                 href={`tel:${prospect.phone}`}
@@ -1350,6 +1467,252 @@ const ClientIntelligenceTab: React.FC = () => {
                 </div>
               </div>
 
+              {/* Owner & Business Info (NEW) */}
+              {(selectedProspect.owner_name || selectedProspect.years_in_business || selectedProspect.established_date) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Owner & Business
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProspect.owner_name && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Owner</p>
+                        <p className="text-white font-medium">{selectedProspect.owner_name}</p>
+                        {selectedProspect.owner_phone && (
+                          <a href={`tel:${selectedProspect.owner_phone}`} className="text-xs text-green-400 hover:text-green-300 mt-1 block">
+                            {selectedProspect.owner_phone}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {selectedProspect.established_date && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Established</p>
+                        <p className="text-white font-medium">{selectedProspect.established_date}</p>
+                        {selectedProspect.years_in_business && (
+                          <p className="text-xs text-gray-400">{selectedProspect.years_in_business} years</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Menu Analysis (NEW) */}
+              {(selectedProspect.menu_item_count || selectedProspect.avg_menu_price || selectedProspect.menu_complexity || selectedProspect.bar_program) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Menu Analysis
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProspect.menu_item_count && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Menu Items</p>
+                        <p className="text-white font-medium text-lg">{selectedProspect.menu_item_count}</p>
+                        {selectedProspect.menu_category_count && (
+                          <p className="text-xs text-gray-400">{selectedProspect.menu_category_count} categories</p>
+                        )}
+                      </div>
+                    )}
+                    {selectedProspect.avg_menu_price && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Avg Menu Price</p>
+                        <p className="text-white font-medium text-lg">${selectedProspect.avg_menu_price.toFixed(2)}</p>
+                      </div>
+                    )}
+                    {selectedProspect.menu_complexity && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Complexity</p>
+                        <p className={`font-medium ${
+                          selectedProspect.menu_complexity === 'Ultra' ? 'text-purple-400' :
+                          selectedProspect.menu_complexity === 'Complex' ? 'text-amber-400' :
+                          selectedProspect.menu_complexity === 'Moderate' ? 'text-blue-400' :
+                          'text-gray-400'
+                        }`}>{selectedProspect.menu_complexity}</p>
+                      </div>
+                    )}
+                    {selectedProspect.bar_program && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Bar Program</p>
+                        <p className="text-white font-medium">{selectedProspect.bar_program}</p>
+                      </div>
+                    )}
+                    {selectedProspect.price_level && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Price Level</p>
+                        <p className="text-green-400 font-medium text-lg">{'$'.repeat(selectedProspect.price_level)}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedProspect.menu_url && (
+                    <a
+                      href={selectedProspect.menu_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      View Menu →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Financial Estimates (NEW) */}
+              {(selectedProspect.estimated_annual_revenue || selectedProspect.estimated_daily_covers || selectedProspect.avg_check_size) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Financial Estimates
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedProspect.estimated_annual_revenue && (
+                      <div className="p-3 bg-gradient-to-br from-green-900/30 to-gray-900/50 rounded-lg border border-green-500/20">
+                        <p className="text-xs text-gray-500 mb-1">Est. Annual Revenue</p>
+                        <p className="text-green-400 font-bold text-xl">
+                          ${(selectedProspect.estimated_annual_revenue / 1000000).toFixed(1)}M
+                        </p>
+                      </div>
+                    )}
+                    {selectedProspect.estimated_daily_covers && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Daily Covers</p>
+                        <p className="text-white font-medium text-lg">{selectedProspect.estimated_daily_covers}</p>
+                        <p className="text-xs text-gray-400">guests/day</p>
+                      </div>
+                    )}
+                    {selectedProspect.avg_check_size && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Avg Check</p>
+                        <p className="text-white font-medium text-lg">${selectedProspect.avg_check_size.toFixed(2)}</p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 italic">
+                    * Estimates based on seating capacity, price level, and Cape Cod market data
+                  </p>
+                </div>
+              )}
+
+              {/* Property/Assessor Data (NEW) */}
+              {(selectedProspect.parcel_id || selectedProspect.property_owner || selectedProspect.building_sqft || selectedProspect.assessor_url) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    Property Records
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProspect.property_owner && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Property Owner</p>
+                        <p className="text-white font-medium text-sm">{selectedProspect.property_owner}</p>
+                      </div>
+                    )}
+                    {selectedProspect.building_sqft && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Building Size</p>
+                        <p className="text-white font-medium">{selectedProspect.building_sqft.toLocaleString()} sq ft</p>
+                      </div>
+                    )}
+                    {selectedProspect.property_value && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Assessed Value</p>
+                        <p className="text-white font-medium">${(selectedProspect.property_value / 1000).toFixed(0)}K</p>
+                      </div>
+                    )}
+                    {selectedProspect.parcel_id && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Parcel ID</p>
+                        <p className="text-gray-300 font-mono text-xs">{selectedProspect.parcel_id}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedProspect.floor_plan_notes && (
+                    <p className="text-xs text-gray-400 bg-gray-900/30 p-2 rounded">
+                      <strong>Floor Plan Notes:</strong> {selectedProspect.floor_plan_notes}
+                    </p>
+                  )}
+                  {selectedProspect.assessor_url && (
+                    <a
+                      href={selectedProspect.assessor_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 text-sm"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      View Assessor Records →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Reviews & Ratings (NEW) */}
+              {(selectedProspect.google_rating || selectedProspect.yelp_rating) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    Reviews & Ratings
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedProspect.google_rating && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Google Rating</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-400 font-bold text-lg">{selectedProspect.google_rating}</span>
+                          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        </div>
+                        {selectedProspect.google_review_count && (
+                          <p className="text-xs text-gray-400">{selectedProspect.google_review_count} reviews</p>
+                        )}
+                      </div>
+                    )}
+                    {selectedProspect.yelp_rating && (
+                      <div className="p-3 bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Yelp Rating</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400 font-bold text-lg">{selectedProspect.yelp_rating}</span>
+                          <Star className="w-4 h-4 text-red-400 fill-red-400" />
+                        </div>
+                        {selectedProspect.yelp_review_count && (
+                          <p className="text-xs text-gray-400">{selectedProspect.yelp_review_count} reviews</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Data Completeness Indicator (NEW) */}
+              {selectedProspect.data_completeness !== undefined && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Data Completeness</h4>
+                    <span className={`text-sm font-bold ${
+                      selectedProspect.data_completeness >= 70 ? 'text-green-400' :
+                      selectedProspect.data_completeness >= 40 ? 'text-amber-400' :
+                      'text-red-400'
+                    }`}>{selectedProspect.data_completeness}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        selectedProspect.data_completeness >= 70 ? 'bg-green-500' :
+                        selectedProspect.data_completeness >= 40 ? 'bg-amber-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${selectedProspect.data_completeness}%` }}
+                    />
+                  </div>
+                  {selectedProspect.last_enriched_at && (
+                    <p className="text-xs text-gray-500">
+                      Last enriched: {formatTimeAgo(selectedProspect.last_enriched_at)}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Notes */}
               {selectedProspect.notes && (
                 <div>
@@ -1392,31 +1755,9 @@ const ClientIntelligenceTab: React.FC = () => {
                   Send Email
                 </a>
                 <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/email/enroll', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          email: selectedProspect.email,
-                          name: selectedProspect.name,
-                          sequenceId: selectedProspect.pos_system === 'Toast' ? 'seq_toast_support_001' : 'seq_pos_switcher_001',
-                          leadId: selectedProspect.id
-                        })
-                      });
-                      const result = await response.json();
-                      if (result.success) {
-                        setResearchMessage(`Added ${selectedProspect.name} to email campaign`);
-                      } else {
-                        setResearchMessage(`Failed to add to campaign: ${result.error}`);
-                      }
-                      setTimeout(() => setResearchMessage(null), 5000);
-                    } catch (error) {
-                      setResearchMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                      setTimeout(() => setResearchMessage(null), 5000);
-                    }
-                  }}
+                  onClick={() => handleAddToCampaign(selectedProspect)}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  title="Select and add to an email campaign"
                 >
                   <Link2 className="w-4 h-4" />
                   Add to Campaign
@@ -1471,6 +1812,87 @@ const ClientIntelligenceTab: React.FC = () => {
                   {isResearching ? 'Researching...' : 'Research'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Selection Modal */}
+      {showCampaignModal && campaignProspect && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl max-w-md w-full border border-gray-700">
+            <div className="p-6 border-b border-gray-700 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Add to Campaign</h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  Select campaign for {campaignProspect.company}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCampaignModal(false);
+                  setSelectedCampaign(null);
+                  setCampaignProspect(null);
+                }}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              {availableCampaigns.length > 0 ? (
+                availableCampaigns.map(campaign => (
+                  <label
+                    key={campaign.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                      selectedCampaign === campaign.id
+                        ? 'bg-amber-500/20 border border-amber-500/50'
+                        : 'bg-gray-900/50 border border-gray-700 hover:border-gray-600'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="campaign"
+                      value={campaign.id}
+                      checked={selectedCampaign === campaign.id}
+                      onChange={(e) => setSelectedCampaign(e.target.value)}
+                      className="mt-1 accent-amber-500"
+                    />
+                    <div>
+                      <p className="text-white font-medium">{campaign.name}</p>
+                      <p className="text-gray-400 text-sm">{campaign.description}</p>
+                      <span className="text-xs text-gray-500 mt-1 inline-block">
+                        Target: {campaign.target_segment}
+                      </span>
+                    </div>
+                  </label>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <Loader2 className="w-6 h-6 text-amber-400 animate-spin mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">Loading campaigns...</p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCampaignModal(false);
+                  setSelectedCampaign(null);
+                  setCampaignProspect(null);
+                }}
+                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAddToCampaign}
+                disabled={!selectedCampaign}
+                className="flex items-center gap-2 px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                Add to Campaign
+              </button>
             </div>
           </div>
         </div>

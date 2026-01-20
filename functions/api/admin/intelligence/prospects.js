@@ -50,6 +50,7 @@ export async function onRequestGet(context) {
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
     // Simple, clean query - data validation happens on import, not query time
+    // Includes all enriched data fields for comprehensive prospect view
     let query = `
       SELECT
         COALESCE(id, 'lead_' || CAST(rowid AS TEXT)) as id,
@@ -76,7 +77,45 @@ export async function onRequestGet(context) {
         health_score,
         last_inspection_date,
         online_ordering_provider as online_ordering,
-        seasonal
+        seasonal,
+        -- Enriched fields: Menu Analysis
+        menu_item_count,
+        menu_category_count,
+        avg_menu_price,
+        menu_url,
+        menu_complexity,
+        price_level,
+        bar_program,
+        -- Enriched fields: Financial Estimates
+        estimated_annual_revenue,
+        estimated_daily_covers,
+        avg_check_size,
+        hours_json,
+        days_open,
+        -- Enriched fields: Property/Assessor
+        parcel_id,
+        property_owner,
+        building_sqft,
+        square_footage,
+        property_value,
+        assessor_url,
+        floor_plan_notes,
+        -- Enriched fields: Owner Info
+        owner_name,
+        owner_email,
+        owner_phone,
+        years_in_business,
+        established_date,
+        -- Enriched fields: Reviews/Ratings
+        google_rating,
+        google_review_count,
+        yelp_rating,
+        yelp_review_count,
+        tripadvisor_rating,
+        -- Enriched fields: Tracking
+        data_completeness,
+        enrichment_confidence,
+        last_enriched_at
       FROM restaurant_leads
       WHERE 1=1
     `;
@@ -145,14 +184,14 @@ export async function onRequestGet(context) {
 
     const countResult = await env.DB.prepare(countQuery).bind(...countParams).first();
 
-    // Transform results
+    // Transform results with all enriched fields
     const prospects = (results.results || []).map((row) => ({
       id: row.id,
       name: row.contact_name || row.company,
       company: row.company || 'Unknown',
       email: row.email || '',
       phone: row.phone || null,
-      website: row.website || row.domain ? `https://${row.domain}` : null,
+      website: row.website || (row.domain ? `https://${row.domain}` : null),
       address: row.address || null,
       town: row.town || null,
       state: row.state || 'MA',
@@ -176,7 +215,51 @@ export async function onRequestGet(context) {
       created_at: row.created_at || Date.now(),
       tags: [],
       notes: null,
-      rating: null,
+      rating: row.google_rating || null,
+
+      // Enriched: Menu Analysis
+      menu_item_count: row.menu_item_count || null,
+      menu_category_count: row.menu_category_count || null,
+      avg_menu_price: row.avg_menu_price || null,
+      menu_url: row.menu_url || null,
+      menu_complexity: row.menu_complexity || null,
+      price_level: row.price_level || null,
+      bar_program: row.bar_program || null,
+
+      // Enriched: Financial Estimates
+      estimated_annual_revenue: row.estimated_annual_revenue || null,
+      estimated_daily_covers: row.estimated_daily_covers || null,
+      avg_check_size: row.avg_check_size || null,
+      hours_json: row.hours_json || null,
+      days_open: row.days_open || null,
+
+      // Enriched: Property/Assessor Data
+      parcel_id: row.parcel_id || null,
+      property_owner: row.property_owner || null,
+      building_sqft: row.building_sqft || null,
+      square_footage: row.square_footage || null,
+      property_value: row.property_value || null,
+      assessor_url: row.assessor_url || null,
+      floor_plan_notes: row.floor_plan_notes || null,
+
+      // Enriched: Owner Info
+      owner_name: row.owner_name || null,
+      owner_email: row.owner_email || null,
+      owner_phone: row.owner_phone || null,
+      years_in_business: row.years_in_business || null,
+      established_date: row.established_date || null,
+
+      // Enriched: Reviews/Ratings
+      google_rating: row.google_rating || null,
+      google_review_count: row.google_review_count || null,
+      yelp_rating: row.yelp_rating || null,
+      yelp_review_count: row.yelp_review_count || null,
+      tripadvisor_rating: row.tripadvisor_rating || null,
+
+      // Enriched: Tracking
+      data_completeness: row.data_completeness || null,
+      enrichment_confidence: row.enrichment_confidence || null,
+      last_enriched_at: row.last_enriched_at || null,
     }));
 
     return new Response(JSON.stringify({
