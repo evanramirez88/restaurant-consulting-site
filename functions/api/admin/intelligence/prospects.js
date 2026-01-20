@@ -76,6 +76,8 @@ function isGarbageData(row) {
     /top.*\d+/i,
     /seafood.*brunch.*beyond/i,    // "Seafood, Brunch, and Beyond"
     /&#\d+;/,                      // HTML entities like &#8212;
+    /&amp;/,                        // HTML encoded ampersand
+    /&lt;|&gt;|&quot;/,             // Other HTML entities
     /™|®/,                         // Trademark symbols in scraped names
     /\.com$/i,                     // Names that are just domain names
     /\.net$/i,
