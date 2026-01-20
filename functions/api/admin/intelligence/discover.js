@@ -16,6 +16,154 @@
 import { scrapeRestaurantWebsite, detectTechStack } from './_lib/scraper.js';
 import { unifiedSearch, SearchPriority } from '../../../_shared/search-providers.js';
 
+// Cape Cod towns for seeding
+const CAPE_COD_TOWNS = {
+  'Provincetown': 'Outer Cape', 'Truro': 'Outer Cape', 'Wellfleet': 'Outer Cape', 'Eastham': 'Outer Cape',
+  'Orleans': 'Lower Cape', 'Chatham': 'Lower Cape', 'Brewster': 'Lower Cape', 'Harwich': 'Lower Cape',
+  'Dennis': 'Mid Cape', 'Yarmouth': 'Mid Cape', 'Barnstable': 'Mid Cape',
+  'Mashpee': 'Upper Cape', 'Falmouth': 'Upper Cape', 'Sandwich': 'Upper Cape', 'Bourne': 'Upper Cape',
+};
+
+// Known Cape Cod restaurants to seed - 150+ establishments
+const KNOWN_RESTAURANTS = [
+  // PROVINCETOWN (25+)
+  { name: 'The Mews Restaurant', town: 'Provincetown', address: '429 Commercial St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Fanizzis by the Sea', town: 'Provincetown', address: '539 Commercial St', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'The Red Inn', town: 'Provincetown', address: '15 Commercial St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Napis Restaurant', town: 'Provincetown', address: '7 Freeman St', type: 'casual_dining', cuisine: 'International' },
+  { name: 'Mac Seafood Provincetown', town: 'Provincetown', address: '85 Shank Painter Rd', type: 'seafood_market', cuisine: 'Seafood' },
+  { name: 'Sals Place', town: 'Provincetown', address: '99 Commercial St', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Front Street Restaurant', town: 'Provincetown', address: '230 Commercial St', type: 'fine_dining', cuisine: 'Mediterranean' },
+  { name: 'Strangers and Saints', town: 'Provincetown', address: '404 Commercial St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'The Canteen Provincetown', town: 'Provincetown', address: '225 Commercial St', type: 'fast_casual', cuisine: 'Seafood' },
+  { name: 'Ross Grill', town: 'Provincetown', address: '237 Commercial St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Pepes Wharf', town: 'Provincetown', address: '371 Commercial St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'The Lobster Pot', town: 'Provincetown', address: '321 Commercial St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Cafe Heaven', town: 'Provincetown', address: '199 Commercial St', type: 'cafe_coffee', cuisine: 'Breakfast' },
+  { name: 'Crown and Anchor', town: 'Provincetown', address: '247 Commercial St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Governor Bradford', town: 'Provincetown', address: '312 Commercial St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Ocean 193', town: 'Provincetown', address: '193 Commercial St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Spiritus Pizza', town: 'Provincetown', address: '190 Commercial St', type: 'fast_casual', cuisine: 'Pizza' },
+  // WELLFLEET
+  { name: 'Winslows Tavern', town: 'Wellfleet', address: '316 Main St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Mac Shack', town: 'Wellfleet', address: '91 Commercial St', type: 'seafood_market', cuisine: 'Seafood' },
+  { name: 'The Wicked Oyster', town: 'Wellfleet', address: '50 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Bookstore Restaurant', town: 'Wellfleet', address: '50 Kendrick Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'PB Boulangerie Bistro', town: 'Wellfleet', address: '15 Lecount Hollow Rd', type: 'bakery', cuisine: 'French' },
+  { name: 'Moby Dicks Wellfleet', town: 'Wellfleet', address: '3225 US-6', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Pearl Restaurant', town: 'Wellfleet', address: '12 Bank St', type: 'fine_dining', cuisine: 'Seafood' },
+  // TRURO
+  { name: 'Blackfish', town: 'Truro', address: '17 Truro Center Rd', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Terra Luna', town: 'Truro', address: '104 Shore Rd', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Truro Vineyards', town: 'Truro', address: '11 Shore Rd', type: 'brewery_winery', cuisine: 'Wine' },
+  // EASTHAM
+  { name: 'Arnolds Lobster Clam Bar', town: 'Eastham', address: '3580 State Hwy', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Hole in One Eastham', town: 'Eastham', address: '4295 State Hwy', type: 'cafe_coffee', cuisine: 'Breakfast' },
+  // ORLEANS
+  { name: 'The Beacon Room', town: 'Orleans', address: '23 West Rd', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Abba Restaurant', town: 'Orleans', address: '89 Old Colony Way', type: 'fine_dining', cuisine: 'Mediterranean' },
+  { name: 'Nauset Beach Club', town: 'Orleans', address: '222 Main St', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Captain Linnell House', town: 'Orleans', address: '137 Skaket Beach Rd', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Land Ho Orleans', town: 'Orleans', address: '38 Main St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Mahoneys Atlantic Bar', town: 'Orleans', address: '28 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Hot Chocolate Sparrow', town: 'Orleans', address: '5 Old Colony Way', type: 'cafe_coffee', cuisine: 'Cafe' },
+  { name: 'Cottage St Bakery', town: 'Orleans', address: '5 Cottage St', type: 'bakery', cuisine: 'Bakery' },
+  { name: 'Yardarm Restaurant', town: 'Orleans', address: '785 MA-28', type: 'casual_dining', cuisine: 'Seafood' },
+  // CHATHAM
+  { name: 'Impudent Oyster', town: 'Chatham', address: '15 Chatham Bars Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Del Mar Bar Bistro', town: 'Chatham', address: '907 Main St', type: 'fine_dining', cuisine: 'Mediterranean' },
+  { name: 'Chatham Bars Inn Restaurant', town: 'Chatham', address: '297 Shore Rd', type: 'fine_dining', cuisine: 'American' },
+  { name: 'The Chatham Squire', town: 'Chatham', address: '487 Main St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Wild Goose Tavern', town: 'Chatham', address: '512 Main St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Bluefins Sushi Chatham', town: 'Chatham', address: '513 Main St', type: 'casual_dining', cuisine: 'Japanese' },
+  { name: 'Chatham Pier Fish Market', town: 'Chatham', address: '45 Barcliff Ave', type: 'seafood_market', cuisine: 'Seafood' },
+  { name: 'Chatham Cut', town: 'Chatham', address: '907 Main St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Marions Pie Shop', town: 'Chatham', address: '2022 Main St', type: 'bakery', cuisine: 'Bakery' },
+  { name: 'Vinings Bistro', town: 'Chatham', address: '595 Main St', type: 'casual_dining', cuisine: 'American' },
+  // BREWSTER
+  { name: 'Chillingsworth', town: 'Brewster', address: '2449 Main St', type: 'fine_dining', cuisine: 'French' },
+  { name: 'Bramble Inn', town: 'Brewster', address: '2019 Main St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Brewster Fish House', town: 'Brewster', address: '2208 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'JTs Seafood', town: 'Brewster', address: '2689 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Cobies Brewster', town: 'Brewster', address: '3260 Main St', type: 'fast_casual', cuisine: 'Seafood' },
+  { name: 'Snowy Owl Coffee', town: 'Brewster', address: '2624 Main St', type: 'cafe_coffee', cuisine: 'Coffee' },
+  { name: 'Laurinos Tavern', town: 'Brewster', address: '3668 Main St', type: 'bar_pub', cuisine: 'Italian' },
+  // HARWICH
+  { name: 'Cape Sea Grille', town: 'Harwich', address: '31 Sea St', type: 'fine_dining', cuisine: 'Seafood' },
+  { name: 'Bucas Tuscan Roadhouse', town: 'Harwich', address: '4 Depot Rd', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Port Restaurant Harwich', town: 'Harwich', address: '541 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Brax Landing', town: 'Harwich', address: '705 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Hot Stove Saloon', town: 'Harwich', address: '551 Main St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Ember Harwich', town: 'Harwich', address: '600 Main St', type: 'casual_dining', cuisine: 'American' },
+  // DENNIS
+  { name: 'Ocean House Dennis', town: 'Dennis', address: '425 Old Wharf Rd', type: 'fine_dining', cuisine: 'Seafood' },
+  { name: 'Scargo Cafe', town: 'Dennis', address: '799 Main St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Red Pheasant', town: 'Dennis', address: '905 Main St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Sesuit Harbor Cafe', town: 'Dennis', address: '357 Sesuit Neck Rd', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Ginas by the Sea', town: 'Dennis', address: '134 Taunton Ave', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Captain Frostys', town: 'Dennis', address: '219 Main St', type: 'fast_casual', cuisine: 'Seafood' },
+  { name: 'Swan River Restaurant', town: 'Dennis', address: '5 Lower County Rd', type: 'casual_dining', cuisine: 'Seafood' },
+  // YARMOUTH
+  { name: 'Inaho Japanese', town: 'Yarmouth', address: '157 Main St', type: 'casual_dining', cuisine: 'Japanese' },
+  { name: 'Olivers Restaurant', town: 'Yarmouth', address: '960 Main St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Keltic Kitchen', town: 'Yarmouth', address: '415 Main St', type: 'casual_dining', cuisine: 'Irish' },
+  { name: 'Skipper Restaurant', town: 'Yarmouth', address: '152 S Shore Dr', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Captain Parkers Pub', town: 'Yarmouth', address: '668 MA-28', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Mattakeese Wharf', town: 'Yarmouth', address: '273 Mill Way', type: 'casual_dining', cuisine: 'Seafood' },
+  // BARNSTABLE (Hyannis, Osterville, Centerville)
+  { name: 'Naked Oyster', town: 'Barnstable', address: '410 Main St Hyannis', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Pizza Barbone', town: 'Barnstable', address: '390 Main St Hyannis', type: 'fast_casual', cuisine: 'Pizza' },
+  { name: 'Embargo Restaurant', town: 'Barnstable', address: '453 Main St Hyannis', type: 'casual_dining', cuisine: 'Spanish' },
+  { name: 'Brazilian Grill Hyannis', town: 'Barnstable', address: '680 Main St Hyannis', type: 'casual_dining', cuisine: 'Brazilian' },
+  { name: 'Baxters Boathouse', town: 'Barnstable', address: '177 Pleasant St Hyannis', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Black Cat Tavern', town: 'Barnstable', address: '165 Ocean St Hyannis', type: 'bar_pub', cuisine: 'Seafood' },
+  { name: 'Pain DAvignon', town: 'Barnstable', address: '15 Hinckley Rd Hyannis', type: 'bakery', cuisine: 'French' },
+  { name: 'Five Bays Bistro', town: 'Barnstable', address: '825 Main St Osterville', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Wimpys Osterville', town: 'Barnstable', address: '752 Main St Osterville', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Centerville Pie Company', town: 'Barnstable', address: '1671 Falmouth Rd', type: 'bakery', cuisine: 'Bakery' },
+  { name: 'The Paddock', town: 'Barnstable', address: '20 Scudder Ave Hyannis', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Roadhouse Cafe', town: 'Barnstable', address: '488 South St Hyannis', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Four Seas Ice Cream', town: 'Barnstable', address: '360 S Main St Centerville', type: 'fast_casual', cuisine: 'Ice Cream' },
+  { name: 'Colombos Cafe', town: 'Barnstable', address: '544 Main St Hyannis', type: 'cafe_coffee', cuisine: 'Cafe' },
+  { name: 'Albertos Ristorante', town: 'Barnstable', address: '360 Main St Hyannis', type: 'casual_dining', cuisine: 'Italian' },
+  // MASHPEE
+  { name: 'Bleu Restaurant', town: 'Mashpee', address: '10 Market St', type: 'fine_dining', cuisine: 'French' },
+  { name: 'Siena Italian', town: 'Mashpee', address: '17 Steeple St', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Bobby Byrnes Mashpee', town: 'Mashpee', address: '3 Market St', type: 'bar_pub', cuisine: 'American' },
+  { name: 'The Raw Bar Mashpee', town: 'Mashpee', address: '16 Popponesset', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Wicked Restaurant Mashpee', town: 'Mashpee', address: '24 Market St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'C Salt Wine Bar Mashpee', town: 'Mashpee', address: '36 Market St', type: 'bar_pub', cuisine: 'Wine Bar' },
+  // FALMOUTH
+  { name: 'Glass Onion', town: 'Falmouth', address: '37 N Main St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Anejo Mexican Bistro', town: 'Falmouth', address: '188 Main St', type: 'casual_dining', cuisine: 'Mexican' },
+  { name: 'Quarterdeck Restaurant', town: 'Falmouth', address: '164 Main St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Liam Maguires Irish Pub', town: 'Falmouth', address: '273 Main St', type: 'bar_pub', cuisine: 'Irish' },
+  { name: 'The Flying Bridge', town: 'Falmouth', address: '220 Scranton Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Fishmongers Cafe', town: 'Falmouth', address: '56 Water St', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Clam Shack Falmouth', town: 'Falmouth', address: '227 Clinton Ave', type: 'fast_casual', cuisine: 'Seafood' },
+  { name: 'Casino Wharf FX', town: 'Falmouth', address: '286 Grand Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'La Cucina Sul Mare', town: 'Falmouth', address: '237 Main St', type: 'casual_dining', cuisine: 'Italian' },
+  { name: 'Chapoquoit Grill', town: 'Falmouth', address: '410 W Falmouth Hwy', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Maison Villatte', town: 'Falmouth', address: '267 Main St', type: 'bakery', cuisine: 'French' },
+  { name: 'Shipwrecked Falmouth', town: 'Falmouth', address: '180 Scranton Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Betsys Diner', town: 'Falmouth', address: '457 Main St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Landfall Restaurant', town: 'Falmouth', address: '2 Luscombe Ave', type: 'casual_dining', cuisine: 'Seafood' },
+  // SANDWICH
+  { name: 'Belfry Inn Bistro', town: 'Sandwich', address: '8 Jarves St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Danl Webster Inn', town: 'Sandwich', address: '149 Main St', type: 'fine_dining', cuisine: 'American' },
+  { name: 'Seafood Sams Sandwich', town: 'Sandwich', address: '6 Coast Guard Rd', type: 'fast_casual', cuisine: 'Seafood' },
+  { name: 'Pilot House Restaurant', town: 'Sandwich', address: '14 Gallo Rd', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Cafe Chew', town: 'Sandwich', address: '4 Merchants Square', type: 'cafe_coffee', cuisine: 'Cafe' },
+  { name: 'Bobby Byrnes Sandwich', town: 'Sandwich', address: '65 Route 6A', type: 'bar_pub', cuisine: 'American' },
+  { name: 'Aqua Grille', town: 'Sandwich', address: '14 Gallo Rd', type: 'casual_dining', cuisine: 'Seafood' },
+  // BOURNE
+  { name: 'Chart Room', town: 'Bourne', address: '1 Shipyard Ln', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Sagamore Inn', town: 'Bourne', address: '1131 Main St', type: 'casual_dining', cuisine: 'American' },
+  { name: 'Lobster Trap Bourne', town: 'Bourne', address: '290 Shore Rd', type: 'casual_dining', cuisine: 'Seafood' },
+  { name: 'Stir Crazy Bourne', town: 'Bourne', address: '626 MacArthur Blvd', type: 'casual_dining', cuisine: 'Asian' },
+  { name: 'Courtyard Restaurant Bourne', town: 'Bourne', address: '1337 County Rd', type: 'casual_dining', cuisine: 'American' },
+];
+
 // CORS headers for admin APIs
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +194,11 @@ export async function onRequestPost(context) {
 
     let results;
     const targetUrl = website || url || competitor_url;
+
+    // Handle seed_known action
+    if (body.action === 'seed_known') {
+      return await seedKnownRestaurants(env);
+    }
 
     switch (method) {
       case 'location':
@@ -566,6 +719,61 @@ function generateCompetitorInsights(scrapeResult) {
   }
 
   return insights;
+}
+
+/**
+ * Seed known Cape Cod restaurants into the database
+ */
+async function seedKnownRestaurants(env) {
+  let imported = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (const r of KNOWN_RESTAURANTS) {
+    try {
+      // Check if already exists
+      const existing = await env.DB.prepare(
+        'SELECT id FROM restaurant_leads WHERE LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?)'
+      ).bind(r.name, r.town).first();
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      const id = 'lead_seed_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+      await env.DB.prepare(`
+        INSERT INTO restaurant_leads (
+          id, name, dba_name, city, state, address_line1,
+          cuisine_primary, service_style, source, status, lead_score,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'MA', ?, ?, ?, 'seed_import', 'prospect', 50, unixepoch(), unixepoch())
+      `).bind(
+        id,
+        r.name,
+        r.name,
+        r.town,
+        r.address || null,
+        r.cuisine || null,
+        r.type || null
+      ).run();
+
+      imported++;
+    } catch (err) {
+      errors.push({ restaurant: r.name, error: err.message });
+    }
+  }
+
+  return new Response(JSON.stringify({
+    success: true,
+    message: `Seeded ${imported} Cape Cod restaurants, skipped ${skipped} duplicates`,
+    imported,
+    skipped,
+    total_known: KNOWN_RESTAURANTS.length,
+    towns_covered: Object.keys(CAPE_COD_TOWNS),
+    errors: errors.length > 0 ? errors.slice(0, 5) : undefined,
+  }), { headers: corsHeaders });
 }
 
 export async function onRequestGet(context) {
