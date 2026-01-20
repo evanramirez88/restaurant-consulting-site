@@ -130,7 +130,14 @@ export async function onRequestGet(context) {
       automationHealth,
 
       // Intelligence agent status
-      agentStatus
+      agentStatus,
+
+      // Cal.com bookings
+      upcomingCalls,
+      todaysCalls,
+
+      // Stripe MRR
+      stripeMrr
     ] = await Promise.all([
       // Action items (pending, not expired)
       env.DB.prepare(`
@@ -306,7 +313,34 @@ export async function onRequestGet(context) {
         FROM intelligence_tasks
         WHERE completed_at > ?
         GROUP BY agent_name
-      `).bind(oneDayAgo).all().catch(() => ({ results: [] }))
+      `).bind(oneDayAgo).all().catch(() => ({ results: [] })),
+
+      // Cal.com scheduled calls (upcoming)
+      env.DB.prepare(`
+        SELECT id, name, email, company, title, start_time, end_time, status, lead_id, client_id
+        FROM scheduled_bookings
+        WHERE status = 'confirmed'
+        AND start_time > datetime('now')
+        ORDER BY start_time ASC
+        LIMIT 10
+      `).all().catch(() => ({ results: [] })),
+
+      // Today's scheduled calls
+      env.DB.prepare(`
+        SELECT id, name, email, company, title, start_time, end_time, status
+        FROM scheduled_bookings
+        WHERE status = 'confirmed'
+        AND date(start_time) = date('now')
+        ORDER BY start_time ASC
+      `).all().catch(() => ({ results: [] })),
+
+      // Stripe MRR for goal calculation
+      env.DB.prepare(`
+        SELECT
+          COALESCE(SUM(CASE WHEN billing_interval = 'month' THEN amount ELSE amount / 12 END), 0) as mrr
+        FROM stripe_subscriptions
+        WHERE status = 'active'
+      `).first().catch(() => ({ mrr: 0 }))
     ]);
 
     // ========================================
@@ -327,8 +361,35 @@ export async function onRequestGet(context) {
       }
     });
 
-    // Calculate MRR from support plans
-    const mrr = (planBreakdown.core * 350) + (planBreakdown.professional * 500) + (planBreakdown.premium * 800);
+    // Calculate MRR from support plans + Stripe subscriptions
+    const planMrr = (planBreakdown.core * 350) + (planBreakdown.professional * 500) + (planBreakdown.premium * 800);
+    const stripeRevenue = stripeMrr?.mrr || 0;
+    const mrr = Math.max(planMrr, stripeRevenue); // Use higher of the two (avoiding double count)
+
+    // Process scheduled calls
+    const upcomingCallsList = (upcomingCalls?.results || []).map(call => ({
+      id: call.id,
+      name: call.name,
+      email: call.email,
+      company: call.company,
+      title: call.title,
+      startTime: call.start_time,
+      endTime: call.end_time,
+      status: call.status,
+      leadId: call.lead_id,
+      clientId: call.client_id
+    }));
+
+    const todaysCallsList = (todaysCalls?.results || []).map(call => ({
+      id: call.id,
+      name: call.name,
+      email: call.email,
+      company: call.company,
+      title: call.title,
+      startTime: call.start_time,
+      endTime: call.end_time,
+      status: call.status
+    }));
 
     // Build metrics object
     const metrics = {
@@ -450,12 +511,21 @@ export async function onRequestGet(context) {
     }
 
     if (quickWins.length > 0) {
-      aiSummary += `${quickWins.length} quick win opportunit${quickWins.length > 1 ? 'ies' : 'y'} identified worth ~$${quickWins.reduce((sum, qw) => sum + (qw.value || 0), 0).toLocaleString()}.`;
+      aiSummary += `${quickWins.length} quick win opportunit${quickWins.length > 1 ? 'ies' : 'y'} identified worth ~$${quickWins.reduce((sum, qw) => sum + (qw.value || 0), 0).toLocaleString()}. `;
+    }
+
+    // Add today's scheduled calls
+    if (todaysCallsList.length > 0) {
+      aiSummary += `You have ${todaysCallsList.length} call${todaysCallsList.length > 1 ? 's' : ''} scheduled today.`;
     }
 
     if (!aiSummary) {
       aiSummary = 'Business operations are running smoothly. Focus on outreach and pipeline development today.';
     }
+
+    // Calculate live goal progress using actual MRR
+    const liveARR = mrr * 12;
+    const goalProgressPercent = (liveARR / 400000) * 100;
 
     // ========================================
     // BUILD RESPONSE
@@ -497,25 +567,42 @@ export async function onRequestGet(context) {
       // Quick Wins
       quickWins: quickWins.slice(0, 5),
 
-      // Goal Progress
+      // Goal Progress (using live MRR calculation)
       goalProgress: primaryGoal ? {
         id: primaryGoal.id,
         title: primaryGoal.title,
         targetValue: primaryGoal.target_value,
-        currentValue: primaryGoal.current_value,
+        currentValue: liveARR, // Live calculated ARR
         unit: primaryGoal.unit,
         deadline: primaryGoal.deadline,
-        status: primaryGoal.status,
-        percentComplete: (primaryGoal.current_value / primaryGoal.target_value) * 100,
+        status: goalProgressPercent >= 90 ? 'on_track' : goalProgressPercent >= 70 ? 'at_risk' : 'behind',
+        percentComplete: goalProgressPercent,
+        currentMRR: mrr,
+        daysRemaining: Math.max(0, Math.ceil((1714521600 - now) / 86400)), // May 1, 2026
+        weeklyTarget: 23529, // $400K / 17 weeks
         milestones: (goalMilestones?.results || []).map(m => ({
           id: m.id,
           title: m.title,
           targetDate: m.target_date,
           targetValue: m.target_value,
-          actualValue: m.actual_value,
-          achieved: m.achieved_at != null
+          actualValue: m.actual_value || (m.target_date <= now ? liveARR : null),
+          achieved: m.achieved_at != null || (m.target_date <= now && liveARR >= m.target_value)
         }))
-      } : null,
+      } : {
+        // Default goal if not in database
+        id: 'goal_revenue_400k_2026',
+        title: '$400K Revenue by May 1, 2026',
+        targetValue: 400000,
+        currentValue: liveARR,
+        unit: '$',
+        deadline: 1714521600,
+        status: goalProgressPercent >= 90 ? 'on_track' : goalProgressPercent >= 70 ? 'at_risk' : 'behind',
+        percentComplete: goalProgressPercent,
+        currentMRR: mrr,
+        daysRemaining: Math.max(0, Math.ceil((1714521600 - now) / 86400)),
+        weeklyTarget: 23529,
+        milestones: []
+      },
 
       // Alerts (for immediate attention)
       alerts: {
@@ -553,6 +640,15 @@ export async function onRequestGet(context) {
           };
           return acc;
         }, {})
+      },
+
+      // Cal.com Scheduling
+      scheduling: {
+        todaysCalls: todaysCallsList,
+        todaysCallCount: todaysCallsList.length,
+        upcomingCalls: upcomingCallsList,
+        upcomingCallCount: upcomingCallsList.length,
+        nextCall: upcomingCallsList.length > 0 ? upcomingCallsList[0] : null
       }
     };
 
