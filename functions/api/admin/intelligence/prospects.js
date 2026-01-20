@@ -1,10 +1,10 @@
 /**
  * Prospects/Leads API for Intelligence Dashboard
  *
- * GET /api/admin/intelligence/prospects - List prospects from restaurant_leads
+ * GET /api/admin/intelligence/prospects - List prospects from cape_cod_restaurants
  *
- * Data Source: restaurant_leads table (cleaned, validated restaurant prospects)
- * Service Area: Cape Cod (Outer/Lower/Mid/Upper), South Shore, Islands
+ * Data Source: cape_cod_restaurants table (clean, validated Cape Cod restaurant directory)
+ * Service Area: Cape Cod ONLY (15 towns - Outer/Lower/Mid/Upper Cape)
  */
 
 const corsHeaders = {
@@ -14,24 +14,16 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-// Service area regions - Cape Cod sub-regions, South Shore, Islands
-const SERVICE_REGIONS = {
+// Cape Cod regions - the 15 towns ONLY
+const CAPE_COD_REGIONS = {
   'Outer Cape': ['Provincetown', 'Truro', 'Wellfleet', 'Eastham'],
   'Lower Cape': ['Orleans', 'Chatham', 'Brewster', 'Harwich'],
-  'Mid Cape': ['Dennis', 'Yarmouth', 'Barnstable', 'Hyannis'],
+  'Mid Cape': ['Dennis', 'Yarmouth', 'Barnstable'],
   'Upper Cape': ['Mashpee', 'Falmouth', 'Sandwich', 'Bourne'],
-  'South Shore': ['Plymouth', 'Duxbury', 'Kingston', 'Wareham'],
-  'Islands': ['Nantucket', 'Edgartown', 'Oak Bluffs', 'Vineyard Haven'],
 };
 
-// Get region from city
-function getRegion(city) {
-  if (!city) return 'Other';
-  for (const [region, cities] of Object.entries(SERVICE_REGIONS)) {
-    if (cities.includes(city)) return region;
-  }
-  return 'Other';
-}
+// All Cape Cod towns (flat list for validation)
+const CAPE_COD_TOWNS = Object.values(CAPE_COD_REGIONS).flat();
 
 export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: corsHeaders });
@@ -46,38 +38,47 @@ export async function onRequestGet(context) {
     const region = url.searchParams.get('region');
     const posSystem = url.searchParams.get('pos');
     const status = url.searchParams.get('status');
-    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '100', 10);
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
-    // Simple, clean query - only select columns that exist in the database
+    // Query the CLEAN cape_cod_restaurants table
     let query = `
       SELECT
-        COALESCE(id, 'lead_' || CAST(rowid AS TEXT)) as id,
-        name as company,
-        COALESCE(dba_name, name, '') as contact_name,
-        primary_email as email,
-        primary_phone as phone,
-        website_url as website,
-        COALESCE(address_line1, '') as address,
-        city as town,
+        id,
+        name,
+        dba_name,
+        address,
+        village,
+        town,
+        region,
         state,
         zip,
-        cuisine_primary as category,
-        current_pos as pos_system,
-        COALESCE(service_style, '') as service_style,
-        COALESCE(lead_score, 50) as lead_score,
-        created_at,
-        domain,
-        hubspot_id,
-        source,
+        phone,
+        email,
+        website,
+        type,
+        cuisine_primary,
+        cuisine_secondary,
+        service_style,
+        price_level,
+        seasonal,
+        pos_system,
+        pos_confidence,
+        online_ordering,
+        online_ordering_url,
         license_number,
         license_type,
-        actual_seat_count as seating_capacity,
+        seating_capacity,
         health_score,
         last_inspection_date,
-        online_ordering_provider as online_ordering,
-        seasonal
-      FROM restaurant_leads
+        rating,
+        review_count,
+        description,
+        data_source,
+        data_confidence,
+        created_at,
+        updated_at
+      FROM cape_cod_restaurants
       WHERE 1=1
     `;
     const params = [];
@@ -87,97 +88,137 @@ export async function onRequestGet(context) {
       query += ` AND (
         name LIKE ? OR
         dba_name LIKE ? OR
-        primary_email LIKE ? OR
-        city LIKE ?
+        town LIKE ? OR
+        type LIKE ? OR
+        cuisine_primary LIKE ?
       )`;
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    // Region filter
+    // Region filter - only Cape Cod regions
     if (region && region !== 'all') {
-      const regionCities = SERVICE_REGIONS[region];
-      if (regionCities) {
-        const placeholders = regionCities.map(() => '?').join(', ');
-        query += ` AND city IN (${placeholders})`;
-        params.push(...regionCities);
+      if (CAPE_COD_REGIONS[region]) {
+        const regionTowns = CAPE_COD_REGIONS[region];
+        const placeholders = regionTowns.map(() => '?').join(', ');
+        query += ` AND town IN (${placeholders})`;
+        params.push(...regionTowns);
+      } else {
+        // Direct region match
+        query += ` AND region = ?`;
+        params.push(region);
       }
     }
 
     // POS filter
     if (posSystem && posSystem !== 'all') {
-      query += ` AND LOWER(current_pos) LIKE ?`;
-      params.push(`%${posSystem.toLowerCase()}%`);
+      if (posSystem.toLowerCase() === 'unknown') {
+        query += ` AND (pos_system IS NULL OR pos_system = 'Unknown' OR pos_system = '')`;
+      } else {
+        query += ` AND LOWER(pos_system) LIKE ?`;
+        params.push(`%${posSystem.toLowerCase()}%`);
+      }
     }
 
-    // Status filter (based on lead_score)
+    // Status filter (based on data completeness for now)
     if (status && status !== 'all') {
       if (status === 'lead') {
-        query += ` AND lead_score >= 70`;
+        // Leads have more complete data (email or phone or website)
+        query += ` AND (email IS NOT NULL OR phone IS NOT NULL OR website IS NOT NULL)`;
       } else if (status === 'prospect') {
-        query += ` AND lead_score < 70`;
+        // Prospects have less data
+        query += ` AND (email IS NULL AND phone IS NULL AND website IS NULL)`;
       }
     }
 
     // Ordering and pagination
-    query += ` ORDER BY lead_score DESC, created_at DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY
+      CASE WHEN pos_system IS NOT NULL AND pos_system != 'Unknown' THEN 0 ELSE 1 END,
+      CASE WHEN email IS NOT NULL THEN 0 ELSE 1 END,
+      name ASC
+      LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     // Execute query
     const results = await env.DB.prepare(query).bind(...params).all();
 
     // Get total count
-    let countQuery = `SELECT COUNT(*) as total FROM restaurant_leads WHERE 1=1`;
+    let countQuery = `SELECT COUNT(*) as total FROM cape_cod_restaurants WHERE 1=1`;
     const countParams = [];
 
     if (search) {
-      countQuery += ` AND (name LIKE ? OR dba_name LIKE ? OR primary_email LIKE ? OR city LIKE ?)`;
+      countQuery += ` AND (name LIKE ? OR dba_name LIKE ? OR town LIKE ? OR type LIKE ? OR cuisine_primary LIKE ?)`;
       const searchPattern = `%${search}%`;
-      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      countParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    if (region && region !== 'all' && SERVICE_REGIONS[region]) {
-      const regionCities = SERVICE_REGIONS[region];
-      const placeholders = regionCities.map(() => '?').join(', ');
-      countQuery += ` AND city IN (${placeholders})`;
-      countParams.push(...regionCities);
+    if (region && region !== 'all') {
+      if (CAPE_COD_REGIONS[region]) {
+        const regionTowns = CAPE_COD_REGIONS[region];
+        const placeholders = regionTowns.map(() => '?').join(', ');
+        countQuery += ` AND town IN (${placeholders})`;
+        countParams.push(...regionTowns);
+      } else {
+        countQuery += ` AND region = ?`;
+        countParams.push(region);
+      }
+    }
+
+    if (posSystem && posSystem !== 'all') {
+      if (posSystem.toLowerCase() === 'unknown') {
+        countQuery += ` AND (pos_system IS NULL OR pos_system = 'Unknown' OR pos_system = '')`;
+      } else {
+        countQuery += ` AND LOWER(pos_system) LIKE ?`;
+        countParams.push(`%${posSystem.toLowerCase()}%`);
+      }
     }
 
     const countResult = await env.DB.prepare(countQuery).bind(...countParams).first();
 
-    // Transform results
-    const prospects = (results.results || []).map((row) => ({
-      id: row.id,
-      name: row.contact_name || row.company,
-      company: row.company || 'Unknown',
-      email: row.email || '',
-      phone: row.phone || null,
-      website: row.website || (row.domain ? `https://${row.domain}` : null),
-      address: row.address || null,
-      town: row.town || null,
-      state: row.state || 'MA',
-      zip: row.zip || null,
-      region: getRegion(row.town),
-      category: row.category || null,
-      service_style: row.service_style || null,
-      seasonal: row.seasonal === 1 || row.seasonal === true,
-      pos_system: row.pos_system || 'Unknown',
-      online_ordering: row.online_ordering || null,
-      license_number: row.license_number || null,
-      license_type: row.license_type || null,
-      seating_capacity: row.seating_capacity || null,
-      health_score: row.health_score || null,
-      last_inspection_date: row.last_inspection_date || null,
-      lead_score: row.lead_score || 50,
-      status: row.lead_score >= 70 ? 'lead' : 'prospect',
-      domain: row.domain || null,
-      hubspot_id: row.hubspot_id || null,
-      source: row.source || null,
-      created_at: row.created_at || Date.now(),
-      tags: [],
-      notes: null,
-      rating: null,
-    }));
+    // Transform results for the UI
+    const prospects = (results.results || []).map((row) => {
+      // Calculate a simple lead score based on data completeness
+      let leadScore = 50;
+      if (row.email) leadScore += 15;
+      if (row.phone) leadScore += 10;
+      if (row.website) leadScore += 10;
+      if (row.pos_system && row.pos_system !== 'Unknown') leadScore += 10;
+      if (row.pos_system === 'Toast') leadScore += 5; // Bonus for Toast users
+
+      return {
+        id: row.id,
+        name: row.dba_name || row.name,
+        company: row.name,
+        email: row.email || '',
+        phone: row.phone || null,
+        website: row.website || null,
+        address: row.address || null,
+        town: row.town || null,
+        state: row.state || 'MA',
+        zip: row.zip || null,
+        region: row.region || null,
+        category: row.type || row.cuisine_primary || null,
+        service_style: row.service_style || null,
+        seasonal: row.seasonal === 1,
+        pos_system: row.pos_system || 'Unknown',
+        online_ordering: row.online_ordering || null,
+        license_number: row.license_number || null,
+        license_type: row.license_type || null,
+        seating_capacity: row.seating_capacity || null,
+        health_score: row.health_score || null,
+        last_inspection_date: row.last_inspection_date || null,
+        lead_score: Math.min(100, leadScore),
+        status: leadScore >= 70 ? 'lead' : 'prospect',
+        domain: row.website ? new URL(row.website).hostname : null,
+        source: row.data_source || 'directory',
+        created_at: row.created_at || Date.now(),
+        rating: row.rating || null,
+        review_count: row.review_count || null,
+        description: row.description || null,
+        tags: [],
+        notes: null,
+      };
+    });
 
     return new Response(JSON.stringify({
       success: true,
@@ -192,6 +233,7 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({
       success: false,
       error: error.message,
+      hint: 'If cape_cod_restaurants table does not exist, run migration 0044a first'
     }), { status: 500, headers: corsHeaders });
   }
 }
