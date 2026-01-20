@@ -163,6 +163,7 @@ const ClientIntelligenceTab: React.FC = () => {
   // Research State
   const [isResearching, setIsResearching] = useState(false);
   const [researchMessage, setResearchMessage] = useState<string | null>(null);
+  const [researchResults, setResearchResults] = useState<any | null>(null);
 
   // Campaign State
   const [showCampaignModal, setShowCampaignModal] = useState(false);
@@ -328,6 +329,8 @@ const ClientIntelligenceTab: React.FC = () => {
   const handleResearch = async (prospect: IntelClient) => {
     setIsResearching(true);
     setResearchMessage('Starting full research and data enrichment...');
+    setResearchResults(null);
+
     try {
       // Use the full enrichment API - it will search for data even without a website
       const response = await fetch('/api/admin/intelligence/enrich-full', {
@@ -344,30 +347,33 @@ const ClientIntelligenceTab: React.FC = () => {
 
       const result = await response.json();
 
-      if (result.success) {
-        const fieldsFound = result.fields_updated || 0;
-        const sourcesUsed = result.sources_used || 0;
+      if (result.success && result.data) {
+        // Store the research results for display
+        setResearchResults(result.data);
 
-        let message = `Research complete for ${prospect.company}! `;
-        message += `Found ${fieldsFound} data points from ${sourcesUsed} sources.`;
+        const fieldsFound = result.fields_updated || result.data.fields_updated?.length || 0;
+        const sourcesUsed = result.sources_used || result.data.sources?.length || 0;
+
+        let message = `Research complete! Found data from ${sourcesUsed} sources.`;
 
         // Highlight key findings
-        if (result.data?.owner_name) message += ` Owner: ${result.data.owner_name}.`;
-        if (result.data?.website) message += ` Website found.`;
-        if (result.data?.google_rating) message += ` Rating: ${result.data.google_rating}/5.`;
-        if (result.data?.estimated_annual_revenue) {
-          message += ` Est. Revenue: $${(result.data.estimated_annual_revenue / 1000).toFixed(0)}K.`;
+        const findings = [];
+        if (result.data.owner_name) findings.push(`Owner: ${result.data.owner_name}`);
+        if (result.data.website) findings.push('Website found');
+        if (result.data.google_rating) findings.push(`Rating: ${result.data.google_rating}/5`);
+        if (result.data.estimated_annual_revenue) {
+          findings.push(`Est. Revenue: $${(result.data.estimated_annual_revenue / 1000).toFixed(0)}K`);
         }
+        if (result.data.assessor_url) findings.push('Assessor records available');
 
-        if (result.errors && result.errors.length > 0) {
-          message += ` (${result.errors.length} sources unavailable)`;
+        if (findings.length > 0) {
+          message += ' ' + findings.join(' · ');
         }
 
         setResearchMessage(message);
-        await loadData(); // Refresh data to show new fields
-        setTimeout(() => setResearchMessage(null), 8000);
+        // Don't clear the message automatically so user can see results
       } else {
-        setResearchMessage(`Research incomplete: ${result.error || 'Unknown error'}. Try manual lookup.`);
+        setResearchMessage(`Research incomplete: ${result.error || 'No data found'}. Try manual lookup.`);
         setTimeout(() => setResearchMessage(null), 5000);
       }
     } catch (error) {
@@ -1209,7 +1215,11 @@ const ClientIntelligenceTab: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => setSelectedProspect(null)}
+                onClick={() => {
+                  setSelectedProspect(null);
+                  setResearchResults(null);
+                  setResearchMessage(null);
+                }}
                 className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -1220,16 +1230,166 @@ const ClientIntelligenceTab: React.FC = () => {
               {/* Research Message */}
               {researchMessage && (
                 <div className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
-                  researchMessage.includes('error') || researchMessage.includes('failed')
+                  researchMessage.includes('error') || researchMessage.includes('failed') || researchMessage.includes('incomplete')
                     ? 'bg-red-500/20 text-red-400 border border-red-500/50'
-                    : researchMessage.includes('complete')
+                    : researchMessage.includes('complete') || researchMessage.includes('Complete')
                       ? 'bg-green-500/20 text-green-400 border border-green-500/50'
                       : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
                 }`}>
                   {researchMessage.includes('Starting') && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {researchMessage.includes('complete') && <CheckCircle className="w-4 h-4" />}
-                  {(researchMessage.includes('error') || researchMessage.includes('failed')) && <AlertCircle className="w-4 h-4" />}
-                  {researchMessage}
+                  {(researchMessage.includes('complete') || researchMessage.includes('Complete')) && <CheckCircle className="w-4 h-4" />}
+                  {(researchMessage.includes('error') || researchMessage.includes('failed') || researchMessage.includes('incomplete')) && <AlertCircle className="w-4 h-4" />}
+                  <span className="flex-1">{researchMessage}</span>
+                  {researchMessage && !researchMessage.includes('Starting') && (
+                    <button
+                      onClick={() => {
+                        setResearchMessage(null);
+                        setResearchResults(null);
+                      }}
+                      className="text-current opacity-70 hover:opacity-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Research Results Display */}
+              {researchResults && (
+                <div className="space-y-4 p-4 bg-gradient-to-br from-purple-900/20 to-gray-900/40 rounded-lg border border-purple-500/30">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Research Results
+                    </h4>
+                    <button
+                      onClick={() => setResearchResults(null)}
+                      className="text-gray-400 hover:text-white text-xs"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {researchResults.owner_name && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Owner</span>
+                        <span className="text-white">{researchResults.owner_name}</span>
+                      </div>
+                    )}
+                    {researchResults.website && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Website</span>
+                        <a href={researchResults.website} target="_blank" rel="noopener noreferrer"
+                           className="text-amber-400 hover:text-amber-300 truncate block">
+                          {researchResults.website.replace('https://', '').replace('http://', '')}
+                        </a>
+                      </div>
+                    )}
+                    {researchResults.phone && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Phone</span>
+                        <a href={`tel:${researchResults.phone}`} className="text-green-400">{researchResults.phone}</a>
+                      </div>
+                    )}
+                    {researchResults.email && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Email</span>
+                        <a href={`mailto:${researchResults.email}`} className="text-blue-400">{researchResults.email}</a>
+                      </div>
+                    )}
+                    {researchResults.established_date && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Established</span>
+                        <span className="text-white">{researchResults.established_date}</span>
+                        {researchResults.years_in_business && (
+                          <span className="text-gray-400 text-xs ml-1">({researchResults.years_in_business} yrs)</span>
+                        )}
+                      </div>
+                    )}
+                    {researchResults.google_rating && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Google Rating</span>
+                        <span className="text-yellow-400 font-bold">{researchResults.google_rating}/5</span>
+                        {researchResults.google_review_count && (
+                          <span className="text-gray-400 text-xs ml-1">({researchResults.google_review_count} reviews)</span>
+                        )}
+                      </div>
+                    )}
+                    {researchResults.price_level && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Price Level</span>
+                        <span className="text-green-400 font-bold">{'$'.repeat(researchResults.price_level)}</span>
+                      </div>
+                    )}
+                    {researchResults.estimated_annual_revenue && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Est. Revenue</span>
+                        <span className="text-green-400 font-bold">
+                          ${(researchResults.estimated_annual_revenue / 1000000).toFixed(1)}M/yr
+                        </span>
+                      </div>
+                    )}
+                    {researchResults.estimated_daily_covers && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Daily Covers</span>
+                        <span className="text-white">{researchResults.estimated_daily_covers} guests</span>
+                      </div>
+                    )}
+                    {researchResults.seating_capacity && (
+                      <div className="p-2 bg-gray-800/50 rounded">
+                        <span className="text-gray-500 text-xs block">Seating</span>
+                        <span className="text-white">{researchResults.seating_capacity} seats</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assessor/Property Data */}
+                  {researchResults.assessor_url && (
+                    <div className="pt-3 border-t border-gray-700">
+                      <h5 className="text-xs font-semibold text-gray-400 uppercase mb-2">Property Records</h5>
+                      <div className="flex flex-wrap gap-2">
+                        <a
+                          href={researchResults.assessor_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded flex items-center gap-1"
+                        >
+                          <Building2 className="w-3 h-3" />
+                          Town Assessor
+                        </a>
+                        {researchResults.search_url && (
+                          <a
+                            href={researchResults.search_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded flex items-center gap-1"
+                          >
+                            <Search className="w-3 h-3" />
+                            Search Property
+                          </a>
+                        )}
+                      </div>
+                      {researchResults.floor_plan_notes && (
+                        <p className="text-xs text-gray-400 mt-2 italic">{researchResults.floor_plan_notes}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {researchResults.description && (
+                    <div className="pt-3 border-t border-gray-700">
+                      <h5 className="text-xs font-semibold text-gray-400 uppercase mb-2">Summary</h5>
+                      <p className="text-gray-300 text-sm">{researchResults.description}</p>
+                    </div>
+                  )}
+
+                  {/* Sources */}
+                  {researchResults.sources && researchResults.sources.length > 0 && (
+                    <div className="pt-2 text-xs text-gray-500">
+                      Sources: {researchResults.sources.map((s: any) => s.type).join(', ')}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -566,55 +566,27 @@ function calculateConfidence(data) {
 }
 
 /**
- * Update lead record with enriched data
+ * Store enriched data in appropriate tables
+ * Only updates existing columns in restaurant_leads, stores detailed data in separate tables
  */
 async function updateLeadWithEnrichedData(env, leadId, data) {
-  const updateFields = [];
-  const updateValues = [];
-
-  const fieldMap = {
-    owner_name: 'owner_name',
-    owner_email: 'owner_email',
-    owner_phone: 'owner_phone',
+  // Only update columns that exist in restaurant_leads
+  const safeFieldMap = {
     website: 'website_url',
     phone: 'primary_phone',
     email: 'primary_email',
-    established_date: 'established_date',
-    years_in_business: 'years_in_business',
-    menu_item_count: 'menu_item_count',
-    menu_category_count: 'menu_category_count',
-    avg_menu_price: 'avg_menu_price',
-    menu_url: 'menu_url',
-    menu_complexity: 'menu_complexity',
-    price_level: 'price_level',
-    bar_program: 'bar_program',
-    google_rating: 'google_rating',
-    google_review_count: 'google_review_count',
-    yelp_rating: 'yelp_rating',
-    yelp_review_count: 'yelp_review_count',
-    hours_json: 'hours_json',
-    parcel_id: 'parcel_id',
-    property_owner: 'property_owner',
-    building_sqft: 'building_sqft',
-    square_footage: 'square_footage',
-    property_value: 'property_value',
-    assessor_url: 'assessor_url',
-    floor_plan_notes: 'floor_plan_notes',
     license_number: 'license_number',
     license_type: 'license_type',
     seating_capacity: 'actual_seat_count',
-    estimated_annual_revenue: 'estimated_annual_revenue',
-    estimated_daily_covers: 'estimated_daily_covers',
-    avg_check_size: 'avg_check_size',
-    data_completeness: 'data_completeness',
-    enrichment_confidence: 'enrichment_confidence',
-    last_enriched_at: 'last_enriched_at'
   };
 
-  for (const [sourceKey, dbColumn] of Object.entries(fieldMap)) {
-    if (data[sourceKey] !== null && data[sourceKey] !== undefined) {
+  const updateFields = [];
+  const updateValues = [];
+
+  for (const [sourceKey, dbColumn] of Object.entries(safeFieldMap)) {
+    if (data[sourceKey] !== null && data[sourceKey] !== undefined && data[sourceKey] !== '') {
       updateFields.push(`${dbColumn} = ?`);
-      updateValues.push(typeof data[sourceKey] === 'object' ? JSON.stringify(data[sourceKey]) : data[sourceKey]);
+      updateValues.push(data[sourceKey]);
     }
   }
 
@@ -623,8 +595,73 @@ async function updateLeadWithEnrichedData(env, leadId, data) {
     updateValues.push(Date.now());
     updateValues.push(leadId);
 
-    const query = `UPDATE restaurant_leads SET ${updateFields.join(', ')} WHERE id = ?`;
-    await env.DB.prepare(query).bind(...updateValues).run();
+    try {
+      const query = `UPDATE restaurant_leads SET ${updateFields.join(', ')} WHERE id = ?`;
+      await env.DB.prepare(query).bind(...updateValues).run();
+    } catch (error) {
+      console.error('Error updating lead:', error);
+    }
+  }
+
+  // Store menu analysis in separate table
+  if (data.menu_item_count || data.avg_menu_price || data.menu_url) {
+    try {
+      const menuId = `menu_${leadId}_${Date.now()}`;
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO menu_analysis (id, lead_id, menu_url, total_items, price_avg, modifier_complexity, analyzed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        menuId,
+        leadId,
+        data.menu_url || null,
+        data.menu_item_count || null,
+        data.avg_menu_price || null,
+        data.menu_complexity || null,
+        Date.now()
+      ).run();
+    } catch (error) {
+      console.error('Error storing menu analysis:', error);
+    }
+  }
+
+  // Store assessor data in separate table
+  if (data.parcel_id || data.property_owner || data.assessor_url) {
+    try {
+      const assessorId = `assessor_${leadId}_${Date.now()}`;
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO assessor_data (id, lead_id, town, parcel_id, owner_name, total_sqft, assessed_value, source_url, fetched_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        assessorId,
+        leadId,
+        data.town || null,
+        data.parcel_id || null,
+        data.property_owner || null,
+        data.building_sqft || null,
+        data.property_value || null,
+        data.assessor_url || null,
+        Date.now()
+      ).run();
+    } catch (error) {
+      console.error('Error storing assessor data:', error);
+    }
+  }
+
+  // Log the enrichment job
+  try {
+    const jobId = `enrich_${leadId}_${Date.now()}`;
+    await env.DB.prepare(`
+      INSERT INTO enrichment_jobs (id, lead_id, status, fields_updated, completed_at, created_at)
+      VALUES (?, ?, 'completed', ?, ?, ?)
+    `).bind(
+      jobId,
+      leadId,
+      JSON.stringify(data.fields_updated || []),
+      Date.now(),
+      Date.now()
+    ).run();
+  } catch (error) {
+    console.error('Error logging enrichment job:', error);
   }
 }
 
