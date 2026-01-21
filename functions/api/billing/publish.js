@@ -171,3 +171,4 @@ export async function onRequestOptions() {
 // Trigger redeploy Wed, Jan 21, 2026  3:58:37 PM
 // Redeploy after env update Wed, Jan 21, 2026  4:01:56 PM
 // Final env sync Wed, Jan 21, 2026  4:07:46 PM
+// WORKER_API_KEY sync Wed, Jan 21, 2026  4:43:00 PM
