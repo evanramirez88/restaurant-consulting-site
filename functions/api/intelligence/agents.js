@@ -19,6 +19,7 @@
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { unifiedSearch, batchSearch, getBudgetReport, SearchPriority } from '../../_shared/search-providers.js';
+import { calculateLeadScore } from '../../_shared/lead-scoring.js';
 
 // ============================================
 // AGENT DEFINITIONS
@@ -80,80 +81,7 @@ const AGENTS = {
 // Score = (Property Ownership × 3) + (Tech Vulnerability × 2) + (Warm Intro × 5)
 // ============================================
 
-const SCORING_WEIGHTS = {
-  property_ownership: 3,   // Owner vs leasing
-  tech_vulnerability: 2,   // Outdated POS, no online ordering, etc.
-  warm_intro: 5,           // Referral, prior contact, network connection
-  revenue_estimate: 1,     // Revenue signals
-  employee_count: 0.5,     // Size indicator
-  website_quality: 1,      // Online presence
-  review_volume: 0.5,      // Active customer base
-  review_sentiment: 1,     // Customer satisfaction
-  pos_age: 1.5,            // How old is current POS
-  growth_signals: 2        // Expansion, hiring, renovations
-};
-
-/**
- * Calculate lead score using the proprietary formula
- */
-function calculateLeadScore(lead) {
-  let score = 0;
-  const factors = [];
-
-  // Property Ownership (inferred from business type/age)
-  if (lead.is_owner || lead.years_in_business > 5) {
-    score += SCORING_WEIGHTS.property_ownership * 10;
-    factors.push({ factor: 'property_ownership', value: 10, weight: SCORING_WEIGHTS.property_ownership });
-  }
-
-  // Tech Vulnerability
-  const vulnerablePOS = ['square', 'clover', 'none', 'cash_only', 'legacy'];
-  if (vulnerablePOS.some(p => (lead.current_pos || '').toLowerCase().includes(p))) {
-    score += SCORING_WEIGHTS.tech_vulnerability * 10;
-    factors.push({ factor: 'tech_vulnerability', value: 10, weight: SCORING_WEIGHTS.tech_vulnerability });
-  }
-
-  // Warm Intro
-  if (lead.referral_source || lead.has_prior_contact) {
-    score += SCORING_WEIGHTS.warm_intro * 10;
-    factors.push({ factor: 'warm_intro', value: 10, weight: SCORING_WEIGHTS.warm_intro });
-  }
-
-  // Revenue estimate (normalize to 0-10)
-  if (lead.revenue_estimate) {
-    const revScore = Math.min(10, lead.revenue_estimate / 100000);
-    score += SCORING_WEIGHTS.revenue_estimate * revScore;
-    factors.push({ factor: 'revenue_estimate', value: revScore, weight: SCORING_WEIGHTS.revenue_estimate });
-  }
-
-  // Employee count
-  if (lead.employee_estimate) {
-    const empScore = Math.min(10, lead.employee_estimate / 10);
-    score += SCORING_WEIGHTS.employee_count * empScore;
-    factors.push({ factor: 'employee_count', value: empScore, weight: SCORING_WEIGHTS.employee_count });
-  }
-
-  // Website quality (has website = base score, SSL = bonus)
-  if (lead.website) {
-    let webScore = 5;
-    if (lead.website.startsWith('https')) webScore += 2;
-    if (lead.has_online_ordering) webScore += 3;
-    score += SCORING_WEIGHTS.website_quality * webScore;
-    factors.push({ factor: 'website_quality', value: webScore, weight: SCORING_WEIGHTS.website_quality });
-  }
-
-  // Growth signals
-  if (lead.is_hiring || lead.recently_opened || lead.expanding) {
-    score += SCORING_WEIGHTS.growth_signals * 10;
-    factors.push({ factor: 'growth_signals', value: 10, weight: SCORING_WEIGHTS.growth_signals });
-  }
-
-  return {
-    score: Math.round(Math.min(100, score)),
-    factors,
-    formula: 'Score = (Property Ownership × 3) + (Tech Vulnerability × 2) + (Warm Intro × 5) + ...'
-  };
-}
+// Lead scoring logic is now imported from ../../_shared/lead-scoring.js
 
 // ============================================
 // RECURSIVE GAP FILLING
@@ -701,12 +629,12 @@ async function runGapFillSearches(env, leadsWithGaps) {
     // Determine search priority based on lead score
     const leadScore = lead.lead_score || 0;
     const searchPriority = leadScore >= 70 ? SearchPriority.HIGH :
-                           leadScore >= 50 ? SearchPriority.NORMAL :
-                           SearchPriority.LOW;
+      leadScore >= 50 ? SearchPriority.NORMAL :
+        SearchPriority.LOW;
 
     // Limit queries per lead based on priority
     const maxQueriesPerLead = searchPriority === SearchPriority.HIGH ? 5 :
-                              searchPriority === SearchPriority.NORMAL ? 3 : 1;
+      searchPriority === SearchPriority.NORMAL ? 3 : 1;
 
     // Limit total searches per run
     if (results.searched >= 30) {

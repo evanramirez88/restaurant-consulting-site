@@ -13,20 +13,25 @@
  * - styleId: string (optional)
  */
 
-import { verifyAuth, unauthorizedResponse, handleOptions } from '../../../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../_shared/auth.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
 
-export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: corsHeaders });
+export async function onRequestOptions(context) {
+  return new Response(null, { status: 204, headers: getCorsHeaders(context.request) });
 }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  const corsHeaders = getCorsHeaders(request);
 
   // Verify authentication
   const auth = await verifyAuth(request, env);

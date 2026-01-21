@@ -7,7 +7,7 @@ import BusinessBriefPulse from './BusinessBriefPulse';
 import BusinessBriefStrategy from './BusinessBriefStrategy';
 import BusinessBriefIntelligence from './BusinessBriefIntelligence';
 import BusinessBriefReports from './BusinessBriefReports';
-import BusinessBriefAIConsole from './BusinessBriefAIConsole';
+import BusinessBriefAIConsole from './ai-console';
 
 type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'reports' | 'ai';
 

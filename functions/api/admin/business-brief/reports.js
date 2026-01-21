@@ -162,7 +162,14 @@ export async function onRequestGet(context) {
       id: r.id,
       type: r.report_type,
       title: r.title,
-      parameters: r.parameters ? JSON.parse(r.parameters) : null,
+      parameters: (() => {
+        try {
+          return r.parameters ? JSON.parse(r.parameters) : null;
+        } catch (e) {
+          console.warn('Invalid JSON in report parameters:', r.id);
+          return null;
+        }
+      })(),
       format: r.format,
       status: r.status,
       generatedAt: r.generated_at,
@@ -180,8 +187,20 @@ export async function onRequestGet(context) {
       description: r.description,
       frequency: r.frequency,
       format: r.format,
-      recipients: r.recipients ? JSON.parse(r.recipients) : [],
-      parameters: r.parameters ? JSON.parse(r.parameters) : null,
+      recipients: (() => {
+        try {
+          return r.recipients ? JSON.parse(r.recipients) : [];
+        } catch (e) {
+          return [];
+        }
+      })(),
+      parameters: (() => {
+        try {
+          return r.parameters ? JSON.parse(r.parameters) : null;
+        } catch (e) {
+          return null;
+        }
+      })(),
       nextRunAt: r.next_run_at,
       lastRunAt: r.last_run_at,
       isActive: r.is_active === 1
@@ -283,7 +302,7 @@ export async function onRequestPost(context) {
       format || 'dashboard',
       now,
       JSON.stringify(reportData)
-    ).run().catch(() => {});
+    ).run().catch(() => { });
 
     return new Response(JSON.stringify({
       success: true,
@@ -706,9 +725,9 @@ async function generateGoalProgress(env) {
   const goalData = (goals?.results || []).map(g => {
     const milestones = g.milestones
       ? g.milestones.split(',').map(m => {
-          const [date, target, actual] = m.split(':');
-          return { date: parseInt(date), target: parseFloat(target), actual: actual ? parseFloat(actual) : null };
-        })
+        const [date, target, actual] = m.split(':');
+        return { date: parseInt(date), target: parseFloat(target), actual: actual ? parseFloat(actual) : null };
+      })
       : [];
 
     return {

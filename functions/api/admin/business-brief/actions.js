@@ -354,12 +354,8 @@ export async function onRequestPost(context) {
         }
 
         const placeholders = body.ids.map(() => '?').join(',');
-        await env.DB.prepare(`
-          UPDATE business_brief_actions
-          SET status = 'dismissed',
-              updated_at = ?
-          WHERE id IN (${placeholders})
-        `).bind(now, ...body.ids).run();
+        const query = `UPDATE business_brief_actions SET status = 'dismissed', updated_at = ? WHERE id IN (${placeholders})`;
+        await env.DB.prepare(query).bind(now, ...body.ids).run();
 
         return new Response(JSON.stringify({
           success: true,
