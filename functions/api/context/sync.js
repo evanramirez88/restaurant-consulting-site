@@ -63,35 +63,36 @@ export async function onRequestPost(context) {
                 if (item.entity_type === 'contact') {
                     // Upsert Contact
                     await env.DB.prepare(`
-                    INSERT INTO synced_contacts (id, external_id, name, phone, email, company, source, last_interaction_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO synced_contacts (id, external_id, name, phone, email, company, source, last_interaction_at, privacy_level)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         name=excluded.name,
                         phone=excluded.phone,
                         email=excluded.email,
                         last_interaction_at=excluded.last_interaction_at,
+                        privacy_level=excluded.privacy_level,
                         updated_at=unixepoch()
                 `).bind(
-                        item.id, item.external_id, item.name, item.phone, item.email, item.company, source || 'api', item.last_interaction_at
+                        item.id, item.external_id, item.name, item.phone, item.email, item.company, source || 'api', item.last_interaction_at, item.privacy_level || 'private'
                     ).run();
 
                 } else if (['sms', 'call', 'email', 'meeting'].includes(item.entity_type)) {
                     // Insert Communication
                     await env.DB.prepare(`
-                    INSERT INTO synced_communications (id, contact_id, type, direction, summary, content_snippet, occurred_at, source_id, meta_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO synced_communications (id, contact_id, type, direction, summary, content_snippet, occurred_at, source_id, meta_json, privacy_level)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET summary=excluded.summary
                 `).bind(
-                        item.id, item.contact_id, item.entity_type, item.direction, item.summary, item.content_snippet, item.occurred_at, item.source_id, item.meta_json ? JSON.stringify(item.meta_json) : null
+                        item.id, item.contact_id, item.entity_type, item.direction, item.summary, item.content_snippet, item.occurred_at, item.source_id, item.meta_json ? JSON.stringify(item.meta_json) : null, item.privacy_level || 'private'
                     ).run();
                 } else {
                     // Generic Context Item
                     await env.DB.prepare(`
-                    INSERT INTO context_items (id, type, content, summary, source, embedding_json, relevance_score, tags)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO context_items (id, type, content, summary, source, embedding_json, relevance_score, tags, privacy_level)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET content=excluded.content, relevance_score=excluded.relevance_score
                  `).bind(
-                        item.id, item.type || 'fact', item.content, item.summary, item.source || source, item.embedding ? JSON.stringify(item.embedding) : null, item.relevance || 1.0, item.tags
+                        item.id, item.type || 'fact', item.content, item.summary, item.source || source, item.embedding ? JSON.stringify(item.embedding) : null, item.relevance || 1.0, item.tags, item.privacy_level || 'private'
                     ).run();
                 }
                 results.processed++;

@@ -301,6 +301,7 @@ Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 
             SELECT c.type, c.direction, c.summary, c.occurred_at, k.name 
             FROM synced_communications c
             LEFT JOIN synced_contacts k ON c.contact_id = k.id
+            WHERE c.privacy_level != 'private' 
             ORDER BY c.occurred_at DESC LIMIT 5
         `).all();
 

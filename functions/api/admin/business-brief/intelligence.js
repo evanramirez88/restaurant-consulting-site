@@ -42,7 +42,11 @@ export async function onRequestGet(context) {
       // Beacon Intelligence
       beaconStats,
       topBeaconContent,
-      pendingBeaconItems
+      pendingBeaconItems,
+
+      // Data Context
+      dataContextStats,
+      recentSyncedComms
     ] = await Promise.all([
       // Segment analysis with performance
       env.DB.prepare(`
@@ -220,6 +224,25 @@ export async function onRequestGet(context) {
         WHERE status = 'pending'
         ORDER BY relevance_score DESC
         LIMIT 5
+      `).all().catch(() => ({ results: [] })),
+
+      // Data Context Stats (New)
+      env.DB.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM synced_contacts) as total_contacts,
+          (SELECT COUNT(*) FROM synced_contacts WHERE privacy_level = 'business') as business_contacts,
+          (SELECT COUNT(*) FROM synced_communications WHERE occurred_at > ?) as recent_interactions_24h,
+          (SELECT COUNT(*) FROM context_items) as total_facts
+      `).bind(now - 86400).first().catch(() => ({
+        total_contacts: 0, business_contacts: 0, recent_interactions_24h: 0, total_facts: 0
+      })),
+
+      // Recent Synced Communications
+      env.DB.prepare(`
+         SELECT type, summary, occurred_at, source_id
+         FROM synced_communications
+         ORDER BY occurred_at DESC
+         LIMIT 10
       `).all().catch(() => ({ results: [] }))
     ]);
 
@@ -378,7 +401,11 @@ export async function onRequestGet(context) {
       leadIntelligence,
       clientIntelligence,
       agentIntelligence,
-      beaconIntelligence
+      beaconIntelligence,
+      dataContext: {
+        stats: dataContextStats || { total_contacts: 0, business_contacts: 0, recent_interactions_24h: 0, total_facts: 0 },
+        recentActivity: recentSyncedComms?.results || []
+      }
     }), {
       headers: { 'Content-Type': 'application/json' }
     });

@@ -3,7 +3,7 @@ import {
   Loader2, RefreshCw, Brain, Users, Database, Newspaper,
   AlertTriangle, CheckCircle2, XCircle, Clock, MapPin,
   TrendingUp, Zap, ChevronRight, ExternalLink, Star,
-  Activity, Target, BarChart3, Globe, Bot
+  Activity, Target, BarChart3, Globe, Bot, Phone, MessageSquare
 } from 'lucide-react';
 
 interface Segment {
@@ -127,6 +127,20 @@ interface IntelligenceData {
     topContent: BeaconContent[];
     pendingReview: BeaconContent[];
   };
+  dataContext: {
+    stats: {
+      total_contacts: number;
+      business_contacts: number;
+      recent_interactions_24h: number;
+      total_facts: number;
+    };
+    recentActivity: {
+      type: string;
+      summary: string;
+      occurred_at: number;
+      source_id: string;
+    }[];
+  };
 }
 
 export default function BusinessBriefIntelligence() {
@@ -134,7 +148,7 @@ export default function BusinessBriefIntelligence() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeSection, setActiveSection] = useState<'leads' | 'clients' | 'agents' | 'beacon'>('leads');
+  const [activeSection, setActiveSection] = useState<'leads' | 'clients' | 'agents' | 'beacon' | 'context'>('leads');
 
   const fetchIntelligence = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -230,13 +244,14 @@ export default function BusinessBriefIntelligence() {
 
   if (!data) return null;
 
-  const { leadIntelligence, clientIntelligence, agentIntelligence, beaconIntelligence } = data;
+  const { leadIntelligence, clientIntelligence, agentIntelligence, beaconIntelligence, dataContext } = data;
 
   const sections = [
-    { id: 'leads', label: 'Leads', icon: <Database className="w-4 h-4" /> },
+    { id: 'leads', label: 'Leads', icon: <Target className="w-4 h-4" /> },
     { id: 'clients', label: 'Clients', icon: <Users className="w-4 h-4" /> },
     { id: 'agents', label: 'Agents', icon: <Bot className="w-4 h-4" /> },
-    { id: 'beacon', label: 'Beacon', icon: <Newspaper className="w-4 h-4" /> }
+    { id: 'beacon', label: 'Beacon', icon: <Newspaper className="w-4 h-4" /> },
+    { id: 'context', label: 'Data Context', icon: <Database className="w-4 h-4" /> }
   ];
 
   return (
@@ -441,10 +456,9 @@ export default function BusinessBriefIntelligence() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-2xl font-bold ${
-                        client.healthScore >= 70 ? 'text-green-400' :
-                        client.healthScore >= 40 ? 'text-yellow-400' : 'text-red-400'
-                      }`}>
+                      <div className={`text-2xl font-bold ${client.healthScore >= 70 ? 'text-green-400' :
+                          client.healthScore >= 40 ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
                         {client.healthScore}
                       </div>
                       <div className="text-xs text-gray-500">health</div>
@@ -586,11 +600,10 @@ export default function BusinessBriefIntelligence() {
                 {agentIntelligence.recentFindings.map(finding => (
                   <div key={finding.id} className="p-4 hover:bg-gray-800/30">
                     <div className="flex items-start gap-3">
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                        finding.priority === 'critical' ? 'bg-red-500/20 text-red-400' :
-                        finding.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-gray-500/20 text-gray-400'
-                      }`}>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded ${finding.priority === 'critical' ? 'bg-red-500/20 text-red-400' :
+                          finding.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                            'bg-gray-500/20 text-gray-400'
+                        }`}>
                         {finding.priority}
                       </span>
                       <div className="flex-1">
@@ -714,14 +727,87 @@ export default function BusinessBriefIntelligence() {
                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                           <span>{item.source}</span>
                           {item.category && <span>{item.category}</span>}
-                          <span className={`px-2 py-0.5 rounded ${
-                            item.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded ${item.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                            }`}>
                             {item.status}
                           </span>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========== DATA CONTEXT ========== */}
+      {activeSection === 'context' && dataContext && (
+        <div className="space-y-6">
+          {/* Data Context Stats */}
+          <div className="admin-card overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-teal-500/10 to-transparent border-b border-gray-700">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-teal-400" />
+                <h3 className="font-semibold text-white">Synced Business Context</h3>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-white">{dataContext.stats.total_contacts}</div>
+                  <div className="text-sm text-gray-400">Synced Contacts</div>
+                </div>
+                <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-teal-400">{dataContext.stats.business_contacts}</div>
+                  <div className="text-sm text-gray-400">Verified Business</div>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-blue-400">{dataContext.stats.recent_interactions_24h}</div>
+                  <div className="text-sm text-gray-400">Interactions (24h)</div>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400">{dataContext.stats.total_facts}</div>
+                  <div className="text-sm text-gray-400">Knowledge Facts</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity Feed */}
+          <div className="admin-card overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-indigo-500/10 to-transparent border-b border-gray-700">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-400" />
+                <h3 className="font-semibold text-white">Recent Data Streams</h3>
+              </div>
+            </div>
+            {dataContext.recentActivity.length === 0 ? (
+              <div className="p-6 text-center text-gray-400">
+                <Database className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p>No recent data activity synced.</p>
+                <p className="text-xs text-gray-500 mt-1">Run the Data Context Engine to sync data.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-700/50">
+                {dataContext.recentActivity.map((activity, idx) => (
+                  <div key={idx} className="p-4 hover:bg-gray-800/30">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2 rounded-lg bg-gray-800 text-gray-400`}>
+                        {activity.type === 'sms' ? <MessageSquare className="w-4 h-4" /> :
+                          activity.type === 'call' ? <Phone className="w-4 h-4" /> :
+                            <Activity className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white">{activity.summary || 'Synced Activity'}</div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          <span className="capitalize">{activity.type}</span>
+                          <span>•</span>
+                          <span>{formatTimeAgo(activity.occurred_at)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
