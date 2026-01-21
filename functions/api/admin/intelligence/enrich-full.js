@@ -217,12 +217,16 @@ export async function onRequestPost(context) {
       await updateLeadWithEnrichedData(env, leadId, enrichedData);
     }
 
+    // Decide if research was "successful" enough
+    const dataFound = enrichedData.fields_updated.length > 0 || enrichedData.sources.length > 0;
+
     return new Response(JSON.stringify({
-      success: true,
+      success: dataFound,
       data: enrichedData,
       fields_updated: enrichedData.fields_updated.length,
       sources_used: enrichedData.sources.length,
-      errors: enrichedData.errors
+      errors: enrichedData.errors,
+      status_message: dataFound ? 'Research successful' : 'No data found'
     }), { headers: corsHeaders });
 
   } catch (error) {
@@ -323,7 +327,7 @@ function parseSearchResults(results, answer, businessName) {
   // Extract website from results
   for (const result of results) {
     if (result.url && !result.url.includes('yelp.com') && !result.url.includes('tripadvisor.com') &&
-        !result.url.includes('facebook.com') && !result.url.includes('google.com')) {
+      !result.url.includes('facebook.com') && !result.url.includes('google.com')) {
       // Check if it looks like the business's own site
       const domain = new URL(result.url).hostname.toLowerCase();
       const nameParts = businessName.toLowerCase().split(/\s+/);
@@ -506,21 +510,39 @@ function estimateFinancials(data) {
     avg_check: null
   };
 
-  const seating = data.seating_capacity || data.square_footage ? Math.floor(data.square_footage / 15) : 50;
+  // Seating calculation: prefer actual, then estimate from sqft, then default by type
+  let seating = data.seating_capacity || (data.building_sqft ? Math.floor(data.building_sqft / 18) : null);
+
+  if (!seating) {
+    const typeDefaults = {
+      'fine_dining': 120,
+      'casual_american': 80,
+      'seafood_casual': 150,
+      'pizza': 40,
+      'bar': 100,
+      'cafe': 45
+    };
+    seating = typeDefaults[data.restaurant_type_id] || 60;
+  }
+
   const priceLevel = data.price_level || 2;
 
   // Estimate average check based on price level
-  const avgCheckByPrice = { 1: 15, 2: 25, 3: 45, 4: 80 };
-  estimates.avg_check = avgCheckByPrice[priceLevel] || 25;
+  const avgCheckByPrice = { 1: 18, 2: 32, 3: 55, 4: 95 };
+  estimates.avg_check = avgCheckByPrice[priceLevel] || 30;
 
-  // Estimate daily covers (2 turns average)
-  estimates.daily_covers = Math.round(seating * 2);
+  // Estimate daily covers (Cape Cod specific: higher turns in summer)
+  // Weighted average: 2.5 turns/day in peak, 1.2 in off-season
+  const isSeasonal = data.seasonal === 1;
+  const avgTurns = isSeasonal ? 2.8 : 1.8;
+  estimates.daily_covers = Math.round(seating * avgTurns);
 
   // Estimate annual revenue
-  // Assume 300 operating days, seasonal adjustment for Cape Cod
-  const seasonalMultiplier = data.seasonal ? 0.6 : 0.85; // Seasonal = ~7 months, year-round = ~10 months effective
+  // Normalized operating days: 180 for seasonal, 350 for year-round
+  const operatingDays = isSeasonal ? 190 : 340;
+
   estimates.annual_revenue = Math.round(
-    estimates.daily_covers * estimates.avg_check * 300 * seasonalMultiplier
+    estimates.daily_covers * estimates.avg_check * operatingDays
   );
 
   return estimates;

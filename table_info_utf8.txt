@@ -1,0 +1,19 @@
+﻿
+ Γ¢à∩╕Å wrangler 4.54.0 (update available 4.59.3)
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+Resource location: local 
+
+Use --remote if you want to access the remote instance.
+
+≡ƒîÇ Executing on local database rg-consulting-forms (eb39c9a2-24ed-426e-9260-a1fb55d899cb) from .wrangler\state\v3\d1:
+≡ƒîÇ To execute on your remote database, add a --remote flag to your wrangler command.
+≡ƒÜú 1 command executed successfully.
+[
+  {
+    "results": [],
+    "success": true,
+    "meta": {
+      "duration": 1
+    }
+  }
+]
