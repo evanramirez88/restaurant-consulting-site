@@ -7,7 +7,7 @@
  * This endpoint is used to publish invoices that were created as drafts.
  */
 
-import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { squareRequest, publishInvoice, getInvoice, mapInvoiceStatus, centsToDollars } from '../_shared/square.js';
 
 /**
