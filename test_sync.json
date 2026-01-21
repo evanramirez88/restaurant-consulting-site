@@ -1,0 +1,1 @@
+﻿{"batch_id":"test_01","source":"test_script","items":[{"id":"msg_123","entity_type":"sms","type":"sms","direction":"inbound","summary":"Client asking for quote update","content_snippet":"Hey Evan, any update on the quote?","occurred_at":1709999999,"contact_id":"user_01"}]}

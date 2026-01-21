@@ -243,6 +243,7 @@ async function getModelConfig(env, modelId) {
   };
 }
 
+
 async function buildSystemPrompt(env, assistant, style, builderMode, includeContext) {
   let prompt = '';
 
@@ -252,8 +253,8 @@ Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 
 `;
 
   // Assistant instructions
-  if (assistant?.system_instructions) {
-    prompt += `\n${assistant.system_instructions}\n`;
+  if (assistant?.system_instructions || assistant?.instructions) {
+    prompt += `\n${assistant.system_instructions || assistant.instructions}\n`;
   }
 
   // Persona
@@ -262,16 +263,19 @@ Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 
   }
 
   // Speaking style
-  if (style?.instructions) {
-    prompt += `\n[Speaking Style]: ${style.instructions}\n`;
+  if (style?.instructions || style?.content) {
+    prompt += `\n[Speaking Style]: ${style.instructions || style.content}\n`;
   }
 
   // Builder mode
   const builderPrompts = {
     code: 'Act as a senior software engineer. Prioritize clean, efficient, and well-documented code.',
     write: 'Act as a professional editor and creative writer. Focus on flow, tone, and clarity.',
-    research: 'Act as a research assistant. Provide factual, cited, and comprehensive information.',
-    analysis: 'Act as a data analyst. Focus on patterns, insights, and actionable recommendations.'
+    research: 'Act as a research assistant. Provide factual, cited, and comprehensive information. Use the available Context Items.',
+    analysis: 'Act as a data analyst. Focus on patterns, insights, and actionable recommendations.',
+    image: 'Act as a visual art director. Describe images in high detail for generation.',
+    character: 'Act as a character designer. Flesh out backstories and traits.',
+    plot: 'Act as a narrative architect. Outline structures and plot points.'
   };
 
   if (builderMode !== 'none' && builderPrompts[builderMode]) {
@@ -281,6 +285,8 @@ Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 
   // Business context
   if (includeContext) {
     const context = await getBusinessContext(env);
+
+    // 1. Metrics
     prompt += `\n[CURRENT BUSINESS CONTEXT]:
 - MRR: $${context.mrr.toLocaleString()}
 - Active Clients: ${context.clients}
@@ -288,10 +294,32 @@ Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 
 - Open Tickets: ${context.openTickets}
 - Days to $400K Goal: ${context.daysToGoal}
 `;
+
+    // 2. Synced Data Context (Recent Communications)
+    try {
+      const recentComms = await env.DB.prepare(`
+            SELECT c.type, c.direction, c.summary, c.occurred_at, k.name 
+            FROM synced_communications c
+            LEFT JOIN synced_contacts k ON c.contact_id = k.id
+            ORDER BY c.occurred_at DESC LIMIT 5
+        `).all();
+
+      if (recentComms.results && recentComms.results.length > 0) {
+        prompt += `\n[RECENT SYNCED ACTIVITY]:\n`;
+        recentComms.results.forEach(c => {
+          const date = new Date(c.occurred_at).toLocaleString();
+          prompt += `- [${date}] ${c.direction === 'inbound' ? 'From' : 'To'} ${c.name || 'Unknown'} (${c.type}): ${c.summary}\n`;
+        });
+      }
+
+    } catch (e) {
+      console.error("Failed to load synced context", e);
+    }
   }
 
   return prompt;
 }
+
 
 async function getBusinessContext(env) {
   const now = Math.floor(Date.now() / 1000);

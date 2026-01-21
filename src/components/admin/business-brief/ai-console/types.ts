@@ -1,94 +1,132 @@
 
+// Existing AI Console types + Millstone specific types
 import { ReactNode } from 'react';
 
-export interface AIProvider {
+// --- Millstone Core Enums ---
+export enum GeminiModel {
+    FLASH = 'gemini-2.5-flash',
+    PRO = 'gemini-3-pro-preview',
+    FLASH_LITE = 'gemini-flash-lite-latest',
+    IMAGEN = 'imagen-4.0-generate-001'
+}
+
+export type BuilderMode = 'none' | 'code' | 'write' | 'image' | 'character' | 'plot' | 'research';
+
+// --- File System ---
+export interface FileAttachment {
+    id?: string;
+    name: string;
+    mimeType: string;
+    data: string; // base64
+    size?: number;
+    isContext?: boolean;
+}
+
+// --- Libraries / Catalogs ---
+export interface LibraryItem {
     id: string;
     name: string;
-    provider_type: string;
-    is_default: boolean;
+    content: string;
+    description?: string;
+    tags?: string[];
 }
 
-export interface AIModel {
-    id: string;
-    provider_id: string;
-    model_id: string;
-    display_name: string;
-    category: string;
-    is_default: boolean;
+export interface VoiceItem extends LibraryItem {
+    voiceId: string;
 }
 
-export interface AIAssistant {
+export interface Libraries {
+    styles: LibraryItem[];
+    characters: LibraryItem[];
+    plots: LibraryItem[];
+    prompts: LibraryItem[];
+    voices: VoiceItem[];
+}
+
+// --- Settings ---
+export interface UserProfile {
+    name: string;
+    about: string;
+    customInstructions: string;
+}
+
+export interface Connection {
     id: string;
+    name: string;
+    type: 'model_provider' | 'tool' | 'data_source' | 'other';
+    apiKey: string;
+    baseUrl?: string;
+    description?: string;
+}
+
+export interface Settings {
+    defaultModel: GeminiModel | string;
+    temperature: number;
+    disableImages: boolean;
+    userProfile: UserProfile;
+    globalFiles: FileAttachment[];
+    connections: Connection[];
+}
+
+// --- Entities ---
+export interface CustomGPT {
+    id: string;
+    folderId?: string | null;
     name: string;
     description: string;
-    system_instructions: string;
-    persona: string;
-    model_id: string;
-    include_business_context: boolean;
-    include_lead_context: boolean;
-    include_personal_context: boolean;
-    is_default: boolean;
-}
-
-export interface SpeakingStyle {
-    id: string;
-    name: string;
     instructions: string;
-    category: string;
+    model: GeminiModel | string;
+    files: FileAttachment[];
+    createdAt: number;
+    persona?: string;
+    voiceId?: string;
+    tools?: string[];
 }
 
-export interface IntelligenceFolder {
+export interface Folder {
     id: string;
     name: string;
-    parent_id: string | null;
+    createdAt: number;
+    description?: string;
+    instructions?: string;
+    files?: FileAttachment[];
+    plot?: string;
 }
 
-export interface ContextDataSource {
-    id: string;
-    name: string;
-    source_type: string;
-    tier: number;
-    is_business: boolean;
-    sync_enabled: boolean;
-    last_sync_at: string | null;
+export interface Attachment {
+    mimeType: string;
+    data: string; // base64
 }
 
 export interface Message {
     id: string;
-    role: 'user' | 'assistant';
-    content: string;
+    role: 'user' | 'model' | 'assistant'; // Support both formats
+    text: string;
+    content?: string; // Fallback for existing components
+    attachments?: Attachment[];
     timestamp: number;
-    model_used?: string;
-    builder_mode?: string;
-    attachments?: { name: string; type: string; size: number }[];
+    metadata?: {
+        builderMode?: BuilderMode;
+        speakingStyleId?: string;
+        voiceId?: string;
+        modelUsed?: string;
+        [key: string]: any;
+    };
 }
 
-export interface Session {
+export interface Thread {
     id: string;
     title: string;
-    assistant_id: string | null;
-    model_id: string;
-    created_at: string;
-    updated_at: string;
-    message_count: number;
-}
+    createdAt: number;
+    updatedAt: number;
 
-export interface ConsoleConfig {
-    providers: AIProvider[];
-    models: AIModel[];
-    assistants: AIAssistant[];
-    styles: SpeakingStyle[];
-    folders: IntelligenceFolder[];
-    dataSources: ContextDataSource[];
-    builderModes: { id: string; label: string; icon: string }[];
-}
+    folderId: string | null;
+    customGptId?: string | null;
+    secondaryModelId?: string | null;
 
-export type Tab = 'chat' | 'assistants' | 'connections' | 'context' | 'settings';
-export type BuilderMode = 'none' | 'code' | 'write' | 'research' | 'analysis';
+    model: GeminiModel | string;
+    speakingStyleId?: string | null;
+    voiceId?: string | null;
 
-export interface BuilderModeConfig {
-    id: BuilderMode;
-    label: string;
-    icon: ReactNode;
-    color: string;
+    messages: Message[];
 }
