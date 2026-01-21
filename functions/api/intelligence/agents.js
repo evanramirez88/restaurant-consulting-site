@@ -19,7 +19,7 @@
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { unifiedSearch, batchSearch, getBudgetReport, SearchPriority } from '../../_shared/search-providers.js';
-import { calculateLeadScore } from '../../_shared/lead-scoring.js';
+import { calculateLeadScore, SCORING_WEIGHTS } from '../_shared/lead-scoring.js';
 
 // ============================================
 // AGENT DEFINITIONS

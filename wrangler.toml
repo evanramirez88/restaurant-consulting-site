@@ -1,5 +1,7 @@
 # Cape Cod Restaurant Consulting - Cloudflare Configuration
 name = "restaurant-consulting-site"
+# NOTE: For Pages projects, set CLOUDFLARE_ACCOUNT_ID env var instead of account_id in config
+# CLOUDFLARE_ACCOUNT_ID=373a6cef1f9ccf5d26bfd9687a91c0a6
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 

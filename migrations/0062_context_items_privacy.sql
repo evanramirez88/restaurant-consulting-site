@@ -1,5 +1,6 @@
 -- Migration: 0062_context_items_privacy.sql
--- Description: Add privacy_level to context_items table
+-- Description: Add privacy index for context_items (privacy_level column added in 0061)
+-- NOTE: The ALTER TABLE was removed as it's redundant with 0061_privacy_controls.sql
 
-ALTER TABLE context_items ADD COLUMN privacy_level TEXT DEFAULT 'private';
+-- Index only (column already exists from 0061)
 CREATE INDEX IF NOT EXISTS idx_context_items_privacy ON context_items(privacy_level);
