@@ -5,10 +5,26 @@
  * GET /api/billing/publish - List draft invoices (admin only)
  *
  * This endpoint is used to publish invoices that were created as drafts.
+ *
+ * Authentication: JWT cookie OR WORKER_API_KEY header/query
  */
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
 import { squareRequest, publishInvoice, getInvoice, mapInvoiceStatus, centsToDollars } from '../_shared/square.js';
+
+/**
+ * Check if request is authorized via WORKER_API_KEY
+ */
+function verifyWorkerApiKey(request, env) {
+  const url = new URL(request.url);
+  const apiKey = request.headers.get('X-Worker-API-Key') || url.searchParams.get('api_key');
+
+  if (!apiKey || !env.WORKER_API_KEY) {
+    return { authenticated: false };
+  }
+
+  return { authenticated: apiKey === env.WORKER_API_KEY };
+}
 
 /**
  * GET /api/billing/publish
@@ -18,10 +34,13 @@ export async function onRequestGet(context) {
   try {
     const { env, request } = context;
 
-    // Admin auth required
-    const auth = await verifyAuth(request, env);
-    if (!auth.authenticated) {
-      return unauthorizedResponse(auth.error);
+    // Check WORKER_API_KEY first, then fall back to JWT auth
+    const apiKeyAuth = verifyWorkerApiKey(request, env);
+    if (!apiKeyAuth.authenticated) {
+      const auth = await verifyAuth(request, env);
+      if (!auth.authenticated) {
+        return unauthorizedResponse(auth.error || 'Unauthorized');
+      }
     }
 
     // List all invoices and filter for DRAFT status
@@ -73,10 +92,13 @@ export async function onRequestPost(context) {
   try {
     const { env, request } = context;
 
-    // Admin auth required
-    const auth = await verifyAuth(request, env);
-    if (!auth.authenticated) {
-      return unauthorizedResponse(auth.error);
+    // Check WORKER_API_KEY first, then fall back to JWT auth
+    const apiKeyAuth = verifyWorkerApiKey(request, env);
+    if (!apiKeyAuth.authenticated) {
+      const auth = await verifyAuth(request, env);
+      if (!auth.authenticated) {
+        return unauthorizedResponse(auth.error || 'Unauthorized');
+      }
     }
 
     const body = await request.json();
