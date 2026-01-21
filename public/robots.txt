@@ -73,6 +73,10 @@ Disallow: /api/rep/
 # Sitemap location
 Sitemap: https://ccrestaurantconsulting.com/sitemap.xml
 
+# LLMs.txt - Structured information for AI systems
+# https://llmstxt.org/ standard for AI-readable site information
+LLMs: https://ccrestaurantconsulting.com/llms.txt
+
 # IndexNow key for instant search engine notification
 # Submit URL changes to: https://api.indexnow.org/indexnow
 # Key: 0538ba51-7b65-4005-aa82-759a599155db

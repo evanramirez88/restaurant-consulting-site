@@ -14,6 +14,7 @@ const Schedule = lazy(() => import('./pages/Schedule'));
 const LocalNetworking = lazy(() => import('./pages/LocalNetworking'));
 const ToastHub = lazy(() => import('./pages/ToastHub'));
 const ToastHubPost = lazy(() => import('./pages/ToastHubPost'));
+const Legal = lazy(() => import('./pages/Legal'));
 
 // Admin pages (lazy - only loaded when visiting admin routes)
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
@@ -221,6 +222,9 @@ const App: React.FC = () => {
           <Route path="/local-networking" element={<PublicLayout><LocalNetworking /></PublicLayout>} />
           <Route path="/toast-hub" element={<PublicLayout><ToastHub /></PublicLayout>} />
           <Route path="/toast-hub/:slug" element={<PublicLayout><ToastHubPost /></PublicLayout>} />
+          <Route path="/legal" element={<PublicLayout><Legal /></PublicLayout>} />
+          <Route path="/terms" element={<Navigate to="/legal#terms" replace />} />
+          <Route path="/privacy" element={<Navigate to="/legal#privacy" replace />} />
 
           {/* Redirects for merged pages */}
           <Route path="/support-plans" element={<Navigate to="/services" replace />} />

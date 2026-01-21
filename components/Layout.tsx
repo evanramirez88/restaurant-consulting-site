@@ -282,16 +282,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     About & Contact
                   </Link>
                 </li>
-                <li>
-                  <Link to="/portal" className="text-gray-500 hover:text-amber-400 transition-colors duration-200">
-                    Client Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/admin" className="text-gray-600 hover:text-amber-400 transition-colors duration-200 text-xs">
-                    Admin
-                  </Link>
-                </li>
               </ul>
             </div>
 
@@ -326,9 +316,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <p>
                 &copy; 2026 R&amp;G Consulting LLC | DBA Cape Cod Restaurant Consulting
               </p>
-              <p className="text-gray-600">
-                Serving New England &amp; Remote
-              </p>
+              <div className="flex items-center gap-4">
+                <Link to="/legal" className="hover:text-amber-400 transition-colors">
+                  Terms &amp; Privacy
+                </Link>
+                <span className="text-gray-700">|</span>
+                <span className="text-gray-600">Serving New England &amp; Remote</span>
+              </div>
             </div>
           </div>
         </div>

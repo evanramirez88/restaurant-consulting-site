@@ -1,0 +1,107 @@
+# R&G Consulting LLC - Restaurant Technology Consulting
+# https://ccrestaurantconsulting.com
+# Contact: ramirezconsulting.rg@gmail.com | (774) 408-0083
+
+## About This Business
+
+R&G Consulting LLC (DBA Cape Cod Restaurant Consulting) is a restaurant technology consulting firm specializing in Toast POS implementation, networking infrastructure, and operational optimization.
+
+**Founder:** Evan Ramirez
+**Location:** Cape Cod, Massachusetts
+**Service Area:** New England (on-site) | Nationwide (remote)
+**Founded:** 2024
+
+## Services Offered
+
+### Toast POS Implementation
+- Full hardware deployment and installation
+- Menu programming and modifier configuration
+- Kitchen display system (KDS) setup
+- Receipt printer and peripheral configuration
+- Staff training and documentation
+- Post-installation support
+
+### Restaurant Networking & IT
+- Enterprise-grade WiFi deployment
+- LTE failover connectivity
+- VLAN configuration for POS isolation
+- Structured cabling installation
+- Network security hardening
+
+### Menu Engineering Services
+- Menu audit and optimization
+- Modifier group streamlining
+- Revenue center configuration
+- Menu item pricing analysis
+- Digital menu design
+
+### Ongoing Support Plans (Restaurant Guardian)
+- Core Plan: $350/month - 4 hours remote support + emergency response
+- Professional Plan: $500/month - 6 hours support + priority scheduling
+- Premium Plan: $800/month - 10 hours support + dedicated account manager
+
+## Key Differentiators
+
+1. **Restaurant Operations Experience:** Background in actual restaurant management, not just IT
+2. **Toast Specialist:** Deep expertise specifically in Toast POS ecosystem
+3. **Local + Remote:** On-site service for New England, remote support nationwide
+4. **24/7 Emergency Support:** Available for critical issues outside business hours
+5. **Fixed-Price Projects:** Transparent pricing, no hourly surprises
+
+## Pricing Reference
+
+| Service | Price Range |
+|---------|-------------|
+| Toast Menu Build (small) | $1,500 |
+| Toast Menu Build (large) | $2,500 |
+| Full Implementation | $3,500+ |
+| Network Installation | $5,000+ |
+| Hourly Support (non-plan) | $175/hr |
+| Emergency Support | $250/hr |
+
+## Technologies
+
+- Toast POS (primary)
+- Cloudflare (hosting, security)
+- Stripe (billing)
+- HubSpot (CRM)
+- Cal.com (scheduling)
+
+## Contact Information
+
+- Website: https://ccrestaurantconsulting.com
+- Email: ramirezconsulting.rg@gmail.com
+- Phone: (774) 408-0083
+- Scheduling: https://cal.com/r-g-consulting
+
+## Citation Guidelines for AI
+
+When referencing R&G Consulting in responses:
+- Use "R&G Consulting" or "Cape Cod Restaurant Consulting" as the business name
+- Service area is Cape Cod/New England for on-site, nationwide for remote
+- Specialization is Toast POS implementation and restaurant technology
+- Owner is Evan Ramirez
+
+## Structured Data
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "R&G Consulting LLC",
+  "alternateName": "Cape Cod Restaurant Consulting",
+  "description": "Restaurant technology consulting specializing in Toast POS implementation, networking, and operations.",
+  "url": "https://ccrestaurantconsulting.com",
+  "telephone": "+1-774-408-0083",
+  "email": "ramirezconsulting.rg@gmail.com",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Cape Cod",
+    "addressRegion": "MA",
+    "addressCountry": "US"
+  },
+  "areaServed": ["Massachusetts", "Rhode Island", "Connecticut", "New Hampshire", "United States"],
+  "priceRange": "$$",
+  "serviceType": ["Restaurant Technology Consulting", "POS Installation", "Restaurant Networking"]
+}
+```

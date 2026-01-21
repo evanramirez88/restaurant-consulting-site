@@ -64,11 +64,11 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Client Portal - Customer Access -->
+  <!-- Legal - Terms & Privacy -->
   <url>
-    <loc>https://ccrestaurantconsulting.com/#/portal</loc>
-    <lastmod>2025-12-30</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://ccrestaurantconsulting.com/#/legal</loc>
+    <lastmod>2026-01-21</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>
