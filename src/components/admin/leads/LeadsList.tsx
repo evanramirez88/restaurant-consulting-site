@@ -20,7 +20,10 @@ import {
   ExternalLink,
   MoreVertical,
   UserPlus,
-  Send
+  Send,
+  X,
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 
 interface Lead {
@@ -67,6 +70,13 @@ interface PosCount {
   count: number;
 }
 
+interface Sequence {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+}
+
 export default function LeadsList() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +99,20 @@ export default function LeadsList() {
   // Selected lead for detail view
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sequence enrollment state
+  const [sequences, setSequences] = useState<Sequence[]>([]);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [enrollingLead, setEnrollingLead] = useState<Lead | null>(null);
+  const [selectedSequence, setSelectedSequence] = useState<string>('');
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollResult, setEnrollResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Convert to client state
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertingLead, setConvertingLead] = useState<Lead | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [convertResult, setConvertResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -131,6 +155,122 @@ export default function LeadsList() {
   useEffect(() => {
     fetchLeads();
   }, [offset, statusFilter, segmentFilter, posFilter, minScore]);
+
+  // Fetch sequences on mount
+  useEffect(() => {
+    fetchSequences();
+  }, []);
+
+  const fetchSequences = async () => {
+    try {
+      const response = await fetch('/api/admin/email/sequences', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success && data.data) {
+        setSequences(data.data.filter((s: Sequence) => s.status === 'active'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch sequences:', err);
+    }
+  };
+
+  // Handle sequence enrollment
+  const handleEnrollInSequence = async () => {
+    if (!enrollingLead || !selectedSequence || !enrollingLead.primary_email) return;
+
+    setEnrolling(true);
+    setEnrollResult(null);
+
+    try {
+      const response = await fetch(`/api/admin/email/sequences/${selectedSequence}/enroll`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'manual',
+          emails: [enrollingLead.primary_email],
+          schedule: 'immediate',
+          exclude_enrolled: true
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setEnrollResult({
+          success: true,
+          message: `Successfully enrolled in sequence (${data.data?.success_count || 1} subscriber)`
+        });
+        // Update lead status to contacted
+        await fetch(`/api/admin/leads/${enrollingLead.id}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'contacted' })
+        });
+        setTimeout(() => {
+          setShowEnrollModal(false);
+          setEnrollingLead(null);
+          setSelectedSequence('');
+          setEnrollResult(null);
+          fetchLeads();
+        }, 2000);
+      } else {
+        setEnrollResult({ success: false, message: data.error || 'Enrollment failed' });
+      }
+    } catch (err: any) {
+      setEnrollResult({ success: false, message: err.message });
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  // Handle convert to client
+  const handleConvertToClient = async () => {
+    if (!convertingLead || !convertingLead.primary_email) return;
+
+    setConverting(true);
+    setConvertResult(null);
+
+    try {
+      const response = await fetch('/api/admin/intelligence/convert', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id: convertingLead.id,
+          email: convertingLead.primary_email,
+          name: convertingLead.name,
+          company: convertingLead.dba_name || convertingLead.name,
+          phone: convertingLead.primary_phone,
+          address: convertingLead.address_line1,
+          town: convertingLead.city,
+          state: convertingLead.state,
+          pos_system: convertingLead.current_pos
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setConvertResult({
+          success: true,
+          message: `Successfully converted to client!`
+        });
+        setTimeout(() => {
+          setShowConvertModal(false);
+          setConvertingLead(null);
+          setConvertResult(null);
+          fetchLeads();
+        }, 2000);
+      } else {
+        setConvertResult({ success: false, message: data.error || 'Conversion failed' });
+      }
+    } catch (err: any) {
+      setConvertResult({ success: false, message: err.message });
+    } finally {
+      setConverting(false);
+    }
+  };
 
   // Debounced search
   useEffect(() => {
@@ -428,13 +568,33 @@ export default function LeadsList() {
 
                   {/* Action buttons */}
                   <div className="flex gap-2 pt-2">
-                    <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium hover:bg-amber-400">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (lead.primary_email) {
+                          setEnrollingLead(lead);
+                          setShowEnrollModal(true);
+                        }
+                      }}
+                      disabled={!lead.primary_email}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium hover:bg-amber-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
                       <Send className="w-4 h-4" />
                       Enroll in Sequence
                     </button>
-                    <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-500">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (lead.primary_email) {
+                          setConvertingLead(lead);
+                          setShowConvertModal(true);
+                        }
+                      }}
+                      disabled={!lead.primary_email || lead.converted_to_client_id !== null}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-500 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
                       <UserPlus className="w-4 h-4" />
-                      Convert to Client
+                      {lead.converted_to_client_id ? 'Already Client' : 'Convert to Client'}
                     </button>
                   </div>
                 </div>
@@ -465,6 +625,192 @@ export default function LeadsList() {
             >
               Next
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Enroll in Sequence Modal */}
+      {showEnrollModal && enrollingLead && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Enroll in Email Sequence</h3>
+              <button
+                onClick={() => {
+                  setShowEnrollModal(false);
+                  setEnrollingLead(null);
+                  setSelectedSequence('');
+                  setEnrollResult(null);
+                }}
+                className="p-1 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+              <p className="text-white font-medium">{enrollingLead.name}</p>
+              <p className="text-sm text-gray-400">{enrollingLead.primary_email}</p>
+            </div>
+
+            {enrollResult ? (
+              <div className={`p-4 rounded-lg mb-4 ${enrollResult.success ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+                <div className="flex items-center gap-2">
+                  {enrollResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <X className="w-5 h-5 text-red-400" />
+                  )}
+                  <span className={enrollResult.success ? 'text-green-400' : 'text-red-400'}>
+                    {enrollResult.message}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label className="block text-sm text-gray-400 mb-2">Select Sequence</label>
+                <select
+                  value={selectedSequence}
+                  onChange={(e) => setSelectedSequence(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white mb-4 focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="">Choose a sequence...</option>
+                  {sequences.map(seq => (
+                    <option key={seq.id} value={seq.id}>{seq.name}</option>
+                  ))}
+                </select>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowEnrollModal(false);
+                      setEnrollingLead(null);
+                      setSelectedSequence('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleEnrollInSequence}
+                    disabled={!selectedSequence || enrolling}
+                    className="flex-1 px-4 py-2 bg-amber-500 text-black rounded-lg font-medium hover:bg-amber-400 disabled:bg-gray-600 disabled:text-gray-400 flex items-center justify-center gap-2"
+                  >
+                    {enrolling ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Enrolling...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Enroll Now
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Convert to Client Modal */}
+      {showConvertModal && convertingLead && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl max-w-md w-full p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Convert to Client</h3>
+              <button
+                onClick={() => {
+                  setShowConvertModal(false);
+                  setConvertingLead(null);
+                  setConvertResult(null);
+                }}
+                className="p-1 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {convertResult ? (
+              <div className={`p-4 rounded-lg mb-4 ${convertResult.success ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+                <div className="flex items-center gap-2">
+                  {convertResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <X className="w-5 h-5 text-red-400" />
+                  )}
+                  <span className={convertResult.success ? 'text-green-400' : 'text-red-400'}>
+                    {convertResult.message}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 p-4 bg-gray-800 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Name:</span>
+                    <span className="text-white">{convertingLead.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Email:</span>
+                    <span className="text-white">{convertingLead.primary_email}</span>
+                  </div>
+                  {convertingLead.primary_phone && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Phone:</span>
+                      <span className="text-white">{convertingLead.primary_phone}</span>
+                    </div>
+                  )}
+                  {convertingLead.current_pos && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">POS:</span>
+                      <span className="text-amber-400">{convertingLead.current_pos}</span>
+                    </div>
+                  )}
+                  {convertingLead.city && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Location:</span>
+                      <span className="text-white">{convertingLead.city}, {convertingLead.state}</span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-sm text-gray-400 mb-4">
+                  This will create a new client profile and mark this lead as converted.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowConvertModal(false);
+                      setConvertingLead(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConvertToClient}
+                    disabled={converting}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-500 disabled:bg-gray-600 disabled:text-gray-400 flex items-center justify-center gap-2"
+                  >
+                    {converting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Converting...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        Convert Now
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
