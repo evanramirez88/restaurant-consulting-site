@@ -47,4 +47,6 @@ FROM_EMAIL = "notifications@ccrestaurantconsulting.com"
 FROM_NAME = "R&G Consulting"
 REPLY_TO = "ramirezconsulting.rg@gmail.com"
 # Rate limit: max emails per 5-minute cron window
-MAX_EMAILS_PER_RUN = "50"
+# REDUCED from 50 to 10 due to Resend daily limit (100/day free, 3000/mo paid)
+# Upgrade Resend for higher throughput: https://resend.com/pricing
+MAX_EMAILS_PER_RUN = "10"
