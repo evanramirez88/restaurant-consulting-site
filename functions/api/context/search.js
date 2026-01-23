@@ -1,6 +1,6 @@
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
-import { filterQueryResults } from '../../_shared/data-gatekeeper.js';
+import { filterQueryResults } from '../_shared/data-gatekeeper.js';
 
 /**
  * Context Search API

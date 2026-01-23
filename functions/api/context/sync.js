@@ -1,6 +1,6 @@
 
 import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '../../_shared/auth.js';
-import { filterBatch, classifyPrivacy, getFilterStats } from '../../_shared/data-gatekeeper.js';
+import { filterBatch, classifyPrivacy, getFilterStats } from '../_shared/data-gatekeeper.js';
 
 /**
  * Handle POST request to sync data from Data Context Engine
