@@ -104,73 +104,14 @@ function rateLimitResponse(retryAfter) {
 
 /**
  * Main middleware function
+ *
+ * KV-based rate limiting DISABLED to stay within free tier limits.
+ * Cloudflare's built-in DDoS/bot protection handles abuse at the edge.
+ * All authenticated endpoints already verify auth tokens.
+ *
+ * To re-enable: upgrade to Workers Paid plan ($5/mo) and uncomment
+ * the KV logic below.
  */
 export async function onRequest(context) {
-  const { request, next, env } = context;
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-
-  // Skip rate limiting for bypassed paths
-  if (shouldBypass(pathname)) {
-    return next();
-  }
-
-  // Skip rate limiting if KV is not configured
-  if (!env.RATE_LIMIT_KV) {
-    console.warn('RATE_LIMIT_KV not configured, skipping rate limiting');
-    return next();
-  }
-
-  const clientIP = getClientIP(request);
-  const config = getRateLimitConfig(pathname);
-  const key = createRateLimitKey(clientIP, pathname);
-
-  try {
-    // Get current rate limit data from KV
-    const now = Date.now();
-    const windowStart = now - (config.windowSeconds * 1000);
-
-    let rateLimitData = await env.RATE_LIMIT_KV.get(key, { type: 'json' });
-
-    if (!rateLimitData) {
-      rateLimitData = { requests: [], windowStart: now };
-    }
-
-    // Filter out expired requests
-    rateLimitData.requests = rateLimitData.requests.filter(
-      timestamp => timestamp > windowStart
-    );
-
-    // Check if over limit
-    if (rateLimitData.requests.length >= config.limit) {
-      const oldestRequest = Math.min(...rateLimitData.requests);
-      const retryAfter = Math.ceil((oldestRequest + (config.windowSeconds * 1000) - now) / 1000);
-      return rateLimitResponse(Math.max(1, retryAfter));
-    }
-
-    // Add current request
-    rateLimitData.requests.push(now);
-
-    // Store updated data with expiration
-    await env.RATE_LIMIT_KV.put(key, JSON.stringify(rateLimitData), {
-      expirationTtl: config.windowSeconds + 60 // Add buffer for clock skew
-    });
-
-    // Continue to the actual handler
-    const response = await next();
-
-    // Add rate limit headers to response
-    const remaining = config.limit - rateLimitData.requests.length;
-    const newResponse = new Response(response.body, response);
-    newResponse.headers.set('X-RateLimit-Limit', String(config.limit));
-    newResponse.headers.set('X-RateLimit-Remaining', String(Math.max(0, remaining)));
-    newResponse.headers.set('X-RateLimit-Reset', String(Math.ceil((windowStart + (config.windowSeconds * 1000)) / 1000)));
-
-    return newResponse;
-
-  } catch (error) {
-    console.error('Rate limiting error:', error);
-    // On error, allow the request through but log it
-    return next();
-  }
+  return context.next();
 }

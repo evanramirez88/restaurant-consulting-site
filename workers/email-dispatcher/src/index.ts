@@ -340,28 +340,26 @@ async function handleEmailFailure(
 // ============================================
 
 // ============================================
-// DAILY SEND LIMIT (KV-based)
+// DAILY SEND LIMIT (D1-based, no KV needed)
 // ============================================
 
-function getDailyKey(): string {
-  // Use UTC date as key for consistent daily reset
-  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  return `daily_send_count:${date}`;
+function getTodayStartUnix(): number {
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  return Math.floor(todayUTC.getTime() / 1000);
 }
 
 async function getDailySendCount(env: Env): Promise<number> {
-  const key = getDailyKey();
-  const value = await env.RATE_LIMIT_KV.get(key);
-  return value ? parseInt(value, 10) : 0;
+  const todayStart = getTodayStartUnix();
+  const result = await env.DB.prepare(
+    `SELECT COUNT(*) as count FROM email_logs WHERE sent_at >= ? AND status IN ('sent', 'delivered', 'opened', 'clicked')`
+  ).bind(todayStart).first<{ count: number }>();
+  return result?.count || 0;
 }
 
-async function incrementDailySendCount(env: Env, increment: number = 1): Promise<number> {
-  const key = getDailyKey();
-  const current = await getDailySendCount(env);
-  const newCount = current + increment;
-  // TTL of 48 hours so old keys auto-expire
-  await env.RATE_LIMIT_KV.put(key, String(newCount), { expirationTtl: 172800 });
-  return newCount;
+async function incrementDailySendCount(env: Env, _increment: number = 1): Promise<number> {
+  // No-op: D1 counts from email_logs directly, no separate counter needed
+  return await getDailySendCount(env);
 }
 
 async function getRemainingDailyQuota(env: Env): Promise<number> {
