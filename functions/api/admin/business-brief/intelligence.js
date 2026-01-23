@@ -199,7 +199,7 @@ export async function onRequestGet(context) {
           COUNT(CASE WHEN status = 'published' THEN 1 END) as published,
           COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
           COUNT(CASE WHEN created_at > ? THEN 1 END) as new_7d
-        FROM beacon_items
+        FROM beacon_content_items
       `).bind(sevenDaysAgo).first().catch(() => ({
         total: 0, pending: 0, approved: 0, published: 0, rejected: 0, new_7d: 0
       })),
@@ -209,7 +209,7 @@ export async function onRequestGet(context) {
         SELECT
           id, title, source_name, category, status,
           relevance_score, created_at
-        FROM beacon_items
+        FROM beacon_content_items
         WHERE status IN ('approved', 'published')
         ORDER BY relevance_score DESC, created_at DESC
         LIMIT 10
@@ -220,27 +220,28 @@ export async function onRequestGet(context) {
         SELECT
           id, title, source_name, category, summary,
           relevance_score, created_at
-        FROM beacon_items
+        FROM beacon_content_items
         WHERE status = 'pending'
         ORDER BY relevance_score DESC
         LIMIT 5
       `).all().catch(() => ({ results: [] })),
 
-      // Data Context Stats (New)
+      // Data Context Stats (privacy-filtered)
       env.DB.prepare(`
         SELECT
-          (SELECT COUNT(*) FROM synced_contacts) as total_contacts,
+          (SELECT COUNT(*) FROM synced_contacts WHERE privacy_level IN ('business', 'public')) as total_contacts,
           (SELECT COUNT(*) FROM synced_contacts WHERE privacy_level = 'business') as business_contacts,
-          (SELECT COUNT(*) FROM synced_communications WHERE occurred_at > ?) as recent_interactions_24h,
-          (SELECT COUNT(*) FROM context_items) as total_facts
+          (SELECT COUNT(*) FROM synced_communications WHERE occurred_at > ? AND privacy_level IN ('business', 'public')) as recent_interactions_24h,
+          (SELECT COUNT(*) FROM context_items WHERE privacy_level IN ('business', 'public')) as total_facts
       `).bind(now - 86400).first().catch(() => ({
         total_contacts: 0, business_contacts: 0, recent_interactions_24h: 0, total_facts: 0
       })),
 
-      // Recent Synced Communications
+      // Recent Synced Communications (business only)
       env.DB.prepare(`
          SELECT type, summary, occurred_at, source_id
          FROM synced_communications
+         WHERE privacy_level IN ('business', 'public')
          ORDER BY occurred_at DESC
          LIMIT 10
       `).all().catch(() => ({ results: [] }))

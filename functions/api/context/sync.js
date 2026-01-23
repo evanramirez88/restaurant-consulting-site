@@ -108,12 +108,14 @@ export async function onRequestPost(context) {
 
                 } else {
                     await env.DB.prepare(`
-                        INSERT INTO context_items (id, type, content, summary, source, embedding_json, relevance_score, tags, privacy_level)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO context_items (id, source_id, item_type, content, summary, timestamp, type, source, embedding_json, relevance_score, tags, privacy_level)
+                        VALUES (?, 'context_engine_sync', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(id) DO UPDATE SET content=excluded.content, relevance_score=excluded.relevance_score, privacy_level=excluded.privacy_level
                     `).bind(
                         item.id, item.type || 'fact', item.content, item.summary,
-                        item.source || source, item.embedding ? JSON.stringify(item.embedding) : null,
+                        item.timestamp || Math.floor(Date.now() / 1000),
+                        item.type || 'fact', item.source || source,
+                        item.embedding ? JSON.stringify(item.embedding) : null,
                         item.relevance || 1.0, item.tags, item.privacy_level || 'business'
                     ).run();
                 }
