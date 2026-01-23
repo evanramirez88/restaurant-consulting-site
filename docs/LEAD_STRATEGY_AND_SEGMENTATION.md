@@ -1,238 +1,237 @@
-# Lead Strategy and Segmentation - R&G Consulting LLC
-## Permanent Business Context Document
-
-**Created:** 2026-01-21
-**Purpose:** This document captures the lead organization strategy and business context so it never needs to be repeated.
+# Lead Strategy & Segmentation
+## R&G Consulting LLC - Email Outreach & Data Architecture
 
 ---
 
-## CORE PRINCIPLE: NEVER DELETE ORIGINALS
+## TWO PUSHES
 
-All lead processing must:
-1. **Preserve original spreadsheets** - Never modify or delete source files
-2. **Create new cleaned/validated segment files** - Output to new files
-3. **Store "garbage" data as C/D tier** - Repurpose, don't discard
-4. **Build validation database** - Known-bad data prevents future re-validation of garbage
+### 1. NATIONAL PUSH (Active Now - Remote Only)
+- Source: BuiltWith leads (cleaned)
+- Service model: Remote-only / remote-predominant
+- Segments target different restaurant situations (see below)
+- Goal: Sell Toast support, menu audits, POS switching assistance, referral bonuses
 
----
-
-## TWO DISTINCT MARKETING PUSHES
-
-### 1. NATIONAL PUSH (Active Now)
-**Target:** Remote-only or remote-predominant clients
-**Source:** BuiltWith leads (42,969 total)
-**Geography:** Nationwide USA
-**Services:** Toast POS consulting, menu building, support (ALL REMOTE)
-
-### 2. LOCAL PUSH (Future - Not Started Yet)
-**Target:** On-site service area clients
-**Geography:** Provincetown → Plymouth → Providence RI triangle
-**Services:**
-- Toast POS services (on-site AND remote)
-- **Networking and cabling services** (Cape Cod Cable Contractors)
-**Status:** Will launch separately with different marketing approach
+### 2. LOCAL PUSH (Future - On-Site + Remote)
+- Service area: Provincetown → Plymouth → Providence, RI
+- Marketing for: Toast POS (on-site + remote) AND networking/cabling services
+- Data source: Intelligence Researcher (local prospect profiles)
+- Status: NOT active yet. Digital push coming soon.
 
 ---
 
-## NATIONAL LEAD SEGMENTS (Remote Push)
+## NATIONAL LEAD SEGMENTS
 
-### Segment A: POS Switchers
-**Profile:** Restaurants currently using Clover, Square, Upserve, Lightspeed, or other subpar POS systems
-**Pain Point:** Transfer complexity - they don't want to spend time on the switch
-**Value Proposition:** "I handle the entire transfer so you don't have to"
-**Revenue Model:**
-- Toast referral bonus ($1,000+ per referral)
-- Implementation consulting
-- Menu build for new system
-
-**Why They Convert:** If they feel CONFIDENT you can handle the transfer, they'll switch. The barrier isn't convincing them Toast is better - it's convincing them the switch won't be painful.
-
-### Segment B: Toast Existing - Support Needed
-**Profile:** Current Toast merchants who need ongoing support
-**Pain Point:** Don't know how to optimize their system, menu issues, need audits
-**Value Proposition:** Restaurant Guardian support plans, menu audits, optimization
-**Revenue Model:**
-- Monthly/quarterly/annual support plans ($350-$800/month)
-- One-time menu audits
-- Hourly consulting
-
-**Sub-segments:**
-- Know they need help (active seekers)
-- Don't know they need help yet (education required)
-
-### Segment C: New Toast Implementations
-**Profile:** Restaurants getting Toast for the first time (upcoming installs)
-**Pain Point:** Need menu built, system configured before go-live
-**Value Proposition:** "Menu built before install = faster launch"
-**Revenue Model:**
-- Menu building packages ($800-$2,500)
-- Implementation support
-- Training
-
-**Source:** BuiltWith "Upcoming Implementations" list (1,614 leads)
-
-### Segment D: Ownership Transitions
-**Profile:** Restaurants changing hands that already have Toast
-**Pain Point:** Transfer of Toast account, menu updates, system reconfiguration
-**Value Proposition:** Zero-downtime transition, keep what works, fix what doesn't
-**Revenue Model:**
-- Transition consulting
-- Menu audit and cleanup
-- Support plan enrollment
-
-### Segment E: Menu Building/Auditing (Cross-Segment)
-**Profile:** ANY existing Toast merchant
-**Pain Point:** Menu is a mess, modifiers wrong, pricing inconsistent
-**Value Proposition:** Professional menu audit and rebuild
-**Revenue Model:**
-- Menu audit ($500-$1,000)
-- Full menu rebuild ($1,500-$3,500)
-- Ongoing menu management
-
-**Note:** This is a MASSIVE need that cuts across all Toast users.
+| Segment | Description | Angle | Sequence |
+|---------|-------------|-------|----------|
+| **POS Switchers (Clover)** | Restaurants on Clover considering switch | Pain points of current POS → Toast benefits | seq_pos_switcher_001 |
+| **POS Switchers (Square)** | Restaurants on Square | Same angle, Square-specific pain | seq_pos_switcher_001 |
+| **POS Switchers (Upserve)** | Restaurants on Upserve | Upserve end-of-life / limitations | seq_pos_switcher_001 |
+| **Toast Existing** | Already on Toast, need support | Menu audit, optimization, ongoing support | seq_toast_support_001 |
+| **Toast Upcoming** | Signed with Toast, not yet live | Implementation help, smooth transition | seq_toast_support_001 |
+| **High Value** | High-score leads (any POS) | Personalized, high-touch outreach | Multiple sequences |
+| **Contactable** | Has valid email, any segment | General awareness / intro | Multiple sequences |
 
 ---
 
-## LEAD TIER CLASSIFICATION
+## SEGMENT ANGLES (Why Different Restaurants, Different Pitches)
 
-### Tier 1: Hot Leads (Score 80-100)
-- Has email AND phone
-- Restaurant vertical confirmed
-- Toast or switching-ready POS
-- Geographic fit (if local segment)
+1. **Switching POS**: Restaurant has inferior POS → sell them on Toast + get referral bonus. Biggest hurdle = fear of transfer complexity. If confident I can handle it, they switch.
 
-### Tier 2: Warm Leads (Score 60-79)
-- Has email OR phone
-- Restaurant vertical confirmed
-- Any POS system
+2. **New Restaurant**: Starting up, wants Toast → implementation services.
 
-### Tier 3: Nurture Leads (Score 40-59)
-- Has email
-- Restaurant vertical confirmed
-- May need education
+3. **Ownership Change**: Restaurant changing hands, keeping Toast → transfer handling.
 
-### Tier C: Cold/Future Leads
-- Missing contact info
-- Restaurant vertical confirmed
-- Store for future enrichment
-- Can be assigned to reps for manual research
+4. **Existing Toast - Support**: Already has Toast, needs help → support plans, troubleshooting.
 
-### Tier D: Garbage/Validation Database
-- NOT restaurant vertical
-- Invalid/bounce emails
-- Wrong business type
-- **PURPOSE:**
-  - Prevent re-importing same bad data
-  - Fact-check against future imports
-  - "Already known bad" database
+5. **Existing Toast - Menu Work**: Has Toast but menu is messy → menu audit, rebuild, optimization. Many don't know they need this.
+
+6. **Referral Bonus Play**: Inferior POS (Clover, Square, etc.) → help switch to Toast → earn Toast referral bonus for each switch.
 
 ---
 
-## LEAD PROCESSING RULES
+## DATA TIERS
 
-### When Importing BuiltWith Data:
-1. **ALWAYS filter by Vertical column** - Only "Food And Drink", "Restaurants"
-2. **Never use pre-processed files** - Always start from source CSVs
-3. **Sample verification** - Check 50 random records before bulk import
-4. **Preserve originals** - Output to new files only
-
-### Output File Structure:
-```
-G:/My Drive/RG OPS/70_LEADS/
-├── ORIGINAL_BUILTWITH/           # Never modify these
-│   ├── All-Live-Toast-POS-WebSites.csv
-│   ├── All-Live-Clover-WebSites.csv
-│   └── ...
-├── CLEANED_SEGMENTS/             # Validated restaurant-only leads
-│   ├── seg_toast_existing_CLEAN_[date].csv
-│   ├── seg_switcher_clover_CLEAN_[date].csv
-│   └── ...
-├── TIER_CD_FUTURE/               # Non-restaurant and garbage data
-│   ├── tier_c_needs_enrichment_[date].csv
-│   ├── tier_d_non_restaurant_[date].csv
-│   └── tier_d_validation_blacklist.csv
-└── SEGMENTED_WORKBOOKS/          # Previous outputs (may have bad data)
-```
+| Tier | Count (Jan 2026) | Description | Action |
+|------|-------------------|-------------|--------|
+| **A+B (Clean)** | 3,437 | Verified restaurants with valid contact info | ACTIVE - import & sequence |
+| **C (Review)** | 24,237 | Might be restaurants, needs manual verification | HOLD - review later |
+| **D (Non-Restaurant)** | 27,431 | Not restaurants (shoe stores, tech cos, colleges) | ARCHIVE - never send |
+| **Blacklist** | 21,241 | Known bad data (duplicates, invalid, spam traps) | BLOCK - validate against |
 
 ---
 
-## WHY DIFFERENT SEGMENTS EXIST
+## CLEANED SEGMENT FILES
 
-> "I don't want to just hammer away at the same exact perspective or the same exact type of selling in the same way."
+Location: `G:\My Drive\RG OPS\70_LEADS\CLEANED_SEGMENTS\`
 
-Different restaurants have different needs:
-
-| Restaurant Situation | Their Need | Your Offer |
-|---------------------|------------|------------|
-| On subpar POS, considering switch | Confidence in painless transfer | Handle entire migration |
-| New restaurant, chose Toast | Menu built before opening | Menu building package |
-| Existing Toast, struggling | Support and optimization | Guardian support plan |
-| Changing ownership | Smooth transition | Transition consulting |
-| Any Toast user | Menu is a mess | Menu audit/rebuild |
-
-**Each segment gets different messaging, different sequences, different value props.**
-
----
-
-## REFERRAL BONUS STRATEGY
-
-**Toast Referral Program:**
-- Earn $1,000+ per successful referral
-- Target: Restaurants on inferior POS systems
-- Easy targets: Clover, Square (known limitations for restaurants)
-
-**Sales Approach:**
-1. Identify pain points with current system
-2. Show Toast advantages (not hard - Toast IS better for restaurants)
-3. **KEY:** Make them confident YOU can handle the transfer
-4. Close the switch, earn referral bonus
-5. Optionally: Sell them a support plan after migration
+| File | Records | Segment |
+|------|---------|---------|
+| CLEAN_ALL_LEADS_MASTER_2026-01-22.csv | 3,437 | All clean leads combined |
+| CLEAN_seg_toast_existing_2026-01-22.csv | 2,587 | Toast Existing |
+| CLEAN_seg_switcher_clover_2026-01-22.csv | 455 | Clover Switchers |
+| CLEAN_seg_contactable_2026-01-22.csv | 413 | Has valid email |
+| CLEAN_seg_high_value_2026-01-22.csv | 401 | High lead score |
+| CLEAN_seg_toast_upcoming_2026-01-22.csv | 317 | Toast Upcoming |
+| CLEAN_seg_switcher_upserve_2026-01-22.csv | 50 | Upserve Switchers |
+| CLEAN_seg_local_ma_2026-01-22.csv | 29 | Massachusetts Local |
+| CLEAN_seg_switcher_square_2026-01-22.csv | 28 | Square Switchers |
+| CLEAN_seg_local_capecod_2026-01-22.csv | 3 | Cape Cod Local |
 
 ---
 
-## SERVICE AREA REFERENCE
+## GARBAGE DATA STRATEGY
 
-### Local Service Area (Cape Cod Cable Contractors)
-```
-Northern Boundary: Provincetown, MA
-Southern Boundary: Providence, RI
-Eastern Boundary: Cape Cod coastline
-Western Boundary: Plymouth, MA → Providence, RI line
+The garbage data (Tier C + D) serves two purposes:
 
-Includes:
-- All of Cape Cod
-- South Shore (Plymouth, Marshfield, Duxbury)
-- Fall River / New Bedford
-- Southeastern MA
-- Providence metro area
-```
+1. **Validation Blacklist**: Known-bad data to check against. When importing new leads, cross-reference against this to avoid re-importing garbage.
 
-### National Service Area (R&G Consulting)
-- All 50 states
-- Remote-only services
-- Toast POS consulting, menu building, support
+2. **Future Segments**: Some of these might have reps, vendors, or adjacent businesses that could be useful for different campaigns later (e.g., restaurant suppliers, food distributors).
+
+Storage: `G:\My Drive\RG OPS\70_LEADS\TIER_CD_FUTURE\`
 
 ---
 
-## IMPORTANT: SAVE THIS CONTEXT
+## TESTING PHASE RULES
 
-This document exists because the user is tired of repeating this information. Any AI agent working on this project MUST:
-
-1. **Read this document** before working on leads
-2. **Follow the tier classification** when processing
-3. **Never delete original files**
-4. **Store garbage data for validation**
-5. **Understand the different segment purposes**
+- **Resend Plan**: FREE tier (100 emails/day max)
+- **Import Limit**: 100 leads at a time for testing
+- **Purpose**: Manually track, observe, and validate each batch
+- **When done testing**: Upgrade Resend plan, increase daily cap
 
 ---
 
-## RELATED DOCUMENTS
+## CRITICAL: NATIONAL vs LOCAL BOUNDARY
 
-- `MASTER_EXECUTION_PLAN.md` - Overall business execution plan
-- `HUMAN_TASKS.md` - Tasks requiring human action
-- `scripts/process_leads.cjs` - Lead processing script
-- `docs/RESTAURANT_INTELLIGENCE_SYSTEM.md` - Database schema for leads
+**THIS IS THE MOST IMPORTANT DISTINCTION IN THE ENTIRE SYSTEM:**
+
+| | NATIONAL PUSH | LOCAL PUSH |
+|--|---------------|------------|
+| **Status** | ACTIVE NOW | NOT YET - FUTURE |
+| **Service Model** | Remote-only / remote-predominant | On-site + remote |
+| **Data Source** | BuiltWith clean leads (CLEANED_SEGMENTS) | Intelligence Researcher (local prospect profiles) |
+| **Outreach** | Email sequences via Resend | NOT email yet - digital push TBD |
+| **Geography** | US-wide | Provincetown → Plymouth → Providence, RI (P-P-P) |
+| **Services Marketed** | Toast support, menu audits, POS switching | Toast POS (on-site + remote) + networking/cabling |
+| **Lead Storage** | D1: email_subscribers + subscriber_sequences | D1: restaurant_leads (seed_import, manual_discovery sources) |
+
+**RULES:**
+- Local leads (Intelligence Researcher data) are NEVER for email outreach
+- Local leads are for prospect profiling and on-site preparation ONLY
+- The email engine uses ONLY the national cleaned segments
+- When the local digital push starts, it will be a SEPARATE campaign with different angles
 
 ---
 
-**This document is the source of truth for lead strategy. Reference it, don't ask the user to repeat it.**
+## DATA FLOW ACROSS SYSTEMS
+
+The same lead/contact/prospect/client data flows through:
+
+| System | Role | Storage | Scope |
+|--------|------|---------|-------|
+| **Email Engine** | Outreach sequences, delivery | D1 (email_subscribers, email_logs) | NATIONAL only |
+| **Intelligence Researcher** | Local area prospect profiling | D1 (restaurant_leads) + Local SQLite | LOCAL P-P-P only |
+| **Client Profiles** | Active client records | D1 (clients table) | All clients |
+| **Prospect Profiles** | Pre-client records | D1 (restaurant_leads) | Both |
+| **Business Brief** | AI-driven ops center, daily dashboard | D1 + DATA_CONTEXT | All business |
+| **Toast Hub** (future) | Toast-specific client management | D1 | All Toast clients |
+| **DATA_CONTEXT** | Enrichment from lifelogs, emails, etc. | Seagate 20TB local | All data |
+
+**Key Principle**: Data can be STORED locally (Seagate) for enrichment, but must be AVAILABLE on the Admin Portal at all times.
+
+---
+
+## INTELLIGENCE RESEARCHER (LOCAL ONLY)
+
+- Scope: ONLY the P-P-P service area (Provincetown → Plymouth → Providence, RI)
+- Purpose: Catalog and profile every possible Toast POS merchant in service area
+- Enriches/validates prospect profiles with each regular run
+- Uses DATA_CONTEXT engine (LimitlessAI lifelogs, personal data) for enrichment
+- NOT for email outreach. NOT for national push. NOT for sending emails.
+- Needs: Floor plans, assessor records, liquor license info, menus, hours, volume, cuisine, service style, financial analysis
+- Data sources: Google Maps, Yelp, County health, Board of Assessors, town registry
+- Goal: Eventually have full profile on every hospitality/F&B business in service area, constantly updating
+
+---
+
+## BUSINESS BRIEF
+
+- AI-driven (model-agnostic, multi-modal) operations center for business owner
+- Has its own AI Chat interface (prototype: millstone-intelligence.zip from Google AI Studio)
+- Has its own Intelligence Researcher (DIFFERENT from the main one - this is for ALL clients)
+- Daily up-to-the-moment dashboard: what's happening, what needs to be done, across all clients/reps/activity
+- Data sources: SMS, calls, LimitlessAI lifelogs (via DATA_CONTEXT), calendars, location data, emails
+- Master Client profile database and enrichment system
+- Configurable in admin portal settings
+- Stores conversation/task/transcript history for every respective client
+- Uses business data to analyze, automate, and systemize workflows
+
+---
+
+## CLIENT SERVICE PIPELINE
+
+1. **Menu Intake**: Clients send menus (email, Google Drive upload, client portal) → feeds Menu Builder and/or Quote Builder
+2. **Client Portal**: Each client gets a shared Google Drive folder with subfolders
+3. **Toast ABO**: Worker/technician tool for ongoing remote/online support, maintenance, audits of installations/configurations
+4. **Quote Builder + Menu Builder**: Proprietary tools that both attract new clients AND serve existing ones
+5. **Automation Goal**: Analyze how work is done → create systemized automated workflows from patterns
+
+---
+
+## GOOGLE ACCOUNTS
+
+| Account | Category | Primary Use |
+|---------|----------|-------------|
+| ramirezconsulting.rg@gmail.com | BUSINESS | Primary business email, HubSpot, platform |
+| evanramirez88@gmail.com | PERSONAL | Personal, some business overlap |
+| evan@ccrestaurantconsulting.com | BUSINESS | Client-facing domain email |
+| capecodcablecontractors@gmail.com | BUSINESS | Cable/networking services (primary now) |
+| capecodrestaurantconsulting@gmail.com | BUSINESS | Alternate to evan@ (future) |
+| thewanderingardener@gmail.com | SIDE | Minor side hustle (future) |
+| millstonecompound@gmail.com | PERSONAL | Smart home/household (future) |
+
+**Integration**: All accounts → DATA_CONTEXT engine → parsed into client DBs + master business DB → available on Admin Portal
+
+---
+
+## OUTREACH PRIORITY ORDER
+
+1. Toast Upcoming (317) - Highest conversion probability
+2. High Value (401) - Best revenue potential
+3. Contactable (413) - Valid emails, ready to send
+4. Clover Switchers (455) - Referral bonus opportunity
+5. Toast Existing (2,587) - Support plan upsell
+6. Local MA (29) - Future on-site push prep (NOT for email yet)
+
+---
+
+## CAMPAIGN MANIFEST (Jan 17, 2026)
+
+Location: `G:\My Drive\RG OPS\70_LEADS\CAMPAIGN_BATCHES\campaign_2026-01-17\MANIFEST.json`
+
+**Batch Size**: 500 per file
+**Segments Batched**: A (Clover, Contactable, High Value, Lightspeed, Square, Upserve), B (Contactable, High Value, Toast Existing), D (Cape Cod, Contactable, SE MA, South Shore)
+
+**Campaign Angles**:
+- Segment A: "The Outage Insurance" → seq_pos_switcher_001
+- Segment B: "The 7-Minute Menu Teardown" → seq_toast_support_001
+- Segment D: "I build for kitchens" → seq_local_network_001
+
+---
+
+## CURRENT STATE (Jan 22, 2026)
+
+| Table | Count | Source | Purpose |
+|-------|-------|--------|---------|
+| restaurant_leads (national) | 77 | builtwith_clean | Email outreach |
+| restaurant_leads (local) | 161 | seed_import + manual_discovery | Intelligence Researcher profiling ONLY |
+| email_subscribers | 77 | From national leads | Active sequence recipients |
+| subscriber_sequences | 77 | All active | Staggered 15 min apart |
+| email_logs | 0 | Fresh start | Clean slate after garbage purge |
+
+**Sequence Distribution:**
+- seq_pos_switcher_001: 50 (High Value segment)
+- seq_toast_support_001: 27 (Toast Upcoming segment, 23 deduped)
+
+---
+
+Last Updated: 2026-01-22

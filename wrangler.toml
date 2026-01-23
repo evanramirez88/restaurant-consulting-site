@@ -68,6 +68,14 @@ binding = "AI"
 #   RESEND_API_KEY         - From https://resend.com/api-keys
 #                            Used for contact forms, quote emails, magic link auth
 #   RESEND_WEBHOOK_SECRET  - For webhook signature verification
+#
+# CONTEXT ENGINE (Data Context Engine Integration):
+#   CONTEXT_SYNC_KEY       - API key for headless sync scripts pushing data to /api/context/sync
+#                            Falls back to ADMIN_PASSWORD_HASH if not set
+#   CONTEXT_ENGINE_URL     - (Optional) Live Context Engine URL (e.g., Cloudflare Tunnel)
+#                            Only needed if pulling live data from DATA_CONTEXT API
+#   CONTEXT_ENGINE_KEY     - (Optional) Bearer token for live Context Engine access
+#                            Only needed if CONTEXT_ENGINE_URL is configured
 
 
 # ============================================
