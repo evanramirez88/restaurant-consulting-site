@@ -1,6 +1,6 @@
 # Human Required Tasks - Operation Breakout
 
-**Last Updated:** 2026-01-11 00:30 EST
+**Last Updated:** 2026-01-23 01:00 EST
 **Goal:** $400K by May 1, 2026 (110 days remaining)
 
 ---
@@ -103,42 +103,71 @@ Create templates for:
 
 ---
 
-## AI READY TASKS (Claude Can Execute)
+## AI READY TASKS (Claude Executes When Evan Approves)
 
-### Lead Import to D1 (Ready Now)
+### ✅ Lead Import to D1 (DONE 2026-01-23)
 
-```bash
-node scripts/process_leads.cjs --import
+3,437 validated restaurant leads imported. Stats:
+- Toast Existing: 2,587 | Clover: 455 | Toast Upcoming: 317
+- With Email: 1,626 (47%) | With Both: 413 (12%)
+- High Value (80+): 401
+
+### Enrollment (USER CONTROLS PACE)
+
+77 currently enrolled. Auto-enroll API ready for controlled rollout:
+```
+POST /api/admin/email/auto-enroll
+{ segment: "B", minScore: 70, limit: 50, dryRun: true }
 ```
 
 ### HubSpot Sync
 
 Sync high-value segment to HubSpot:
-- 477 leads with score 80+
-- 3,398 contactable leads
+- 401 leads with score 80+
+- 413 contactable leads (email + phone)
 
 ---
 
-## ✅ COMPLETED: Infrastructure (All Configured)
+## ✅ COMPLETED: Infrastructure
 
 | Item | Status | Details |
 |------|--------|---------|
-| D1 Database | ✅ | 68 tables |
-| KV Namespace | ✅ | Rate limiting |
+| D1 Database | ✅ | ~130 tables, 5.2 MB / 5 GB |
+| KV Namespace | ✅ | Rate limiting DISABLED (free tier conservation) |
 | R2 Bucket | ✅ | File storage |
-| Email Dispatcher | ✅ | Cron every 5 min |
+| Email Dispatcher | ✅ | Cron */5 min, D1-based daily cap |
+| Google OAuth | ✅ | 4 accounts, token refresh working |
+| Gmail Pipeline | ✅ | scripts/gmail_pipeline.cjs |
+| Calendar Sync | ✅ | scripts/google_calendar_sync.cjs |
+| Drive Sync | ✅ | scripts/google_drive_sync.cjs (306 docs indexed) |
+| DATA_CONTEXT Sync | ✅ | scripts/data_context_sync.py (64 items) |
+| Context Engine | ✅ | D1 tables + Data Gatekeeper privacy filter |
 
 ---
 
-## Outreach Priority
+## Outreach Priority (Validated Restaurant Counts)
 
-| Priority | Segment | Count |
-|----------|---------|-------|
-| 1 | Toast Upcoming | 1,614 |
-| 2 | High Value (80+) | 477 |
-| 3 | Contactable | 3,398 |
-| 4 | Massachusetts | 251 |
+| Priority | Segment | D1 Count | Enrolled |
+|----------|---------|----------|----------|
+| 1 | Toast Upcoming | 317 | 0 |
+| 2 | High Value (80+) | 401 | 0 |
+| 3 | Contactable (email+phone) | 413 | 0 |
+| 4 | Clover Switchers | 455 | ~50 |
+| 5 | Massachusetts | 29 | 0 |
 
 ---
 
-**EXECUTE. THE MATH WORKS.**
+## ⚠️ FREE TIER AWARENESS
+
+| Resource | Daily Limit | Status |
+|----------|-------------|--------|
+| KV Reads | 1,000/day | FIXED: middleware disabled, dispatcher uses D1 |
+| KV Writes | 1,000/day | FIXED: same |
+| D1 Reads | 5,000,000/day | Safe |
+| D1 Writes | 100,000/day | Safe |
+| Workers Requests | 100,000/day | Safe |
+| Resend Emails | 100/day (free) | Capped in dispatcher |
+
+---
+
+**CONTROLLED ROLLOUT. FREE TIER AWARE. ASK BEFORE BULK OPS.**

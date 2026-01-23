@@ -1872,3 +1872,83 @@ All 4 external integrations tested and working:
 - Week 1 launch tasks pending human action (see HUMAN_TASKS.md)
 
 ---
+
+## 2026-01-23 | KV Free Tier Fix + Full Lead Import + Google Integrations
+
+**Operator:** Claude-Opus-4.5 @ Anthropic
+**Time:** Early AM Session (continuation from Jan 22 session)
+**Mode:** Infrastructure Fix + Data Import
+
+### Context (Carried From Previous Session Jan 22)
+
+Previous session built:
+- DATA_CONTEXT sync script (Python, 64 items from millstone.db)
+- Google Calendar sync (Node.js, classified 4 personal events)
+- Google Drive sync (Node.js, 306 business docs indexed)
+- Gmail check/pipeline scripts
+- Fixed Cloudflare Pages deployment (import paths, react-markdown, vite build path)
+- All committed and pushed (142de6b)
+
+### Work Completed This Session
+
+#### 1. Full Lead Import (3,437 validated restaurants)
+- Ran `process_leads.cjs --import` against all BuiltWith CSVs on G: drive
+- Parsed 55,594 total records, classified into tiers:
+  - Tier 1/2 (Restaurants): 3,926 → deduplicated to 3,437
+  - Tier C (Needs Review): 24,237
+  - Tier D (Non-Restaurant): 27,431
+- All 3,437 imported to D1 `restaurant_leads` table (0 errors)
+- Segments: Toast(2,587), Clover(455), Toast Upcoming(317), Upserve(50)
+- **Note:** User expressed concern about bulk import. Future imports require explicit approval.
+
+#### 2. KV Free Tier Crisis Identified & Fixed
+- User received Cloudflare emails: 50% (Jan 24) and 90% (Jan 23) KV daily limit warnings
+- **Root Cause:** API middleware (`_middleware.js`) did KV read+write on EVERY request
+  - Plus email dispatcher doing 288+ KV reads/day from cron
+- **Fix 1:** Disabled KV-based rate limiting middleware entirely
+  - Cloudflare's built-in DDoS/bot protection covers abuse at edge for free
+  - All auth endpoints already verify tokens
+- **Fix 2:** Email dispatcher daily send counter switched from KV to D1
+  - Queries `email_logs` table (already tracking sends) instead of separate KV counter
+  - D1 has 5M reads/day free vs KV's 1,000
+- Deployed both changes (commit 18f89f4)
+- KV usage now near-zero (only login rate limiting on actual login attempts)
+
+#### 3. Documentation Updates
+- CLAUDE.md: Added CLOUDFLARE FREE TIER rules, updated NEXT SESSION section
+- HUMAN_TASKS.md: Updated with current counts, free tier awareness table
+- Added critical rule: "Do NOT bulk-import/enroll without explicit user approval"
+
+### Commits
+| Hash | Message |
+|------|---------|
+| 142de6b | Add Google integrations (Gmail, Calendar, Drive) and DATA_CONTEXT sync |
+| 18f89f4 | Eliminate KV free tier usage to prevent 429 errors |
+
+### Key Learnings (CRITICAL FOR NEXT SESSION)
+1. **FREE TIER:** KV = 1,000 ops/day. D1 = 5M. Always prefer D1 for anything frequent.
+2. **Bulk Ops:** NEVER run batch imports/enrollments without asking user first.
+3. **Vite Build:** MUST run from `D:\USER_DATA\Projects\restaurant-consulting-site`, not the C: junction.
+4. **Deploy:** Use `wrangler pages deploy dist` with `CLOUDFLARE_ACCOUNT_ID` env var.
+5. **Email automation:** Controlled by feature flag `email_automation_enabled`. Don't touch it.
+
+### Current Infrastructure State
+
+| System | Status | Notes |
+|--------|--------|-------|
+| D1 | 5.2 MB / 5 GB | 3,437 leads + 77 subscribers + 306 context items |
+| KV | Near-zero usage | Middleware disabled, dispatcher uses D1 |
+| Workers | Healthy | Dispatcher cron running */5 min |
+| Resend | 100/day cap | Not yet sending (feature flag off) |
+| Google OAuth | Working | Token refresh automatic |
+| Gmail/Cal/Drive | Scripts ready | Run manually or set up cron |
+
+### Handoff Context
+- 3,437 leads in D1 but only 77 enrolled in sequences
+- User wants CONTROLLED enrollment pace - ask before enrolling
+- KV free tier issue is resolved
+- Email feature flag likely OFF - emails won't actually send until Evan enables it
+- Next priority: verify deliverability of first 77, then controlled enrollment expansion
+- Auto-enroll API: `POST /api/admin/email/auto-enroll` with dryRun option
+
+---
