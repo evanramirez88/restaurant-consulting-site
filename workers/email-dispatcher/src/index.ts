@@ -21,6 +21,7 @@ interface Env {
   REPLY_TO: string;
   ENVIRONMENT: string;
   MAX_EMAILS_PER_RUN: string;
+  MAX_EMAILS_PER_DAY: string; // Daily send cap (Resend free tier = 100)
   WORKER_API_KEY: string; // Required for /dispatch and /stats endpoints
 }
 
@@ -338,17 +339,65 @@ async function handleEmailFailure(
 // MAIN CRON HANDLER
 // ============================================
 
+// ============================================
+// DAILY SEND LIMIT (KV-based)
+// ============================================
+
+function getDailyKey(): string {
+  // Use UTC date as key for consistent daily reset
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return `daily_send_count:${date}`;
+}
+
+async function getDailySendCount(env: Env): Promise<number> {
+  const key = getDailyKey();
+  const value = await env.RATE_LIMIT_KV.get(key);
+  return value ? parseInt(value, 10) : 0;
+}
+
+async function incrementDailySendCount(env: Env, increment: number = 1): Promise<number> {
+  const key = getDailyKey();
+  const current = await getDailySendCount(env);
+  const newCount = current + increment;
+  // TTL of 48 hours so old keys auto-expire
+  await env.RATE_LIMIT_KV.put(key, String(newCount), { expirationTtl: 172800 });
+  return newCount;
+}
+
+async function getRemainingDailyQuota(env: Env): Promise<number> {
+  const maxPerDay = parseInt(env.MAX_EMAILS_PER_DAY || '100', 10);
+  const sentToday = await getDailySendCount(env);
+  return Math.max(0, maxPerDay - sentToday);
+}
+
+// ============================================
+// MAIN CRON HANDLER
+// ============================================
+
 async function handleScheduled(
   event: ScheduledEvent,
   env: Env,
   ctx: ExecutionContext
 ): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  const maxEmails = parseInt(env.MAX_EMAILS_PER_RUN || '50', 10);
+  const maxPerRun = parseInt(env.MAX_EMAILS_PER_RUN || '25', 10);
+  const maxPerDay = parseInt(env.MAX_EMAILS_PER_DAY || '100', 10);
 
   console.log(`[Email Dispatcher] Running at ${new Date().toISOString()}`);
 
   try {
+    // Check daily send limit FIRST
+    const remainingQuota = await getRemainingDailyQuota(env);
+    if (remainingQuota <= 0) {
+      const sentToday = await getDailySendCount(env);
+      console.log(`[Email Dispatcher] Daily limit reached (${sentToday}/${maxPerDay}). Pausing until tomorrow.`);
+      return;
+    }
+
+    // Effective limit for this run = min(per-run cap, remaining daily quota)
+    const maxEmails = Math.min(maxPerRun, remainingQuota);
+    console.log(`[Email Dispatcher] Quota: ${remainingQuota}/${maxPerDay} remaining today, processing up to ${maxEmails} this run`);
+
     // Check if email automation is enabled
     const flagResult = await env.DB.prepare(`
       SELECT enabled FROM feature_flags WHERE key = 'email_automation_enabled'
@@ -468,8 +517,17 @@ async function handleScheduled(
           row.sequence_id, row.step_number, now
         );
 
+        // Increment daily send counter
+        const dailyCount = await incrementDailySendCount(env);
+
         sent++;
-        console.log(`[Dispatcher] Sent to ${row.sub_email}`);
+        console.log(`[Dispatcher] Sent to ${row.sub_email} (${dailyCount}/${maxPerDay} today)`);
+
+        // Stop if we hit daily limit mid-run
+        if (dailyCount >= maxPerDay) {
+          console.log(`[Dispatcher] Daily limit reached mid-run (${dailyCount}/${maxPerDay}). Stopping.`);
+          break;
+        }
       } else {
         // Log failure
         await logEmail(
@@ -485,13 +543,20 @@ async function handleScheduled(
 
         failed++;
         console.error(`[Dispatcher] Failed to send to ${row.sub_email}: ${result.error}`);
+
+        // If we hit Resend's rate limit, stop this run entirely
+        if (result.error === 'rate_limit_exceeded') {
+          console.log(`[Dispatcher] Resend rate limit hit. Stopping run, will retry next cycle.`);
+          break;
+        }
       }
 
-      // Rate limiting: wait 500ms between emails (2 emails/second max)
-      await sleep(500);
+      // Rate limiting: wait 1000ms between emails (1 email/second for free tier safety)
+      await sleep(1000);
     }
 
-    console.log(`[Email Dispatcher] Complete: ${sent} sent, ${failed} failed, ${skipped} skipped`);
+    const dailyTotal = await getDailySendCount(env);
+    console.log(`[Email Dispatcher] Complete: ${sent} sent, ${failed} failed, ${skipped} skipped | Daily total: ${dailyTotal}/${maxPerDay}`);
   } catch (error) {
     console.error('[Email Dispatcher] Error:', error);
     throw error;
@@ -562,10 +627,23 @@ export default {
             (SELECT COUNT(*) FROM email_subscribers WHERE status = 'active') as active_subscribers,
             (SELECT COUNT(*) FROM email_sequences WHERE status = 'active') as active_sequences,
             (SELECT COUNT(*) FROM subscriber_sequences WHERE status = 'active') as active_enrollments,
+            (SELECT COUNT(*) FROM subscriber_sequences WHERE status = 'paused') as paused_enrollments,
             (SELECT COUNT(*) FROM email_logs WHERE sent_at > ?) as emails_sent_24h
         `).bind(Math.floor(Date.now() / 1000) - 86400).first();
 
-        return new Response(JSON.stringify({ success: true, stats }), {
+        const dailySentCount = await getDailySendCount(env);
+        const maxPerDay = parseInt(env.MAX_EMAILS_PER_DAY || '100', 10);
+
+        return new Response(JSON.stringify({
+          success: true,
+          stats,
+          daily_quota: {
+            sent_today: dailySentCount,
+            max_per_day: maxPerDay,
+            remaining: Math.max(0, maxPerDay - dailySentCount),
+            reset_at: new Date(new Date().setUTCHours(24, 0, 0, 0)).toISOString(),
+          }
+        }), {
           headers: { 'Content-Type': 'application/json' },
         });
       } catch (error) {

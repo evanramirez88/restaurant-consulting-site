@@ -48,6 +48,18 @@
 
 ## IMMEDIATE HUMAN TASKS (Priority Order)
 
+### ~~0. Google Cloud Project + OAuth Setup~~ ✅ COMPLETED (2026-01-22)
+
+**All 4 accounts authenticated. Tokens stored at `D:\MILLSTONE_STAGING\google_creds\tokens\`**
+- token_rg_business.json (ramirezconsulting.rg@gmail.com)
+- token_evan_personal.json (evanramirez88@gmail.com)
+- token_evan_ccrc.json (evan@ccrestaurantconsulting.com)
+- token_cccc_business.json (capecodcablecontractors@gmail.com)
+
+**Unblocks:** Gmail inbox in Admin Portal, DATA_CONTEXT harvesting, Calendar sync, Drive integration
+
+---
+
 ### 1. Square Subscription Catalog IDs (BLOCKING)
 
 **Status:** ❌ REQUIRED FOR AUTOMATED BILLING
