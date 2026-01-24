@@ -2,18 +2,27 @@
 // GET /api/admin/clients/:clientId/reps - Get assigned reps for a client
 // POST /api/admin/clients/:clientId/reps - Assign a rep to a client
 
-export async function onRequestGet(context) {
-  try {
-    const { env, params } = context;
-    const { clientId } = params;
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../../_shared/auth.js';
 
-    // Check admin auth
-    const authCookie = context.request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
+
+export async function onRequestGet(context) {
+  const { request, env, params } = context;
+  const corsHeaders = getCorsHeaders(request);
+  const { clientId } = params;
+
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error, request);
     }
 
     // Get assigned reps for this client
@@ -30,7 +39,7 @@ export async function onRequestGet(context) {
       success: true,
       data: result.results || []
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -40,23 +49,20 @@ export async function onRequestGet(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
 export async function onRequestPost(context) {
-  try {
-    const { env, request, params } = context;
-    const { clientId } = params;
+  const { request, env, params } = context;
+  const corsHeaders = getCorsHeaders(request);
+  const { clientId } = params;
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error, request);
     }
 
     const body = await request.json();
@@ -68,7 +74,7 @@ export async function onRequestPost(context) {
         error: 'rep_id is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -84,7 +90,7 @@ export async function onRequestPost(context) {
       success: true,
       message: 'Rep assigned successfully'
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -94,7 +100,11 @@ export async function onRequestPost(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
 }

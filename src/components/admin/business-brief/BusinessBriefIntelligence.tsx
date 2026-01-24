@@ -436,6 +436,13 @@ export default function BusinessBriefIntelligence() {
                 <h3 className="font-semibold text-white">Client Health Scores</h3>
               </div>
             </div>
+            {clientIntelligence.healthScores.length === 0 ? (
+              <div className="p-6 text-center text-gray-400">
+                <Users className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                <p>No client health data yet.</p>
+                <p className="text-xs text-gray-500 mt-1">Data populates as clients are onboarded.</p>
+              </div>
+            ) : (
             <div className="divide-y divide-gray-700/50 max-h-[400px] overflow-y-auto">
               {clientIntelligence.healthScores.map(client => (
                 <div key={client.id} className="p-4 hover:bg-gray-800/30">
@@ -467,6 +474,7 @@ export default function BusinessBriefIntelligence() {
                 </div>
               ))}
             </div>
+            )}
           </div>
 
           {/* Upsell Opportunities */}

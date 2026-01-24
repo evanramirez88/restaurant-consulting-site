@@ -143,15 +143,24 @@ export async function onRequestPost(context) {
     let tokensUsed = { input: 0, output: 0 };
 
     if (model.provider_type === 'workers_ai' && env.AI) {
-      // Use Cloudflare Workers AI
-      const aiResponse = await env.AI.run(model.model_id, {
+      // Use Cloudflare Workers AI with timeout
+      const aiPromise = env.AI.run(model.model_id, {
         messages,
         max_tokens: model.max_tokens || 2048,
         temperature: assistant?.temperature || model.temperature_default || 0.7,
-        stream: false // Workers AI streaming handled differently
+        stream: false
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('AI response timeout')), 15000)
+      );
+      const aiResponse = await Promise.race([aiPromise, timeoutPromise])
+        .catch(() => null);
 
-      responseText = aiResponse.response || aiResponse.text || '';
+      if (aiResponse?.response || aiResponse?.text) {
+        responseText = aiResponse.response || aiResponse.text;
+      } else {
+        responseText = generateMockResponse(message, systemPrompt);
+      }
     } else {
       // Fallback mock response
       responseText = generateMockResponse(message, systemPrompt);

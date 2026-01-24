@@ -377,7 +377,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                           <button
                             type="button"
                             onClick={() => removeLineItem(item.id)}
-                            className="self-end p-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                            className="self-end p-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95 min-h-[48px] min-w-[48px] flex items-center justify-center"
                             aria-label="Remove line item"
                           >
                             <Trash2 className="w-5 h-5" />

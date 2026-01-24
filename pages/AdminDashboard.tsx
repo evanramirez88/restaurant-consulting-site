@@ -359,7 +359,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6 transition-opacity duration-200">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <AdminOverview

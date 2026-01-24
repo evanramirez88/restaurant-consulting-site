@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Loader2, AlertCircle, UtensilsCrossed, Shield, Info, CheckCircle, Monitor } from 'lucide-react';
+import { Lock, Loader2, AlertCircle, UtensilsCrossed, Shield, CheckCircle, Monitor } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
 interface LoginStatus {
@@ -30,7 +30,6 @@ const AdminLogin: React.FC = () => {
     message: ''
   });
   const [retryCountdown, setRetryCountdown] = useState(0);
-  const [enable2FA, setEnable2FA] = useState(false);
   const [showSessionInfo, setShowSessionInfo] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
 
@@ -121,10 +120,9 @@ const AdminLogin: React.FC = () => {
           message: 'Login successful! Redirecting...'
         });
         setShowSessionInfo(true);
-        // Short delay to show success state
-        setTimeout(() => {
-          navigate('/admin');
-        }, 1000);
+        // Wait for cookie to be set before navigating
+        await new Promise(resolve => setTimeout(resolve, 500));
+        navigate('/admin');
       } else {
         if (result.retryAfter) {
           setRetryCountdown(result.retryAfter);
@@ -197,6 +195,8 @@ const AdminLogin: React.FC = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Hidden username field for password manager compatibility */}
+            <input type="text" name="username" value="admin" autoComplete="username" hidden readOnly />
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
@@ -220,26 +220,10 @@ const AdminLogin: React.FC = () => {
               />
             </div>
 
-            {/* 2FA Placeholder */}
-            <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enable2FA}
-                  onChange={(e) => setEnable2FA(e.target.checked)}
-                  disabled
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-describedby="twofa-note"
-                />
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-amber-400" aria-hidden="true" />
-                  <span className="text-gray-300 text-sm">Enable Two-Factor Authentication</span>
-                </div>
-              </label>
-              <p id="twofa-note" className="mt-2 ml-7 text-xs text-gray-500 flex items-center gap-1">
-                <Info className="w-3 h-3" aria-hidden="true" />
-                Coming Soon - Enhanced security with 2FA
-              </p>
+            {/* 2FA Status */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/30 rounded-lg border border-gray-700">
+              <Shield className="w-4 h-4 text-gray-500" aria-hidden="true" />
+              <span className="text-gray-500 text-xs font-medium">2FA: Coming Soon</span>
             </div>
 
             {/* Success Message */}
@@ -332,11 +316,13 @@ const AdminLogin: React.FC = () => {
           )}
         </div>
 
-        {/* Security Note */}
+        {/* Password Recovery */}
         <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-          <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-2">
-            <Shield className="w-3 h-3 text-amber-400/60" aria-hidden="true" />
-            This login is secured with rate limiting and session management
+          <p className="text-xs text-gray-500 text-center">
+            Locked out? Contact{' '}
+            <a href="mailto:ramirezconsulting.rg@gmail.com" className="text-amber-400/80 hover:text-amber-400">
+              ramirezconsulting.rg@gmail.com
+            </a>
           </p>
         </div>
 

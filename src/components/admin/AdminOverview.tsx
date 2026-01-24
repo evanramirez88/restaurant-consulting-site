@@ -232,9 +232,16 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className={`w-2 h-2 rounded-full ${automationStatus?.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
                 <span className="text-gray-400 text-sm">Automation</span>
               </div>
-              <span className={`text-sm font-medium ${automationStatus?.isOnline ? 'text-green-400' : 'text-gray-500'}`}>
-                {automationStatus?.isOnline ? 'Online' : 'Offline'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-medium ${automationStatus?.isOnline ? 'text-green-400' : 'text-gray-500'}`}>
+                  {automationStatus?.isOnline ? 'Online' : 'Offline'}
+                </span>
+                {!automationStatus?.isOnline && (
+                  <span className="text-xs text-gray-500" title="Email dispatcher runs on cron schedule">
+                    (cron-based)
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
               <div className="flex items-center gap-2">

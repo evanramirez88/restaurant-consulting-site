@@ -79,6 +79,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [slugError, setSlugError] = useState<string | null>(null);
 
   // Rep Assignment state
@@ -187,11 +188,18 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const errors: Record<string, string> = {};
 
-    if (!formData.email || !formData.name || !formData.company) {
+    if (!formData.name.trim()) errors.name = 'This field is required';
+    if (!formData.company.trim()) errors.company = 'This field is required';
+    if (!formData.email.trim()) errors.email = 'This field is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       setError('Please fill in all required fields');
       return;
     }
+    setFieldErrors({});
 
     if (formData.portal_enabled && (!formData.slug || formData.slug.length < 3)) {
       setError('A valid URL slug is required when portal is enabled');
@@ -244,11 +252,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); setFieldErrors(prev => ({ ...prev, name: '' })); }}
                 placeholder="John Smith"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.name ? 'border-red-500' : 'border-gray-600'}`}
                 required
               />
+              {fieldErrors.name && <p className="text-red-400 text-xs mt-1">{fieldErrors.name}</p>}
             </div>
 
             <div>
@@ -259,11 +268,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="text"
                 value={formData.company}
-                onChange={(e) => handleCompanyChange(e.target.value)}
+                onChange={(e) => { handleCompanyChange(e.target.value); setFieldErrors(prev => ({ ...prev, company: '' })); }}
                 placeholder="Seafood Shack"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.company ? 'border-red-500' : 'border-gray-600'}`}
                 required
               />
+              {fieldErrors.company && <p className="text-red-400 text-xs mt-1">{fieldErrors.company}</p>}
             </div>
 
             <div>
@@ -274,11 +284,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); setFieldErrors(prev => ({ ...prev, email: '' })); }}
                 placeholder="owner@restaurant.com"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.email ? 'border-red-500' : 'border-gray-600'}`}
                 required
               />
+              {fieldErrors.email && <p className="text-red-400 text-xs mt-1">{fieldErrors.email}</p>}
             </div>
 
             <div>

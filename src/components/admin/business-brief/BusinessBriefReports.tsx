@@ -59,6 +59,7 @@ export default function BusinessBriefReports() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
   const [generatedReport, setGeneratedReport] = useState<any | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'library' | 'history' | 'scheduled'>('library');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -93,10 +94,14 @@ export default function BusinessBriefReports() {
       const result = await response.json();
       if (result.success) {
         setGeneratedReport(result.report);
+        setToast('Report generated successfully');
+        setTimeout(() => setToast(null), 3000);
         fetchReports(); // Refresh history
       }
     } catch (error) {
       console.error('Failed to generate report:', error);
+      setToast('Failed to generate report');
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setGenerating(null);
     }
@@ -121,6 +126,13 @@ export default function BusinessBriefReports() {
 
   return (
     <div className="space-y-4">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 bg-green-600/90 text-white text-sm font-medium rounded-lg shadow-lg animate-fade-in">
+          <CheckCircle className="w-4 h-4" />
+          {toast}
+        </div>
+      )}
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="admin-card p-4">

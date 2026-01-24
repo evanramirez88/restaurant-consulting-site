@@ -1,18 +1,27 @@
 // Client-Rep Unassignment API
 // DELETE /api/admin/clients/:clientId/reps/:repId - Unassign a rep from a client
 
-export async function onRequestDelete(context) {
-  try {
-    const { env, request, params } = context;
-    const { clientId, repId } = params;
+import { verifyAuth, unauthorizedResponse, getCorsOrigin, handleOptions } from '../../../../../_shared/auth.js';
 
-    // Check admin auth
-    const authCookie = request.headers.get('Cookie')?.match(/admin_session=([^;]+)/)?.[1];
-    if (!authCookie) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+function getCorsHeaders(request) {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+  };
+}
+
+export async function onRequestDelete(context) {
+  const { request, env, params } = context;
+  const corsHeaders = getCorsHeaders(request);
+  const { clientId, repId } = params;
+
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error, request);
     }
 
     // Delete the assignment
@@ -25,7 +34,7 @@ export async function onRequestDelete(context) {
       success: true,
       message: 'Rep unassigned successfully'
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
 
   } catch (error) {
@@ -35,7 +44,11 @@ export async function onRequestDelete(context) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
+}
+
+export async function onRequestOptions(context) {
+  return handleOptions(context.request);
 }

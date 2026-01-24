@@ -8,7 +8,7 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
   # Content Security Policy - Balanced for functionality
   # frame-ancestors 'self' allows same-origin iframes (admin portal tool previews)
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.acuityscheduling.com https://cal.com https://app.cal.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.hubspot.com https://api.resend.com https://*.cloudflare.com https://cal.com https://app.cal.com; frame-src https://app.acuityscheduling.com https://embed.acuityscheduling.com https://cal.com https://app.cal.com; frame-ancestors 'self';
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.acuityscheduling.com https://cal.com https://app.cal.com https://fonts.googleapis.com https://cdn.plot.ly https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.hubspot.com https://api.resend.com https://*.cloudflare.com https://cal.com https://app.cal.com https://cloudflareinsights.com; frame-src https://app.acuityscheduling.com https://embed.acuityscheduling.com https://cal.com https://app.cal.com; frame-ancestors 'self';
 
 # Cache static assets aggressively
 /assets/*

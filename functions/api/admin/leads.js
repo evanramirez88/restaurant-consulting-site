@@ -39,7 +39,7 @@ export async function onRequestGet(context) {
     // Verify admin auth
     const auth = await verifyAuth(request, env);
     if (!auth.authenticated) {
-      return unauthorizedResponse(auth.error);
+      return unauthorizedResponse(auth.error, request);
     }
 
     const url = new URL(request.url);
@@ -195,7 +195,7 @@ export async function onRequestPost(context) {
   try {
     const auth = await verifyAuth(request, env);
     if (!auth.authenticated) {
-      return unauthorizedResponse(auth.error);
+      return unauthorizedResponse(auth.error, request);
     }
 
     const body = await request.json();
