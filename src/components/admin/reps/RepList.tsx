@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search, Plus, Briefcase, MapPin, ExternalLink, ChevronRight,
-  Loader2, RefreshCw, Users, Mail, Phone, DollarSign, Grid3X3, List, Eye
+  Loader2, RefreshCw, Users, Mail, Phone, DollarSign, Grid3X3, List, Eye, X
 } from 'lucide-react';
 
 interface Rep {
@@ -127,8 +127,17 @@ const RepList: React.FC<RepListProps> = ({ onSelectRep, onCreateRep }) => {
               placeholder="Search reps by name, email, territory, or slug..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-10 pr-10 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-white rounded transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <select
             value={filterStatus}
