@@ -41,6 +41,9 @@ export { default as EnrollmentWizard } from './EnrollmentWizard';
 // Error Recovery (Day 3)
 export { default as ErrorRecovery } from './ErrorRecovery';
 
+// Email Responses (Response Pipeline)
+export { default as EmailResponses } from './EmailResponses';
+
 // Sequence Flow Tester (Day 3)
 export { default as SequenceFlowTester } from './SequenceFlowTester';
 

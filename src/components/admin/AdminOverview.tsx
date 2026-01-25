@@ -82,6 +82,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
   const [isLoadingAutomation, setIsLoadingAutomation] = useState(true);
   const [showAvailabilityEditor, setShowAvailabilityEditor] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState<{ emailsSentToday: number; emailsThisWeek: number; newLeadsThisWeek: number } | null>(null);
+  const [recentActivity, setRecentActivity] = useState<Array<{ id: string; type: string; title: string; detail: string; time: number }>>([]);
 
   useEffect(() => {
     const loadPortals = async () => {
@@ -123,6 +125,48 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     // Refresh status every 30 seconds
     const interval = setInterval(loadAutomationStatus, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Load dashboard quick stats and recent activity
+  useEffect(() => {
+    const loadDashStats = async () => {
+      try {
+        const [emailRes, activityRes] = await Promise.all([
+          fetch('/api/admin/email/subscribers?limit=1'),
+          fetch('/api/admin/business-brief/pulse')
+        ]);
+        const emailData = await emailRes.json();
+        const pulseData = await activityRes.json();
+
+        if (pulseData.success) {
+          setDashboardStats({
+            emailsSentToday: pulseData.data?.emailMetrics?.sentToday || 0,
+            emailsThisWeek: pulseData.data?.emailMetrics?.sentThisWeek || 0,
+            newLeadsThisWeek: pulseData.data?.leadHealth?.newThisWeek || 0
+          });
+        }
+      } catch (e) {
+        // Stats are non-critical
+      }
+
+      // Fetch recent activity from email logs
+      try {
+        const res = await fetch('/api/admin/email/errors?limit=5');
+        const data = await res.json();
+        if (data.success && data.data?.length > 0) {
+          setRecentActivity(data.data.slice(0, 3).map((e: any) => ({
+            id: e.id,
+            type: 'email',
+            title: `Email ${e.status}: ${e.recipient || 'unknown'}`,
+            detail: e.error_message || e.status,
+            time: e.created_at
+          })));
+        }
+      } catch (e) {
+        // Non-critical
+      }
+    };
+    loadDashStats();
   }, []);
 
   const getSupportPlanBadge = (tier: string | null, status: string | null) => {
@@ -232,16 +276,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className={`w-2 h-2 rounded-full ${automationStatus?.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
                 <span className="text-gray-400 text-sm">Automation</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-medium ${automationStatus?.isOnline ? 'text-green-400' : 'text-gray-500'}`}>
-                  {automationStatus?.isOnline ? 'Online' : 'Offline'}
-                </span>
-                {!automationStatus?.isOnline && (
-                  <span className="text-xs text-gray-500" title="Email dispatcher runs on cron schedule">
-                    (cron-based)
-                  </span>
-                )}
-              </div>
+              {automationStatus?.isOnline ? (
+                <span className="text-green-400 text-sm font-medium">Online</span>
+              ) : (
+                <button
+                  onClick={() => onNavigateToTab('toast-automate')}
+                  className="text-gray-500 text-sm font-medium hover:text-amber-400 transition-colors"
+                  title="View Toast Automate settings"
+                >
+                  Offline →
+                </button>
+              )}
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
               <div className="flex items-center gap-2">
@@ -273,23 +318,23 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <Eye className="w-4 h-4" />
-                Today's Visits
+                Emails Today
               </div>
-              <span className="text-white font-semibold">--</span>
+              <span className="text-white font-semibold">{dashboardStats?.emailsSentToday ?? '—'}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <TrendingUp className="w-4 h-4" />
-                This Week
+                Emails This Week
               </div>
-              <span className="text-white font-semibold">--</span>
+              <span className="text-white font-semibold">{dashboardStats?.emailsThisWeek ?? '—'}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <UserPlus className="w-4 h-4" />
-                New Leads
+                New Leads (7d)
               </div>
-              <span className="text-white font-semibold">--</span>
+              <span className="text-white font-semibold">{dashboardStats?.newLeadsThisWeek ?? '—'}</span>
             </div>
           </div>
         </section>
@@ -308,20 +353,40 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           </button>
         </div>
         <div className="space-y-2">
-          {/* Placeholder activity items */}
-          <div className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
-            <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-4 h-4 text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm">System initialized</p>
-              <p className="text-gray-500 text-xs">Admin dashboard loaded</p>
-            </div>
-            <span className="text-gray-500 text-xs whitespace-nowrap">Just now</span>
-          </div>
-          <div className="text-center py-4 text-gray-500 text-sm">
-            Activity tracking will populate as you manage clients, send emails, and update settings.
-          </div>
+          {recentActivity.length > 0 ? (
+            <>
+              {recentActivity.map(item => (
+                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm truncate">{item.title}</p>
+                    <p className="text-gray-500 text-xs truncate">{item.detail}</p>
+                  </div>
+                  <span className="text-gray-500 text-xs whitespace-nowrap">
+                    {item.time ? formatTimeAgo(item.time) : ''}
+                  </span>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm">All systems operational</p>
+                  <p className="text-gray-500 text-xs">{clientCount} clients, {repCount} reps active</p>
+                </div>
+                <span className="text-gray-500 text-xs whitespace-nowrap">Now</span>
+              </div>
+              <p className="text-center text-gray-600 text-xs py-2">
+                Activity populates as emails send, clients interact, and events occur.
+              </p>
+            </>
+          )}
         </div>
       </section>
 

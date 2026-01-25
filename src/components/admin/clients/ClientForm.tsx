@@ -79,8 +79,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [slugError, setSlugError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Rep Assignment state
   const [allReps, setAllReps] = useState<Rep[]>([]);
@@ -190,9 +190,9 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
     setError(null);
     const errors: Record<string, string> = {};
 
-    if (!formData.name.trim()) errors.name = 'This field is required';
-    if (!formData.company.trim()) errors.company = 'This field is required';
-    if (!formData.email.trim()) errors.email = 'This field is required';
+    if (!formData.name.trim()) errors.name = 'Contact name is required';
+    if (!formData.company.trim()) errors.company = 'Company name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -231,7 +231,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {error && (
           <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -252,7 +252,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); setFieldErrors(prev => ({ ...prev, name: '' })); }}
+                onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); setFieldErrors(prev => { const { name, ...rest } = prev; return rest; }); }}
                 placeholder="John Smith"
                 className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.name ? 'border-red-500' : 'border-gray-600'}`}
                 required
@@ -268,7 +268,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="text"
                 value={formData.company}
-                onChange={(e) => { handleCompanyChange(e.target.value); setFieldErrors(prev => ({ ...prev, company: '' })); }}
+                onChange={(e) => { handleCompanyChange(e.target.value); setFieldErrors(prev => { const { company, ...rest } = prev; return rest; }); }}
                 placeholder="Seafood Shack"
                 className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.company ? 'border-red-500' : 'border-gray-600'}`}
                 required
@@ -284,7 +284,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); setFieldErrors(prev => ({ ...prev, email: '' })); }}
+                onChange={(e) => { setFormData(prev => ({ ...prev, email: e.target.value })); setFieldErrors(prev => { const { email, ...rest } = prev; return rest; }); }}
                 placeholder="owner@restaurant.com"
                 className={`w-full px-4 py-2 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 ${fieldErrors.email ? 'border-red-500' : 'border-gray-600'}`}
                 required

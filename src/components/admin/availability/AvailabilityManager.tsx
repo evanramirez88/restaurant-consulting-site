@@ -142,9 +142,19 @@ const AvailabilityManager: React.FC = () => {
         await loadData();
         setShowScheduleForm(false);
         setEditingSchedule(null);
+        setSaveStatus('success');
+        setSaveMessage('Schedule saved');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      } else {
+        setSaveStatus('error');
+        setSaveMessage(result.error || 'Failed to save schedule');
+        setTimeout(() => setSaveStatus('idle'), 4000);
       }
     } catch (error) {
       console.error('Failed to save schedule:', error);
+      setSaveStatus('error');
+      setSaveMessage('Connection error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
     }
   };
 

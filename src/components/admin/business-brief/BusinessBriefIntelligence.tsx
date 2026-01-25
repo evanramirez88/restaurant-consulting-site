@@ -347,8 +347,8 @@ export default function BusinessBriefIntelligence() {
             <div className="p-4">
               <div className="space-y-2">
                 {leadIntelligence.posDistribution.slice(0, 8).map(pos => (
-                  <div key={pos.pos} className="flex items-center gap-3">
-                    <div className="w-24 text-sm text-white font-medium truncate">{pos.pos}</div>
+                  <div key={pos.pos || 'unknown'} className="flex items-center gap-3">
+                    <div className="w-24 text-sm text-white font-medium truncate">{pos.pos || 'Unknown'}</div>
                     <div className="flex-1 h-6 bg-gray-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-purple-500/50 rounded-full flex items-center justify-end pr-2"
@@ -380,7 +380,7 @@ export default function BusinessBriefIntelligence() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-white truncate">{lead.name || lead.company}</span>
+                        <span className="font-medium text-white truncate">{lead.name || lead.company || 'Unnamed Lead'}</span>
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${getScoreColor(lead.score)}`}>
                           {lead.score}
                         </span>
@@ -439,41 +439,41 @@ export default function BusinessBriefIntelligence() {
             {clientIntelligence.healthScores.length === 0 ? (
               <div className="p-6 text-center text-gray-400">
                 <Users className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                <p>No client health data yet.</p>
-                <p className="text-xs text-gray-500 mt-1">Data populates as clients are onboarded.</p>
+                <p>No client health data yet</p>
+                <p className="text-sm text-gray-500 mt-1">Data populates as clients are onboarded and interact with support.</p>
               </div>
             ) : (
-            <div className="divide-y divide-gray-700/50 max-h-[400px] overflow-y-auto">
-              {clientIntelligence.healthScores.map(client => (
-                <div key={client.id} className="p-4 hover:bg-gray-800/30">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-white">{client.name}</span>
-                        <span className={`px-2 py-0.5 rounded text-xs ${getRiskColor(client.riskLevel)}`}>
-                          {client.riskLevel} risk
-                        </span>
+              <div className="divide-y divide-gray-700/50 max-h-[400px] overflow-y-auto">
+                {clientIntelligence.healthScores.map(client => (
+                  <div key={client.id} className="p-4 hover:bg-gray-800/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-white">{client.name}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${getRiskColor(client.riskLevel)}`}>
+                            {client.riskLevel} risk
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                          <span>{client.plan} plan</span>
+                          <span>{client.ticketCount} tickets (30d)</span>
+                          {client.openTickets > 0 && (
+                            <span className="text-orange-400">{client.openTickets} open</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
-                        <span>{client.plan} plan</span>
-                        <span>{client.ticketCount} tickets (30d)</span>
-                        {client.openTickets > 0 && (
-                          <span className="text-orange-400">{client.openTickets} open</span>
-                        )}
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold ${client.healthScore >= 70 ? 'text-green-400' :
+                            client.healthScore >= 40 ? 'text-yellow-400' : 'text-red-400'
+                          }`}>
+                          {client.healthScore}
+                        </div>
+                        <div className="text-xs text-gray-500">health</div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-2xl font-bold ${client.healthScore >= 70 ? 'text-green-400' :
-                          client.healthScore >= 40 ? 'text-yellow-400' : 'text-red-400'
-                        }`}>
-                        {client.healthScore}
-                      </div>
-                      <div className="text-xs text-gray-500">health</div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -551,10 +551,14 @@ export default function BusinessBriefIntelligence() {
             <div className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(agentIntelligence.agents).map(([key, agent]) => {
+                  const isConfigured = agent.status === 'healthy' || agent.completedRuns > 0;
                   const statusColor = agent.status === 'healthy' ? 'text-green-400' :
-                    agent.status === 'error' ? 'text-red-400' : 'text-gray-400';
+                    agent.status === 'error' ? 'text-red-400' : 'text-gray-500';
                   const statusBg = agent.status === 'healthy' ? 'bg-green-500/20' :
                     agent.status === 'error' ? 'bg-red-500/20' : 'bg-gray-500/20';
+                  const displayStatus = agent.status === 'healthy' ? 'Active' :
+                    agent.status === 'error' ? 'Error' :
+                    isConfigured ? 'Idle' : 'Not configured';
 
                   return (
                     <div key={key} className="bg-gray-800/50 rounded-lg p-4">
@@ -567,7 +571,7 @@ export default function BusinessBriefIntelligence() {
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-400">Status</span>
-                          <span className={statusColor}>{agent.status}</span>
+                          <span className={statusColor}>{displayStatus}</span>
                         </div>
                         {agent.lastRun && (
                           <div className="flex justify-between">

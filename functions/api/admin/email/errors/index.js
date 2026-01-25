@@ -95,7 +95,7 @@ export async function onRequestGet(context) {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM email_logs el
-      LEFT JOIN subscribers s ON el.subscriber_id = s.id
+      LEFT JOIN email_subscribers s ON el.subscriber_id = s.id
       WHERE ${whereClause}
     `;
     const countResult = await db.prepare(countQuery).bind(...queryParams).first();
@@ -124,7 +124,7 @@ export async function onRequestGet(context) {
         el.resolved_by,
         el.resolution_note
       FROM email_logs el
-      LEFT JOIN subscribers s ON el.subscriber_id = s.id
+      LEFT JOIN email_subscribers s ON el.subscriber_id = s.id
       LEFT JOIN email_sequences seq ON el.sequence_id = seq.id
       LEFT JOIN sequence_steps ss ON el.step_id = ss.id
       WHERE ${whereClause}

@@ -249,22 +249,23 @@ export async function onRequestGet(context) {
       : 0;
 
     // Build scenario projections
+    const moderateRate = parseFloat(closeRate) || 25;
     const scenarios = {
       conservative: {
         label: 'Conservative',
-        assumedCloseRate: Math.max(parseFloat(closeRate) - 10, 10),
+        assumedCloseRate: Math.max(moderateRate - 10, 5),
         projectedValue: (activeQuotes?.value || 0) * 0.15,
         description: 'Based on 15% of active pipeline'
       },
       moderate: {
         label: 'Moderate',
-        assumedCloseRate: parseFloat(closeRate) || 25,
+        assumedCloseRate: moderateRate,
         projectedValue: (activeQuotes?.value || 0) * 0.25,
         description: 'Based on current close rate'
       },
       optimistic: {
         label: 'Optimistic',
-        assumedCloseRate: Math.min(parseFloat(closeRate) + 15, 50),
+        assumedCloseRate: Math.min(moderateRate + 15, 50),
         projectedValue: (activeQuotes?.value || 0) * 0.40,
         description: 'Based on improved conversion efforts'
       }

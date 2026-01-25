@@ -80,39 +80,45 @@ function parseCookies(cookieHeader) {
 async function verifyClientAuth(request, env, slug) {
   const cookieHeader = request.headers.get('Cookie');
   const cookies = parseCookies(cookieHeader);
+
+  // 1. Try client-specific token
   const token = cookies[COOKIE_NAME];
-
-  if (!token) {
-    return { authenticated: false, error: 'No session' };
-  }
-
-  const jwtSecret = env.CLIENT_JWT_SECRET || env.JWT_SECRET;
-  if (!jwtSecret) {
-    return { authenticated: false, error: 'Server config error' };
-  }
-
-  try {
-    const isValid = await jwt.verify(token, jwtSecret);
-    if (!isValid) {
-      return { authenticated: false, error: 'Invalid session' };
+  if (token) {
+    const jwtSecret = env.CLIENT_JWT_SECRET || env.JWT_SECRET;
+    if (jwtSecret) {
+      try {
+        const isValid = await jwt.verify(token, jwtSecret);
+        if (isValid) {
+          const { payload } = jwt.decode(token);
+          const db = env.DB;
+          const client = await db.prepare('SELECT id, slug FROM clients WHERE id = ?')
+            .bind(payload.clientId).first();
+          if (client && client.slug === slug) {
+            return { authenticated: true, clientId: payload.clientId };
+          }
+        }
+      } catch (e) { /* fall through */ }
     }
-
-    const { payload } = jwt.decode(token);
-
-    // Verify the client matches the slug
-    const db = env.DB;
-    const client = await db.prepare('SELECT id, slug FROM clients WHERE id = ?')
-      .bind(payload.clientId)
-      .first();
-
-    if (!client || client.slug !== slug) {
-      return { authenticated: false, error: 'Unauthorized' };
-    }
-
-    return { authenticated: true, clientId: payload.clientId };
-  } catch (error) {
-    return { authenticated: false, error: 'Session error' };
   }
+
+  // 2. Fall back to admin token
+  const adminToken = cookies['ccrc_admin_token'];
+  if (adminToken) {
+    const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+    if (jwtSecret) {
+      try {
+        const isValid = await jwt.verify(adminToken, jwtSecret);
+        if (isValid) {
+          const db = env.DB;
+          const client = await db.prepare('SELECT id FROM clients WHERE slug = ?')
+            .bind(slug).first();
+          return { authenticated: true, isAdmin: true, clientId: client?.id };
+        }
+      } catch (e) { /* fall through */ }
+    }
+  }
+
+  return { authenticated: false, error: 'No session' };
 }
 
 export async function onRequestGet(context) {

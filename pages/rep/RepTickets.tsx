@@ -20,6 +20,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useSEO } from '../../src/components/SEO';
+import TicketComments from '../../src/components/shared/TicketComments';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -482,11 +483,17 @@ const RepTickets: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Ticket Conversation */}
+                    <div className="mt-4 pt-4 border-t border-gray-700">
+                      <TicketComments
+                        ticketId={ticket.id}
+                        apiBase={`/api/rep/${slug}/tickets`}
+                        userRole="rep"
+                        showVisibilityToggle={true}
+                      />
+                    </div>
+
                     <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-700">
-                      <button className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors">
-                        <MessageSquare className="w-4 h-4" />
-                        Add Note
-                      </button>
                       <button
                         onClick={() => navigate(`/portal/${ticket.client_slug}`)}
                         className="inline-flex items-center gap-2 px-4 py-2 text-amber-400 hover:text-amber-300 text-sm transition-colors"

@@ -12,6 +12,7 @@ import { InvoiceModal } from '../src/components/admin/billing';
 import AdminOverview from '../src/components/admin/AdminOverview';
 import ClientList from '../src/components/admin/clients/ClientList';
 import ClientForm from '../src/components/admin/clients/ClientForm';
+import ClientProfile360 from '../src/components/admin/clients/ClientProfile360';
 import RepList from '../src/components/admin/reps/RepList';
 import RepForm from '../src/components/admin/reps/RepForm';
 import ToolsDemo from '../src/components/admin/tools/ToolsDemo';
@@ -28,17 +29,18 @@ import {
   ABTestingPanel,
   EnrollmentWizard,
   ErrorRecovery,
-  SendTimeOptimizer
+  SendTimeOptimizer,
+  EmailResponses
 } from '../src/components/admin/email';
 import { LeadsList } from '../src/components/admin/leads';
 import { BusinessBrief } from '../src/components/admin/business-brief';
-import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { BarChart3, Filter, FlaskConical, UserPlus, AlertTriangle, Clock, TrendingUp, MessageSquare } from 'lucide-react';
 
 type TabType = 'overview' | 'brief' | 'portals' | 'contacts' | 'tickets' | 'email' | 'intelligence' | 'tools' | 'config';
-type ClientView = 'list' | 'form' | 'detail';
+type ClientView = 'list' | 'form' | 'detail' | 'profile360';
 type RepView = 'list' | 'form' | 'detail';
 type ContactSubTab = 'clients' | 'reps' | 'leads';
-type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics' | 'ab-testing' | 'enrollment' | 'errors' | 'schedule';
+type EmailSubTab = 'campaigns' | 'subscribers' | 'segments' | 'analytics' | 'ab-testing' | 'enrollment' | 'errors' | 'schedule' | 'responses';
 
 interface Client {
   id?: string;
@@ -183,7 +185,7 @@ const AdminDashboard: React.FC = () => {
   // Client handlers
   const handleSelectClient = (client: any) => {
     setSelectedClient(client);
-    setClientView('form');
+    setClientView('profile360');
   };
 
   const handleCreateClient = () => {
@@ -447,6 +449,19 @@ const AdminDashboard: React.FC = () => {
                     onCreateInvoice={handleCreateInvoice}
                   />
                 )}
+                {clientView === 'profile360' && selectedClient?.id && (
+                  <ClientProfile360
+                    clientId={selectedClient.id}
+                    onBack={() => {
+                      setClientView('list');
+                      setSelectedClient(null);
+                    }}
+                    onEditClient={(client) => {
+                      setSelectedClient(client);
+                      setClientView('form');
+                    }}
+                  />
+                )}
                 {clientView === 'form' && (
                   <ClientForm
                     client={selectedClient}
@@ -587,6 +602,17 @@ const AdminDashboard: React.FC = () => {
                 <Clock className="w-4 h-4" />
                 Schedule
               </button>
+              <button
+                onClick={() => setEmailSubTab('responses')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  emailSubTab === 'responses'
+                    ? 'bg-gray-800 text-amber-400 border-b-2 border-amber-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Responses
+              </button>
             </div>
 
             {emailSubTab === 'campaigns' && <EmailCampaigns />}
@@ -597,6 +623,7 @@ const AdminDashboard: React.FC = () => {
             {emailSubTab === 'enrollment' && <EnrollmentWizard />}
             {emailSubTab === 'errors' && <ErrorRecovery />}
             {emailSubTab === 'schedule' && <SendTimeOptimizer />}
+            {emailSubTab === 'responses' && <EmailResponses />}
           </>
         )}
 

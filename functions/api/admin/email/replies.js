@@ -44,7 +44,15 @@ export async function onRequestPost(context) {
       received_at,
       sentiment = 'neutral',
       priority = 'medium',
-      source = 'manual'
+      source = 'manual',
+      classification,
+      response_type,
+      extracted_business_name,
+      extracted_phone,
+      extracted_address,
+      extracted_business_type,
+      enrichment_status,
+      local_storage_path
     } = body;
 
     if (!email) {
@@ -77,8 +85,11 @@ export async function onRequestPost(context) {
       await db.prepare(`
         INSERT INTO email_replies (
           id, subscriber_id, lead_id, email, subject, body_preview,
-          sentiment, priority, source, received_at, processed, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+          sentiment, priority, source, received_at, processed, created_at,
+          classification, response_type, extracted_business_name,
+          extracted_phone, extracted_address, extracted_business_type,
+          enrichment_status, local_storage_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         replyId,
         subscriber?.id || null,
@@ -90,11 +101,39 @@ export async function onRequestPost(context) {
         priority,
         source,
         receivedAt,
-        now
+        now,
+        classification || null,
+        response_type || null,
+        extracted_business_name || null,
+        extracted_phone || null,
+        extracted_address || null,
+        extracted_business_type || null,
+        enrichment_status || 'pending',
+        local_storage_path || null
       ).run();
     } catch (e) {
-      // Table might not exist, log but continue
       console.log('Could not insert reply record:', e.message);
+    }
+
+    // Update restaurant_leads response tracking if lead found
+    if (lead && classification) {
+      try {
+        await db.prepare(`
+          UPDATE restaurant_leads
+          SET response_received = 1,
+              response_classification = ?,
+              response_date = ?,
+              business_type_detected = COALESCE(?, business_type_detected)
+          WHERE id = ?
+        `).bind(
+          classification,
+          receivedAt,
+          extracted_business_type || null,
+          lead.id
+        ).run();
+      } catch (e) {
+        console.log('Could not update lead response:', e.message);
+      }
     }
 
     // Update subscriber engagement score if found (+15 for reply)
@@ -192,6 +231,8 @@ export async function onRequestGet(context) {
     const days = parseInt(url.searchParams.get('days') || '7');
     const priority = url.searchParams.get('priority');
     const processed = url.searchParams.get('processed');
+    const classification = url.searchParams.get('classification');
+    const enrichment = url.searchParams.get('enrichment');
 
     const now = Math.floor(Date.now() / 1000);
     const startTs = now - (days * 24 * 60 * 60);
@@ -209,6 +250,16 @@ export async function onRequestGet(context) {
           r.source,
           r.received_at,
           r.processed,
+          r.classification,
+          r.response_type,
+          r.extracted_business_name,
+          r.extracted_phone,
+          r.extracted_address,
+          r.extracted_business_type,
+          r.enrichment_status,
+          r.rep_profile_id,
+          r.local_storage_path,
+          r.notes,
           es.first_name as subscriber_name,
           es.company as subscriber_company,
           es.engagement_score,
@@ -232,6 +283,16 @@ export async function onRequestGet(context) {
         params.push(processed === 'true' || processed === '1' ? 1 : 0);
       }
 
+      if (classification) {
+        query += ' AND r.classification = ?';
+        params.push(classification);
+      }
+
+      if (enrichment) {
+        query += ' AND r.enrichment_status = ?';
+        params.push(enrichment);
+      }
+
       query += ' ORDER BY r.received_at DESC LIMIT 50';
 
       const { results } = await db.prepare(query).bind(...params).all();
@@ -242,7 +303,13 @@ export async function onRequestGet(context) {
           COUNT(*) as total,
           SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high_priority,
           SUM(CASE WHEN processed = 0 THEN 1 ELSE 0 END) as unprocessed,
-          SUM(CASE WHEN sentiment = 'positive' THEN 1 ELSE 0 END) as positive
+          SUM(CASE WHEN sentiment = 'positive' THEN 1 ELSE 0 END) as positive,
+          SUM(CASE WHEN classification = 'human_positive' THEN 1 ELSE 0 END) as human_positive,
+          SUM(CASE WHEN classification = 'human_negative' THEN 1 ELSE 0 END) as human_negative,
+          SUM(CASE WHEN classification = 'human_info' THEN 1 ELSE 0 END) as human_info,
+          SUM(CASE WHEN classification = 'auto_reply' THEN 1 ELSE 0 END) as auto_reply,
+          SUM(CASE WHEN classification = 'bounce' THEN 1 ELSE 0 END) as bounces,
+          SUM(CASE WHEN classification IN ('human_positive','human_negative','human_info') THEN 1 ELSE 0 END) as human_replies
         FROM email_replies
         WHERE received_at >= ?
       `;
@@ -262,6 +329,17 @@ export async function onRequestGet(context) {
             source: r.source,
             received_at: r.received_at,
             processed: !!r.processed,
+            classification: r.classification,
+            response_type: r.response_type,
+            enrichment_status: r.enrichment_status,
+            rep_profile_id: r.rep_profile_id,
+            notes: r.notes,
+            extracted: {
+              business_name: r.extracted_business_name,
+              phone: r.extracted_phone,
+              address: r.extracted_address,
+              business_type: r.extracted_business_type
+            },
             subscriber: r.subscriber_name ? {
               name: r.subscriber_name,
               company: r.subscriber_company,
@@ -276,11 +354,17 @@ export async function onRequestGet(context) {
             total: stats?.total || 0,
             high_priority: stats?.high_priority || 0,
             unprocessed: stats?.unprocessed || 0,
-            positive: stats?.positive || 0
+            positive: stats?.positive || 0,
+            human_positive: stats?.human_positive || 0,
+            human_negative: stats?.human_negative || 0,
+            human_info: stats?.human_info || 0,
+            auto_reply: stats?.auto_reply || 0,
+            bounces: stats?.bounces || 0,
+            human_replies: stats?.human_replies || 0
           },
           meta: {
             days,
-            filters: { priority, processed }
+            filters: { priority, processed, classification, enrichment }
           }
         }
       }), {

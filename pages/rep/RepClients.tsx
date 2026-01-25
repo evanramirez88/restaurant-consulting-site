@@ -386,8 +386,8 @@ const RepClients: React.FC = () => {
                       <p className="text-white capitalize">{client.assignment_role}</p>
                     </div>
                     <div className="text-sm">
-                      <p className="text-gray-500">Commission</p>
-                      <p className="text-green-400 font-medium">{(client.commission_rate * 100).toFixed(0)}%</p>
+                      <p className="text-gray-500">Status</p>
+                      <p className="text-green-400 font-medium">Active</p>
                     </div>
                     <div className="text-sm">
                       <p className="text-gray-500">Assigned</p>

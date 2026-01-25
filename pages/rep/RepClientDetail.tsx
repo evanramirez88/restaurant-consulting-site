@@ -407,8 +407,8 @@ const RepClientDetail: React.FC = () => {
               <p className="text-white capitalize">{client.assignment_role}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Commission Rate</p>
-              <p className="text-green-400 font-semibold">{(client.commission_rate * 100).toFixed(0)}%</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Status</p>
+              <p className="text-green-400 font-semibold">Active</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Assigned Since</p>

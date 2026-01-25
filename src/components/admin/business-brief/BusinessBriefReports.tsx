@@ -59,7 +59,7 @@ export default function BusinessBriefReports() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<string | null>(null);
   const [generatedReport, setGeneratedReport] = useState<any | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [activeTab, setActiveTab] = useState<'library' | 'history' | 'scheduled'>('library');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -94,14 +94,17 @@ export default function BusinessBriefReports() {
       const result = await response.json();
       if (result.success) {
         setGeneratedReport(result.report);
-        setToast('Report generated successfully');
+        setToast({ message: 'Report generated successfully!', type: 'success' });
         setTimeout(() => setToast(null), 3000);
         fetchReports(); // Refresh history
+      } else {
+        setToast({ message: result.error || 'Failed to generate report', type: 'error' });
+        setTimeout(() => setToast(null), 4000);
       }
     } catch (error) {
       console.error('Failed to generate report:', error);
-      setToast('Failed to generate report');
-      setTimeout(() => setToast(null), 3000);
+      setToast({ message: 'Connection error. Please try again.', type: 'error' });
+      setTimeout(() => setToast(null), 4000);
     } finally {
       setGenerating(null);
     }
@@ -126,13 +129,20 @@ export default function BusinessBriefReports() {
 
   return (
     <div className="space-y-4">
-      {/* Toast notification */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 bg-green-600/90 text-white text-sm font-medium rounded-lg shadow-lg animate-fade-in">
-          <CheckCircle className="w-4 h-4" />
-          {toast}
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg animate-in fade-in slide-in-from-top-2 ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-4 h-4" />
+          ) : (
+            <AlertCircle className="w-4 h-4" />
+          )}
+          <span className="text-sm font-medium">{toast.message}</span>
         </div>
       )}
+
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="admin-card p-4">

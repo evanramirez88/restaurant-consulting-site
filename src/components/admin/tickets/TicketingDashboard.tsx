@@ -4,6 +4,7 @@ import {
   AlertCircle, Clock, CheckCircle, X, Building2, Flag, Tag,
   MessageSquare, Save, Trash2, Calendar, ArrowUpDown, Target
 } from 'lucide-react';
+import TicketComments from '../../shared/TicketComments';
 
 interface Ticket {
   id: string;
@@ -677,6 +678,14 @@ const TicketingDashboard: React.FC<TicketingDashboardProps> = ({ clients: propCl
                   ))}
                 </div>
               </div>
+
+              {/* Ticket Comments Thread */}
+              <TicketComments
+                ticketId={selectedTicket.id}
+                apiBase="/api/admin/tickets"
+                userRole="admin"
+                showVisibilityToggle={true}
+              />
             </div>
             <div className="p-6 border-t border-gray-700 flex justify-between">
               <button

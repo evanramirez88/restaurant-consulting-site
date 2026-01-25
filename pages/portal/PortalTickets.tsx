@@ -15,9 +15,11 @@ import {
   Filter,
   MessageSquare,
   Calendar,
-  X
+  X,
+  Star
 } from 'lucide-react';
 import { useSEO } from '../../src/components/SEO';
+import TicketComments from '../../src/components/shared/TicketComments';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -36,6 +38,89 @@ interface TicketData {
   resolved_at: number | null;
   created_at: number;
   updated_at: number;
+}
+
+// ============================================
+// CSAT SATISFACTION WIDGET
+// ============================================
+function SatisfactionWidget({ ticketId, slug }: { ticketId: string; slug: string }) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [existing, setExisting] = useState<{ rating: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/portal/${slug}/tickets/${ticketId}/satisfaction`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data) setExisting(d.data); })
+      .finally(() => setLoading(false));
+  }, [ticketId]);
+
+  async function submit() {
+    if (!rating) return;
+    const res = await fetch(`/api/portal/${slug}/tickets/${ticketId}/satisfaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ rating, feedback: feedback.trim() || null })
+    });
+    const data = await res.json();
+    if (data.success) setSubmitted(true);
+  }
+
+  if (loading) return null;
+  if (existing || submitted) {
+    const stars = existing?.rating || rating;
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-700 text-center">
+        <p className="text-xs text-gray-500 mb-1">Your rating</p>
+        <div className="flex justify-center gap-1">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Star key={i} className={`w-5 h-5 ${i <= stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+          ))}
+        </div>
+        {submitted && <p className="text-green-400 text-xs mt-1">Thank you for your feedback!</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-700">
+      <p className="text-sm text-gray-400 mb-2 text-center">How was your experience?</p>
+      <div className="flex justify-center gap-1 mb-2">
+        {[1, 2, 3, 4, 5].map(i => (
+          <button
+            key={i}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => setRating(i)}
+            className="p-1 transition-transform hover:scale-110"
+          >
+            <Star className={`w-6 h-6 ${i <= (hovered || rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+          </button>
+        ))}
+      </div>
+      {rating > 0 && (
+        <div className="flex gap-2 max-w-sm mx-auto">
+          <input
+            type="text"
+            value={feedback}
+            onChange={e => setFeedback(e.target.value)}
+            placeholder="Optional feedback..."
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
+          />
+          <button
+            onClick={submit}
+            className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ============================================
@@ -449,13 +534,19 @@ const PortalTickets: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-700">
-                      <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
-                        <MessageSquare className="w-4 h-4" />
-                        Add Comment
-                      </button>
+                    {/* Ticket Conversation */}
+                    <div className="mt-6 pt-4 border-t border-gray-700">
+                      <TicketComments
+                        ticketId={ticket.id}
+                        apiBase={`/api/portal/${slug}/tickets`}
+                        userRole="client"
+                      />
                     </div>
+
+                    {/* CSAT Survey for Resolved Tickets */}
+                    {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+                      <SatisfactionWidget ticketId={ticket.id} slug={slug || ''} />
+                    )}
                   </div>
                 )}
               </div>

@@ -312,6 +312,102 @@ export async function verifyAuthOrWorker(request, env) {
 }
 
 /**
+ * Verify rep portal authentication, with admin fallback
+ * Allows admin users to view rep portals for management purposes
+ *
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @param {string} slug - The rep slug to validate against
+ * @returns {Promise<{authenticated: boolean, isAdmin: boolean, repId?: string, error?: string}>}
+ */
+export async function verifyRepOrAdminAuth(request, env, slug) {
+  const cookieHeader = request.headers.get('Cookie');
+  const cookies = parseCookies(cookieHeader);
+
+  // 1. Try rep-specific token
+  const repToken = cookies['ccrc_rep_token'];
+  if (repToken) {
+    try {
+      const jwtSecret = env.REP_JWT_SECRET || env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const result = await verifyJWT(repToken, jwtSecret);
+        if (result.valid && result.payload?.slug === slug && result.payload?.type === 'rep') {
+          return { authenticated: true, isAdmin: false, repId: result.payload.repId };
+        }
+      }
+    } catch (e) {
+      // Fall through to admin check
+    }
+  }
+
+  // 2. Fall back to admin token
+  const adminToken = cookies[COOKIE_NAME];
+  if (adminToken) {
+    try {
+      const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const result = await verifyJWT(adminToken, jwtSecret);
+        if (result.valid) {
+          return { authenticated: true, isAdmin: true };
+        }
+      }
+    } catch (e) {
+      // Fall through
+    }
+  }
+
+  return { authenticated: false, error: 'No valid session found' };
+}
+
+/**
+ * Verify client portal authentication, with admin fallback
+ * Allows admin users to view client portals for management purposes
+ *
+ * @param {Request} request - The incoming request
+ * @param {Object} env - Environment bindings
+ * @param {string} slug - The client slug to validate against
+ * @returns {Promise<{authenticated: boolean, isAdmin: boolean, clientId?: string, error?: string}>}
+ */
+export async function verifyClientOrAdminAuth(request, env, slug) {
+  const cookieHeader = request.headers.get('Cookie');
+  const cookies = parseCookies(cookieHeader);
+
+  // 1. Try client-specific token
+  const clientToken = cookies[CLIENT_COOKIE_NAME];
+  if (clientToken) {
+    try {
+      const jwtSecret = env.CLIENT_JWT_SECRET || env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const result = await verifyJWT(clientToken, jwtSecret);
+        if (result.valid && result.payload?.slug === slug) {
+          return { authenticated: true, isAdmin: false, clientId: result.payload.clientId };
+        }
+      }
+    } catch (e) {
+      // Fall through to admin check
+    }
+  }
+
+  // 2. Fall back to admin token
+  const adminToken = cookies[COOKIE_NAME];
+  if (adminToken) {
+    try {
+      const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const result = await verifyJWT(adminToken, jwtSecret);
+        if (result.valid) {
+          return { authenticated: true, isAdmin: true };
+        }
+      }
+    } catch (e) {
+      // Fall through
+    }
+  }
+
+  return { authenticated: false, error: 'No valid session found' };
+}
+
+/**
  * CORS headers helper (legacy - use getCorsHeaders(request) for dynamic origin)
  * @deprecated Use getCorsHeaders(request) instead for proper CORS security
  */

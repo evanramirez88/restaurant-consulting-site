@@ -36,6 +36,7 @@ const PortalNotifications = lazy(() => import('./pages/portal/PortalNotification
 const PortalFiles = lazy(() => import('./pages/portal/PortalFiles'));
 const PortalMessages = lazy(() => import('./pages/portal/PortalMessages'));
 const PortalBilling = lazy(() => import('./pages/portal/PortalBilling'));
+const PortalHelpCenter = lazy(() => import('./pages/portal/PortalHelpCenter'));
 
 // Slug-based Rep Portal Components (lazy)
 const RepLogin = lazy(() => import('./pages/rep/RepLogin'));
@@ -148,6 +149,11 @@ const App: React.FC = () => {
           <Route path="/portal/:slug/billing" element={
             <PortalLayoutWrapper>
               <PortalBilling />
+            </PortalLayoutWrapper>
+          } />
+          <Route path="/portal/:slug/help" element={
+            <PortalLayoutWrapper>
+              <PortalHelpCenter />
             </PortalLayoutWrapper>
           } />
 

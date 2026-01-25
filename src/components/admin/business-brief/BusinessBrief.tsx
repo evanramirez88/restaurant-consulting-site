@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  LayoutDashboard, Activity, Target, Brain, FileBarChart, MessageSquare
+  LayoutDashboard, Activity, Target, Brain, FileBarChart, MessageSquare, Database, TrendingUp
 } from 'lucide-react';
 import BusinessBriefDashboard from './BusinessBriefDashboard';
 import BusinessBriefPulse from './BusinessBriefPulse';
@@ -8,8 +8,10 @@ import BusinessBriefStrategy from './BusinessBriefStrategy';
 import BusinessBriefIntelligence from './BusinessBriefIntelligence';
 import BusinessBriefReports from './BusinessBriefReports';
 import BusinessBriefAIConsole from './ai-console';
+import BusinessBriefDataContext from './BusinessBriefDataContext';
+import BusinessBriefMetrics from './BusinessBriefMetrics';
 
-type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'reports' | 'ai';
+type SubTabType = 'dashboard' | 'pulse' | 'strategy' | 'intelligence' | 'metrics' | 'reports' | 'ai' | 'data-context';
 
 interface SubTab {
   id: SubTabType;
@@ -52,6 +54,13 @@ export default function BusinessBrief() {
       description: 'Deep analysis & insights'
     },
     {
+      id: 'metrics',
+      label: 'Metrics',
+      icon: <TrendingUp className="w-4 h-4" />,
+      available: true,
+      description: 'Business metrics trending & snapshots'
+    },
+    {
       id: 'reports',
       label: 'Reports',
       icon: <FileBarChart className="w-4 h-4" />,
@@ -64,6 +73,13 @@ export default function BusinessBrief() {
       icon: <MessageSquare className="w-4 h-4" />,
       available: true,
       description: 'AI-powered business insights and analysis'
+    },
+    {
+      id: 'data-context',
+      label: 'Data Context',
+      icon: <Database className="w-4 h-4" />,
+      available: true,
+      description: 'Google Calendar, Drive & Gmail sync data'
     }
   ];
 
@@ -105,8 +121,10 @@ export default function BusinessBrief() {
         {activeSubTab === 'pulse' && <BusinessBriefPulse />}
         {activeSubTab === 'strategy' && <BusinessBriefStrategy />}
         {activeSubTab === 'intelligence' && <BusinessBriefIntelligence />}
+        {activeSubTab === 'metrics' && <BusinessBriefMetrics />}
         {activeSubTab === 'reports' && <BusinessBriefReports />}
         {activeSubTab === 'ai' && <BusinessBriefAIConsole />}
+        {activeSubTab === 'data-context' && <BusinessBriefDataContext />}
       </div>
     </div>
   );

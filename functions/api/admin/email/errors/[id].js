@@ -42,7 +42,7 @@ export async function onRequestGet(context) {
         el.resolution_note,
         el.email_content
       FROM email_logs el
-      LEFT JOIN subscribers s ON el.subscriber_id = s.id
+      LEFT JOIN email_subscribers s ON el.subscriber_id = s.id
       LEFT JOIN email_sequences seq ON el.sequence_id = seq.id
       LEFT JOIN sequence_steps ss ON el.step_id = ss.id
       WHERE el.id = ?

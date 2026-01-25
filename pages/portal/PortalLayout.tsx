@@ -14,7 +14,8 @@ import {
   User,
   ChevronRight,
   Loader2,
-  Ticket
+  Ticket,
+  BookOpen
 } from 'lucide-react';
 
 // ============================================
@@ -62,6 +63,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({ children }) => {
     { id: 'dashboard', label: 'Dashboard', path: `/portal/${slug}/dashboard`, icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'projects', label: 'Projects', path: `/portal/${slug}/projects`, icon: <FileText className="w-5 h-5" /> },
     { id: 'tickets', label: 'Support', path: `/portal/${slug}/tickets`, icon: <Ticket className="w-5 h-5" /> },
+    { id: 'help', label: 'Help Center', path: `/portal/${slug}/help`, icon: <BookOpen className="w-5 h-5" /> },
     { id: 'files', label: 'Files', path: `/portal/${slug}/files`, icon: <FolderOpen className="w-5 h-5" /> },
     { id: 'messages', label: 'Messages', path: `/portal/${slug}/messages`, icon: <MessageSquare className="w-5 h-5" /> },
     { id: 'billing', label: 'Billing', path: `/portal/${slug}/billing`, icon: <CreditCard className="w-5 h-5" /> },

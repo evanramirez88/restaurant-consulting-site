@@ -120,9 +120,10 @@ const AdminLogin: React.FC = () => {
           message: 'Login successful! Redirecting...'
         });
         setShowSessionInfo(true);
-        // Wait for cookie to be set before navigating
-        await new Promise(resolve => setTimeout(resolve, 500));
-        navigate('/admin');
+        // Short delay to show success state
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1000);
       } else {
         if (result.retryAfter) {
           setRetryCountdown(result.retryAfter);
@@ -195,9 +196,18 @@ const AdminLogin: React.FC = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Hidden username field for password manager compatibility */}
-            <input type="text" name="username" value="admin" autoComplete="username" hidden readOnly />
             <div>
+              {/* Hidden username for password managers */}
+              <input
+                type="text"
+                name="username"
+                value="admin"
+                autoComplete="username"
+                readOnly
+                hidden
+                aria-hidden="true"
+                tabIndex={-1}
+              />
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
@@ -221,9 +231,9 @@ const AdminLogin: React.FC = () => {
             </div>
 
             {/* 2FA Status */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/30 rounded-lg border border-gray-700">
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900/30 rounded-lg border border-gray-700">
               <Shield className="w-4 h-4 text-gray-500" aria-hidden="true" />
-              <span className="text-gray-500 text-xs font-medium">2FA: Coming Soon</span>
+              <span className="text-xs text-gray-500">2FA: Coming Soon</span>
             </div>
 
             {/* Success Message */}
@@ -316,11 +326,15 @@ const AdminLogin: React.FC = () => {
           )}
         </div>
 
-        {/* Password Recovery */}
+        {/* Security Note */}
         <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 text-center flex items-center justify-center gap-2">
+            <Shield className="w-3 h-3 text-amber-400/60" aria-hidden="true" />
+            This login is secured with rate limiting and session management
+          </p>
+          <p className="text-xs text-gray-600 text-center mt-2">
             Locked out? Contact{' '}
-            <a href="mailto:ramirezconsulting.rg@gmail.com" className="text-amber-400/80 hover:text-amber-400">
+            <a href="mailto:ramirezconsulting.rg@gmail.com" className="text-amber-500/70 hover:text-amber-400 transition-colors">
               ramirezconsulting.rg@gmail.com
             </a>
           </p>

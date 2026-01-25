@@ -120,14 +120,24 @@ export async function onRequestPost(context) {
     const targetDateTimestamp = target_date ? Math.floor(new Date(target_date).getTime() / 1000) : null;
 
     const id = crypto.randomUUID();
+
+    // Auto-assign SLA policy based on priority
+    const slaMap = { urgent: 'sla_urgent', high: 'sla_high', normal: 'sla_normal', low: 'sla_low' };
+    const slaPolicyId = slaMap[priority] || 'sla_normal';
+    const slaPolicy = await env.DB.prepare('SELECT * FROM sla_policies WHERE id = ?').bind(slaPolicyId).first();
+
+    const now = Math.floor(Date.now() / 1000);
+    const responseDueAt = slaPolicy ? now + (slaPolicy.first_response_hours * 3600) : null;
+    const resolutionDueAt = slaPolicy ? now + (slaPolicy.resolution_hours * 3600) : null;
+
     await env.DB.prepare(`
-      INSERT INTO tickets (id, client_id, project_id, subject, description, priority, category, assigned_to, due_date, target_date, target_date_label, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', unixepoch(), unixepoch())
-    `).bind(id, client_id, project_id || null, subject, description || null, priority, category || null, assigned_to || null, dueDateTimestamp, targetDateTimestamp, target_date_label || null).run();
+      INSERT INTO tickets (id, client_id, project_id, subject, description, priority, category, assigned_to, due_date, target_date, target_date_label, status, sla_policy_id, response_due_at, resolution_due_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, unixepoch(), unixepoch())
+    `).bind(id, client_id, project_id || null, subject, description || null, priority, category || null, assigned_to || null, dueDateTimestamp, targetDateTimestamp, target_date_label || null, slaPolicyId, responseDueAt, resolutionDueAt).run();
 
     return new Response(JSON.stringify({
       success: true,
-      data: { id, client_id, subject, priority, status: 'open' }
+      data: { id, client_id, subject, priority, status: 'open', sla_policy_id: slaPolicyId }
     }), {
       headers: corsHeaders
     });

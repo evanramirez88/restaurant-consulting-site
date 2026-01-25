@@ -12,11 +12,11 @@ import { verifyAuth, unauthorizedResponse, corsHeaders, handleOptions } from '..
 
 // Default rate values
 const DEFAULT_RATES = {
-  hourly_rate: 110,
-  remote_rate: 80,
-  onsite_rate: 100,
-  emergency_rate: 150,
-  after_hours_multiplier: 1.25,
+  hourly_rate: 175,
+  remote_rate: 125,
+  onsite_rate: 200,
+  emergency_rate: 250,
+  after_hours_multiplier: 1.5,
   travel_cape_cod: 0,
   travel_south_shore: 100,
   travel_islands: 300,

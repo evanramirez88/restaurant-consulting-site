@@ -15,6 +15,7 @@ import {
   ShoppingCart, FileSearch, History, Scale, Copy, Check
 } from 'lucide-react';
 import ResearchPanel from './ResearchPanel';
+import IntelligenceFindings from './IntelligenceFindings';
 
 // Types
 interface IntelClient {
@@ -125,7 +126,7 @@ interface MarketStats {
   by_category: Record<string, number>;
 }
 
-type TabType = 'overview' | 'prospects' | 'research' | 'facts' | 'import';
+type TabType = 'overview' | 'prospects' | 'research' | 'facts' | 'findings' | 'import';
 type ViewMode = 'table' | 'cards';
 
 // Cape Cod sub-regions as defined in demo prototype (NO BOSTON)
@@ -503,6 +504,7 @@ const ClientIntelligenceTab: React.FC = () => {
     { id: 'prospects', label: 'Prospects', icon: <Users className="w-4 h-4" />, count: prospects.length },
     { id: 'research', label: 'Research', icon: <Search className="w-4 h-4" /> },
     { id: 'facts', label: 'Review Queue', icon: <CheckCircle className="w-4 h-4" />, count: pendingFacts.length },
+    { id: 'findings', label: 'Findings', icon: <Brain className="w-4 h-4" /> },
     { id: 'import', label: 'Import', icon: <Upload className="w-4 h-4" /> }
   ];
 
@@ -1103,6 +1105,9 @@ const ClientIntelligenceTab: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Findings Tab */}
+      {activeTab === 'findings' && <IntelligenceFindings />}
 
       {/* Import Tab */}
       {activeTab === 'import' && (

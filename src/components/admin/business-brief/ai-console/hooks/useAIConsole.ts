@@ -138,9 +138,9 @@ export function useAIConsole() {
             const assistantMessage: Message = {
                 id: `msg_${Date.now()}_resp`,
                 role: 'assistant',
-                content: result.success ? result.response : 'Sorry, I encountered an error processing your request.',
+                content: result.success ? (result.message?.content || result.response || 'No response received.') : `Sorry, I encountered an error: ${result.error || 'Unknown error'}`,
                 timestamp: Date.now(),
-                model_used: result.model_used,
+                model_used: result.message?.model || result.model_used,
             };
 
             setMessages(prev => [...prev, assistantMessage]);

@@ -72,28 +72,35 @@ async function verifyRepAuth(request, env, slug) {
   try {
     const cookieHeader = request.headers.get('Cookie');
     const cookies = parseCookies(cookieHeader);
+
+    // 1. Try rep-specific token
     const token = cookies[REP_COOKIE_NAME];
-
-    if (!token) {
-      return { authenticated: false, error: 'No session found' };
+    if (token) {
+      const jwtSecret = env.REP_JWT_SECRET || env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const isValid = await jwt.verify(token, jwtSecret);
+        if (isValid) {
+          const { payload } = jwt.decode(token);
+          if (payload.slug === slug && payload.type === 'rep') {
+            return { authenticated: true, repId: payload.repId };
+          }
+        }
+      }
     }
 
-    const jwtSecret = env.REP_JWT_SECRET || env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
-    if (!jwtSecret) {
-      return { authenticated: false, error: 'Server configuration error' };
+    // 2. Fall back to admin token (allows admin to view rep portals)
+    const adminToken = cookies['ccrc_admin_token'];
+    if (adminToken) {
+      const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD_HASH;
+      if (jwtSecret) {
+        const isValid = await jwt.verify(adminToken, jwtSecret);
+        if (isValid) {
+          return { authenticated: true, isAdmin: true };
+        }
+      }
     }
 
-    const isValid = await jwt.verify(token, jwtSecret);
-    if (!isValid) {
-      return { authenticated: false, error: 'Invalid or expired session' };
-    }
-
-    const { payload } = jwt.decode(token);
-    if (payload.slug !== slug || payload.type !== 'rep') {
-      return { authenticated: false, error: 'Unauthorized' };
-    }
-
-    return { authenticated: true, repId: payload.repId };
+    return { authenticated: false, error: 'No session found' };
   } catch (error) {
     console.error('Rep auth error:', error);
     return { authenticated: false, error: 'Authentication failed' };

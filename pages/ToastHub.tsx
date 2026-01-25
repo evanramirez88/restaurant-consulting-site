@@ -51,33 +51,23 @@ const getCategoryIcon = (slug: string) => {
   }
 };
 
-// FAQ data for SEO schema
-const FAQ_DATA = [
-  {
-    question: "What is Toast POS and why should I consider it for my restaurant?",
-    answer: "Toast POS is a cloud-based restaurant point-of-sale system built specifically for the food service industry. It offers integrated payment processing, online ordering, kitchen display systems, and robust reporting. Unlike generic POS systems, Toast understands restaurant workflows like coursing, modifiers, and table management."
-  },
-  {
-    question: "How long does it take to implement Toast POS?",
-    answer: "A typical Toast POS implementation takes 1-3 weeks from contract signing to go-live. This includes hardware setup, menu configuration, staff training, and integration with your existing systems. Complex multi-location setups may take longer."
-  },
-  {
-    question: "Can I migrate my existing menu to Toast?",
-    answer: "Yes, your existing menu can be migrated to Toast. The process involves exporting your current menu data, reformatting it for Toast's structure, and uploading it to the system. Our menu builder tool can help with this process, handling complex modifier groups and pricing rules."
-  },
-  {
-    question: "What support options are available for Toast POS users?",
-    answer: "Toast offers 24/7 phone and email support. Additionally, certified Toast consultants like R&G Consulting provide hands-on implementation support, custom menu configuration, and ongoing maintenance through Restaurant Guardian support plans starting at $350/month."
-  }
-];
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string | null;
+  display_order: number;
+}
 
 const ToastHub: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   useSEO({
     title: 'Toast Hub | Toast POS Resources, Tips & News | R&G Consulting',
@@ -120,7 +110,7 @@ const ToastHub: React.FC = () => {
     const faqSchema = {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      "mainEntity": FAQ_DATA.map(faq => ({
+      "mainEntity": faqs.map(faq => ({
         "@type": "Question",
         "name": faq.question,
         "acceptedAnswer": {
@@ -150,7 +140,7 @@ const ToastHub: React.FC = () => {
     return () => {
       document.querySelectorAll('script[data-schema="toast-hub"]').forEach(el => el.remove());
     };
-  }, [posts]);
+  }, [posts, faqs]);
 
   useEffect(() => {
     loadData();
@@ -168,20 +158,24 @@ const ToastHub: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [postsRes, categoriesRes] = await Promise.all([
+      const [postsRes, categoriesRes, faqsRes] = await Promise.all([
         fetch('/api/toast-hub/posts'),
-        fetch('/api/toast-hub/categories')
+        fetch('/api/toast-hub/categories'),
+        fetch('/api/toast-hub/faqs')
       ]);
 
       const postsResult = await postsRes.json();
       const categoriesResult = await categoriesRes.json();
+      const faqsResult = await faqsRes.json();
 
       if (postsResult.success) {
-        // Only show published posts
         setPosts(postsResult.data?.filter((p: Post) => p.status === 'published') || []);
       }
       if (categoriesResult.success) {
         setCategories(categoriesResult.data?.filter((c: Category) => c.is_active) || []);
+      }
+      if (faqsResult.success) {
+        setFaqs(faqsResult.data || []);
       }
     } catch (error) {
       console.error('Failed to load Toast Hub data:', error);
@@ -418,26 +412,40 @@ const ToastHub: React.FC = () => {
         )}
 
         {/* FAQ Section for SEO */}
-        <section className="mt-20 animate-on-scroll">
-          <div className="text-center mb-10">
-            <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
-            </h2>
-            <div className="brass-line-draw short mb-4" />
-            <p className="text-gray-600">Common questions about Toast POS and our services</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {FAQ_DATA.map((faq, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-              >
-                <h3 className="text-lg font-bold text-gray-900 mb-3">{faq.question}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {faqs.length > 0 && (
+          <section className="mt-20 animate-on-scroll">
+            <div className="text-center mb-10">
+              <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">
+                Frequently Asked Questions
+              </h2>
+              <div className="brass-line-draw short mb-4" />
+              <p className="text-gray-600">Common questions about Toast POS and our services</p>
+            </div>
+            <div className="max-w-3xl mx-auto space-y-3">
+              {faqs.map(faq => (
+                <div
+                  key={faq.id}
+                  className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <button
+                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between gap-4"
+                  >
+                    <h3 className="text-lg font-bold text-gray-900">{faq.question}</h3>
+                    <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ${
+                      expandedFaq === faq.id ? 'rotate-90' : ''
+                    }`} />
+                  </button>
+                  {expandedFaq === faq.id && (
+                    <div className="px-6 pb-5 pt-0">
+                      <p className="text-gray-600 text-sm leading-relaxed">{faq.answer}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* CTA Section */}
         <section className="mt-20 animate-on-scroll">

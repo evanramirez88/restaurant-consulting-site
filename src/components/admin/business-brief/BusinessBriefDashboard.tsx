@@ -516,7 +516,10 @@ export default function BusinessBriefDashboard() {
                           <p className="text-gray-400 text-sm mt-1">{win.description}</p>
                         </div>
                         {win.value && (
-                          <span className="text-green-400 font-medium whitespace-nowrap">
+                          <span
+                            className="text-green-400 font-medium whitespace-nowrap"
+                            title="Estimated opportunity value based on average project size"
+                          >
                             {formatCurrency(win.value)}
                           </span>
                         )}

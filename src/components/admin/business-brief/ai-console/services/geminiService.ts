@@ -41,43 +41,29 @@ export async function streamGeminiResponse(
             }),
         });
 
-        if (!response.body) throw new Error('No response body');
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let resultText = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            // Our backend currently returns JSON, but for "streaming" simulation we might need adjustment.
-            // For now, let's assume non-streaming JSON response for v1 compatibility, 
-            // or if we implement streaming later.
-            // If the backend returns a single JSON object:
+        if (!response.ok) {
+            const errorText = await response.text();
             try {
-                const json = JSON.parse(resultText + chunk);
-                if (json.response) {
-                    onChunk(json.response);
-                    return;
-                }
-            } catch (e) {
-                // Accumulate if incomplete
+                const errorJson = JSON.parse(errorText);
+                onChunk(`**Error**: ${errorJson.error || 'Request failed'}`);
+            } catch {
+                onChunk(`**Error**: Request failed (${response.status})`);
             }
-            resultText += chunk;
+            return;
         }
 
-        // Fallback if not streaming
-        try {
-            const json = JSON.parse(resultText);
-            if (json.success) {
-                onChunk(json.response);
+        const result = await response.json();
+
+        if (result.success) {
+            // Backend returns { success: true, message: { content: "..." } }
+            const responseText = result.message?.content || result.response || '';
+            if (responseText) {
+                onChunk(responseText);
             } else {
-                onChunk(`Error: ${json.error || 'Unknown error'}`);
+                onChunk('No response received from the AI model.');
             }
-        } catch (e) {
-            onChunk(resultText);
+        } else {
+            onChunk(`**Error**: ${result.error || 'Unknown error'}`);
         }
 
     } catch (error) {
