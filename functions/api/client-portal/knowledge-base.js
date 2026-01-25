@@ -1,6 +1,6 @@
 // Client Portal Knowledge Base API
 // GET /api/client-portal/knowledge-base - Get content shared with current client
-import { verifyClientAuth, getCorsHeaders, handleOptions } from '../_shared/auth.js';
+import { verifyClientAuth, getCorsHeaders, handleOptions } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const corsHeaders = getCorsHeaders(context.request);

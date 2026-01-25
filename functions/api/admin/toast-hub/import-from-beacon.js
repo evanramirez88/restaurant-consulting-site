@@ -1,6 +1,6 @@
 // Toast Hub Beacon Import API
 // POST /api/admin/toast-hub/import-from-beacon - Import content from Beacon
-import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../../_shared/auth.js';
 
 export async function onRequestPost(context) {
   const corsHeaders = getCorsHeaders(context.request);

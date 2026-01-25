@@ -1,6 +1,6 @@
 // Toast Hub Newsletter Notification API
 // POST /api/admin/toast-hub/notify-subscribers - Send content to email subscribers
-import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../../_shared/auth.js';
 
 export async function onRequestPost(context) {
   const corsHeaders = getCorsHeaders(context.request);

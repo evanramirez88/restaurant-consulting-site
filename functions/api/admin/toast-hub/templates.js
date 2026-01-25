@@ -1,7 +1,7 @@
 // Toast Hub Templates API
 // GET /api/admin/toast-hub/templates - List all templates
 // POST /api/admin/toast-hub/templates - Create a new template
-import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse, getCorsHeaders, handleOptions } from '../../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const corsHeaders = getCorsHeaders(context.request);
