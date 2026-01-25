@@ -2,6 +2,169 @@
 // Centralized type definitions for all Business Brief components
 
 // ============================================
+// METRICS & TRENDS TYPES
+// ============================================
+
+export interface MetricSnapshot {
+  id: string;
+  snapshotDate: string;
+  metricType: 'revenue' | 'clients' | 'pipeline' | 'email' | 'support' | 'engagement';
+  metricValue: number;
+  metricMeta?: Record<string, unknown>;
+  createdAt: number;
+}
+
+export interface TrendDirection {
+  previous: number;
+  change: number;
+  direction: 'up' | 'down' | 'stable';
+}
+
+export interface RevenueTrend {
+  current: number;
+  wow: TrendDirection;
+  mom: TrendDirection;
+  sparkline: { date: string; value: number }[];
+}
+
+export interface ClientsTrend {
+  current: number;
+  wow: TrendDirection;
+  sparkline: { date: string; value: number }[];
+}
+
+export interface PipelineTrend {
+  current: number;
+  activeQuotes: number;
+  sparkline: { date: string; value: number }[];
+}
+
+export interface EmailTrend {
+  currentOpenRate: number;
+  wow: TrendDirection;
+}
+
+export interface TrendsData {
+  success: boolean;
+  generatedAt: number;
+  period: {
+    today: string;
+    oneWeekAgo: string;
+    oneMonthAgo: string;
+  };
+  trends: {
+    revenue: RevenueTrend;
+    clients: ClientsTrend;
+    pipeline: PipelineTrend;
+    email: EmailTrend;
+    support: {
+      openTickets: number;
+      resolvedThisWeek: number;
+      wow: TrendDirection;
+    };
+    conversions: {
+      thisWeek: number;
+      lastWeek: number;
+      change: number;
+      direction: 'up' | 'down' | 'stable';
+    };
+  };
+}
+
+// ============================================
+// HEALTH SCORE TYPES
+// ============================================
+
+export interface HealthScoreComponent {
+  score: number;
+  weight: number;
+  contribution: number;
+  metric: number;
+  metricLabel: string;
+  target?: number;
+  targetLabel?: string;
+}
+
+export interface HealthScoreData {
+  overall: number;
+  status: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
+  trend: 'improving' | 'declining' | 'stable';
+  components: {
+    revenue: HealthScoreComponent;
+    clients: HealthScoreComponent;
+    pipeline: HealthScoreComponent;
+    email: HealthScoreComponent;
+    retention: HealthScoreComponent;
+  };
+}
+
+export interface HealthScoreRecommendation {
+  component: string;
+  priority: 'high' | 'medium' | 'low';
+  message: string;
+}
+
+export interface HealthScoreResponse {
+  success: boolean;
+  generatedAt: number;
+  healthScore: HealthScoreData;
+  recommendations: HealthScoreRecommendation[];
+  history: {
+    date: string;
+    overall: number;
+    revenue?: number;
+    clients?: number;
+    pipeline?: number;
+    email?: number;
+    retention?: number;
+  }[];
+}
+
+// ============================================
+// REVENUE EVENTS TYPES
+// ============================================
+
+export interface RevenueEvent {
+  id: string;
+  clientId?: string;
+  clientName?: string;
+  eventType: 'invoice_paid' | 'subscription_started' | 'subscription_cancelled' | 'subscription_renewed' | 'refund' | 'project_payment';
+  amount: number;
+  eventDate: number;
+  source: 'stripe' | 'square' | 'manual';
+  referenceId?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface RevenueData {
+  success: boolean;
+  period: {
+    days: number;
+    startDate: string;
+    endDate: string;
+  };
+  summary: {
+    totalRevenue: number;
+    totalRefunds: number;
+    netRevenue: number;
+    currentMRR: number;
+    currentARR: number;
+    activeSubscriptions: number;
+  };
+  bySource: Record<string, { total: number; count: number }>;
+  byType: Record<string, { total: number; count: number }>;
+  dailyData: {
+    date: string;
+    revenue: number;
+    refunds: number;
+    netRevenue: number;
+    eventCount: number;
+  }[];
+  events: RevenueEvent[];
+  eventCount: number;
+}
+
+// ============================================
 // DASHBOARD TYPES
 // ============================================
 

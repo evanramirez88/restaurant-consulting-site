@@ -73,8 +73,9 @@ export async function onRequestPost(context) {
       INSERT INTO clients (
         id, email, name, company, slug, phone, portal_enabled,
         support_plan_tier, support_plan_status, google_drive_folder_id,
-        avatar_url, notes, timezone, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        avatar_url, notes, timezone, intel_profile, intel_notes, tags,
+        local_folder_path, client_since, last_activity_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       body.email,
@@ -89,8 +90,25 @@ export async function onRequestPost(context) {
       body.avatar_url || null,
       body.notes || null,
       body.timezone || 'America/New_York',
+      body.intel_profile || null,
+      body.intel_notes || null,
+      body.tags || null,
+      body.local_folder_path || null,
+      now,  // client_since
+      now,  // last_activity_at
       now,
       now
+    ).run();
+
+    // Log activity for new client creation
+    await db.prepare(`
+      INSERT INTO client_activity_log (id, client_id, activity_type, title, description, performed_by_type, performed_by_name)
+      VALUES (?, ?, 'status_change', 'Client created', ?, 'admin', ?)
+    `).bind(
+      `act_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id,
+      `New client: ${body.company || body.name}${body.support_plan_tier ? ` with ${body.support_plan_tier} plan` : ''}`,
+      auth.payload?.username || 'Admin'
     ).run();
 
     const client = await db.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first();

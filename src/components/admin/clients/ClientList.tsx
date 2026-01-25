@@ -3,7 +3,7 @@ import {
   Search, Plus, Building2, MapPin, Shield, ExternalLink, ChevronRight,
   Loader2, RefreshCw, Users, Mail, Phone, FolderOpen, MoreVertical,
   Clock, Calendar, Grid3X3, List, Eye, Globe, AlertCircle, Power, Brain,
-  FileText, X
+  FileText, X, UserCircle
 } from 'lucide-react';
 
 interface Client {
@@ -32,9 +32,10 @@ interface ClientListProps {
   onSelectClient: (client: Client) => void;
   onCreateClient: () => void;
   onCreateInvoice?: (clientId: string) => void;
+  onViewProfile360?: (client: Client) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient, onCreateInvoice }) => {
+const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient, onCreateInvoice, onViewProfile360 }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -316,6 +317,18 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient,
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        {onViewProfile360 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewProfile360(client);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                            title="View Full Profile"
+                          >
+                            <UserCircle className="w-4 h-4" />
+                          </button>
+                        )}
                         {onCreateInvoice && (
                           <button
                             onClick={(e) => {
@@ -435,7 +448,21 @@ const ClientList: React.FC<ClientListProps> = ({ onSelectClient, onCreateClient,
                     {client.portal_enabled ? 'Portal Active' : 'Portal Off'}
                   </span>
                 </div>
-                {getSupportBadge(client.support_plan_tier, client.support_plan_status)}
+                <div className="flex items-center gap-2">
+                  {onViewProfile360 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewProfile360(client);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                      title="View Full Profile"
+                    >
+                      <UserCircle className="w-4 h-4" />
+                    </button>
+                  )}
+                  {getSupportBadge(client.support_plan_tier, client.support_plan_status)}
+                </div>
               </div>
 
               {(client.restaurant_count || client.rep_count || client.google_drive_folder_id) && (

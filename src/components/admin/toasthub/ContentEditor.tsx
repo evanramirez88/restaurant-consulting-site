@@ -2,8 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold, Italic, Heading1, Heading2, Heading3, Link2, Image, Code,
   List, ListOrdered, Quote, Minus, Save, Eye, EyeOff, Loader2,
-  ArrowLeft, Globe, Check, AlertCircle, Clock, FileText, Tag
+  ArrowLeft, Globe, Check, AlertCircle, Clock, FileText, Tag,
+  Video, Users, Mail, Share2
 } from 'lucide-react';
+import WorkflowBar from './WorkflowBar';
+import RevisionHistory from './RevisionHistory';
+import ShareWithClients from './ShareWithClients';
+import NotifyModal from './NotifyModal';
+import { VideoEmbedModal } from './VideoEmbed';
 
 interface Post {
   id: string;
@@ -117,6 +123,12 @@ export default function ContentEditor({ post, categories, onSave, onBack }: Cont
   const [tagsInput, setTagsInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // New workflow states
+  const [showRevisions, setShowRevisions] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showNotify, setShowNotify] = useState(false);
+  const [showVideoEmbed, setShowVideoEmbed] = useState(false);
+
   // Parse tags from JSON
   useEffect(() => {
     if (formData.tags_json) {
@@ -216,10 +228,143 @@ export default function ContentEditor({ post, categories, onSave, onBack }: Cont
     }
   };
 
+  // Workflow handlers
+  const handlePublish = async () => {
+    if (!formData.id) {
+      alert('Please save the post first');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/toast-hub/content/${formData.id}/publish`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(data.data);
+      } else {
+        alert(data.error || 'Failed to publish');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to publish');
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!formData.id) return;
+    try {
+      const res = await fetch(`/api/admin/toast-hub/content/${formData.id}/publish`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(data.data);
+      } else {
+        alert(data.error || 'Failed to unpublish');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to unpublish');
+    }
+  };
+
+  const handleSchedule = async (scheduledFor: number) => {
+    if (!formData.id) {
+      alert('Please save the post first');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/toast-hub/content/${formData.id}/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ scheduled_for: scheduledFor })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to schedule');
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleCancelSchedule = async () => {
+    if (!formData.id) return;
+    try {
+      const res = await fetch(`/api/admin/toast-hub/content/${formData.id}/schedule`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(data.data);
+      } else {
+        alert(data.error || 'Failed to cancel schedule');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to cancel schedule');
+    }
+  };
+
+  const handleRestoreRevision = async (revisionId: string) => {
+    if (!formData.id) return;
+    try {
+      const res = await fetch(`/api/admin/toast-hub/content/${formData.id}/revisions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ revision_id: revisionId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(data.data);
+        // Re-parse tags
+        if (data.data.tags_json) {
+          try {
+            const tags = JSON.parse(data.data.tags_json);
+            setTagsInput(Array.isArray(tags) ? tags.join(', ') : '');
+          } catch { }
+        }
+      } else {
+        throw new Error(data.error || 'Failed to restore');
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const insertVideoEmbed = (markdown: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setFormData(prev => ({ ...prev, content: (prev.content || '') + '\n\n' + markdown }));
+      return;
+    }
+    const start = textarea.selectionStart;
+    const text = formData.content || '';
+    const newText = text.substring(0, start) + '\n\n' + markdown + '\n\n' + text.substring(start);
+    setFormData(prev => ({ ...prev, content: newText }));
+  };
+
   const words = wordCount(formData.content || '');
 
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-200px)]">
+      {/* Workflow Bar - only show for saved posts */}
+      {formData.id && (
+        <WorkflowBar
+          post={formData}
+          onPublish={handlePublish}
+          onUnpublish={handleUnpublish}
+          onSchedule={handleSchedule}
+          onCancelSchedule={handleCancelSchedule}
+          onShowRevisions={() => setShowRevisions(true)}
+          isSaving={saving}
+        />
+      )}
+
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-800/80 border-b border-gray-700 rounded-t-lg">
         <div className="flex items-center gap-3">
@@ -253,6 +398,26 @@ export default function ContentEditor({ post, categories, onSave, onBack }: Cont
           >
             <Globe className="w-4 h-4" />
           </button>
+          {/* Share with clients button */}
+          {formData.id && formData.status === 'published' && (
+            <button
+              onClick={() => setShowShare(true)}
+              className="p-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-700"
+              title="Share with clients"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          )}
+          {/* Newsletter button */}
+          {formData.id && formData.status === 'published' && (
+            <button
+              onClick={() => setShowNotify(true)}
+              className="p-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-700"
+              title="Send newsletter"
+            >
+              <Mail className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={handleSave}
             disabled={saving || !formData.title}
@@ -339,6 +504,7 @@ export default function ContentEditor({ post, categories, onSave, onBack }: Cont
             <span className="w-px h-4 bg-gray-700 mx-1" />
             <ToolbarButton icon={Link2} title="Link (Ctrl+K)" onClick={() => insertMarkdown('[', '](url)')} />
             <ToolbarButton icon={Image} title="Image" onClick={() => insertMarkdown('![alt](', ')')} />
+            <ToolbarButton icon={Video} title="Embed Video" onClick={() => setShowVideoEmbed(true)} />
             <ToolbarButton icon={Code} title="Code" onClick={() => insertMarkdown('`', '`')} />
             <span className="w-px h-4 bg-gray-700 mx-1" />
             <ToolbarButton icon={List} title="Bullet List" onClick={() => insertMarkdown('- ', '')} />
@@ -458,6 +624,36 @@ export default function ContentEditor({ post, categories, onSave, onBack }: Cont
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <RevisionHistory
+        isOpen={showRevisions}
+        onClose={() => setShowRevisions(false)}
+        postId={formData.id}
+        postTitle={formData.title || 'Untitled'}
+        onRestore={handleRestoreRevision}
+      />
+
+      <ShareWithClients
+        isOpen={showShare}
+        onClose={() => setShowShare(false)}
+        postId={formData.id}
+        postTitle={formData.title || 'Untitled'}
+      />
+
+      <NotifyModal
+        isOpen={showNotify}
+        onClose={() => setShowNotify(false)}
+        postId={formData.id}
+        postTitle={formData.title || 'Untitled'}
+        postExcerpt={formData.excerpt}
+      />
+
+      <VideoEmbedModal
+        isOpen={showVideoEmbed}
+        onClose={() => setShowVideoEmbed(false)}
+        onInsert={insertVideoEmbed}
+      />
     </div>
   );
 }

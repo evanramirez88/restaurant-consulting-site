@@ -15,7 +15,7 @@ import {
   ShoppingCart, FileSearch, History, Scale, Copy, Check
 } from 'lucide-react';
 import ResearchPanel from './ResearchPanel';
-import IntelligenceFindings from './IntelligenceFindings';
+import IntelligenceDashboard from './IntelligenceDashboard';
 
 // Types
 interface IntelClient {
@@ -1107,7 +1107,7 @@ const ClientIntelligenceTab: React.FC = () => {
       )}
 
       {/* Findings Tab */}
-      {activeTab === 'findings' && <IntelligenceFindings />}
+      {activeTab === 'findings' && <IntelligenceDashboard />}
 
       {/* Import Tab */}
       {activeTab === 'import' && (

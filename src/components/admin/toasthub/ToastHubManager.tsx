@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Plus, Search, Edit3, Trash2, Eye, Calendar,
   Tag, Loader2, RefreshCw, Star, ExternalLink, ToggleLeft, ToggleRight,
-  Globe, HelpCircle, BarChart3
+  Globe, HelpCircle, BarChart3, Radio, ClipboardList
 } from 'lucide-react';
 import ContentEditor from './ContentEditor';
 import FAQManager from './FAQManager';
 import ContentAnalytics from './ContentAnalytics';
+import BeaconImport from './BeaconImport';
+import TemplateSelector from './TemplateSelector';
 
 interface Post {
   id: string;
@@ -49,6 +51,8 @@ const ToastHubManager: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [showBeaconImport, setShowBeaconImport] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -279,10 +283,25 @@ const ToastHubManager: React.FC = () => {
                 <span className="hidden sm:inline">View Site</span>
               </a>
               <button
+                onClick={() => setShowBeaconImport(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-sm"
+                title="Import from Beacon"
+              >
+                <Radio className="w-4 h-4" />
+                <span className="hidden sm:inline">Import</span>
+              </button>
+              <button
                 onClick={loadData}
                 className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-sm"
+                title="Start from template"
+              >
+                <ClipboardList className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setEditingPost(createNewPost())}
@@ -463,6 +482,33 @@ const ToastHubManager: React.FC = () => {
               ))}
             </div>
           </section>
+
+          {/* Beacon Import Modal */}
+          <BeaconImport
+            isOpen={showBeaconImport}
+            onClose={() => setShowBeaconImport(false)}
+            onImport={(postId) => {
+              setShowBeaconImport(false);
+              loadData();
+              // Optionally open the newly imported post for editing
+              // Could fetch the post and setEditingPost(post)
+            }}
+          />
+
+          {/* Template Selector Modal */}
+          <TemplateSelector
+            isOpen={showTemplates}
+            onClose={() => setShowTemplates(false)}
+            onSelect={(template) => {
+              setShowTemplates(false);
+              // Create new post with template content
+              const newPost = createNewPost();
+              if (template.default_content) {
+                newPost.content = template.default_content;
+              }
+              setEditingPost(newPost);
+            }}
+          />
         </div>
       )}
     </div>

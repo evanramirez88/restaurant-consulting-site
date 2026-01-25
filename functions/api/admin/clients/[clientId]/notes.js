@@ -98,6 +98,121 @@ export async function onRequestPost(context) {
   }
 }
 
+export async function onRequestPut(context) {
+  const { env, request, params } = context;
+  const { clientId } = params;
+
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error, request);
+    }
+
+    const body = await request.json();
+    const { id, content, note_type, is_pinned } = body;
+
+    if (!id) {
+      return new Response(JSON.stringify({ success: false, error: 'Note ID is required' }), {
+        status: 400, headers: corsHeaders
+      });
+    }
+
+    const updates = [];
+    const updateParams = [];
+
+    if (content !== undefined) {
+      updates.push('content = ?');
+      updateParams.push(content.trim());
+    }
+    if (note_type !== undefined) {
+      updates.push('note_type = ?');
+      updateParams.push(note_type);
+    }
+    if (is_pinned !== undefined) {
+      updates.push('is_pinned = ?');
+      updateParams.push(is_pinned ? 1 : 0);
+    }
+
+    if (updates.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: 'No updates provided' }), {
+        status: 400, headers: corsHeaders
+      });
+    }
+
+    updates.push('updated_at = unixepoch()');
+    updateParams.push(id, clientId);
+
+    const result = await env.DB.prepare(`
+      UPDATE client_notes SET ${updates.join(', ')} WHERE id = ? AND client_id = ?
+    `).bind(...updateParams).run();
+
+    if (result.changes === 0) {
+      return new Response(JSON.stringify({ success: false, error: 'Note not found' }), {
+        status: 404, headers: corsHeaders
+      });
+    }
+
+    // Log activity for pin/unpin
+    if (is_pinned !== undefined) {
+      await env.DB.prepare(`
+        INSERT INTO client_activity_log (id, client_id, activity_type, title, performed_by_type, performed_by_name, is_internal)
+        VALUES (?, ?, 'note_updated', ?, 'admin', ?, 1)
+      `).bind(`act_${Date.now()}`, clientId, is_pinned ? 'Note pinned' : 'Note unpinned', auth.username || 'Admin').run();
+    }
+
+    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500, headers: corsHeaders
+    });
+  }
+}
+
+export async function onRequestDelete(context) {
+  const { env, request, params } = context;
+  const { clientId } = params;
+
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.authenticated) {
+      return unauthorizedResponse(auth.error, request);
+    }
+
+    const url = new URL(request.url);
+    const noteId = url.searchParams.get('id');
+
+    if (!noteId) {
+      return new Response(JSON.stringify({ success: false, error: 'Note ID is required' }), {
+        status: 400, headers: corsHeaders
+      });
+    }
+
+    const result = await env.DB.prepare(`
+      DELETE FROM client_notes WHERE id = ? AND client_id = ?
+    `).bind(noteId, clientId).run();
+
+    if (result.changes === 0) {
+      return new Response(JSON.stringify({ success: false, error: 'Note not found' }), {
+        status: 404, headers: corsHeaders
+      });
+    }
+
+    // Log activity
+    await env.DB.prepare(`
+      INSERT INTO client_activity_log (id, client_id, activity_type, title, performed_by_type, performed_by_name, is_internal)
+      VALUES (?, ?, 'note_deleted', 'Note deleted', 'admin', ?, 1)
+    `).bind(`act_${Date.now()}`, clientId, auth.username || 'Admin').run();
+
+    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500, headers: corsHeaders
+    });
+  }
+}
+
 export async function onRequestOptions() {
   return handleOptions();
 }

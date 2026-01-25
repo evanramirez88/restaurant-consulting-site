@@ -3,8 +3,13 @@ import {
   Loader2, RefreshCw, Target, TrendingUp, TrendingDown, Minus,
   AlertCircle, AlertTriangle, CheckCircle2, Clock, DollarSign,
   Users, Mail, Ticket, Zap, ChevronRight, ChevronDown,
-  ExternalLink, Bell, Calendar, Briefcase, BarChart3
+  ExternalLink, Bell, Calendar, Briefcase, BarChart3, Activity, Info
 } from 'lucide-react';
+import { SparkLine, LineChart, FunnelChart, HealthGauge } from '../charts';
+
+// ============================================
+// TYPE DEFINITIONS
+// ============================================
 
 interface DailyBrief {
   date: string;
@@ -50,6 +55,9 @@ interface GoalProgress {
   deadline?: number;
   status: string;
   percentComplete: number;
+  currentMRR?: number;
+  daysRemaining?: number;
+  weeklyTarget?: number;
   milestones: {
     id: string;
     title?: string;
@@ -105,6 +113,42 @@ interface Metrics {
   };
 }
 
+interface TrendData {
+  revenue: {
+    current: number;
+    wow: { previous: number; change: number; direction: string };
+    mom: { previous: number; change: number; direction: string };
+    sparkline: { date: string; value: number }[];
+  };
+  clients: {
+    current: number;
+    wow: { previous: number; change: number; direction: string };
+    sparkline: { date: string; value: number }[];
+  };
+  pipeline: {
+    current: number;
+    activeQuotes: number;
+    sparkline: { date: string; value: number }[];
+  };
+  email: {
+    currentOpenRate: number;
+    wow: { previous: number; change: number; direction: string };
+  };
+}
+
+interface HealthScoreData {
+  overall: number;
+  status: string;
+  trend: string;
+  components: {
+    revenue: { score: number; weight: number; contribution: number; metric: number; metricLabel: string };
+    clients: { score: number; weight: number; contribution: number; metric: number; metricLabel: string };
+    pipeline: { score: number; weight: number; contribution: number; metric: number; metricLabel: string };
+    email: { score: number; weight: number; contribution: number; metric: number; metricLabel: string };
+    retention: { score: number; weight: number; contribution: number; metric: number; metricLabel: string };
+  };
+}
+
 interface DashboardData {
   dailyBrief: DailyBrief;
   actionItems: ActionItem[];
@@ -118,30 +162,57 @@ interface DashboardData {
   };
 }
 
+// ============================================
+// COMPONENT
+// ============================================
+
 export default function BusinessBriefDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [trends, setTrends] = useState<TrendData | null>(null);
+  const [healthScore, setHealthScore] = useState<HealthScoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     actions: true,
     quickWins: true,
-    goals: true
+    goals: true,
+    healthBreakdown: false
   });
 
   const fetchDashboard = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const response = await fetch('/api/admin/business-brief/dashboard', {
-        credentials: 'include'
-      });
-      const result = await response.json();
+      // Fetch dashboard data and trends in parallel
+      const [dashboardRes, trendsRes, healthRes] = await Promise.all([
+        fetch('/api/admin/business-brief/dashboard', { credentials: 'include' }),
+        fetch('/api/admin/business-brief/trends', { credentials: 'include' }).catch(() => null),
+        fetch('/api/admin/business-brief/health-score', { credentials: 'include' }).catch(() => null)
+      ]);
 
-      if (result.success) {
-        setData(result);
+      const dashboardResult = await dashboardRes.json();
+
+      if (dashboardResult.success) {
+        setData(dashboardResult);
         setError(null);
       } else {
-        setError(result.error || 'Failed to load dashboard');
+        setError(dashboardResult.error || 'Failed to load dashboard');
+      }
+
+      // Trends data (optional)
+      if (trendsRes && trendsRes.ok) {
+        const trendsResult = await trendsRes.json();
+        if (trendsResult.success) {
+          setTrends(trendsResult.trends);
+        }
+      }
+
+      // Health score data (optional)
+      if (healthRes && healthRes.ok) {
+        const healthResult = await healthRes.json();
+        if (healthResult.success) {
+          setHealthScore(healthResult.healthScore);
+        }
       }
     } catch (err) {
       setError('Failed to connect to server');
@@ -217,19 +288,22 @@ export default function BusinessBriefDashboard() {
     }
   };
 
-  const getHealthColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-lime-400';
-    if (score >= 40) return 'text-yellow-400';
-    return 'text-red-400';
-  };
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
+  const getTrendIcon = (direction: string) => {
+    switch (direction) {
       case 'up': return <TrendingUp className="w-4 h-4 text-green-400" />;
       case 'down': return <TrendingDown className="w-4 h-4 text-red-400" />;
       default: return <Minus className="w-4 h-4 text-gray-400" />;
     }
+  };
+
+  const getTrendBadge = (change: number, inverse = false) => {
+    const isPositive = inverse ? change < 0 : change > 0;
+    const color = isPositive ? 'text-green-400 bg-green-500/20' : change === 0 ? 'text-gray-400 bg-gray-500/20' : 'text-red-400 bg-red-500/20';
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${color}`}>
+        {change > 0 ? '+' : ''}{change.toFixed(1)}%
+      </span>
+    );
   };
 
   const formatCurrency = (value: number) => {
@@ -276,6 +350,15 @@ export default function BusinessBriefDashboard() {
 
   const { dailyBrief, actionItems, metrics, quickWins, goalProgress, alerts } = data;
 
+  // Prepare funnel data for visualization
+  const funnelStages = metrics.leads.funnel ? [
+    { label: 'Prospects', value: metrics.leads.funnel.prospect || 0, color: '#6366f1' },
+    { label: 'Leads', value: metrics.leads.funnel.lead || 0, color: '#8b5cf6' },
+    { label: 'Qualified', value: metrics.leads.funnel.qualified || 0, color: '#a855f7' },
+    { label: 'Opportunity', value: metrics.leads.funnel.opportunity || 0, color: '#d946ef' },
+    { label: 'Clients', value: metrics.leads.funnel.client || 0, color: '#22c55e' }
+  ].filter(s => s.value > 0) : [];
+
   return (
     <div className="space-y-6">
       {/* Header with Refresh */}
@@ -294,7 +377,7 @@ export default function BusinessBriefDashboard() {
         </button>
       </div>
 
-      {/* Daily Brief Card */}
+      {/* Daily Brief Card with Health Gauge */}
       <div className="admin-card p-6 border-l-4 border-amber-500">
         <div className="flex flex-col lg:flex-row lg:items-start gap-6">
           {/* AI Summary */}
@@ -306,22 +389,20 @@ export default function BusinessBriefDashboard() {
             <p className="text-gray-300 leading-relaxed">{dailyBrief.aiSummary}</p>
           </div>
 
-          {/* Health Score & Quick Stats */}
-          <div className="flex flex-row lg:flex-col gap-4 lg:gap-3 lg:min-w-[180px]">
-            {/* Health Score */}
-            <div className="flex-1 lg:flex-none bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-sm text-gray-400 mb-1">Business Health</div>
-              <div className={`text-3xl font-bold ${getHealthColor(dailyBrief.healthScore)}`}>
-                {dailyBrief.healthScore}
-              </div>
-              <div className="flex items-center justify-center gap-1 mt-1">
-                {getTrendIcon(dailyBrief.trend)}
-                <span className="text-xs text-gray-500">vs yesterday</span>
-              </div>
+          {/* Health Score Gauge & Quick Stats */}
+          <div className="flex flex-row lg:flex-col items-center gap-4 lg:gap-3 lg:min-w-[180px]">
+            {/* Health Gauge */}
+            <div className="flex-shrink-0">
+              <HealthGauge
+                score={healthScore?.overall || dailyBrief.healthScore}
+                size={100}
+                showTrend={healthScore?.trend as 'up' | 'down' | 'stable' || dailyBrief.trend as any}
+                label="Business Health"
+              />
             </div>
 
             {/* Urgent/Opportunities */}
-            <div className="flex-1 lg:flex-none flex gap-3">
+            <div className="flex-1 lg:flex-none flex gap-3 w-full">
               <div className="flex-1 bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
                 <div className="text-2xl font-bold text-red-400">{dailyBrief.urgentCount}</div>
                 <div className="text-xs text-gray-400">Urgent</div>
@@ -333,27 +414,96 @@ export default function BusinessBriefDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Health Score Breakdown (Collapsible) */}
+        {healthScore && (
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <button
+              onClick={() => toggleSection('healthBreakdown')}
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-white"
+            >
+              <Info className="w-4 h-4" />
+              Health Score Breakdown
+              {expandedSections.healthBreakdown ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {expandedSections.healthBreakdown && (
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3">
+                {Object.entries(healthScore.components).map(([key, comp]) => (
+                  <div key={key} className="bg-gray-800/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-400 capitalize">{key}</span>
+                      <span className="text-xs text-gray-500">{(comp.weight * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="text-lg font-bold text-white">{comp.score.toFixed(0)}</div>
+                    <div className="h-1.5 bg-gray-700 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          comp.score >= 70 ? 'bg-green-500' :
+                          comp.score >= 40 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${comp.score}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* KPI Row */}
+      {/* KPI Row with Trends */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* MRR */}
+        {/* MRR with Sparkline */}
         <div className="admin-card p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
-            <DollarSign className="w-4 h-4" />
-            Monthly Recurring
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <DollarSign className="w-4 h-4" />
+              MRR
+            </div>
+            {trends?.revenue.sparkline && trends.revenue.sparkline.length > 1 && (
+              <SparkLine
+                data={trends.revenue.sparkline.map(d => d.value)}
+                width={60}
+                height={20}
+                showArea={false}
+                showDots
+              />
+            )}
           </div>
           <div className="text-2xl font-bold text-white">{formatCurrency(metrics.revenue.mrr)}</div>
-          <div className="text-xs text-gray-500 mt-1">
-            {formatCurrency(metrics.revenue.arr)} ARR
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-gray-500">{formatCurrency(metrics.revenue.arr)} ARR</span>
+            {trends?.revenue.wow && (
+              <span className="text-xs">
+                {getTrendBadge(trends.revenue.wow.change)}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Pipeline */}
+        {/* Pipeline with Sparkline */}
         <div className="admin-card p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
-            <Briefcase className="w-4 h-4" />
-            Pipeline
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <Briefcase className="w-4 h-4" />
+              Pipeline
+            </div>
+            {trends?.pipeline.sparkline && trends.pipeline.sparkline.length > 1 && (
+              <SparkLine
+                data={trends.pipeline.sparkline.map(d => d.value)}
+                width={60}
+                height={20}
+                showArea={false}
+                showDots
+              />
+            )}
           </div>
           <div className="text-2xl font-bold text-white">{formatCurrency(metrics.pipeline.quoteValue)}</div>
           <div className="text-xs text-gray-500 mt-1">
@@ -373,18 +523,61 @@ export default function BusinessBriefDashboard() {
           </div>
         </div>
 
-        {/* Email */}
+        {/* Email with Trend */}
         <div className="admin-card p-4">
           <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
             <Mail className="w-4 h-4" />
             Email Today
           </div>
           <div className="text-2xl font-bold text-white">{metrics.email.sentToday}</div>
-          <div className="text-xs text-gray-500 mt-1">
-            {metrics.email.openRate}% open rate
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-gray-500">{metrics.email.openRate}% open</span>
+            {trends?.email.wow && (
+              <span className="text-xs">
+                {getTrendBadge(trends.email.wow.change)}
+              </span>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Revenue Chart + Pipeline Funnel Row */}
+      {(trends?.revenue.sparkline?.length ?? 0) > 5 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Revenue Trajectory */}
+          <div className="admin-card p-4">
+            <h4 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Revenue Trajectory (30 Days)
+            </h4>
+            <LineChart
+              data={trends?.revenue.sparkline?.map(d => ({ date: d.date, value: d.value })) || []}
+              width={500}
+              height={180}
+              yAxisFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              showGrid
+              showLabels
+            />
+          </div>
+
+          {/* Pipeline Funnel */}
+          {funnelStages.length > 0 && (
+            <div className="admin-card p-4">
+              <h4 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Pipeline Funnel
+              </h4>
+              <FunnelChart
+                stages={funnelStages}
+                width={400}
+                height={180}
+                showPercentages
+                showValues
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -579,13 +772,30 @@ export default function BusinessBriefDashboard() {
                   <span className="text-gray-400">
                     {goalProgress.percentComplete.toFixed(1)}% complete
                   </span>
-                  {goalProgress.deadline && (
-                    <span className="text-gray-500">
-                      Due {new Date(goalProgress.deadline * 1000).toLocaleDateString()}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-4">
+                    {goalProgress.daysRemaining !== undefined && (
+                      <span className="text-gray-500">
+                        {goalProgress.daysRemaining} days remaining
+                      </span>
+                    )}
+                    {goalProgress.currentMRR !== undefined && (
+                      <span className="text-amber-400">
+                        {formatCurrency(goalProgress.currentMRR)} MRR
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Weekly Target */}
+              {goalProgress.weeklyTarget && (
+                <div className="bg-gray-800/50 rounded-lg p-3 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Weekly Target</span>
+                    <span className="text-lg font-bold text-white">{formatCurrency(goalProgress.weeklyTarget)}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Milestones */}
               {goalProgress.milestones.length > 0 && (
@@ -627,6 +837,75 @@ export default function BusinessBriefDashboard() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Week-over-Week Comparison Cards */}
+      {trends && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="admin-card p-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+              <DollarSign className="w-4 h-4" />
+              Revenue WoW
+            </div>
+            <div className="flex items-center gap-2">
+              {getTrendIcon(trends.revenue.wow.direction)}
+              <span className="text-xl font-bold text-white">
+                {trends.revenue.wow.change > 0 ? '+' : ''}{trends.revenue.wow.change.toFixed(1)}%
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              vs {formatCurrency(trends.revenue.wow.previous)}
+            </div>
+          </div>
+
+          <div className="admin-card p-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+              <Users className="w-4 h-4" />
+              Clients WoW
+            </div>
+            <div className="flex items-center gap-2">
+              {getTrendIcon(trends.clients.wow.direction)}
+              <span className="text-xl font-bold text-white">
+                {trends.clients.wow.change > 0 ? '+' : ''}{trends.clients.wow.change.toFixed(1)}%
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {trends.clients.current} active
+            </div>
+          </div>
+
+          <div className="admin-card p-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+              <DollarSign className="w-4 h-4" />
+              Revenue MoM
+            </div>
+            <div className="flex items-center gap-2">
+              {getTrendIcon(trends.revenue.mom.direction)}
+              <span className="text-xl font-bold text-white">
+                {trends.revenue.mom.change > 0 ? '+' : ''}{trends.revenue.mom.change.toFixed(1)}%
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              30-day trend
+            </div>
+          </div>
+
+          <div className="admin-card p-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+              <Mail className="w-4 h-4" />
+              Email Engagement
+            </div>
+            <div className="flex items-center gap-2">
+              {getTrendIcon(trends.email.wow.direction)}
+              <span className="text-xl font-bold text-white">
+                {trends.email.currentOpenRate.toFixed(0)}%
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              open rate
+            </div>
+          </div>
         </div>
       )}
 

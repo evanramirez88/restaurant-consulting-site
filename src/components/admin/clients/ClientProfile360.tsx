@@ -9,6 +9,7 @@ import {
 import ClientNotes from './ClientNotes';
 import ClientActivityTimeline from './ClientActivityTimeline';
 import ClientDealPipeline from './ClientDealPipeline';
+import ClientHealthScore from './ClientHealthScore';
 
 // ============================================
 // TYPES
@@ -42,7 +43,7 @@ interface Props {
   onEditClient: (client: any) => void;
 }
 
-type TabId = 'overview' | 'activity' | 'deals' | 'notes' | 'tickets' | 'projects';
+type TabId = 'overview' | 'activity' | 'deals' | 'notes' | 'tickets' | 'projects' | 'health';
 
 // ============================================
 // HEALTH SCORE GAUGE
@@ -186,6 +187,7 @@ const ClientProfile360: React.FC<Props> = ({ clientId, onBack, onEditClient }) =
 
   const tabs: { id: TabId; label: string; icon: any; count?: number }[] = [
     { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'health', label: 'Health', icon: TrendingUp },
     { id: 'activity', label: 'Activity', icon: Clock },
     { id: 'deals', label: 'Deals', icon: Handshake, count: summary.open_deals },
     { id: 'notes', label: 'Notes', icon: StickyNote, count: data.notes.length },
@@ -434,6 +436,10 @@ const ClientProfile360: React.FC<Props> = ({ clientId, onBack, onEditClient }) =
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'health' && (
+        <ClientHealthScore clientId={clientId} />
       )}
 
       {activeTab === 'activity' && (

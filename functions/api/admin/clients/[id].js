@@ -61,6 +61,14 @@ export async function onRequestPut(context) {
     const body = await context.request.json();
     const now = Math.floor(Date.now() / 1000);
 
+    // Get existing client to detect changes for activity logging
+    const existing = await db.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first();
+    if (!existing) {
+      return new Response(JSON.stringify({ success: false, error: 'Client not found' }), {
+        status: 404, headers: corsHeaders
+      });
+    }
+
     await db.prepare(`
       UPDATE clients SET
         email = ?,
@@ -75,6 +83,11 @@ export async function onRequestPut(context) {
         avatar_url = ?,
         notes = ?,
         timezone = ?,
+        intel_profile = ?,
+        intel_notes = ?,
+        tags = ?,
+        local_folder_path = ?,
+        last_activity_at = ?,
         updated_at = ?
       WHERE id = ?
     `).bind(
@@ -90,9 +103,38 @@ export async function onRequestPut(context) {
       body.avatar_url || null,
       body.notes || null,
       body.timezone || 'America/New_York',
+      body.intel_profile || null,
+      body.intel_notes || null,
+      body.tags || null,
+      body.local_folder_path || null,
+      now,
       now,
       id
     ).run();
+
+    // Log activity for significant changes
+    const changes = [];
+    if (existing.support_plan_tier !== body.support_plan_tier) {
+      changes.push(`Plan: ${existing.support_plan_tier || 'none'} -> ${body.support_plan_tier || 'none'}`);
+    }
+    if (existing.portal_enabled !== (body.portal_enabled ? 1 : 0)) {
+      changes.push(`Portal: ${body.portal_enabled ? 'enabled' : 'disabled'}`);
+    }
+    if (existing.company !== body.company) {
+      changes.push(`Company renamed`);
+    }
+
+    if (changes.length > 0) {
+      await db.prepare(`
+        INSERT INTO client_activity_log (id, client_id, activity_type, title, description, performed_by_type, performed_by_name)
+        VALUES (?, ?, 'status_change', 'Client updated', ?, 'admin', ?)
+      `).bind(
+        `act_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id,
+        changes.join('; '),
+        auth.payload?.username || 'Admin'
+      ).run();
+    }
 
     const client = await db.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first();
 

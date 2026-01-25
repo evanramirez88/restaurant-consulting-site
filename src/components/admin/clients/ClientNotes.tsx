@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StickyNote, Pin, Send, Loader2, AlertTriangle } from 'lucide-react';
+import { StickyNote, Pin, Send, Loader2, Edit3, Trash2, X, Check, MoreVertical } from 'lucide-react';
 
 interface Note {
   id: string;
@@ -45,12 +45,26 @@ const ClientNotes: React.FC<Props> = ({ clientId, initialNotes }) => {
   const [newType, setNewType] = useState('general');
   const [pinNew, setPinNew] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editType, setEditType] = useState('');
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!initialNotes) {
       loadNotes();
     }
   }, [clientId]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setMenuOpen(null);
+    if (menuOpen) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [menuOpen]);
 
   const loadNotes = async () => {
     setLoading(true);
@@ -87,6 +101,94 @@ const ClientNotes: React.FC<Props> = ({ clientId, initialNotes }) => {
       console.error('Failed to create note:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleTogglePin = async (note: Note) => {
+    setActionLoading(note.id);
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}/notes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: note.id, is_pinned: !note.is_pinned })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setNotes(prev => {
+          const updated = prev.map(n =>
+            n.id === note.id ? { ...n, is_pinned: !n.is_pinned } : n
+          );
+          // Re-sort: pinned first, then by created_at
+          return updated.sort((a, b) => {
+            if (a.is_pinned && !b.is_pinned) return -1;
+            if (!a.is_pinned && b.is_pinned) return 1;
+            return b.created_at - a.created_at;
+          });
+        });
+      }
+    } catch (err) {
+      console.error('Failed to toggle pin:', err);
+    } finally {
+      setActionLoading(null);
+      setMenuOpen(null);
+    }
+  };
+
+  const handleStartEdit = (note: Note) => {
+    setEditingId(note.id);
+    setEditContent(note.content);
+    setEditType(note.note_type);
+    setMenuOpen(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditContent('');
+    setEditType('');
+  };
+
+  const handleSaveEdit = async (noteId: string) => {
+    if (!editContent.trim()) return;
+    setActionLoading(noteId);
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}/notes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: noteId, content: editContent.trim(), note_type: editType })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setNotes(prev => prev.map(n =>
+          n.id === noteId ? { ...n, content: editContent.trim(), note_type: editType } : n
+        ));
+        handleCancelEdit();
+      }
+    } catch (err) {
+      console.error('Failed to save edit:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    if (!confirm('Delete this note?')) return;
+    setActionLoading(noteId);
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}/notes?id=${noteId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setNotes(prev => prev.filter(n => n.id !== noteId));
+      }
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+    } finally {
+      setActionLoading(null);
+      setMenuOpen(null);
     }
   };
 
@@ -157,18 +259,107 @@ const ClientNotes: React.FC<Props> = ({ clientId, initialNotes }) => {
       ) : (
         <div className="space-y-3">
           {notes.map(note => (
-            <div key={note.id} className={`bg-gray-800/50 border rounded-lg p-4 ${note.is_pinned ? 'border-amber-500/30' : 'border-gray-700'}`}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {note.is_pinned && <Pin className="w-3.5 h-3.5 text-amber-400" />}
-                  <span className={`px-2 py-0.5 rounded text-xs ${NOTE_TYPE_COLORS[note.note_type] || NOTE_TYPE_COLORS.general}`}>
-                    {NOTE_TYPES.find(t => t.value === note.note_type)?.label || note.note_type}
-                  </span>
+            <div
+              key={note.id}
+              className={`bg-gray-800/50 border rounded-lg p-4 ${note.is_pinned ? 'border-amber-500/30' : 'border-gray-700'} ${actionLoading === note.id ? 'opacity-60' : ''}`}
+            >
+              {editingId === note.id ? (
+                /* Edit Mode */
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={editType}
+                      onChange={e => setEditType(e.target.value)}
+                      className="bg-gray-700 border border-gray-600 text-white text-sm rounded px-2 py-1"
+                    >
+                      {NOTE_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    rows={3}
+                    className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-amber-500/50"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-3 py-1.5 text-gray-400 hover:text-white text-sm flex items-center gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveEdit(note.id)}
+                      disabled={!editContent.trim() || actionLoading === note.id}
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {actionLoading === note.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                      Save
+                    </button>
+                  </div>
                 </div>
-                <span className="text-xs text-gray-500">{formatDate(note.created_at)}</span>
-              </div>
-              <p className="text-sm text-gray-200 whitespace-pre-wrap">{note.content}</p>
-              <p className="text-xs text-gray-500 mt-2">{note.author_name}</p>
+              ) : (
+                /* View Mode */
+                <>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {note.is_pinned && <Pin className="w-3.5 h-3.5 text-amber-400" />}
+                      <span className={`px-2 py-0.5 rounded text-xs ${NOTE_TYPE_COLORS[note.note_type] || NOTE_TYPE_COLORS.general}`}>
+                        {NOTE_TYPES.find(t => t.value === note.note_type)?.label || note.note_type}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{formatDate(note.created_at)}</span>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpen(menuOpen === note.id ? null : note.id);
+                          }}
+                          className="p-1 text-gray-500 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {menuOpen === note.id && (
+                          <div className="absolute right-0 top-full mt-1 w-36 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 z-10">
+                            <button
+                              onClick={() => handleTogglePin(note)}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                            >
+                              <Pin className="w-4 h-4" />
+                              {note.is_pinned ? 'Unpin' : 'Pin'}
+                            </button>
+                            <button
+                              onClick={() => handleStartEdit(note)}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(note.id)}
+                              className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-200 whitespace-pre-wrap">{note.content}</p>
+                  <p className="text-xs text-gray-500 mt-2">{note.author_name}</p>
+                </>
+              )}
             </div>
           ))}
         </div>
