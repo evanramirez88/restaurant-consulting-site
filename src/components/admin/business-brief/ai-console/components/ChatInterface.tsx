@@ -58,19 +58,24 @@ export const ChatInterface: React.FC<ChatProps> = ({
             metadata: { builderMode: activeBuilderMode }
         };
 
+        // BB-9 fix: Store IDs for callback reference
+        const modelMsgId = generateId();
+        const threadId = thread.id;
         const newMessages = [...thread.messages, userMsg];
-        onUpdateThread(thread.id, { messages: newMessages });
+
+        onUpdateThread(threadId, { messages: newMessages });
         setInput('');
         setAttachments([]);
         setIsGenerating(true);
 
         // Generate Title if new
         if (thread.messages.length === 0) {
-            generateTitle(userMsg.text).then(title => onUpdateThread(thread.id, { title }));
+            generateTitle(userMsg.text).then(title => onUpdateThread(threadId, { title }));
         }
 
-        const modelMsg: Message = { id: generateId(), role: 'model', text: '', timestamp: Date.now() };
-        onUpdateThread(thread.id, { messages: [...newMessages, modelMsg] });
+        const modelMsg: Message = { id: modelMsgId, role: 'model', text: '', timestamp: Date.now() };
+        const messagesWithModel = [...newMessages, modelMsg];
+        onUpdateThread(threadId, { messages: messagesWithModel });
 
         try {
             const style = libraries.styles.find(s => s.id === thread.speakingStyleId);
@@ -86,16 +91,28 @@ export const ChatInterface: React.FC<ChatProps> = ({
                 style,
                 activeBuilderMode,
                 (chunk) => {
-                    // For React state updates, we need to be careful with closure if we used the prev state method.
-                    // Here we just replicate the logic to append text.
-                    // But since chunking might replace whole text or append, let's assume replace for now.
-                    onUpdateThread(thread.id, {
-                        messages: [...newMessages, { ...modelMsg, text: chunk }]
+                    // BB-9 fix: Use captured references to avoid stale closure
+                    // Create updated model message with response text
+                    const updatedModelMsg: Message = {
+                        id: modelMsgId,
+                        role: 'model',
+                        text: chunk,
+                        timestamp: Date.now()
+                    };
+                    onUpdateThread(threadId, {
+                        messages: [...newMessages, updatedModelMsg]
                     });
                 }
             );
         } catch (e) {
-            onUpdateThread(thread.id, { messages: [...newMessages, { ...modelMsg, text: "**Error:** Failed to generate response." }] });
+            // BB-9 fix: Ensure error message is shown instead of stuck "Thinking..."
+            const errorMsg: Message = {
+                id: modelMsgId,
+                role: 'model',
+                text: "**Error:** Failed to generate response. Please try again.",
+                timestamp: Date.now()
+            };
+            onUpdateThread(threadId, { messages: [...newMessages, errorMsg] });
         } finally {
             setIsGenerating(false);
             setTimeout(() => textareaRef.current?.focus(), 100);

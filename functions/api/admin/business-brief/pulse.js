@@ -169,12 +169,12 @@ export async function onRequestGet(context) {
         WHERE created_at > ?
       `).bind(todayStart).first().catch(() => ({ client_logins: 0, rep_logins: 0 })),
 
-      // Lead database stats
+      // Lead database stats - BB-2 fix: correct column names (email/phone, not primary_email/primary_phone)
       env.DB.prepare(`
         SELECT
           COUNT(*) as total,
-          COUNT(CASE WHEN primary_email IS NOT NULL AND primary_email != '' THEN 1 END) as with_email,
-          COUNT(CASE WHEN primary_phone IS NOT NULL AND primary_phone != '' THEN 1 END) as with_phone,
+          COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END) as with_email,
+          COUNT(CASE WHEN phone IS NOT NULL AND phone != '' THEN 1 END) as with_phone,
           COUNT(CASE WHEN lead_score >= 80 THEN 1 END) as hot_leads,
           COUNT(CASE WHEN enriched_at > ? THEN 1 END) as enriched_30d
         FROM restaurant_leads

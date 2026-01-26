@@ -36,6 +36,7 @@ interface SubscriberSequenceRow {
   sub_last_name: string | null;
   sub_company: string | null;
   sub_pos_system: string | null;
+  sub_unsubscribe_token: string | null;
   step_id: string;
   step_number: number;
   step_subject_a: string;
@@ -87,6 +88,38 @@ function calculateDelaySeconds(value: number, unit: string): number {
     case 'weeks': return value * 60 * 60 * 24 * 7;
     default: return value * 60 * 60;
   }
+}
+
+/**
+ * Generate unsubscribe token for a subscriber if not exists
+ */
+function generateUnsubscribeToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Add unsubscribe footer to email HTML
+ */
+function addUnsubscribeFooter(html: string, unsubscribeToken: string): string {
+  const unsubscribeUrl = `https://ccrestaurantconsulting.com/api/email/unsubscribe/${unsubscribeToken}`;
+  const footer = `
+<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #6b7280;">
+  <p style="margin: 0 0 8px 0;">R&G Consulting | Cape Cod Restaurant Consulting</p>
+  <p style="margin: 0;">
+    <a href="${unsubscribeUrl}" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a>
+    &nbsp;|&nbsp;
+    <a href="https://ccrestaurantconsulting.com" style="color: #6b7280; text-decoration: underline;">Visit Website</a>
+  </p>
+</div>
+`;
+
+  // Insert before </body> if it exists, otherwise append
+  if (html.toLowerCase().includes('</body>')) {
+    return html.replace(/<\/body>/i, `${footer}</body>`);
+  }
+  return html + footer;
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -208,16 +241,17 @@ async function logEmail(
   await env.DB.prepare(`
     INSERT INTO email_logs (
       id, subscriber_id, sequence_id, step_id, subscriber_sequence_id,
-      message_id, email_to, email_from, subject, send_type, status,
-      esp_provider, failure_message, queued_at, sent_at, failed_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'sequence', ?, 'resend', ?, ?, ?, ?, ?)
+      message_id, resend_id, email_to, email_from, subject, send_type, status,
+      esp_provider, failure_message, queued_at, sent_at, failed_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sequence', ?, 'resend', ?, ?, ?, ?, ?, ?)
   `).bind(
     logId,
     subscriberId,
     sequenceId,
     stepId,
     subscriberSequenceId,
-    resendId,
+    resendId,  // message_id (same as resend_id for Resend)
+    resendId,  // resend_id (explicit for webhook lookup)
     toEmail,
     fromEmail,
     subject,
@@ -226,6 +260,7 @@ async function logEmail(
     now,
     status === 'sent' ? now : null,
     status === 'failed' ? now : null,
+    now,
     now
   ).run();
 }
@@ -420,6 +455,7 @@ async function handleScheduled(
         sub.last_name as sub_last_name,
         sub.company as sub_company,
         sub.pos_system as sub_pos_system,
+        sub.unsubscribe_token as sub_unsubscribe_token,
         step.id as step_id,
         step.step_number,
         step.subject_a as step_subject_a,
@@ -474,6 +510,16 @@ async function handleScheduled(
       // Generate idempotency key
       const idempotencyKey = `seq_${row.ss_id}_step_${row.step_number}_${Date.now()}`;
 
+      // Get or generate unsubscribe token
+      let unsubscribeToken = row.sub_unsubscribe_token;
+      if (!unsubscribeToken) {
+        unsubscribeToken = generateUnsubscribeToken();
+        // Store the token for this subscriber
+        await env.DB.prepare(`
+          UPDATE email_subscribers SET unsubscribe_token = ?, updated_at = ? WHERE id = ?
+        `).bind(unsubscribeToken, now, row.subscriber_id).run();
+      }
+
       // Personalize content
       const subscriber = {
         email: row.sub_email,
@@ -484,9 +530,14 @@ async function handleScheduled(
       };
 
       const personalizedSubject = personalizeContent(row.step_subject_a, subscriber);
-      const personalizedBodyHtml = personalizeContent(row.step_body_html_a, subscriber);
+      let personalizedBodyHtml = personalizeContent(row.step_body_html_a, subscriber);
+
+      // Add unsubscribe footer to HTML
+      personalizedBodyHtml = addUnsubscribeFooter(personalizedBodyHtml, unsubscribeToken);
+
       const personalizedBodyText = row.step_body_text_a
-        ? personalizeContent(row.step_body_text_a, subscriber)
+        ? personalizeContent(row.step_body_text_a, subscriber) +
+          `\n\n---\nTo unsubscribe: https://ccrestaurantconsulting.com/api/email/unsubscribe/${unsubscribeToken}`
         : null;
 
       // Send email

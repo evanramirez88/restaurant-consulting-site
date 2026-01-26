@@ -91,6 +91,44 @@ const AI_VISION_MODELS = [
 
 type SectionType = 'contact' | 'rates' | 'flags' | 'api' | 'ai' | 'intelligence' | 'content';
 
+// Feature Flag Descriptions for TL-1 (explain what each flag does)
+const FEATURE_FLAG_DESCRIPTIONS: Record<string, {
+  name: string;
+  description: string;
+  prerequisites: string[];
+}> = {
+  quote_builder_enabled: {
+    name: 'Quote Builder (DCI)',
+    description: 'Generate professional quotes with line items and pricing',
+    prerequisites: ['Stripe connected', 'PandaDoc integration (optional)']
+  },
+  menu_builder_enabled: {
+    name: 'Menu Builder',
+    description: 'AI-powered menu migration and customization',
+    prerequisites: ['Client profile complete']
+  },
+  client_portal_enabled: {
+    name: 'Client Portal',
+    description: 'Self-service portal for clients to view projects and files',
+    prerequisites: ['Magic link auth configured']
+  },
+  rep_portal_enabled: {
+    name: 'Rep Portal',
+    description: 'Sales rep dashboard for lead management and commissions',
+    prerequisites: ['Rep accounts created']
+  },
+  toast_hub_enabled: {
+    name: 'Toast Hub',
+    description: 'Content marketing and knowledge base platform',
+    prerequisites: ['At least 5 articles published']
+  },
+  maintenance_mode: {
+    name: 'Maintenance Mode',
+    description: 'Disables all public features and shows maintenance page',
+    prerequisites: []
+  }
+};
+
 // Intelligence Configuration
 interface IntelligenceConfig {
   ai_provider: string;
@@ -125,12 +163,12 @@ const ConfigManager: React.FC = () => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // Business Rates
+  // Business Rates - Documented in CLAUDE.md: Non-plan $175/hr, On-site $200/hr (2hr min), Emergency $250/hr
   const [businessRates, setBusinessRates] = useState<BusinessRates>({
-    hourly_rate: 110,
-    remote_rate: 80,
-    onsite_rate: 100,
-    emergency_rate: 150,
+    hourly_rate: 175,     // Standard/Non-plan hourly (CLAUDE.md)
+    remote_rate: 175,     // Remote rate same as standard
+    onsite_rate: 200,     // On-site rate (2hr min) - CLAUDE.md
+    emergency_rate: 250,  // Urgent/after-hours - CLAUDE.md
     after_hours_multiplier: 1.25,
     travel_cape_cod: 0,
     travel_south_shore: 100,
@@ -621,7 +659,12 @@ const ConfigManager: React.FC = () => {
       {/* Business Rates Section */}
       {activeSection === 'rates' && (
         <section className="admin-card p-6 space-y-6">
-          <h3 className="text-lg font-semibold text-white">Business Rates</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Business Rates</h3>
+            <p className="text-sm text-gray-400 mt-1">
+              Per CLAUDE.md: Non-plan $175/hr, On-site $200/hr (2hr min), Emergency $250/hr
+            </p>
+          </div>
 
           {/* Hourly Rates */}
           <div>
@@ -744,46 +787,64 @@ const ConfigManager: React.FC = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { key: 'quote_builder_enabled', label: 'Quote Builder', desc: 'Interactive POS quoting tool', color: 'blue' },
-                { key: 'menu_builder_enabled', label: 'Menu Builder', desc: 'AI-powered menu migration', color: 'green' },
-                { key: 'client_portal_enabled', label: 'Client Portal', desc: 'Customer dashboard access', color: 'purple' },
-                { key: 'rep_portal_enabled', label: 'Rep Portal', desc: 'Sales rep dashboard access', color: 'amber' },
-                { key: 'toast_hub_enabled', label: 'Toast Hub', desc: 'Content & resource hub', color: 'cyan' }
-              ].map(({ key, label, desc, color }) => (
-                <div
-                  key={key}
-                  className={`p-4 rounded-lg border transition-all ${
-                    featureFlags[key as keyof FeatureFlags]
-                      ? `bg-${color}-500/10 border-${color}-500/30`
-                      : 'bg-gray-900/30 border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          featureFlags[key as keyof FeatureFlags] ? 'bg-green-500' : 'bg-gray-500'
-                        }`} />
-                        <span className="text-white font-medium">{label}</span>
+                { key: 'quote_builder_enabled', color: 'blue' },
+                { key: 'menu_builder_enabled', color: 'green' },
+                { key: 'client_portal_enabled', color: 'purple' },
+                { key: 'rep_portal_enabled', color: 'amber' },
+                { key: 'toast_hub_enabled', color: 'cyan' }
+              ].map(({ key, color }) => {
+                const flagConfig = FEATURE_FLAG_DESCRIPTIONS[key];
+                const isEnabled = featureFlags[key as keyof FeatureFlags];
+                return (
+                  <div
+                    key={key}
+                    className={`p-4 rounded-lg border transition-all ${
+                      isEnabled
+                        ? `bg-${color}-500/10 border-${color}-500/30`
+                        : 'bg-gray-900/30 border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            isEnabled ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
+                          <span className="text-white font-medium">{flagConfig?.name || key}</span>
+                        </div>
+                        <p className="text-gray-500 text-xs mt-1">{flagConfig?.description}</p>
                       </div>
-                      <p className="text-gray-500 text-xs mt-1">{desc}</p>
+                      <button
+                        onClick={() => setShowFlagConfirm({ key, newValue: !isEnabled })}
+                        disabled={pendingFlagToggle === key}
+                        className="transition-transform hover:scale-110"
+                      >
+                        {pendingFlagToggle === key ? (
+                          <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+                        ) : isEnabled ? (
+                          <ToggleRight className="w-10 h-10 text-green-500" />
+                        ) : (
+                          <ToggleLeft className="w-10 h-10 text-gray-500" />
+                        )}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setShowFlagConfirm({ key, newValue: !featureFlags[key as keyof FeatureFlags] })}
-                      disabled={pendingFlagToggle === key}
-                      className="transition-transform hover:scale-110"
-                    >
-                      {pendingFlagToggle === key ? (
-                        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
-                      ) : featureFlags[key as keyof FeatureFlags] ? (
-                        <ToggleRight className="w-10 h-10 text-green-500" />
-                      ) : (
-                        <ToggleLeft className="w-10 h-10 text-gray-500" />
-                      )}
-                    </button>
+                    {/* Show prerequisites when flag is OFF */}
+                    {!isEnabled && flagConfig?.prerequisites && flagConfig.prerequisites.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-700/50">
+                        <p className="text-xs text-gray-500 mb-1">Prerequisites:</p>
+                        <ul className="text-xs text-gray-400 space-y-0.5">
+                          {flagConfig.prerequisites.map((p, i) => (
+                            <li key={i} className="flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-gray-600" />
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

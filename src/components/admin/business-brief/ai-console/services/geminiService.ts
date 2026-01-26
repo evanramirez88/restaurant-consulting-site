@@ -16,6 +16,13 @@ export async function streamGeminiResponse(
     builderMode: BuilderMode,
     onChunk: (chunk: string) => void
 ) {
+    // Ensure onChunk is always called even on errors - BB-9 fix
+    let responseSent = false;
+    const safeOnChunk = (text: string) => {
+        responseSent = true;
+        onChunk(text);
+    };
+
     try {
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
@@ -45,9 +52,9 @@ export async function streamGeminiResponse(
             const errorText = await response.text();
             try {
                 const errorJson = JSON.parse(errorText);
-                onChunk(`**Error**: ${errorJson.error || 'Request failed'}`);
+                safeOnChunk(`**Error**: ${errorJson.error || 'Request failed'}`);
             } catch {
-                onChunk(`**Error**: Request failed (${response.status})`);
+                safeOnChunk(`**Error**: Request failed (${response.status})`);
             }
             return;
         }
@@ -58,17 +65,22 @@ export async function streamGeminiResponse(
             // Backend returns { success: true, message: { content: "..." } }
             const responseText = result.message?.content || result.response || '';
             if (responseText) {
-                onChunk(responseText);
+                safeOnChunk(responseText);
             } else {
-                onChunk('No response received from the AI model.');
+                safeOnChunk('No response received from the AI model.');
             }
         } else {
-            onChunk(`**Error**: ${result.error || 'Unknown error'}`);
+            safeOnChunk(`**Error**: ${result.error || 'Unknown error'}`);
         }
 
     } catch (error) {
         console.error('API Error:', error);
-        onChunk(`**Connection Error**: ${error instanceof Error ? error.message : 'Failed to reach intelligence service'}.`);
+        safeOnChunk(`**Connection Error**: ${error instanceof Error ? error.message : 'Failed to reach intelligence service'}.`);
+    } finally {
+        // BB-9 fix: Ensure we always send a response to prevent stuck "Thinking..."
+        if (!responseSent) {
+            onChunk('An unexpected error occurred. Please try again.');
+        }
     }
 }
 

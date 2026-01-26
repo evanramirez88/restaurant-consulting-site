@@ -23,7 +23,9 @@ import {
   Save,
   FolderOpen,
   Clock,
-  Check
+  Check,
+  RefreshCw,
+  FileDown
 } from 'lucide-react';
 import DeployToToastModal from '../src/components/admin/automation/DeployToToastModal';
 import { useSEO } from '../src/components/SEO';
@@ -87,6 +89,40 @@ type OCRStatus = 'idle' | 'uploading' | 'processing' | 'parsing' | 'complete' | 
 // COMING SOON COMPONENT
 // ============================================================
 const ComingSoonOverlay: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+
+  const handleNotify = async () => {
+    if (!email || !email.includes('@')) {
+      setSubscribeError('Please enter a valid email address');
+      return;
+    }
+
+    setSubscribing(true);
+    setSubscribeError(null);
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'menu_builder_waitlist' })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSubscribed(true);
+      } else {
+        setSubscribeError(result.error || 'Failed to subscribe. Please try again.');
+      }
+    } catch (error) {
+      setSubscribeError('Network error. Please try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   return (
     <div className="bg-primary-dark min-h-screen flex items-center justify-center relative hero-grain">
       {/* Full page centered content */}
@@ -185,6 +221,43 @@ const ComingSoonOverlay: React.FC = () => {
           </div>
         </div>
 
+        {/* Email Capture */}
+        <div className="hero-fade-in hero-fade-in-delay-3 max-w-md mx-auto mb-8">
+          <p className="text-sm text-gray-400 mb-3">Get notified when Menu Builder launches:</p>
+          {subscribed ? (
+            <div className="flex items-center justify-center gap-2 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <span className="text-green-400 font-medium">You're on the list! We'll notify you at launch.</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
+                  onKeyDown={(e) => e.key === 'Enter' && handleNotify()}
+                />
+                <button
+                  onClick={handleNotify}
+                  disabled={subscribing}
+                  className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {subscribing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {subscribing ? 'Subscribing...' : 'Notify Me'}
+                </button>
+              </div>
+              {subscribeError && (
+                <p className="text-sm text-red-400">{subscribeError}</p>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* CTAs */}
         <div className="hero-fade-in hero-fade-in-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <a
@@ -197,12 +270,6 @@ const ComingSoonOverlay: React.FC = () => {
             <Calendar size={20} />
             Schedule a Menu Consultation
           </a>
-          <Link
-            to="/contact"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all hover:opacity-90 cta-secondary-dark"
-          >
-            Get Notified at Launch
-          </Link>
         </div>
 
         {/* Back to Home Link */}
@@ -465,6 +532,11 @@ const MenuBuilderTool: React.FC = () => {
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [loadingMenuData, setLoadingMenuData] = useState(false);
   const [toast, setToast] = useState<ToastNotification | null>(null);
+
+  // Bulk action state
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState('');
 
   // Generate mock parsed data (simulated)
   const generateMockParsedData = (): ParsedMenu => {
@@ -775,6 +847,9 @@ const MenuBuilderTool: React.FC = () => {
     }
   };
 
+  // Export state
+  const [exporting, setExporting] = useState<string | null>(null);
+
   // Export functions
   const exportAsJSON = () => {
     if (!parsedMenu) return;
@@ -813,6 +888,167 @@ const MenuBuilderTool: React.FC = () => {
     link.download = 'menu-export-toast.csv';
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportAsSquare = async () => {
+    if (!parsedMenu) return;
+
+    setExporting('square');
+    try {
+      const response = await fetch('/api/menu/export/square', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: parsedMenu.items,
+          categories: parsedMenu.categories
+        })
+      });
+
+      const result = await response.json();
+      if (result.success && result.download) {
+        // Decode base64 and download
+        const jsonString = decodeURIComponent(escape(atob(result.download)));
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'menu-square-catalog.json';
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        setErrorMessage(result.error || 'Failed to export to Square format');
+      }
+    } catch (error) {
+      setErrorMessage('Failed to export to Square format');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportAsPDF = () => {
+    if (!parsedMenu) return;
+
+    setExporting('pdf');
+
+    // Generate PDF using canvas
+    const generatePDF = () => {
+      // Create a simple PDF using data URLs and window.print
+      // For a more robust solution, could use jsPDF library
+      const categories = [...new Set(parsedMenu.items.map(i => i.category))];
+
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Menu Export</title>
+          <style>
+            @page { margin: 1in; }
+            body { font-family: Georgia, serif; max-width: 800px; margin: 0 auto; padding: 40px; }
+            h1 { text-align: center; font-size: 32px; margin-bottom: 40px; border-bottom: 2px solid #d4a574; padding-bottom: 20px; }
+            .category { margin-bottom: 30px; }
+            .category-name { font-size: 20px; font-weight: bold; color: #8b4513; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+            .item { display: flex; justify-content: space-between; margin-bottom: 12px; }
+            .item-details { flex: 1; }
+            .item-name { font-weight: bold; }
+            .item-desc { font-size: 12px; color: #666; margin-top: 2px; font-style: italic; }
+            .item-price { font-weight: bold; color: #2d5a27; white-space: nowrap; margin-left: 20px; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Menu</h1>
+      `;
+
+      categories.forEach(category => {
+        const categoryItems = parsedMenu.items.filter(i => i.category === category);
+        htmlContent += `
+          <div class="category">
+            <div class="category-name">${category}</div>
+        `;
+        categoryItems.forEach(item => {
+          htmlContent += `
+            <div class="item">
+              <div class="item-details">
+                <div class="item-name">${item.name}</div>
+                ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+              </div>
+              <div class="item-price">$${item.price}</div>
+            </div>
+          `;
+        });
+        htmlContent += '</div>';
+      });
+
+      htmlContent += '</body></html>';
+
+      // Create blob and download as HTML (user can print to PDF)
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+
+      // Open in new window for printing
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+
+      URL.revokeObjectURL(url);
+      setExporting(null);
+    };
+
+    // Small delay for UI feedback
+    setTimeout(generatePDF, 100);
+  };
+
+  // Bulk action handlers
+  const handleSelectAll = () => {
+    if (!parsedMenu) return;
+    if (selectedItems.size === parsedMenu.items.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(parsedMenu.items.map(item => item.id)));
+    }
+  };
+
+  const handleSelectItem = (itemId: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    if (!parsedMenu || selectedItems.size === 0) return;
+    const newItems = parsedMenu.items.filter(item => !selectedItems.has(item.id));
+    const newCategories = [...new Set(newItems.map(item => item.category))];
+    setParsedMenu({
+      ...parsedMenu,
+      items: newItems,
+      categories: newCategories
+    });
+    setSelectedItems(new Set());
+  };
+
+  const handleBulkCategoryChange = () => {
+    if (!parsedMenu || selectedItems.size === 0 || !bulkCategory) return;
+    const newItems = parsedMenu.items.map(item =>
+      selectedItems.has(item.id) ? { ...item, category: bulkCategory } : item
+    );
+    const newCategories = [...new Set(newItems.map(item => item.category))];
+    setParsedMenu({
+      ...parsedMenu,
+      items: newItems,
+      categories: newCategories
+    });
+    setSelectedItems(new Set());
+    setShowBulkCategoryModal(false);
+    setBulkCategory('');
   };
 
   // Get status display info
@@ -905,11 +1141,27 @@ const MenuBuilderTool: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Error Message */}
+                {/* Error Message with Retry */}
                 {errorMessage && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    {errorMessage}
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-red-700 font-medium">Processing Failed</p>
+                        <p className="text-red-600 text-sm mt-1">{errorMessage}</p>
+                        <button
+                          onClick={() => {
+                            setErrorMessage(null);
+                            setOcrStatus('idle');
+                            startProcessing();
+                          }}
+                          className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium text-sm rounded-lg transition-colors flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Retry Processing
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1085,11 +1337,54 @@ const MenuBuilderTool: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Bulk Actions Bar */}
+                    {parsedMenu.items.length > 0 && (
+                      <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <button
+                          onClick={handleSelectAll}
+                          className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          {selectedItems.size === parsedMenu.items.length ? 'Deselect All' : 'Select All'}
+                        </button>
+
+                        {selectedItems.size > 0 && (
+                          <>
+                            <span className="text-sm text-gray-500">
+                              {selectedItems.size} item{selectedItems.size > 1 ? 's' : ''} selected
+                            </span>
+                            <div className="flex-1" />
+                            <button
+                              onClick={() => setShowBulkCategoryModal(true)}
+                              className="px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-1"
+                            >
+                              <Layers className="w-3 h-3" />
+                              Set Category
+                            </button>
+                            <button
+                              onClick={handleBulkDelete}
+                              className="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1"
+                            >
+                              <X className="w-3 h-3" />
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {/* Items Table */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-200">
+                            <th className="w-10 py-2 px-3">
+                              <input
+                                type="checkbox"
+                                checked={parsedMenu.items.length > 0 && selectedItems.size === parsedMenu.items.length}
+                                onChange={handleSelectAll}
+                                className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
+                              />
+                            </th>
                             <th className="text-left py-2 px-3 font-semibold text-gray-600">Item</th>
                             <th className="text-left py-2 px-3 font-semibold text-gray-600">Category</th>
                             <th className="text-right py-2 px-3 font-semibold text-gray-600">Price</th>
@@ -1097,7 +1392,20 @@ const MenuBuilderTool: React.FC = () => {
                         </thead>
                         <tbody>
                           {parsedMenu.items.map(item => (
-                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <tr
+                              key={item.id}
+                              className={`border-b border-gray-100 hover:bg-gray-50 ${
+                                selectedItems.has(item.id) ? 'bg-amber-50' : ''
+                              }`}
+                            >
+                              <td className="py-3 px-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItems.has(item.id)}
+                                  onChange={() => handleSelectItem(item.id)}
+                                  className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500"
+                                />
+                              </td>
                               <td className="py-3 px-3">
                                 <div className="font-medium text-gray-900">{item.name}</div>
                                 <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">
@@ -1131,6 +1439,47 @@ const MenuBuilderTool: React.FC = () => {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Bulk Category Modal */}
+                    {showBulkCategoryModal && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                          <h3 className="font-semibold text-gray-900 mb-4">Set Category for {selectedItems.size} Items</h3>
+                          <select
+                            value={bulkCategory}
+                            onChange={(e) => setBulkCategory(e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                          >
+                            <option value="">Select a category...</option>
+                            {parsedMenu.categories.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            value={bulkCategory}
+                            onChange={(e) => setBulkCategory(e.target.value)}
+                            placeholder="Or enter a new category..."
+                            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                          />
+                          <div className="flex justify-end gap-3">
+                            <button
+                              onClick={() => { setShowBulkCategoryModal(false); setBulkCategory(''); }}
+                              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleBulkCategoryChange}
+                              disabled={!bulkCategory}
+                              className="px-4 py-2 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1171,6 +1520,42 @@ const MenuBuilderTool: React.FC = () => {
                     <FileSpreadsheet className={`w-8 h-8 ${parsedMenu ? 'text-green-500' : 'text-gray-300'}`} />
                     <span className="font-semibold text-gray-700">Export CSV</span>
                     <span className="text-xs text-gray-500">Toast import ready</span>
+                  </button>
+
+                  <button
+                    onClick={exportAsSquare}
+                    disabled={!parsedMenu || exporting === 'square'}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                      parsedMenu && exporting !== 'square'
+                        ? 'border-gray-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer'
+                        : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    {exporting === 'square' ? (
+                      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                    ) : (
+                      <FileJson className={`w-8 h-8 ${parsedMenu ? 'text-blue-500' : 'text-gray-300'}`} />
+                    )}
+                    <span className="font-semibold text-gray-700">Square Catalog</span>
+                    <span className="text-xs text-gray-500">Square POS format</span>
+                  </button>
+
+                  <button
+                    onClick={exportAsPDF}
+                    disabled={!parsedMenu || exporting === 'pdf'}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                      parsedMenu && exporting !== 'pdf'
+                        ? 'border-gray-200 hover:border-red-400 hover:bg-red-50 cursor-pointer'
+                        : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    {exporting === 'pdf' ? (
+                      <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+                    ) : (
+                      <FileDown className={`w-8 h-8 ${parsedMenu ? 'text-red-500' : 'text-gray-300'}`} />
+                    )}
+                    <span className="font-semibold text-gray-700">Print Menu PDF</span>
+                    <span className="text-xs text-gray-500">Formatted for print</span>
                   </button>
                 </div>
 

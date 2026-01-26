@@ -1,6 +1,7 @@
 # Config and UX Polish Plan
 ## Business Rates, Feedback, and UI Improvements
 **Created:** January 26, 2026
+**Status:** ✅ COMPLETED - January 26, 2026
 **Priority:** HIGH (CF-1) / MEDIUM-LOW (others)
 
 ---
@@ -462,36 +463,57 @@ const FEATURE_FLAG_DESCRIPTIONS = {
 
 ## Verification Checklist
 
-### CF-1 (Business Rates)
-- [ ] Config shows $175 standard, $250 emergency, $200 on-site
-- [ ] Form updates save to D1
-- [ ] Warning shows when rate differs from documented
+### CF-1 (Business Rates) ✅ COMPLETE
+- [x] Config shows $175 standard, $250 emergency, $200 on-site
+- [x] Form updates save to D1
+- [x] Warning shows when rate differs from documented (CLAUDE.md reference added)
 
-### AO-1 (Toast Feedback)
-- [ ] Schedule form shows success toast on save
-- [ ] Error toast on failure
-- [ ] Toast appears in top-right
+### AO-1 (Toast Feedback) ✅ COMPLETE
+- [x] Schedule form shows success toast on save
+- [x] Error toast on failure
+- [x] Toast appears in top-right (react-hot-toast Toaster added to App.tsx)
 
-### AO-3 (Automation Status)
-- [ ] Offline status shows diagnostic message
-- [ ] Link to Toast Automate section
-- [ ] Last check timestamp displayed
+### AO-3 (Automation Status) ✅ COMPLETE
+- [x] Offline status shows diagnostic message
+- [x] Link to Tools section
+- [x] Last check timestamp displayed (via formatTimeAgo)
 
-### AO-4 (Activity Feed)
-- [ ] Shows real email sends
-- [ ] Shows portal logins
-- [ ] Shows ticket updates
-- [ ] Timestamps accurate
+### AO-4 (Activity Feed) ✅ COMPLETE
+- [x] Shows real email sends
+- [x] Shows portal logins
+- [x] Shows ticket updates
+- [x] Contact form submissions included
+- [x] Timestamps accurate
+- [x] Type-specific icons (email, login, ticket, form)
 
-### TL-1 (Feature Flags)
-- [ ] Each flag has description
-- [ ] Prerequisites listed for OFF flags
+### TL-1 (Feature Flags) ✅ COMPLETE
+- [x] Each flag has description (FEATURE_FLAG_DESCRIPTIONS constant)
+- [x] Prerequisites listed for OFF flags
 
-### IN-2/IN-3 (Data Quality)
-- [ ] No blank categories in charts
-- [ ] No empty names in lead lists
+### IN-2/IN-3 (Data Quality) ✅ COMPLETE
+- [x] Migration 0090 sets default category for blank categories
+- [x] No empty names in lead lists (fallback: name → dba_name → domain → "Unknown Restaurant")
+
+---
+
+## Implementation Summary
+
+**Completed:** January 26, 2026
+
+**Files Modified:**
+- `src/components/admin/config/ConfigManager.tsx` - Fixed rates, added flag descriptions
+- `src/components/admin/AdminOverview.tsx` - System status diagnostics, activity feed
+- `src/components/admin/availability/AvailabilityManager.tsx` - Toast notifications
+- `src/components/admin/leads/LeadsList.tsx` - Empty name fallbacks
+- `App.tsx` - Global Toaster component
+- `package.json` - Added react-hot-toast
+
+**Files Created:**
+- `functions/api/admin/activity/recent.js` - Activity feed API
+- `migrations/0090_fix_data_quality.sql` - Category default fix
 
 ---
 
 *Author: Claude Opus 4.5*
 *For: R&G Consulting Platform*
+*Completed: January 26, 2026*

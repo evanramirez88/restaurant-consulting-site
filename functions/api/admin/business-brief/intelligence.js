@@ -332,12 +332,12 @@ export async function onRequestGet(context) {
       }))
     };
 
-    // Process agent intelligence
+    // Process agent intelligence - BB-7 fix: explicitly set completedRuns: 0 for unconfigured agents
     const agents = {
-      hunter: { name: 'Hunter', lastRun: null, status: 'idle', findings: 0 },
-      analyst: { name: 'Analyst', lastRun: null, status: 'idle', findings: 0 },
-      operator: { name: 'Operator', lastRun: null, status: 'idle', findings: 0 },
-      strategist: { name: 'Strategist', lastRun: null, status: 'idle', findings: 0 }
+      hunter: { name: 'Hunter', lastRun: null, status: 'idle', completedRuns: 0, failedRuns: 0 },
+      analyst: { name: 'Analyst', lastRun: null, status: 'idle', completedRuns: 0, failedRuns: 0 },
+      operator: { name: 'Operator', lastRun: null, status: 'idle', completedRuns: 0, failedRuns: 0 },
+      strategist: { name: 'Strategist', lastRun: null, status: 'idle', completedRuns: 0, failedRuns: 0 }
     };
 
     (agentStatus?.results || []).forEach(a => {
@@ -345,8 +345,8 @@ export async function onRequestGet(context) {
       if (agents[agentKey]) {
         agents[agentKey].lastRun = a.last_run;
         agents[agentKey].status = a.failed_count > a.completed_count ? 'error' : 'healthy';
-        agents[agentKey].completedRuns = a.completed_count;
-        agents[agentKey].failedRuns = a.failed_count;
+        agents[agentKey].completedRuns = a.completed_count || 0;
+        agents[agentKey].failedRuns = a.failed_count || 0;
       }
     });
 

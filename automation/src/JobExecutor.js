@@ -456,31 +456,195 @@ async function executeMenuUpload(client, job, payload, executor) {
 
 /**
  * Execute menu update job
+ *
+ * Payload structure:
+ * - updates: Array of update operations
+ *   Each update has:
+ *   - type: 'price_change' | 'availability' | 'modifier_update' | 'item_update'
+ *   - item_id or modifier_id: The target ID
+ *   - new_price, available, changes: Operation-specific data
  */
 async function executeMenuUpdate(client, job, payload, executor) {
-  // Similar to menu_upload but handles updates to existing items
-  await executor.updateJobProgress(job.id, 30, 'Navigating to menu editor...');
-  await client.navigateToMenuEditor();
+  const { updates = [] } = payload;
 
-  // TODO: Implement update logic - find existing items and modify them
-  executor.log('info', 'Menu update job - implementation pending');
+  if (updates.length === 0) {
+    throw new Error('No updates provided');
+  }
 
-  await executor.updateJobProgress(job.id, 90, 'Menu update complete');
+  await executor.updateJobProgress(job.id, 10, 'Processing menu updates...');
+
+  const results = {
+    successful: 0,
+    failed: 0,
+    errors: []
+  };
+
+  const totalUpdates = updates.length;
+
+  for (let i = 0; i < totalUpdates; i++) {
+    const update = updates[i];
+    const progress = 10 + Math.floor((i / totalUpdates) * 80);
+    const progressMessage = `Processing update ${i + 1}/${totalUpdates}: ${update.type}`;
+
+    await executor.updateJobProgress(job.id, progress, progressMessage);
+
+    try {
+      switch (update.type) {
+        case 'price_change':
+          await client.updateMenuItem(update.item_id, { price: update.new_price });
+          executor.log('info', `Price updated for item ${update.item_id}: ${update.new_price}`);
+          break;
+
+        case 'availability':
+          await client.toggleItemAvailability(update.item_id, update.available);
+          executor.log('info', `Availability updated for item ${update.item_id}: ${update.available}`);
+          break;
+
+        case 'modifier_update':
+          await client.updateModifier(update.modifier_id, update.changes);
+          executor.log('info', `Modifier updated: ${update.modifier_id}`);
+          break;
+
+        case 'item_update':
+          await client.updateMenuItem(update.item_id, update.changes);
+          executor.log('info', `Item updated: ${update.item_id}`);
+          break;
+
+        default:
+          executor.log('warn', `Unknown update type: ${update.type}`);
+          results.errors.push({ type: update.type, error: 'Unknown update type' });
+          results.failed++;
+          continue;
+      }
+
+      await client.takeScreenshot(`update_${update.type}_${i}`);
+      results.successful++;
+
+      // Small delay between updates for stability
+      await executor.sleep(1000);
+    } catch (error) {
+      executor.log('error', `Update failed (${update.type}): ${error.message}`);
+      results.errors.push({
+        type: update.type,
+        id: update.item_id || update.modifier_id,
+        error: error.message
+      });
+      results.failed++;
+    }
+  }
+
+  await executor.updateJobProgress(job.id, 95, 'Menu update complete');
+  await client.takeScreenshot('menu_update_complete');
+
+  return {
+    success: results.failed === 0,
+    results: {
+      updated: results.successful,
+      failed: results.failed,
+      errors: results.errors
+    }
+  };
 }
 
 /**
  * Execute KDS configuration job
+ *
+ * Payload structure:
+ * - stations: Array of station configurations
+ *   Each station has:
+ *   - name: Station display name (e.g., "Hot Line", "Cold Line", "Expo", "Bar")
+ *   - color: Optional hex color for station
+ *   - categories: Array of menu categories to route to this station
+ *   - routing_rules: Array of { category, enabled } routing configurations
+ *   - is_expo: Boolean indicating if this is an expo station
+ *   - criticality: Weight for station priority (1.0 = standard)
  */
 async function executeKDSConfig(client, job, payload, executor) {
   const { stations = [] } = payload;
 
-  await executor.updateJobProgress(job.id, 30, 'Navigating to KDS config...');
-  await client.navigateToKDSConfig();
+  if (stations.length === 0) {
+    throw new Error('No KDS stations provided');
+  }
 
-  // TODO: Implement KDS configuration logic
-  executor.log('info', `KDS config job with ${stations.length} stations - implementation pending`);
+  await executor.updateJobProgress(job.id, 10, 'Starting KDS configuration...');
 
-  await executor.updateJobProgress(job.id, 90, 'KDS configuration complete');
+  const results = {
+    stations_created: 0,
+    stations_updated: 0,
+    routing_configured: 0,
+    failed: 0,
+    errors: []
+  };
+
+  const totalStations = stations.length;
+
+  for (let i = 0; i < totalStations; i++) {
+    const station = stations[i];
+    const progress = 10 + Math.floor((i / totalStations) * 80);
+
+    await executor.updateJobProgress(
+      job.id,
+      progress,
+      `Configuring station ${i + 1}/${totalStations}: ${station.name}`
+    );
+
+    try {
+      // Create or update the station
+      const stationCreated = await client.createOrUpdateStation({
+        name: station.name,
+        color: station.color || '#3B82F6',
+        is_expo: station.is_expo || false,
+        criticality: station.criticality || 1.0
+      });
+
+      if (stationCreated) {
+        results.stations_created++;
+      } else {
+        results.stations_updated++;
+      }
+
+      // Configure routing if routing_rules provided
+      if (station.routing_rules && station.routing_rules.length > 0) {
+        await client.configureRouting(station.id || station.name, station.routing_rules);
+        results.routing_configured++;
+      } else if (station.categories && station.categories.length > 0) {
+        // Build routing rules from categories array
+        const routingRules = station.categories.map(category => ({
+          category,
+          enabled: true
+        }));
+        await client.configureRouting(station.id || station.name, routingRules);
+        results.routing_configured++;
+      }
+
+      await client.takeScreenshot(`kds_station_${station.name.replace(/\s+/g, '_')}`);
+
+      // Delay between stations
+      await executor.sleep(1000);
+    } catch (error) {
+      executor.log('error', `KDS station config failed (${station.name}): ${error.message}`);
+      results.errors.push({
+        station: station.name,
+        error: error.message
+      });
+      results.failed++;
+    }
+  }
+
+  await executor.updateJobProgress(job.id, 95, 'KDS configuration complete');
+  await client.takeScreenshot('kds_config_complete');
+
+  return {
+    success: results.failed === 0,
+    results: {
+      stations_configured: results.stations_created + results.stations_updated,
+      stations_created: results.stations_created,
+      stations_updated: results.stations_updated,
+      routing_configured: results.routing_configured,
+      failed: results.failed,
+      errors: results.errors
+    }
+  };
 }
 
 /**

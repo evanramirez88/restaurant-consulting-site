@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronUp, CheckCircle, AlertCircle, Link2, Phone, Mail,
   CalendarClock, Eye, EyeOff, GripVertical
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface AvailabilitySchedule {
   id: string;
@@ -114,6 +115,8 @@ const AvailabilityManager: React.FC = () => {
         setCurrentStatus(result.data);
         setSaveStatus('success');
         setSaveMessage('Status updated!');
+        // AO-1: Use global toast notification
+        toast.success('Availability status updated successfully');
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
         throw new Error(result.error);
@@ -121,6 +124,8 @@ const AvailabilityManager: React.FC = () => {
     } catch (error) {
       setSaveStatus('error');
       setSaveMessage('Failed to save');
+      // AO-1: Use global toast notification for errors
+      toast.error('Failed to update availability status');
     }
   };
 
@@ -144,16 +149,22 @@ const AvailabilityManager: React.FC = () => {
         setEditingSchedule(null);
         setSaveStatus('success');
         setSaveMessage('Schedule saved');
+        // AO-1: Use global toast notification
+        toast.success(isNew ? 'Schedule created successfully' : 'Schedule updated successfully');
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
         setSaveStatus('error');
         setSaveMessage(result.error || 'Failed to save schedule');
+        // AO-1: Use global toast notification for errors
+        toast.error(result.error || 'Failed to save schedule');
         setTimeout(() => setSaveStatus('idle'), 4000);
       }
     } catch (error) {
       console.error('Failed to save schedule:', error);
       setSaveStatus('error');
       setSaveMessage('Connection error');
+      // AO-1: Use global toast notification for errors
+      toast.error('Connection error - please try again');
       setTimeout(() => setSaveStatus('idle'), 4000);
     }
   };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, Save, Loader2, Briefcase, Mail, Phone, User, MapPin, Link2, AlertCircle
+  X, Save, Loader2, Briefcase, Mail, Phone, User, MapPin, Link2, AlertCircle,
+  Send, CheckCircle
 } from 'lucide-react';
 
 interface Rep {
@@ -49,6 +50,8 @@ const RepForm: React.FC<RepFormProps> = ({ rep, onSave, onCancel }) => {
   const [error, setError] = useState<string | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [customTerritory, setCustomTerritory] = useState('');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
 
   const isEditing = !!rep?.id;
 
@@ -122,6 +125,36 @@ const RepForm: React.FC<RepFormProps> = ({ rep, onSave, onCancel }) => {
   };
 
   const isCustomTerritory = formData.territory && !TERRITORIES.includes(formData.territory);
+
+  const handleSendInvite = async () => {
+    if (!rep?.id) return;
+
+    setIsSendingInvite(true);
+    setError(null);
+    setInviteSuccess(false);
+
+    try {
+      const response = await fetch(`/api/admin/reps/${rep.id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setInviteSuccess(true);
+        // Reset success state after 5 seconds
+        setTimeout(() => setInviteSuccess(false), 5000);
+      } else {
+        setError(result.error || 'Failed to send invite');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send invite');
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
 
   return (
     <div className="admin-card">
@@ -299,6 +332,47 @@ const RepForm: React.FC<RepFormProps> = ({ rep, onSave, onCancel }) => {
             {slugError && <p className="text-red-400 text-xs mt-1">{slugError}</p>}
             <p className="text-gray-500 text-xs mt-1">URL-friendly identifier for this rep's portal</p>
           </div>
+
+          {/* Send Invite Button - Only show when editing an existing rep with portal enabled */}
+          {isEditing && formData.portal_enabled && formData.slug && (
+            <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-white font-medium">Send Portal Invite</span>
+                  <p className="text-gray-400 text-sm">
+                    Email a magic link to {formData.email}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isSendingInvite || !formData.email}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    inviteSuccess
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                      : 'bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white'
+                  }`}
+                >
+                  {isSendingInvite ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : inviteSuccess ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Invite Sent!
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Invite
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Notes */}

@@ -393,16 +393,20 @@ Require admin approval before execution.
 
 ## Verification Checklist
 
-### Phase 1
-- [ ] Rules API returns real data from D1
-- [ ] ToastAutomate.tsx displays actual rules
-- [ ] Run counts from automation_events table
-- [ ] "Create Rule" saves to D1
+### Phase 1 ✅ COMPLETED (Jan 26, 2026)
+- [x] Rules API returns real data from D1 (`/api/automation/rules.js`)
+- [x] ToastAutomate.tsx displays actual rules (fetches from API)
+- [x] Run counts from automation_events table (via events API)
+- [x] "Create Rule" saves to D1 (POST to rules API)
+- [x] Events API created (`/api/automation/events.js`)
+- [x] AutomationLogs.tsx updated to use events API
 
-### Phase 2
-- [ ] menu_update handler works
-- [ ] kds_config handler works
-- [ ] Screenshots uploaded to R2
+### Phase 2 ✅ COMPLETED (Jan 26, 2026)
+- [x] menu_update handler works (price_change, availability, modifier_update, item_update)
+- [x] kds_config handler works (station creation, routing configuration)
+- [x] ToastBrowserClient extended with updateMenuItem, toggleItemAvailability, updateModifier
+- [x] ToastBrowserClient extended with createOrUpdateStation, configureRouting
+- [ ] Screenshots uploaded to R2 (existing implementation)
 
 ### Phase 3
 - [ ] Cron trigger fires every 5 minutes
@@ -420,11 +424,16 @@ Require admin approval before execution.
 
 | File | Purpose |
 |------|---------|
-| `pages/ToastAutomate.tsx` | Public rule builder UI |
-| `automation/src/JobExecutor.js` | Core execution engine |
+| `pages/ToastAutomate.tsx` | Public rule builder UI (fetches from API) |
+| `automation/src/JobExecutor.js` | Core execution engine (menu_update, kds_config implemented) |
+| `automation/src/ToastBrowserClient.js` | Browser automation (extended with update methods) |
 | `automation/src/toast/login.js` | Toast portal login |
 | `automation/src/observer/selfHealing.js` | Selector recovery |
-| `functions/api/automation/jobs.js` | Job CRUD API |
+| `functions/api/automation/jobs.js` | Job CRUD API (job types aligned) |
+| `functions/api/automation/rules.js` | Rules CRUD API (NEW - Phase 1) |
+| `functions/api/automation/rules/[id].js` | Individual rule operations (NEW) |
+| `functions/api/automation/events.js` | Automation events API (NEW) |
+| `src/components/admin/automation/AutomationLogs.tsx` | Real-time event log display |
 | `docs/TOAST_ABO_REDESIGN_PLAN.md` | Architecture reference |
 
 ---

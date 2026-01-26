@@ -170,7 +170,8 @@ export async function onRequestGet(context) {
         })),
         communications: communications.map(c => ({
           id: c.id,
-          type: c.type,
+          // BB-8 fix: Infer type from content/summary when type is generic 'meeting'
+          type: inferCommunicationType(c.type, c.summary, c.content_snippet, c.source_id),
           direction: c.direction,
           summary: c.summary,
           snippet: c.content_snippet,
@@ -197,4 +198,56 @@ export async function onRequestGet(context) {
 
 export async function onRequestOptions(context) {
   return handleOptions(context.request);
+}
+
+/**
+ * BB-8 fix: Infer communication type from content when stored type is generic
+ */
+function inferCommunicationType(storedType, summary, snippet, sourceId) {
+  // If type is already specific, use it
+  if (storedType && storedType !== 'meeting' && storedType !== 'other' && storedType !== 'unknown') {
+    return storedType;
+  }
+
+  const content = ((summary || '') + ' ' + (snippet || '') + ' ' + (sourceId || '')).toLowerCase();
+
+  // Check for email indicators
+  if (content.includes('email') || content.includes('gmail') || content.includes('@') ||
+      content.includes('inbox') || content.includes('sent mail') || content.includes('subject:')) {
+    return 'email';
+  }
+
+  // Check for call/phone indicators
+  if (content.includes('call') || content.includes('phone') || content.includes('voicemail') ||
+      content.includes('dial') || content.includes('rang') || content.includes('missed call')) {
+    return 'call';
+  }
+
+  // Check for SMS/text indicators
+  if (content.includes('sms') || content.includes('text message') || content.includes('imessage') ||
+      content.includes('whatsapp') || content.includes('messenger')) {
+    return 'sms';
+  }
+
+  // Check for document indicators
+  if (content.includes('document') || content.includes('google docs') || content.includes('.doc') ||
+      content.includes('.pdf') || content.includes('spreadsheet') || content.includes('sheet') ||
+      content.includes('drive') || content.includes('file')) {
+    return 'document';
+  }
+
+  // Check for browsing/web indicators
+  if (content.includes('http') || content.includes('dashboard') || content.includes('website') ||
+      content.includes('browser') || content.includes('chrome') || content.includes('tab')) {
+    return 'browsing';
+  }
+
+  // Check for actual meeting indicators
+  if (content.includes('zoom') || content.includes('meet') || content.includes('calendar') ||
+      content.includes('schedule') || content.includes('appointment') || content.includes('conference')) {
+    return 'meeting';
+  }
+
+  // Default to the stored type or 'activity'
+  return storedType || 'activity';
 }

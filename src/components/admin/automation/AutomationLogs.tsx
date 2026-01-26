@@ -35,10 +35,12 @@ const AutomationLogs: React.FC = () => {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const response = await fetch('/api/automation/jobs?include_events=true&limit=100');
+      const response = await fetch('/api/automation/events?limit=100', {
+        credentials: 'include'
+      });
       const result = await response.json();
-      if (result.success && result.events) {
-        setEvents(result.events);
+      if (result.success && result.data) {
+        setEvents(result.data);
       }
     } catch (err) {
       console.error('Failed to fetch logs:', err);

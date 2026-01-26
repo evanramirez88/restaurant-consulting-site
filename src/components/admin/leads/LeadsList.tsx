@@ -479,7 +479,10 @@ export default function LeadsList() {
                 {/* Main content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium text-white truncate">{lead.name}</h3>
+                    {/* IN-3: Fallback for empty names */}
+                    <h3 className="font-medium text-white truncate">
+                      {lead.name || lead.dba_name || lead.domain || 'Unknown Restaurant'}
+                    </h3>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(lead.status)}`}>
                       {lead.status}
                     </span>
@@ -658,7 +661,10 @@ export default function LeadsList() {
             </div>
 
             <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-              <p className="text-white font-medium">{enrollingLead.name}</p>
+              {/* IN-3: Fallback for empty names */}
+              <p className="text-white font-medium">
+                {enrollingLead.name || enrollingLead.dba_name || enrollingLead.domain || 'Unknown Restaurant'}
+              </p>
               <p className="text-sm text-gray-400">{enrollingLead.primary_email}</p>
             </div>
 
@@ -760,7 +766,10 @@ export default function LeadsList() {
                 <div className="mb-4 p-4 bg-gray-800 rounded-lg space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Name:</span>
-                    <span className="text-white">{convertingLead.name}</span>
+                    {/* IN-3: Fallback for empty names */}
+                    <span className="text-white">
+                      {convertingLead.name || convertingLead.dba_name || convertingLead.domain || 'Unknown Restaurant'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Email:</span>

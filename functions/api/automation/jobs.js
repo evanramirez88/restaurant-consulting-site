@@ -178,15 +178,16 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Validate job_type
+    // Validate job_type (aligned with JobExecutor handlers)
     const validJobTypes = [
-      'menu_deployment',
-      'menu_import',
-      'pos_sync',
-      'report_generation',
-      'backup',
-      'inventory_sync',
-      'employee_sync'
+      'menu_deployment',   // Menu Builder → Toast deployment
+      'menu_upload',       // Direct menu upload
+      'menu_update',       // Update existing menu items
+      'kds_config',        // KDS station configuration
+      'printer_setup',     // Printer routing setup
+      'employee_setup',    // Employee profile creation
+      'health_check',      // Configuration verification
+      'full_setup'         // Complete restaurant setup
     ];
 
     if (!validJobTypes.includes(job_type)) {

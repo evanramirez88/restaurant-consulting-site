@@ -145,7 +145,7 @@ export async function onRequestPut(context) {
       const emailLog = await db.prepare(`
         SELECT s.email, s.id as subscriber_id
         FROM email_logs el
-        JOIN subscribers s ON el.subscriber_id = s.id
+        JOIN email_subscribers s ON el.subscriber_id = s.id
         WHERE el.id = ?
       `).bind(id).first();
 
@@ -159,7 +159,7 @@ export async function onRequestPut(context) {
 
           // Also update subscriber status
           await db.prepare(`
-            UPDATE subscribers
+            UPDATE email_subscribers
             SET status = 'bounced', updated_at = ?
             WHERE id = ?
           `).bind(now, emailLog.subscriber_id).run();

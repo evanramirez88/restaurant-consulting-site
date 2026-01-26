@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Save, Loader2, Building2, Mail, Phone, User, Globe, Shield,
-  FolderOpen, Link2, AlertCircle, Users, Briefcase, Plus, Trash2
+  FolderOpen, Link2, AlertCircle, Users, Briefcase, Plus, Trash2,
+  Send, CheckCircle
 } from 'lucide-react';
 
 interface Rep {
@@ -86,6 +87,10 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
   const [allReps, setAllReps] = useState<Rep[]>([]);
   const [assignedRepIds, setAssignedRepIds] = useState<string[]>([]);
   const [isLoadingReps, setIsLoadingReps] = useState(false);
+
+  // Portal invite state
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
 
   const isEditing = !!client?.id;
 
@@ -213,6 +218,36 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
       setError(err instanceof Error ? err.message : 'Failed to save client');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!client?.id) return;
+
+    setIsSendingInvite(true);
+    setError(null);
+    setInviteSuccess(false);
+
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setInviteSuccess(true);
+        // Reset success state after 5 seconds
+        setTimeout(() => setInviteSuccess(false), 5000);
+      } else {
+        setError(result.error || 'Failed to send invite');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send invite');
+    } finally {
+      setIsSendingInvite(false);
     }
   };
 
@@ -362,6 +397,47 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => 
               ))}
             </select>
           </div>
+
+          {/* Send Invite Button - Only show when editing an existing client with portal enabled */}
+          {isEditing && formData.portal_enabled && formData.slug && (
+            <div className="p-4 bg-gray-900/30 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-white font-medium">Send Portal Invite</span>
+                  <p className="text-gray-400 text-sm">
+                    Email a magic link to {formData.email}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendInvite}
+                  disabled={isSendingInvite || !formData.email}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    inviteSuccess
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                      : 'bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 text-white'
+                  }`}
+                >
+                  {isSendingInvite ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : inviteSuccess ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Invite Sent!
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Invite
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Support Plan */}

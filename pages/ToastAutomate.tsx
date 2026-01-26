@@ -130,76 +130,17 @@ const CATEGORIES: CategoryInfo[] = [
   }
 ];
 
-// Sample automation rules for demo
-const SAMPLE_RULES: AutomationRule[] = [
-  {
-    id: '1',
-    name: 'Daily Sales Report',
-    description: 'Generate and email daily sales summary at 6 AM',
-    category: 'reporting',
-    trigger: {
-      type: 'schedule',
-      schedule: { frequency: 'daily', time: '06:00' }
-    },
-    actions: [
-      { type: 'export', config: { format: 'pdf', report: 'daily-sales' } },
-      { type: 'email', config: { to: 'owner@restaurant.com', subject: 'Daily Sales Report' } }
-    ],
-    enabled: true,
-    lastRun: Date.now() - 3600000,
-    nextRun: Date.now() + 82800000,
-    runCount: 127
-  },
-  {
-    id: '2',
-    name: 'Low Stock Alert',
-    description: 'Notify when any ingredient drops below minimum level',
-    category: 'inventory',
-    trigger: {
-      type: 'threshold',
-      threshold: { metric: 'stock_level', operator: 'lt', value: 20 }
-    },
-    actions: [
-      { type: 'notification', config: { channel: 'sms', priority: 'high' } },
-      { type: 'email', config: { to: 'kitchen@restaurant.com' } }
-    ],
-    enabled: true,
-    lastRun: Date.now() - 7200000,
-    runCount: 45
-  },
-  {
-    id: '3',
-    name: 'Weekly Menu Sync',
-    description: 'Sync menu changes to all locations every Monday at 3 AM',
-    category: 'menu',
-    trigger: {
-      type: 'schedule',
-      schedule: { frequency: 'weekly', time: '03:00', dayOfWeek: 1 }
-    },
-    actions: [
-      { type: 'update', config: { target: 'all-locations', type: 'menu' } }
-    ],
-    enabled: true,
-    lastRun: Date.now() - 172800000,
-    nextRun: Date.now() + 432000000,
-    runCount: 52
-  },
-  {
-    id: '4',
-    name: 'Overtime Warning',
-    description: 'Alert manager when employee approaches overtime threshold',
-    category: 'labor',
-    trigger: {
-      type: 'threshold',
-      threshold: { metric: 'weekly_hours', operator: 'gt', value: 35 }
-    },
-    actions: [
-      { type: 'notification', config: { channel: 'app', priority: 'medium' } }
-    ],
-    enabled: false,
-    runCount: 18
+// Helper to get auth token from cookie
+const getAuthToken = (): string | null => {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'ccrc_admin_token') {
+      return value;
+    }
   }
-];
+  return null;
+};
 
 // ============================================================
 // COMING SOON COMPONENT
@@ -410,7 +351,9 @@ const ToastAutomate: React.FC = () => {
 
   const [featureFlagLoading, setFeatureFlagLoading] = useState(true);
   const [isFeatureEnabled, setIsFeatureEnabled] = useState(!SHOW_COMING_SOON);
-  const [rules, setRules] = useState<AutomationRule[]>(SAMPLE_RULES);
+  const [rules, setRules] = useState<AutomationRule[]>([]);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesError, setRulesError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -455,14 +398,111 @@ const ToastAutomate: React.FC = () => {
     checkFeatureFlag();
   }, []);
 
-  const toggleRule = (id: string) => {
+  // Fetch rules from API when feature is enabled
+  useEffect(() => {
+    if (!isFeatureEnabled || featureFlagLoading) return;
+
+    const fetchRules = async () => {
+      setRulesLoading(true);
+      setRulesError(null);
+
+      try {
+        const response = await fetch('/api/automation/rules', {
+          credentials: 'include'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          // Transform API response to match UI format
+          const transformedRules = (result.data || []).map((rule: any) => ({
+            id: rule.id,
+            name: rule.name,
+            description: rule.description,
+            category: rule.category as AutomationRule['category'],
+            trigger: rule.trigger,
+            actions: rule.actions,
+            enabled: rule.enabled,
+            lastRun: rule.lastRun,
+            nextRun: rule.nextRun,
+            runCount: rule.runCount || 0
+          }));
+          setRules(transformedRules);
+        } else {
+          setRulesError(result.error || 'Failed to load rules');
+        }
+      } catch (error) {
+        console.error('Failed to fetch rules:', error);
+        setRulesError('Failed to connect to server');
+      } finally {
+        setRulesLoading(false);
+      }
+    };
+
+    fetchRules();
+  }, [isFeatureEnabled, featureFlagLoading]);
+
+  const toggleRule = async (id: string) => {
+    const rule = rules.find(r => r.id === id);
+    if (!rule) return;
+
+    // Optimistic update
     setRules(prev => prev.map(r =>
       r.id === id ? { ...r, enabled: !r.enabled } : r
     ));
+
+    try {
+      const response = await fetch(`/api/automation/rules/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ enabled: !rule.enabled })
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        // Revert on failure
+        setRules(prev => prev.map(r =>
+          r.id === id ? { ...r, enabled: rule.enabled } : r
+        ));
+        console.error('Failed to toggle rule:', result.error);
+      }
+    } catch (error) {
+      // Revert on error
+      setRules(prev => prev.map(r =>
+        r.id === id ? { ...r, enabled: rule.enabled } : r
+      ));
+      console.error('Failed to toggle rule:', error);
+    }
   };
 
-  const deleteRule = (id: string) => {
+  const deleteRule = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this rule?')) return;
+
+    // Optimistic update
+    const deletedRule = rules.find(r => r.id === id);
     setRules(prev => prev.filter(r => r.id !== id));
+
+    try {
+      const response = await fetch(`/api/automation/rules/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        // Revert on failure
+        if (deletedRule) {
+          setRules(prev => [...prev, deletedRule]);
+        }
+        console.error('Failed to delete rule:', result.error);
+      }
+    } catch (error) {
+      // Revert on error
+      if (deletedRule) {
+        setRules(prev => [...prev, deletedRule]);
+      }
+      console.error('Failed to delete rule:', error);
+    }
   };
 
   const editRule = (rule: AutomationRule) => {
@@ -587,29 +627,47 @@ const ToastAutomate: React.FC = () => {
         </div>
 
         {/* Rules Grid */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {filteredRules.map((rule) => (
-            <RuleCard
-              key={rule.id}
-              rule={rule}
-              onToggle={toggleRule}
-              onEdit={editRule}
-              onDelete={deleteRule}
-            />
-          ))}
-          {filteredRules.length === 0 && (
-            <div className="col-span-2 text-center py-12 text-gray-500">
-              <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No automation rules found</p>
-              <button
-                onClick={() => setIsCreating(true)}
-                className="mt-4 text-amber-400 hover:text-amber-300"
-              >
-                Create your first rule
-              </button>
-            </div>
-          )}
-        </div>
+        {rulesLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+            <span className="ml-3 text-gray-400">Loading rules...</span>
+          </div>
+        ) : rulesError ? (
+          <div className="col-span-2 text-center py-12 text-gray-500">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400 opacity-75" />
+            <p className="text-red-400">{rulesError}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 text-amber-400 hover:text-amber-300"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {filteredRules.map((rule) => (
+              <RuleCard
+                key={rule.id}
+                rule={rule}
+                onToggle={toggleRule}
+                onEdit={editRule}
+                onDelete={deleteRule}
+              />
+            ))}
+            {filteredRules.length === 0 && (
+              <div className="col-span-2 text-center py-12 text-gray-500">
+                <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No automation rules found</p>
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="mt-4 text-amber-400 hover:text-amber-300"
+                >
+                  Create your first rule
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -248,26 +248,31 @@ export async function onRequestGet(context) {
       ? ((recentConversions.won / totalDecided) * 100).toFixed(1)
       : 0;
 
-    // Build scenario projections
-    const moderateRate = parseFloat(closeRate) || 25;
+    // BB-4 fix: Build scenario projections with consistent rates
+    // Conservative < Moderate < Optimistic (ascending close rates)
+    const pipelineValue = activeQuotes?.value || 0;
+    const conservativeRate = 5;  // Fixed 5% - worst case
+    const moderateRate = 15;     // Fixed 15% - realistic baseline
+    const optimisticRate = 25;   // Fixed 25% - best case with effort
+
     const scenarios = {
       conservative: {
         label: 'Conservative',
-        assumedCloseRate: Math.max(moderateRate - 10, 5),
-        projectedValue: (activeQuotes?.value || 0) * 0.15,
-        description: 'Based on 15% of active pipeline'
+        assumedCloseRate: conservativeRate,
+        projectedValue: pipelineValue * (conservativeRate / 100),
+        description: `Based on ${conservativeRate}% close rate - cautious estimate`
       },
       moderate: {
         label: 'Moderate',
         assumedCloseRate: moderateRate,
-        projectedValue: (activeQuotes?.value || 0) * 0.25,
-        description: 'Based on current close rate'
+        projectedValue: pipelineValue * (moderateRate / 100),
+        description: `Based on ${moderateRate}% close rate - realistic baseline`
       },
       optimistic: {
         label: 'Optimistic',
-        assumedCloseRate: Math.min(moderateRate + 15, 50),
-        projectedValue: (activeQuotes?.value || 0) * 0.40,
-        description: 'Based on improved conversion efforts'
+        assumedCloseRate: optimisticRate,
+        projectedValue: pipelineValue * (optimisticRate / 100),
+        description: `Based on ${optimisticRate}% close rate - with improved efforts`
       }
     };
 

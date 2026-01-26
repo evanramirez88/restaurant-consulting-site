@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Home from './pages/Home'; // Keep Home eager for fast initial load
 
@@ -94,6 +95,27 @@ const App: React.FC = () => {
   return (
     <HashRouter>
       <ScrollToTop />
+      {/* AO-1: Global toast notification system */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid #374151',
+          },
+          success: {
+            style: { background: '#065f46', border: '1px solid #10b981' },
+            iconTheme: { primary: '#10b981', secondary: '#fff' }
+          },
+          error: {
+            style: { background: '#7f1d1d', border: '1px solid #ef4444' },
+            duration: 5000,
+            iconTheme: { primary: '#ef4444', secondary: '#fff' }
+          }
+        }}
+      />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin routes (protected) */}

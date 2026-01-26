@@ -258,6 +258,246 @@ export class ToastBrowserClient {
   }
 
   /**
+   * Update an existing menu item
+   */
+  async updateMenuItem(itemId, updates) {
+    this.log('info', `Updating menu item: ${itemId}`);
+
+    try {
+      // Navigate to the item's edit page
+      const editUrl = `${config.toast.menuEditorBase.replace('{restaurantGuid}', this.currentRestaurantGuid)}/items/${itemId}/edit`;
+      await this.page.goto(editUrl, { waitUntil: 'networkidle2' });
+      await this.waitForLoadingComplete();
+      await this.takeScreenshot(`menu_item_edit_${itemId}`);
+
+      // Update name if provided
+      if (updates.name) {
+        const nameInput = await this.findElement('menu.itemNameInput');
+        await nameInput.click({ clickCount: 3 });
+        await nameInput.type(updates.name, { delay: 30 });
+      }
+
+      // Update price if provided
+      if (updates.price !== undefined) {
+        const priceInput = await this.findElement('menu.itemPriceInput');
+        await priceInput.click({ clickCount: 3 });
+        await priceInput.type(String(updates.price), { delay: 30 });
+      }
+
+      // Update description if provided
+      if (updates.description) {
+        const descInput = await this.findElement('menu.itemDescriptionInput');
+        await descInput.click({ clickCount: 3 });
+        await descInput.type(updates.description, { delay: 20 });
+      }
+
+      await this.takeScreenshot(`menu_item_updated_${itemId}`);
+
+      // Save
+      const saveButton = await this.findElement('menu.saveButton');
+      await saveButton.click();
+      await this.waitForLoadingComplete();
+
+      this.log('info', `Menu item updated: ${itemId}`);
+      return true;
+    } catch (error) {
+      this.log('error', `Failed to update menu item: ${error.message}`);
+      await this.takeScreenshot('menu_item_update_error');
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle menu item availability (86'd status)
+   */
+  async toggleItemAvailability(itemId, available) {
+    this.log('info', `Setting item ${itemId} availability to: ${available}`);
+
+    try {
+      // Navigate to item
+      const editUrl = `${config.toast.menuEditorBase.replace('{restaurantGuid}', this.currentRestaurantGuid)}/items/${itemId}/edit`;
+      await this.page.goto(editUrl, { waitUntil: 'networkidle2' });
+      await this.waitForLoadingComplete();
+
+      // Find availability toggle (this will depend on Toast's actual UI)
+      const availabilitySelector = [
+        `input[name="available"]`,
+        `[data-testid="availability-toggle"]`,
+        `.availability-switch`
+      ];
+
+      for (const selector of availabilitySelector) {
+        try {
+          const toggle = await this.page.$(selector);
+          if (toggle) {
+            const isChecked = await this.page.evaluate(el => el.checked, toggle);
+            if (isChecked !== available) {
+              await toggle.click();
+              await this.waitForLoadingComplete();
+            }
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      // Save changes
+      const saveButton = await this.findElement('menu.saveButton');
+      await saveButton.click();
+      await this.waitForLoadingComplete();
+
+      this.log('info', `Item ${itemId} availability set to: ${available}`);
+      return true;
+    } catch (error) {
+      this.log('error', `Failed to toggle item availability: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a modifier group
+   */
+  async updateModifier(modifierId, changes) {
+    this.log('info', `Updating modifier: ${modifierId}`);
+
+    try {
+      // Navigate to modifier edit page
+      const modifierUrl = `${config.toast.menuEditorBase.replace('{restaurantGuid}', this.currentRestaurantGuid)}/modifier-groups/${modifierId}/edit`;
+      await this.page.goto(modifierUrl, { waitUntil: 'networkidle2' });
+      await this.waitForLoadingComplete();
+      await this.takeScreenshot(`modifier_edit_${modifierId}`);
+
+      // Update fields based on changes object
+      if (changes.name) {
+        const nameInput = await this.page.$('input[name="name"]');
+        if (nameInput) {
+          await nameInput.click({ clickCount: 3 });
+          await nameInput.type(changes.name, { delay: 30 });
+        }
+      }
+
+      // Update min/max selections if provided
+      if (changes.minSelections !== undefined) {
+        const minInput = await this.page.$('input[name="minSelections"]');
+        if (minInput) {
+          await minInput.click({ clickCount: 3 });
+          await minInput.type(String(changes.minSelections), { delay: 30 });
+        }
+      }
+
+      if (changes.maxSelections !== undefined) {
+        const maxInput = await this.page.$('input[name="maxSelections"]');
+        if (maxInput) {
+          await maxInput.click({ clickCount: 3 });
+          await maxInput.type(String(changes.maxSelections), { delay: 30 });
+        }
+      }
+
+      // Save
+      const saveButton = await this.findElement('menu.saveButton');
+      await saveButton.click();
+      await this.waitForLoadingComplete();
+
+      this.log('info', `Modifier updated: ${modifierId}`);
+      return true;
+    } catch (error) {
+      this.log('error', `Failed to update modifier: ${error.message}`);
+      await this.takeScreenshot('modifier_update_error');
+      throw error;
+    }
+  }
+
+  /**
+   * Create or update a KDS station
+   */
+  async createOrUpdateStation(station) {
+    this.log('info', `Creating/updating KDS station: ${station.name}`);
+
+    try {
+      await this.navigateToKDSConfig();
+
+      // Check if station exists (by name)
+      const existingStation = await this.page.$(`[data-station-name="${station.name}"]`);
+
+      if (existingStation) {
+        // Edit existing station
+        await existingStation.click();
+        await this.waitForLoadingComplete();
+      } else {
+        // Create new station
+        const addButton = await this.findElement('kds.addStationButton');
+        await addButton.click();
+        await this.waitForLoadingComplete();
+      }
+
+      // Fill station details
+      const nameInput = await this.findElement('kds.stationNameInput');
+      await nameInput.click({ clickCount: 3 });
+      await nameInput.type(station.name, { delay: 30 });
+
+      // Set station color if provided
+      if (station.color) {
+        const colorInput = await this.page.$('input[name="color"]');
+        if (colorInput) {
+          await colorInput.click({ clickCount: 3 });
+          await colorInput.type(station.color, { delay: 30 });
+        }
+      }
+
+      await this.takeScreenshot(`kds_station_${station.name.replace(/\s+/g, '_')}`);
+
+      // Save
+      const saveButton = await this.findElement('menu.saveButton');
+      await saveButton.click();
+      await this.waitForLoadingComplete();
+
+      this.log('info', `KDS station saved: ${station.name}`);
+      return true;
+    } catch (error) {
+      this.log('error', `Failed to create/update KDS station: ${error.message}`);
+      await this.takeScreenshot('kds_station_error');
+      throw error;
+    }
+  }
+
+  /**
+   * Configure routing rules for a KDS station
+   */
+  async configureRouting(stationId, routingRules) {
+    this.log('info', `Configuring routing for station: ${stationId}`);
+
+    try {
+      // Navigate to station routing config
+      const routingUrl = `${config.toast.kdsConfigBase.replace('{restaurantGuid}', this.currentRestaurantGuid)}/stations/${stationId}/routing`;
+      await this.page.goto(routingUrl, { waitUntil: 'networkidle2' });
+      await this.waitForLoadingComplete();
+      await this.takeScreenshot(`kds_routing_${stationId}`);
+
+      // Apply each routing rule
+      for (const rule of routingRules) {
+        // Find category/item checkbox and enable it
+        const categorySelector = `[data-category="${rule.category}"] input[type="checkbox"]`;
+        const checkbox = await this.page.$(categorySelector);
+        if (checkbox) {
+          const isChecked = await this.page.evaluate(el => el.checked, checkbox);
+          if (isChecked !== rule.enabled) {
+            await checkbox.click();
+          }
+        }
+      }
+
+      await this.waitForLoadingComplete();
+      this.log('info', `Routing configured for station: ${stationId}`);
+      return true;
+    } catch (error) {
+      this.log('error', `Failed to configure routing: ${error.message}`);
+      await this.takeScreenshot('kds_routing_error');
+      throw error;
+    }
+  }
+
+  /**
    * Navigate to KDS configuration
    */
   async navigateToKDSConfig() {

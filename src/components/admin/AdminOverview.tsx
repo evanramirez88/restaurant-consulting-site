@@ -149,21 +149,39 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         // Stats are non-critical
       }
 
-      // Fetch recent activity from email logs
+      // Fetch recent activity from aggregated activity feed (AO-4)
       try {
-        const res = await fetch('/api/admin/email/errors?limit=5');
+        const res = await fetch('/api/admin/activity/recent?limit=10');
         const data = await res.json();
         if (data.success && data.data?.length > 0) {
-          setRecentActivity(data.data.slice(0, 3).map((e: any) => ({
+          setRecentActivity(data.data.slice(0, 5).map((e: any) => ({
             id: e.id,
-            type: 'email',
-            title: `Email ${e.status}: ${e.recipient || 'unknown'}`,
-            detail: e.error_message || e.status,
-            time: e.created_at
+            type: e.type || 'activity',
+            title: e.description || 'Activity',
+            detail: e.type === 'email' ? 'Email system' :
+                    e.type === 'login' ? 'Portal access' :
+                    e.type === 'ticket' ? 'Support' :
+                    e.type === 'form' ? 'Contact form' : '',
+            time: e.timestamp
           })));
         }
       } catch (e) {
-        // Non-critical
+        // Non-critical - fall back to email errors
+        try {
+          const res = await fetch('/api/admin/email/errors?limit=5');
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setRecentActivity(data.data.slice(0, 3).map((err: any) => ({
+              id: err.id,
+              type: 'email',
+              title: `Email ${err.status}: ${err.recipient || 'unknown'}`,
+              detail: err.error_message || err.status,
+              time: err.created_at
+            })));
+          }
+        } catch (e2) {
+          // Non-critical
+        }
       }
     };
     loadDashStats();
@@ -271,21 +289,36 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               </div>
               <span className="text-green-400 text-sm font-medium">Online</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${automationStatus?.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
-                <span className="text-gray-400 text-sm">Automation</span>
+            <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${automationStatus?.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+                  <span className="text-gray-400 text-sm">Automation</span>
+                </div>
+                {automationStatus?.isOnline ? (
+                  <span className="text-green-400 text-sm font-medium">Online</span>
+                ) : (
+                  <span className="text-gray-500 text-sm font-medium">Offline</span>
+                )}
               </div>
-              {automationStatus?.isOnline ? (
-                <span className="text-green-400 text-sm font-medium">Online</span>
-              ) : (
-                <button
-                  onClick={() => onNavigateToTab('toast-automate')}
-                  className="text-gray-500 text-sm font-medium hover:text-amber-400 transition-colors"
-                  title="View Toast Automate settings"
-                >
-                  Offline →
-                </button>
+              {/* AO-3: Show diagnostic info when automation is offline */}
+              {!automationStatus?.isOnline && (
+                <div className="mt-2 pt-2 border-t border-gray-700/50">
+                  <p className="text-xs text-gray-500">
+                    Automation server not responding
+                  </p>
+                  {automationStatus?.lastHeartbeat && (
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Last seen: {formatTimeAgo(new Date(automationStatus.lastHeartbeat).getTime() / 1000)}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => onNavigateToTab('tools')}
+                    className="text-xs text-amber-400 hover:text-amber-300 mt-1 flex items-center gap-1"
+                  >
+                    View Details →
+                  </button>
+                </div>
               )}
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
@@ -355,20 +388,39 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         <div className="space-y-2">
           {recentActivity.length > 0 ? (
             <>
-              {recentActivity.map(item => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
-                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-blue-400" />
+              {recentActivity.map(item => {
+                // AO-4: Activity type-specific icon and color
+                const getIconAndColor = (type: string) => {
+                  switch (type) {
+                    case 'email':
+                      return { icon: <MessageSquare className="w-4 h-4 text-blue-400" />, bg: 'bg-blue-500/20' };
+                    case 'login':
+                      return { icon: <Users className="w-4 h-4 text-green-400" />, bg: 'bg-green-500/20' };
+                    case 'ticket':
+                      return { icon: <Ticket className="w-4 h-4 text-purple-400" />, bg: 'bg-purple-500/20' };
+                    case 'form':
+                      return { icon: <FileText className="w-4 h-4 text-orange-400" />, bg: 'bg-orange-500/20' };
+                    default:
+                      return { icon: <Activity className="w-4 h-4 text-gray-400" />, bg: 'bg-gray-500/20' };
+                  }
+                };
+                const { icon, bg } = getIconAndColor(item.type);
+
+                return (
+                  <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg border border-gray-700/50">
+                    <div className={`w-8 h-8 ${bg} rounded-full flex items-center justify-center`}>
+                      {icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm truncate">{item.title}</p>
+                      <p className="text-gray-500 text-xs truncate">{item.detail}</p>
+                    </div>
+                    <span className="text-gray-500 text-xs whitespace-nowrap">
+                      {item.time ? formatTimeAgo(item.time) : ''}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm truncate">{item.title}</p>
-                    <p className="text-gray-500 text-xs truncate">{item.detail}</p>
-                  </div>
-                  <span className="text-gray-500 text-xs whitespace-nowrap">
-                    {item.time ? formatTimeAgo(item.time) : ''}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </>
           ) : (
             <>
