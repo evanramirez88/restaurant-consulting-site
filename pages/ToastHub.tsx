@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  FileText, Calendar, Tag, Eye, Star, ChevronRight, Search,
-  BookOpen, Lightbulb, TrendingUp, Newspaper, Loader2, ArrowRight
+  FileText, Calendar, Eye, Star, ChevronRight, Search,
+  BookOpen, Lightbulb, TrendingUp, Newspaper, Loader2, ArrowRight,
+  Mail, Check, AlertCircle
 } from 'lucide-react';
 import { useSEO } from '../src/components/SEO';
 
@@ -68,6 +69,10 @@ const ToastHub: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterName, setNewsletterName] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
 
   useSEO({
     title: 'Toast Hub | Toast POS Resources, Tips & News | R&G Consulting',
@@ -211,6 +216,42 @@ const ToastHub: React.FC = () => {
     if (!slug) return 'General';
     const cat = categories.find(c => c.slug === slug);
     return cat?.name || slug;
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+
+    setNewsletterStatus('loading');
+    try {
+      const res = await fetch('/api/toast-hub/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newsletterEmail,
+          first_name: newsletterName || undefined,
+          source: 'toast_hub_page'
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setNewsletterStatus('success');
+        setNewsletterMessage(data.message);
+        setNewsletterEmail('');
+        setNewsletterName('');
+        setTimeout(() => {
+          setNewsletterStatus('idle');
+          setNewsletterMessage('');
+        }, 5000);
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterMessage(data.error || 'Subscription failed');
+      }
+    } catch {
+      setNewsletterStatus('error');
+      setNewsletterMessage('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -446,6 +487,73 @@ const ToastHub: React.FC = () => {
             </div>
           </section>
         )}
+
+        {/* Newsletter Subscription */}
+        <section className="mt-16 animate-on-scroll">
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 md:p-12">
+            <div className="max-w-xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 mb-4 text-amber-600">
+                <Mail className="w-6 h-6" />
+                <span className="text-sm font-semibold uppercase tracking-wider">Stay Updated</span>
+              </div>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                Get Toast Tips in Your Inbox
+              </h2>
+              <p className="text-gray-600 mb-8">
+                Weekly tips, industry insights, and new articles delivered straight to your inbox.
+              </p>
+
+              {newsletterStatus === 'success' ? (
+                <div className="flex items-center justify-center gap-3 text-green-600 bg-green-50 border border-green-200 rounded-xl p-6">
+                  <Check className="w-6 h-6" />
+                  <span className="font-medium">{newsletterMessage}</span>
+                </div>
+              ) : (
+                <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="First name (optional)"
+                      value={newsletterName}
+                      onChange={(e) => setNewsletterName(e.target.value)}
+                      className="flex-1 sm:w-36 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent shadow-sm"
+                    />
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      required
+                      className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent shadow-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={newsletterStatus === 'loading' || !newsletterEmail}
+                      className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {newsletterStatus === 'loading' ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>Subscribe</>
+                      )}
+                    </button>
+                  </div>
+
+                  {newsletterStatus === 'error' && (
+                    <div className="flex items-center justify-center gap-2 text-red-600 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{newsletterMessage}</span>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500">
+                    No spam, ever. Unsubscribe anytime.
+                  </p>
+                </form>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* CTA Section */}
         <section className="mt-20 animate-on-scroll">
