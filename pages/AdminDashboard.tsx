@@ -82,6 +82,21 @@ const AdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [tabLoading, setTabLoading] = useState(false);
+
+  // Tab transition handler
+  const handleTabChange = (newTab: TabType) => {
+    if (newTab === activeTab) return;
+    setTabLoading(true);
+    setActiveTab(newTab);
+    // Reset sub-views when changing tabs
+    if (newTab === 'contacts') {
+      setClientView('list');
+      setRepView('list');
+    }
+    // Brief loading state for smooth transition
+    setTimeout(() => setTabLoading(false), 150);
+  };
 
   // Client state
   const [clientView, setClientView] = useState<ClientView>('list');
@@ -338,19 +353,13 @@ const AdminDashboard: React.FC = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  // Reset sub-views when changing tabs
-                  if (tab.id === 'contacts') {
-                    setClientView('list');
-                    setRepView('list');
-                  }
-                }}
+                onClick={() => handleTabChange(tab.id)}
+                disabled={tabLoading}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap min-h-[44px] ${
                   activeTab === tab.id
                     ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
+                } ${tabLoading ? 'opacity-70 cursor-wait' : ''}`}
                 aria-current={activeTab === tab.id ? 'page' : undefined}
               >
                 {tab.icon}
@@ -361,30 +370,37 @@ const AdminDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6 transition-opacity duration-200">
+      <main className={`max-w-6xl mx-auto px-4 py-6 space-y-6 transition-opacity duration-150 ${tabLoading ? 'opacity-50' : 'opacity-100'}`}>
+        {/* Tab Loading Indicator */}
+        {tabLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+          </div>
+        )}
+
         {/* Overview Tab */}
-        {activeTab === 'overview' && (
+        {!tabLoading && activeTab === 'overview' && (
           <AdminOverview
             availability={availability}
             clientCount={clientCount}
             repCount={repCount}
-            onNavigateToTab={(tab) => setActiveTab(tab as TabType)}
+            onNavigateToTab={(tab) => handleTabChange(tab as TabType)}
             formatTimeAgo={formatTimeAgo}
           />
         )}
 
         {/* Business Brief Tab */}
-        {activeTab === 'brief' && (
+        {!tabLoading && activeTab === 'brief' && (
           <BusinessBrief />
         )}
 
         {/* Portals Tab */}
-        {activeTab === 'portals' && (
+        {!tabLoading && activeTab === 'portals' && (
           <PortalManagement />
         )}
 
         {/* Contacts Tab */}
-        {activeTab === 'contacts' && (
+        {!tabLoading && activeTab === 'contacts' && (
           <>
             {/* Contacts Sub-tabs */}
             <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
@@ -505,12 +521,12 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Tickets Tab */}
-        {activeTab === 'tickets' && (
+        {!tabLoading && activeTab === 'tickets' && (
           <TicketingDashboard />
         )}
 
         {/* Email Tab */}
-        {activeTab === 'email' && (
+        {!tabLoading && activeTab === 'email' && (
           <>
             {/* Email Sub-tabs */}
             <div className="flex gap-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
@@ -628,12 +644,12 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Intelligence Tab */}
-        {activeTab === 'intelligence' && (
+        {!tabLoading && activeTab === 'intelligence' && (
           <ClientIntelligenceTab />
         )}
 
         {/* Tools Tab */}
-        {activeTab === 'tools' && (
+        {!tabLoading && activeTab === 'tools' && (
           <ToolsDemo
             onOpenQuoteBuilder={handleOpenQuoteBuilder}
             onOpenMenuBuilder={handleOpenMenuBuilder}
@@ -646,7 +662,7 @@ const AdminDashboard: React.FC = () => {
 
 
         {/* Config Tab */}
-        {activeTab === 'config' && (
+        {!tabLoading && activeTab === 'config' && (
           <ConfigManager />
         )}
 
