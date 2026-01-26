@@ -451,11 +451,20 @@ The `resend_id` column wasn't being populated separately in `email_logs`, potent
 - [x] Migration adds unsubscribe_token column and backfills existing subscribers
 - [x] Email footer includes unsubscribe link
 
-**Remaining Human Tasks:**
-1. Deploy changes: `npx wrangler deploy` for email-dispatcher worker
-2. Apply migration: `npx wrangler d1 migrations apply restaurant-consulting-db --remote`
-3. Verify Resend webhook URL is configured: `https://ccrestaurantconsulting.com/api/webhooks/resend`
-4. Verify `RESEND_WEBHOOK_SECRET` environment variable is set in Cloudflare
+**Deployment Status (January 26, 2026):**
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| Site Build | ✅ Deployed | https://027b586e.restaurant-consulting-site.pages.dev |
+| Email Dispatcher Worker | ✅ Deployed | Version e95ca672-5e08-455e-b134-97fda0c691d3 |
+| Migration 0088 | ✅ Applied | 72 subscribers backfilled with unsubscribe tokens |
+| Unsubscribe Table | ✅ Created | `email_unsubscribe_log` table exists |
+
+**Remaining Human Verification:**
+1. Verify Resend webhook URL is configured at https://resend.com/webhooks:
+   - URL: `https://ccrestaurantconsulting.com/api/webhooks/resend`
+   - Events: email.sent, email.delivered, email.opened, email.clicked, email.bounced, email.complained
+2. Verify `RESEND_WEBHOOK_SECRET` environment variable is set in Cloudflare
 
 **Note:** Open/click tracking relies on Resend's native tracking (not custom pixels). Ensure Resend webhook is configured with all email events enabled.
 
