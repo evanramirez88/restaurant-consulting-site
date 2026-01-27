@@ -1,0 +1,436 @@
+{
+  "name": "Menu Intake Pipeline",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-gmail",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-rg-business",
+          "name": "Gmail - RG Business"
+        }
+      },
+      "notes": "Triggers when email with attachment arrives"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.payload.mimeType }}",
+              "operation": "contains",
+              "value2": "multipart"
+            }
+          ]
+        }
+      },
+      "id": "check-attachment",
+      "name": "Has Attachment?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "messageId": "={{ $json.id }}",
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "get-attachments",
+      "name": "Get Attachments",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-rg-business",
+          "name": "Gmail - RG Business"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.attachments[0].mimeType }}",
+              "operation": "contains",
+              "value2": "image"
+            },
+            {
+              "value1": "={{ $json.attachments[0].mimeType }}",
+              "operation": "contains",
+              "value2": "pdf"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-file-type",
+      "name": "Is Menu File?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.OCR_SPACE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "base64Image",
+              "value": "data:{{ $json.attachments[0].mimeType }};base64,{{ $json.attachments[0].data }}"
+            },
+            {
+              "name": "language",
+              "value": "eng"
+            },
+            {
+              "name": "isTable",
+              "value": "true"
+            },
+            {
+              "name": "OCREngine",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ocr-extraction",
+      "name": "OCR Extract Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 300],
+      "notes": "Extract text from menu image/PDF using OCR.space"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"max_tokens\": 4096,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Parse this restaurant menu text into structured JSON. Extract all menu items with their names, descriptions, prices, and categories. Also identify modifier groups (like sides, temperatures, sauces).\\n\\nMenu text:\\n{{ $json.ParsedResults[0].ParsedText }}\\n\\nReturn ONLY valid JSON in this format:\\n{\\n  \\\"restaurant_name\\\": \\\"detected or null\\\",\\n  \\\"categories\\\": [\\n    {\\n      \\\"name\\\": \\\"Category Name\\\",\\n      \\\"items\\\": [\\n        {\\n          \\\"name\\\": \\\"Item Name\\\",\\n          \\\"description\\\": \\\"Description or null\\\",\\n          \\\"price\\\": 12.99,\\n          \\\"modifiers\\\": [\\\"modifier group names\\\"]\\n        }\\n      ]\\n    }\\n  ],\\n  \\\"modifier_groups\\\": [\\n    {\\n      \\\"name\\\": \\\"Group Name\\\",\\n      \\\"options\\\": [\\n        { \\\"name\\\": \\\"Option\\\", \\\"price\\\": 0 }\\n      ]\\n    }\\n  ]\\n}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "claude-parse",
+      "name": "Claude Parse Menu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 300],
+      "notes": "Use Claude to structure the OCR text into menu format"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract JSON from Claude's response\nconst response = $input.first().json;\nconst content = response.content[0].text;\n\n// Find JSON in response (may be wrapped in markdown)\nlet jsonStr = content;\nif (content.includes('```json')) {\n  jsonStr = content.split('```json')[1].split('```')[0].trim();\n} else if (content.includes('```')) {\n  jsonStr = content.split('```')[1].split('```')[0].trim();\n}\n\ntry {\n  const menuData = JSON.parse(jsonStr);\n  return [{ json: { menuData, rawText: content, success: true } }];\n} catch (e) {\n  return [{ json: { error: e.message, rawText: content, success: false } }];\n}"
+      },
+      "id": "parse-json",
+      "name": "Parse JSON Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-parse-success",
+      "name": "Parse Successful?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/automation/jobs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"client_id\": \"{{ $('Gmail Trigger').item.json.clientId || $env.DEFAULT_CLIENT_ID }}\",\n  \"job_type\": \"menu_build\",\n  \"priority\": 2,\n  \"config\": {\n    \"menu_data\": {{ JSON.stringify($json.menuData) }},\n    \"source\": \"email_intake\",\n    \"email_subject\": \"{{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}\",\n    \"email_from\": \"{{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "create-menu-job",
+      "name": "Create Menu Build Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1850, 200],
+      "notes": "Create automation job to build menu in Toast"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"menu_intake\",\n  \"title\": \"Menu Received via Email\",\n  \"message\": \"Menu file received and queued for processing. Job ID: {{ $json.data.id }}\",\n  \"metadata\": {\n    \"job_id\": \"{{ $json.data.id }}\",\n    \"email_subject\": \"{{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}\"\n  }\n}"
+      },
+      "id": "create-alert",
+      "name": "Create Success Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2050, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'From')?.value }}",
+        "subject": "Menu Received - R&G Consulting",
+        "emailType": "text",
+        "message": "Hi,\n\nWe've received your menu and it's being processed. You'll receive a confirmation once it's been imported into Toast.\n\nJob Reference: {{ $('Create Menu Build Job').item.json.data.id }}\n\nBest regards,\nR&G Consulting Automation"
+      },
+      "id": "send-confirmation",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [2250, 200],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-rg-business",
+          "name": "Gmail - RG Business"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"warning\",\n  \"category\": \"menu_intake\",\n  \"title\": \"Menu Parse Failed\",\n  \"message\": \"Failed to parse menu from email. Manual review required.\",\n  \"metadata\": {\n    \"error\": \"{{ $json.error }}\",\n    \"email_subject\": \"{{ $('Gmail Trigger').item.json.payload.headers.find(h => h.name === 'Subject')?.value }}\"\n  }\n}"
+      },
+      "id": "create-error-alert",
+      "name": "Create Error Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1850, 400],
+      "notes": "Alert on parse failure for manual review"
+    },
+    {
+      "parameters": {},
+      "id": "end-success",
+      "name": "End (Success)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2450, 200]
+    },
+    {
+      "parameters": {},
+      "id": "end-no-attachment",
+      "name": "End (No Attachment)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {},
+      "id": "end-wrong-type",
+      "name": "End (Wrong File Type)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 500]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Has Attachment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attachment?": {
+      "main": [
+        [
+          {
+            "node": "Get Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End (No Attachment)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Attachments": {
+      "main": [
+        [
+          {
+            "node": "Is Menu File?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Menu File?": {
+      "main": [
+        [
+          {
+            "node": "OCR Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End (Wrong File Type)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Claude Parse Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Parse Menu": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON Response": {
+      "main": [
+        [
+          {
+            "node": "Parse Successful?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Successful?": {
+      "main": [
+        [
+          {
+            "node": "Create Menu Build Job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Menu Build Job": {
+      "main": [
+        [
+          {
+            "node": "Create Success Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Success Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "End (Success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "menu",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "automation",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

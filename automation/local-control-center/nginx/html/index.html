@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R&G Digital Floor - Control Center</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 800px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: #a0aec0;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .service {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 25px 20px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .service:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+        .service-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        .service-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .service-desc {
+            color: #a0aec0;
+            font-size: 0.85rem;
+        }
+        .service-port {
+            margin-top: 10px;
+            font-family: monospace;
+            background: rgba(102, 126, 234, 0.2);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #667eea;
+        }
+        .status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .footer {
+            margin-top: 50px;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>R&G Digital Floor</h1>
+        <p class="subtitle">
+            <span class="status"></span>
+            Autonomous Architect Control Center
+        </p>
+
+        <div class="services">
+            <a href="/n8n/" class="service">
+                <div class="service-icon">⚡</div>
+                <div class="service-name">n8n Workflows</div>
+                <div class="service-desc">Workflow automation & orchestration</div>
+                <div class="service-port">:5678</div>
+            </a>
+
+            <a href="/browser/health" class="service">
+                <div class="service-icon">🌐</div>
+                <div class="service-name">Browser Service</div>
+                <div class="service-desc">Playwright automation API</div>
+                <div class="service-port">:3000</div>
+            </a>
+
+            <a href="/api/docs" class="service">
+                <div class="service-icon">🔧</div>
+                <div class="service-name">Control API</div>
+                <div class="service-desc">FastAPI management endpoints</div>
+                <div class="service-port">:8000</div>
+            </a>
+
+            <a href="http://localhost:9001" class="service">
+                <div class="service-icon">📦</div>
+                <div class="service-name">MinIO Console</div>
+                <div class="service-desc">S3-compatible object storage</div>
+                <div class="service-port">:9001</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            R&G Consulting LLC | SAGE-LENOVO Homelab<br>
+            <small>Toast Auto-Back-Office Infrastructure</small>
+        </div>
+    </div>
+</body>
+</html>

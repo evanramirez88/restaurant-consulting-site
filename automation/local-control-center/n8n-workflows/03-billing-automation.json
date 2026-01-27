@@ -1,0 +1,370 @@
+{
+  "name": "Billing Automation Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "card",
+        "operation": "update",
+        "id": "={{ $json.cardId }}",
+        "listId": "={{ $json.listId }}",
+        "additionalFields": {}
+      },
+      "id": "trello-trigger",
+      "name": "Trello Webhook",
+      "type": "n8n-nodes-base.trelloTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "trello-card-moved",
+      "notes": "Triggers when card moves to Done list",
+      "credentials": {
+        "trelloApi": {
+          "id": "trello-rg",
+          "name": "Trello RG"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action.data.listAfter.name }}",
+              "operation": "equals",
+              "value2": "Done"
+            }
+          ]
+        }
+      },
+      "id": "check-done-list",
+      "name": "Moved to Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "resource": "card",
+        "operation": "get",
+        "id": "={{ $json.action.data.card.id }}",
+        "additionalFields": {
+          "fields": "name,desc,labels,customFieldItems"
+        }
+      },
+      "id": "get-card-details",
+      "name": "Get Card Details",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [650, 200],
+      "credentials": {
+        "trelloApi": {
+          "id": "trello-rg",
+          "name": "Trello RG"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse billing info from Trello card\nconst card = $input.first().json;\n\n// Extract amount from card name or custom field\n// Format expected: \"Client Name - $XXX - Description\"\nconst nameParts = card.name.split(' - ');\nlet clientName = nameParts[0] || 'Unknown Client';\nlet amount = 0;\nlet description = card.desc || '';\n\n// Try to find amount in name\nfor (const part of nameParts) {\n  const match = part.match(/\\$([\\d,]+\\.?\\d*)/);\n  if (match) {\n    amount = parseFloat(match[1].replace(',', ''));\n    break;\n  }\n}\n\n// If no amount found, check description\nif (amount === 0) {\n  const descMatch = description.match(/Amount:\\s*\\$([\\d,]+\\.?\\d*)/);\n  if (descMatch) {\n    amount = parseFloat(descMatch[1].replace(',', ''));\n  }\n}\n\n// Extract client email from description\nlet email = '';\nconst emailMatch = description.match(/Email:\\s*([\\w.+-]+@[\\w.-]+)/);\nif (emailMatch) {\n  email = emailMatch[1];\n}\n\n// Check labels for service type\nlet serviceType = 'consulting';\nif (card.labels) {\n  const labels = card.labels.map(l => l.name.toLowerCase());\n  if (labels.includes('installation')) serviceType = 'installation';\n  else if (labels.includes('training')) serviceType = 'training';\n  else if (labels.includes('menu')) serviceType = 'menu_build';\n  else if (labels.includes('support')) serviceType = 'support';\n}\n\nreturn [{\n  json: {\n    card_id: card.id,\n    card_name: card.name,\n    client_name: clientName,\n    client_email: email,\n    amount: amount,\n    service_type: serviceType,\n    description: description,\n    ready_to_invoice: amount > 0 && email\n  }\n}];"
+      },
+      "id": "parse-billing-info",
+      "name": "Parse Billing Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ready_to_invoice }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-ready",
+      "name": "Ready to Invoice?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://connect.squareup.com/v2/invoices",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SQUARE_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Square-Version",
+              "value": "2024-01-18"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"idempotency_key\": \"{{ $json.card_id }}-{{ Date.now() }}\",\n  \"invoice\": {\n    \"location_id\": \"{{ $env.SQUARE_LOCATION_ID }}\",\n    \"order_id\": null,\n    \"primary_recipient\": {\n      \"customer_id\": null,\n      \"given_name\": \"{{ $json.client_name }}\",\n      \"email_address\": \"{{ $json.client_email }}\"\n    },\n    \"payment_requests\": [\n      {\n        \"request_type\": \"BALANCE\",\n        \"due_date\": \"{{ new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }}\",\n        \"automatic_payment_source\": \"NONE\"\n      }\n    ],\n    \"invoice_number\": \"RG-{{ Date.now().toString().slice(-8) }}\",\n    \"title\": \"R&G Consulting - {{ $json.service_type }}\",\n    \"description\": \"{{ $json.card_name }}\",\n    \"scheduled_at\": null,\n    \"accepted_payment_methods\": {\n      \"card\": true,\n      \"square_gift_card\": false,\n      \"bank_account\": true\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "create-invoice",
+      "name": "Create Square Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 100],
+      "notes": "Create invoice in Square"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://connect.squareup.com/v2/invoices/{{ $json.invoice.id }}/publish",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SQUARE_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Square-Version",
+              "value": "2024-01-18"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"idempotency_key\": \"pub-{{ $('Parse Billing Info').item.json.card_id }}-{{ Date.now() }}\",\n  \"version\": {{ $json.invoice.version }}\n}",
+        "options": {}
+      },
+      "id": "publish-invoice",
+      "name": "Publish & Send Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 100],
+      "notes": "Publish and send invoice to client"
+    },
+    {
+      "parameters": {
+        "resource": "card",
+        "operation": "update",
+        "id": "={{ $('Parse Billing Info').item.json.card_id }}",
+        "updateFields": {
+          "desc": "={{ $('Parse Billing Info').item.json.description }}\\n\\n---\\nINVOICED: {{ new Date().toISOString() }}\\nInvoice ID: {{ $json.invoice.id }}\\nAmount: ${{ $('Parse Billing Info').item.json.amount }}"
+        }
+      },
+      "id": "update-trello-card",
+      "name": "Update Trello Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [1650, 100],
+      "credentials": {
+        "trelloApi": {
+          "id": "trello-rg",
+          "name": "Trello RG"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"billing\",\n  \"title\": \"Invoice Created & Sent\",\n  \"message\": \"Invoice ${{ $('Parse Billing Info').item.json.amount }} sent to {{ $('Parse Billing Info').item.json.client_name }} ({{ $('Parse Billing Info').item.json.client_email }})\",\n  \"metadata\": {\n    \"invoice_id\": \"{{ $('Publish & Send Invoice').item.json.invoice.id }}\",\n    \"amount\": {{ $('Parse Billing Info').item.json.amount }},\n    \"client\": \"{{ $('Parse Billing Info').item.json.client_name }}\",\n    \"service_type\": \"{{ $('Parse Billing Info').item.json.service_type }}\",\n    \"trello_card_id\": \"{{ $('Parse Billing Info').item.json.card_id }}\"\n  }\n}"
+      },
+      "id": "log-invoice",
+      "name": "Log Invoice Created",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1850, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"warning\",\n  \"category\": \"billing\",\n  \"title\": \"Invoice Creation Incomplete\",\n  \"message\": \"Card '{{ $json.card_name }}' moved to Done but missing billing info. Amount: ${{ $json.amount }}, Email: {{ $json.client_email || 'missing' }}\",\n  \"metadata\": {\n    \"card_id\": \"{{ $json.card_id }}\",\n    \"card_name\": \"{{ $json.card_name }}\",\n    \"missing\": \"{{ $json.amount === 0 ? 'amount' : 'email' }}\"\n  }\n}"
+      },
+      "id": "alert-incomplete",
+      "name": "Alert Incomplete Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 300],
+      "notes": "Alert when card is missing billing info"
+    },
+    {
+      "parameters": {},
+      "id": "end-not-done",
+      "name": "End (Not Done)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2050, 200]
+    }
+  ],
+  "connections": {
+    "Trello Webhook": {
+      "main": [
+        [
+          {
+            "node": "Moved to Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Moved to Done?": {
+      "main": [
+        [
+          {
+            "node": "Get Card Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End (Not Done)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Card Details": {
+      "main": [
+        [
+          {
+            "node": "Parse Billing Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Billing Info": {
+      "main": [
+        [
+          {
+            "node": "Ready to Invoice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready to Invoice?": {
+      "main": [
+        [
+          {
+            "node": "Create Square Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Incomplete Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Square Invoice": {
+      "main": [
+        [
+          {
+            "node": "Publish & Send Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish & Send Invoice": {
+      "main": [
+        [
+          {
+            "node": "Update Trello Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Trello Card": {
+      "main": [
+        [
+          {
+            "node": "Log Invoice Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Invoice Created": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Incomplete Info": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "billing",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "automation",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

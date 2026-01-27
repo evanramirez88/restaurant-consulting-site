@@ -1,0 +1,365 @@
+{
+  "name": "Lead Validation Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily 6 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Run lead validation daily at 6 AM"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudflare.com/client/v4/accounts/{{ $env.CLOUDFLARE_ACCOUNT_ID }}/d1/database/{{ $env.CLOUDFLARE_D1_DATABASE_ID }}/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CLOUDFLARE_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"sql\": \"SELECT * FROM restaurant_leads WHERE validation_status IS NULL OR validation_status = 'pending' ORDER BY lead_score DESC LIMIT 100\"\n}"
+      },
+      "id": "fetch-leads",
+      "name": "Fetch Unvalidated Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300],
+      "notes": "Get leads from D1 that need validation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst leads = response.result?.[0]?.results || [];\n\nif (leads.length === 0) {\n  return [{ json: { empty: true, message: 'No leads to validate' } }];\n}\n\nreturn leads.map(lead => ({ json: lead }));"
+      },
+      "id": "parse-leads",
+      "name": "Parse Lead Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.empty }}",
+              "operation": "notEqual",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "has-leads",
+      "name": "Has Leads?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "batch-leads",
+      "name": "Process in Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate email domain\nconst lead = $input.first().json;\nconst email = lead.email || '';\nconst domain = email.split('@')[1] || '';\n\nlet validation = {\n  lead_id: lead.id,\n  email: email,\n  domain: domain,\n  domain_valid: false,\n  mx_valid: false,\n  is_disposable: false,\n  score_adjustment: 0,\n  validation_notes: []\n};\n\n// Check for common disposable email domains\nconst disposableDomains = ['tempmail', 'throwaway', 'mailinator', 'guerrillamail', '10minutemail'];\nif (disposableDomains.some(d => domain.includes(d))) {\n  validation.is_disposable = true;\n  validation.score_adjustment -= 50;\n  validation.validation_notes.push('Disposable email detected');\n}\n\n// Check for obviously invalid formats\nif (!email.includes('@') || !domain.includes('.')) {\n  validation.validation_notes.push('Invalid email format');\n  validation.score_adjustment -= 30;\n} else {\n  validation.domain_valid = true;\n}\n\n// Business domain bonus\nconst businessIndicators = ['restaurant', 'dining', 'kitchen', 'cafe', 'bistro', 'grill', 'bar'];\nif (businessIndicators.some(b => domain.toLowerCase().includes(b))) {\n  validation.score_adjustment += 10;\n  validation.validation_notes.push('Restaurant-related domain');\n}\n\n// Generic email penalty\nconst genericDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com'];\nif (genericDomains.includes(domain.toLowerCase())) {\n  validation.score_adjustment -= 5;\n  validation.validation_notes.push('Generic email provider');\n}\n\nreturn [{ json: { ...lead, validation } }];"
+      },
+      "id": "validate-email",
+      "name": "Validate Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name={{ $json.validation.domain }}&type=MX",
+        "options": {}
+      },
+      "id": "check-mx",
+      "name": "Check MX Records",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 200],
+      "continueOnFail": true,
+      "notes": "Verify domain has MX records"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Validate Email').first().json;\nconst mxResponse = $input.first().json;\n\nlet validation = lead.validation;\n\n// Check MX records\nif (mxResponse.Answer && mxResponse.Answer.length > 0) {\n  validation.mx_valid = true;\n  validation.score_adjustment += 10;\n  validation.validation_notes.push('Valid MX records found');\n} else {\n  validation.validation_notes.push('No MX records found');\n  validation.score_adjustment -= 20;\n}\n\n// Calculate final score\nconst original_score = lead.lead_score || 50;\nconst new_score = Math.max(0, Math.min(100, original_score + validation.score_adjustment));\n\n// Determine segment based on score\nlet segment = 'D';  // Low priority\nif (new_score >= 80) segment = 'A';  // High value\nelse if (new_score >= 60) segment = 'B';  // Medium-high\nelse if (new_score >= 40) segment = 'C';  // Medium-low\n\nreturn [{\n  json: {\n    ...lead,\n    validation: {\n      ...validation,\n      original_score,\n      new_score,\n      segment\n    }\n  }\n}];"
+      },
+      "id": "calculate-score",
+      "name": "Calculate Final Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudflare.com/client/v4/accounts/{{ $env.CLOUDFLARE_ACCOUNT_ID }}/d1/database/{{ $env.CLOUDFLARE_D1_DATABASE_ID }}/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CLOUDFLARE_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sql\": \"UPDATE restaurant_leads SET lead_score = ?, validation_status = 'validated', segment = ?, validation_notes = ?, validated_at = datetime('now') WHERE id = ?\",\n  \"params\": [\n    {{ $json.validation.new_score }},\n    \"{{ $json.validation.segment }}\",\n    \"{{ $json.validation.validation_notes.join('; ') }}\",\n    \"{{ $json.id }}\"\n  ]\n}"
+      },
+      "id": "update-lead",
+      "name": "Update Lead in D1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1850, 200]
+    },
+    {
+      "parameters": {},
+      "id": "continue-batch",
+      "name": "Continue Batch",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2050, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate validation results\nconst items = $input.all();\n\nconst summary = {\n  total_validated: items.length,\n  by_segment: {\n    A: items.filter(i => i.json.validation?.segment === 'A').length,\n    B: items.filter(i => i.json.validation?.segment === 'B').length,\n    C: items.filter(i => i.json.validation?.segment === 'C').length,\n    D: items.filter(i => i.json.validation?.segment === 'D').length\n  },\n  avg_score_change: Math.round(\n    items.reduce((sum, i) => sum + (i.json.validation?.score_adjustment || 0), 0) / items.length\n  ),\n  mx_valid_count: items.filter(i => i.json.validation?.mx_valid).length,\n  disposable_count: items.filter(i => i.json.validation?.is_disposable).length,\n  validated_at: new Date().toISOString()\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "aggregate",
+      "name": "Aggregate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"lead_validation\",\n  \"title\": \"Lead Validation Complete\",\n  \"message\": \"Validated {{ $json.total_validated }} leads. Segment A: {{ $json.by_segment.A }}, B: {{ $json.by_segment.B }}, C: {{ $json.by_segment.C }}, D: {{ $json.by_segment.D }}\",\n  \"metadata\": {{ JSON.stringify($json) }}\n}"
+      },
+      "id": "log-results",
+      "name": "Log Validation Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2450, 300]
+    },
+    {
+      "parameters": {},
+      "id": "end-no-leads",
+      "name": "End (No Leads)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2650, 300]
+    }
+  ],
+  "connections": {
+    "Daily 6 AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch Unvalidated Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Unvalidated Leads": {
+      "main": [
+        [
+          {
+            "node": "Parse Lead Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Lead Results": {
+      "main": [
+        [
+          {
+            "node": "Has Leads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Leads?": {
+      "main": [
+        [
+          {
+            "node": "Process in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "End (No Leads)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process in Batches": {
+      "main": [
+        [
+          {
+            "node": "Validate Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Email": {
+      "main": [
+        [
+          {
+            "node": "Check MX Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check MX Records": {
+      "main": [
+        [
+          {
+            "node": "Calculate Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Final Score": {
+      "main": [
+        [
+          {
+            "node": "Update Lead in D1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead in D1": {
+      "main": [
+        [
+          {
+            "node": "Continue Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Batch": {
+      "main": [
+        [
+          {
+            "node": "Process in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Summary": {
+      "main": [
+        [
+          {
+            "node": "Log Validation Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Validation Results": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "leads",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "validation",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

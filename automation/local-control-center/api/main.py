@@ -1,6 +1,18 @@
 """
 R&G Consulting Local Control Center API
 FastAPI application for managing client data, quotes, menus, and sync operations.
+
+Phase 3: Admin Portal "Brain" Enhancements
+- Automation job queue management with WebSocket updates
+- Intelligence engine for decision making
+- Toast integration management
+- Client health scoring
+
+Phase 5: QA Center of Excellence
+- Automated test execution and reporting
+- Visual regression detection
+- Selector health monitoring
+- Performance benchmarking
 """
 
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -15,6 +27,18 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 import uuid
+
+# Import Phase 3 routers
+from routers import automation, intelligence, toast
+
+# Import Phase 5 QA router
+import sys
+sys.path.insert(0, '../qa-center/api')
+try:
+    from qaRouter import router as qa_router
+    QA_AVAILABLE = True
+except ImportError:
+    QA_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -94,6 +118,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================
+# PHASE 3: REGISTER ROUTERS
+# ============================================
+
+app.include_router(automation.router, prefix="/api")
+app.include_router(intelligence.router, prefix="/api")
+app.include_router(toast.router, prefix="/api")
+
+# ============================================
+# PHASE 5: QA CENTER ROUTER
+# ============================================
+
+if QA_AVAILABLE:
+    app.include_router(qa_router, prefix="/api")
+    logger.info("QA Center router registered")
 
 
 # ============================================

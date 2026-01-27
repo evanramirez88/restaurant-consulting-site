@@ -1,0 +1,427 @@
+{
+  "name": "Toast Health Check Runner",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Run health checks every 6 hours"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/toast/integrations",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "status",
+                "value": "active"
+              }
+            ]
+          }
+        }
+      },
+      "id": "get-integrations",
+      "name": "Get Active Integrations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batches",
+      "name": "Process One at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300],
+      "notes": "Process sequentially to avoid overwhelming browser-service"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://api:8000/api/toast/integrations/{{ $json.id }}/health-check",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "run-health-check",
+      "name": "Run Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300],
+      "continueOnFail": true,
+      "notes": "3-minute timeout for health check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.login_success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-login-success",
+      "name": "Login Successful?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ui_changes_detected }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-ui-changes",
+      "name": "UI Changes Detected?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"warning\",\n  \"category\": \"toast_ui\",\n  \"title\": \"Toast UI Changes Detected\",\n  \"message\": \"UI changes detected for {{ $json.restaurant_name }}. Selectors may need updating.\",\n  \"client_id\": \"{{ $('Get Active Integrations').item.json.client_id }}\",\n  \"metadata\": {\n    \"integration_id\": \"{{ $json.integration_id }}\",\n    \"toast_guid\": \"{{ $json.toast_guid }}\",\n    \"selector_health\": {{ JSON.stringify($json.selector_health) }}\n  }\n}"
+      },
+      "id": "alert-ui-changes",
+      "name": "Alert UI Changes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 100],
+      "notes": "Alert team about UI changes for selector review"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"error\",\n  \"category\": \"toast_auth\",\n  \"title\": \"Toast Login Failed\",\n  \"message\": \"Health check login failed for {{ $('Get Active Integrations').item.json.toast_guid }}. Credentials may be expired.\",\n  \"client_id\": \"{{ $('Get Active Integrations').item.json.client_id }}\",\n  \"metadata\": {\n    \"integration_id\": \"{{ $('Get Active Integrations').item.json.id }}\",\n    \"response_time_ms\": \"{{ $json.response_time_ms }}\"\n  }\n}"
+      },
+      "id": "alert-login-failed",
+      "name": "Alert Login Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 400],
+      "notes": "Alert on authentication failures"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://api:8000/api/toast/integrations/{{ $('Get Active Integrations').item.json.id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"error\"\n}"
+      },
+      "id": "mark-integration-error",
+      "name": "Mark Integration Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate health check results\nconst items = $input.all();\n\nconst summary = {\n  total_checked: items.length,\n  successful: items.filter(i => i.json.login_success && i.json.menu_accessible).length,\n  login_failed: items.filter(i => !i.json.login_success).length,\n  ui_changes: items.filter(i => i.json.ui_changes_detected).length,\n  avg_response_time: Math.round(items.reduce((sum, i) => sum + (i.json.response_time_ms || 0), 0) / items.length),\n  checked_at: new Date().toISOString()\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.login_failed }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "any-failures",
+      "name": "Any Failures?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_ALERT_WEBHOOK }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"⚠️ Toast Health Check Alert\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Total Checked:* {{ $json.total_checked }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Successful:* {{ $json.successful }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Login Failed:* {{ $json.login_failed }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*UI Changes:* {{ $json.ui_changes }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"Avg Response: {{ $json.avg_response_time }}ms | Checked at: {{ $json.checked_at }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "slack-alert",
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2050, 200],
+      "notes": "Send summary to Slack if any failures"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"health_check\",\n  \"title\": \"Health Check Complete\",\n  \"message\": \"All {{ $json.total_checked }} Toast integrations healthy.\",\n  \"metadata\": {{ JSON.stringify($json) }}\n}"
+      },
+      "id": "log-success",
+      "name": "Log All Healthy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2050, 400]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2250, 300]
+    },
+    {
+      "parameters": {},
+      "id": "continue-batch",
+      "name": "Continue to Next",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1450, 250]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Get Active Integrations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Integrations": {
+      "main": [
+        [
+          {
+            "node": "Process One at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One at a Time": {
+      "main": [
+        [
+          {
+            "node": "Run Health Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Health Check": {
+      "main": [
+        [
+          {
+            "node": "Login Successful?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login Successful?": {
+      "main": [
+        [
+          {
+            "node": "UI Changes Detected?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Login Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UI Changes Detected?": {
+      "main": [
+        [
+          {
+            "node": "Alert UI Changes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Continue to Next",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert UI Changes": {
+      "main": [
+        [
+          {
+            "node": "Continue to Next",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Login Failed": {
+      "main": [
+        [
+          {
+            "node": "Mark Integration Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Integration Error": {
+      "main": [
+        [
+          {
+            "node": "Continue to Next",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue to Next": {
+      "main": [
+        [
+          {
+            "node": "Process One at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Any Failures?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Failures?": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log All Healthy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Alert": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log All Healthy": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "health",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "monitoring",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

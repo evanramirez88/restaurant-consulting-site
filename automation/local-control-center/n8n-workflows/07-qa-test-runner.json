@@ -1,0 +1,347 @@
+{
+  "name": "QA Test Runner",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */4 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 4 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Run QA tests every 4 hours"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/qa/runs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"suites\": null,\n  \"tags\": [\"critical\"],\n  \"parallel\": false,\n  \"fail_fast\": true,\n  \"timeout\": 60000,\n  \"headless\": true\n}",
+        "options": {}
+      },
+      "id": "create-run",
+      "name": "Create Test Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store run ID for polling\nconst response = $input.first().json;\nreturn [{ json: { run_id: response.run_id, status: response.status } }];"
+      },
+      "id": "extract-run-id",
+      "name": "Extract Run ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "wait-initial",
+      "name": "Wait 10s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://api:8000/api/qa/runs/{{ $('Extract Run ID').item.json.run_id }}",
+        "options": {}
+      },
+      "id": "poll-status",
+      "name": "Poll Run Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "notEqual",
+              "value2": "running"
+            },
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "notEqual",
+              "value2": "queued"
+            }
+          ]
+        }
+      },
+      "id": "check-complete",
+      "name": "Run Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-poll",
+      "name": "Wait 5s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1250, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "failed"
+            }
+          ]
+        }
+      },
+      "id": "check-failed",
+      "name": "Tests Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_ALERT_WEBHOOK }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"❌ QA Tests Failed\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Run ID:* {{ $json.id }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Status:* {{ $json.status }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Passed:* {{ $json.stats.passed || 0 }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Failed:* {{ $json.stats.failed || 0 }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"View details: <http://localhost:8000/api/qa/runs/{{ $json.id }}|Test Run>\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "slack-failure",
+      "name": "Slack Alert (Failure)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1700, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"error\",\n  \"category\": \"qa\",\n  \"title\": \"QA Tests Failed\",\n  \"message\": \"Test run {{ $json.id }} failed. {{ $json.stats.failed || 0 }} tests failed.\",\n  \"metadata\": {\n    \"run_id\": \"{{ $json.id }}\",\n    \"passed\": {{ $json.stats.passed || 0 }},\n    \"failed\": {{ $json.stats.failed || 0 }},\n    \"skipped\": {{ $json.stats.skipped || 0 }}\n  }\n}"
+      },
+      "id": "alert-failure",
+      "name": "Create Failure Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1700, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"qa\",\n  \"title\": \"QA Tests Passed\",\n  \"message\": \"Test run {{ $json.id }} completed successfully. {{ $json.stats.passed || 0 }} tests passed.\",\n  \"metadata\": {\n    \"run_id\": \"{{ $json.id }}\",\n    \"passed\": {{ $json.stats.passed || 0 }},\n    \"skipped\": {{ $json.stats.skipped || 0 }},\n    \"duration\": \"{{ $json.completed_at }}\"\n  }\n}"
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1700, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/qa/selectors/health",
+        "options": {}
+      },
+      "id": "check-selector-health",
+      "name": "Check Selector Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.summary.critical }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-critical-selectors",
+      "name": "Critical Selectors?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"warning\",\n  \"category\": \"qa\",\n  \"title\": \"Critical Selectors Failing\",\n  \"message\": \"{{ $json.summary.critical }} critical selectors are failing. UI may have changed.\",\n  \"metadata\": {\n    \"critical_count\": {{ $json.summary.critical }},\n    \"warning_count\": {{ $json.summary.warning }},\n    \"selectors\": {{ JSON.stringify($json.critical_selectors || []) }}\n  }\n}"
+      },
+      "id": "alert-selectors",
+      "name": "Alert Selector Issues",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2300, 200]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2500, 300]
+    }
+  ],
+  "connections": {
+    "Every 4 Hours": {
+      "main": [
+        [
+          { "node": "Create Test Run", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Create Test Run": {
+      "main": [
+        [
+          { "node": "Extract Run ID", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Run ID": {
+      "main": [
+        [
+          { "node": "Wait 10s", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Wait 10s": {
+      "main": [
+        [
+          { "node": "Poll Run Status", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Poll Run Status": {
+      "main": [
+        [
+          { "node": "Run Complete?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Run Complete?": {
+      "main": [
+        [
+          { "node": "Tests Failed?", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Wait 5s", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Wait 5s": {
+      "main": [
+        [
+          { "node": "Poll Run Status", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Tests Failed?": {
+      "main": [
+        [
+          { "node": "Slack Alert (Failure)", "type": "main", "index": 0 },
+          { "node": "Create Failure Alert", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Log Success", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Slack Alert (Failure)": {
+      "main": [
+        [
+          { "node": "Check Selector Health", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Create Failure Alert": {
+      "main": [
+        [
+          { "node": "Check Selector Health", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          { "node": "Check Selector Health", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Selector Health": {
+      "main": [
+        [
+          { "node": "Critical Selectors?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Critical Selectors?": {
+      "main": [
+        [
+          { "node": "Alert Selector Issues", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Alert Selector Issues": {
+      "main": [
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "qa",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "testing",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

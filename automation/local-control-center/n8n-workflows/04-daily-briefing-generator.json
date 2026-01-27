@@ -1,0 +1,260 @@
+{
+  "name": "Daily Briefing Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Weekday 6 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Run daily briefing Mon-Fri at 6 AM"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/automation/jobs/stats",
+        "options": {}
+      },
+      "id": "get-job-stats",
+      "name": "Get Job Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/intelligence/clients/health-summary",
+        "options": {}
+      },
+      "id": "get-health-summary",
+      "name": "Get Client Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 350]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "status",
+                "value": "active"
+              },
+              {
+                "name": "limit",
+                "value": "20"
+              }
+            ]
+          }
+        }
+      },
+      "id": "get-alerts",
+      "name": "Get Active Alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/intelligence/recommendations",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "status",
+                "value": "pending"
+              },
+              {
+                "name": "limit",
+                "value": "10"
+              }
+            ]
+          }
+        }
+      },
+      "id": "get-recommendations",
+      "name": "Get Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 650]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudflare.com/client/v4/accounts/{{ $env.CLOUDFLARE_ACCOUNT_ID }}/d1/database/{{ $env.CLOUDFLARE_D1_DATABASE_ID }}/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CLOUDFLARE_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"sql\": \"SELECT segment, COUNT(*) as count, AVG(lead_score) as avg_score FROM restaurant_leads WHERE validation_status = 'validated' GROUP BY segment ORDER BY count DESC\"\n}"
+      },
+      "id": "get-lead-stats",
+      "name": "Get Lead Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all data sources\nconst jobStats = $('Get Job Stats').first().json;\nconst healthSummary = $('Get Client Health').first().json;\nconst alerts = $('Get Active Alerts').first().json;\nconst recommendations = $('Get Recommendations').first().json;\nconst leadStats = $('Get Lead Stats').first().json;\n\nconst today = new Date().toLocaleDateString('en-US', {\n  weekday: 'long',\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\n// Calculate health distribution\nconst healthDist = healthSummary.clients?.reduce((acc, c) => {\n  acc[c.health_status] = (acc[c.health_status] || 0) + 1;\n  return acc;\n}, {}) || {};\n\n// Priority alerts (error severity)\nconst criticalAlerts = (alerts.data || []).filter(a => a.severity === 'error');\nconst warningAlerts = (alerts.data || []).filter(a => a.severity === 'warning');\n\n// Lead segments\nconst segments = leadStats.result?.[0]?.results || [];\n\nreturn [{\n  json: {\n    date: today,\n    generated_at: new Date().toISOString(),\n    \n    // Job Queue Summary\n    jobs: {\n      pending: jobStats.pending || 0,\n      queued: jobStats.queued || 0,\n      running: jobStats.running || 0,\n      completed_today: jobStats.completed_today || 0,\n      failed_today: jobStats.failed_today || 0,\n      avg_duration: jobStats.avg_duration_seconds || 0\n    },\n    \n    // Client Health\n    health: {\n      total_clients: healthSummary.clients?.length || 0,\n      healthy: healthDist.healthy || 0,\n      at_risk: healthDist.at_risk || 0,\n      critical: healthDist.critical || 0,\n      avg_score: healthSummary.average_score || 0\n    },\n    \n    // Alerts\n    alerts: {\n      critical_count: criticalAlerts.length,\n      warning_count: warningAlerts.length,\n      critical_items: criticalAlerts.slice(0, 5).map(a => ({\n        title: a.title,\n        category: a.category,\n        created: a.created_at\n      }))\n    },\n    \n    // Recommendations\n    recommendations: {\n      pending_count: recommendations.data?.length || 0,\n      top_items: (recommendations.data || []).slice(0, 3).map(r => ({\n        title: r.title,\n        impact: r.impact_level,\n        client: r.client_name\n      }))\n    },\n    \n    // Lead Pipeline\n    leads: {\n      segments: segments.map(s => ({\n        segment: s.segment,\n        count: s.count,\n        avg_score: Math.round(s.avg_score || 0)\n      }))\n    }\n  }\n}];"
+      },
+      "id": "merge-data",
+      "name": "Merge Briefing Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 450]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_BRIEFING_WEBHOOK }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"📊 Daily Briefing - {{ $json.date }}\"\n      }\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🔧 Job Queue*\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        { \"type\": \"mrkdwn\", \"text\": \"*Pending:* {{ $json.jobs.pending }}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Running:* {{ $json.jobs.running }}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Completed Today:* {{ $json.jobs.completed_today }}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Failed Today:* {{ $json.jobs.failed_today }}\" }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*💚 Client Health*\\n• Healthy: {{ $json.health.healthy }} | At Risk: {{ $json.health.at_risk }} | Critical: {{ $json.health.critical }}\\n• Average Score: {{ $json.health.avg_score }}\"\n      }\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*🚨 Alerts*\\n• Critical: {{ $json.alerts.critical_count }} | Warnings: {{ $json.alerts.warning_count }}\"\n      }\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*💡 Pending Recommendations:* {{ $json.recommendations.pending_count }}\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"Generated at {{ $json.generated_at }} | <http://localhost:8000/docs|API Docs>\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "slack-briefing",
+      "name": "Send Slack Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [950, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"info\",\n  \"category\": \"system\",\n  \"title\": \"Daily Briefing Generated\",\n  \"message\": \"Briefing for {{ $json.date }} sent to Slack.\",\n  \"metadata\": {\n    \"jobs_pending\": {{ $json.jobs.pending }},\n    \"alerts_critical\": {{ $json.alerts.critical_count }},\n    \"clients_at_risk\": {{ $json.health.at_risk }}\n  }\n}"
+      },
+      "id": "log-briefing",
+      "name": "Log Briefing Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [950, 550]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1150, 450]
+    }
+  ],
+  "connections": {
+    "Weekday 6 AM": {
+      "main": [
+        [
+          { "node": "Get Job Stats", "type": "main", "index": 0 },
+          { "node": "Get Client Health", "type": "main", "index": 0 },
+          { "node": "Get Active Alerts", "type": "main", "index": 0 },
+          { "node": "Get Recommendations", "type": "main", "index": 0 },
+          { "node": "Get Lead Stats", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Job Stats": {
+      "main": [
+        [
+          { "node": "Merge Briefing Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Client Health": {
+      "main": [
+        [
+          { "node": "Merge Briefing Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Active Alerts": {
+      "main": [
+        [
+          { "node": "Merge Briefing Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Recommendations": {
+      "main": [
+        [
+          { "node": "Merge Briefing Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Lead Stats": {
+      "main": [
+        [
+          { "node": "Merge Briefing Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Merge Briefing Data": {
+      "main": [
+        [
+          { "node": "Send Slack Briefing", "type": "main", "index": 0 },
+          { "node": "Log Briefing Sent", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send Slack Briefing": {
+      "main": [
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Briefing Sent": {
+      "main": [
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "briefing",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "reporting",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "rg-browser-service",
+  "version": "1.0.0",
+  "description": "Decoupled browser automation service for Toast ABO",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node src/test.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "playwright": "^1.41.0",
+    "puppeteer": "^24.0.0",
+    "uuid": "^9.0.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "R&G Consulting LLC",
+  "license": "UNLICENSED",
+  "private": true
+}

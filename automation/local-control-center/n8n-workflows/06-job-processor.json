@@ -1,0 +1,499 @@
+{
+  "name": "Automation Job Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Poll for queued jobs every minute"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://api:8000/api/automation/jobs",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "status",
+                "value": "queued"
+              },
+              {
+                "name": "limit",
+                "value": "5"
+              }
+            ]
+          }
+        }
+      },
+      "id": "get-queued-jobs",
+      "name": "Get Queued Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst jobs = response.data || [];\n\nif (jobs.length === 0) {\n  return [{ json: { empty: true } }];\n}\n\n// Sort by priority (lower = higher priority) and created_at\njobs.sort((a, b) => {\n  if (a.priority !== b.priority) return a.priority - b.priority;\n  return new Date(a.created_at) - new Date(b.created_at);\n});\n\n// Return only the highest priority job to process\nreturn [{ json: { ...jobs[0], empty: false } }];"
+      },
+      "id": "select-job",
+      "name": "Select Next Job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.empty }}",
+              "operation": "notEqual",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "has-job",
+      "name": "Has Job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://api:8000/api/automation/jobs/{{ $json.id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"running\",\n  \"started_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "mark-running",
+      "name": "Mark Job Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Select Next Job').item.json.job_type }}",
+              "operation": "equals",
+              "value2": "menu_build"
+            }
+          ]
+        }
+      },
+      "id": "route-menu-build",
+      "name": "Menu Build?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://browser-service:3000/api/toast/menu/build",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"job_id\": \"{{ $('Select Next Job').item.json.id }}\",\n  \"client_id\": \"{{ $('Select Next Job').item.json.client_id }}\",\n  \"config\": {{ JSON.stringify($('Select Next Job').item.json.config) }}\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "execute-menu-build",
+      "name": "Execute Menu Build",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1500, 100],
+      "continueOnFail": true,
+      "notes": "5-minute timeout for menu build"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Select Next Job').item.json.job_type }}",
+              "operation": "equals",
+              "value2": "health_check"
+            }
+          ]
+        }
+      },
+      "id": "route-health-check",
+      "name": "Health Check?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1500, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://api:8000/api/toast/integrations/{{ $('Select Next Job').item.json.config.integration_id }}/health-check",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "execute-health-check",
+      "name": "Execute Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1750, 200],
+      "continueOnFail": true,
+      "notes": "3-minute timeout for health check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Select Next Job').item.json.job_type }}",
+              "operation": "equals",
+              "value2": "menu_sync"
+            }
+          ]
+        }
+      },
+      "id": "route-menu-sync",
+      "name": "Menu Sync?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1750, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://api:8000/api/toast/integrations/{{ $('Select Next Job').item.json.config.integration_id }}/sync-menus",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"full_sync\": {{ $('Select Next Job').item.json.config.full_sync || false }}\n}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "execute-menu-sync",
+      "name": "Execute Menu Sync",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2000, 300],
+      "continueOnFail": true,
+      "notes": "10-minute timeout for full menu sync"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Select Next Job').item.json.job_type }}",
+              "operation": "equals",
+              "value2": "golden_copy"
+            }
+          ]
+        }
+      },
+      "id": "route-golden-copy",
+      "name": "Golden Copy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2000, 450]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://api:8000/api/toast/integrations/{{ $('Select Next Job').item.json.config.integration_id }}/golden-copy/{{ $('Select Next Job').item.json.config.action || 'capture' }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "execute-golden-copy",
+      "name": "Execute Golden Copy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2250, 400],
+      "continueOnFail": true,
+      "notes": "5-minute timeout for golden copy"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fallback handler for unrecognized job types\nconst job = $('Select Next Job').first().json;\n\nreturn [{\n  json: {\n    success: false,\n    error: `Unknown job type: ${job.job_type}`,\n    job_id: job.id\n  }\n}];"
+      },
+      "id": "unknown-job-type",
+      "name": "Unknown Job Type",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 550]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect result from whichever execution path ran\nconst job = $('Select Next Job').first().json;\nconst result = $input.first().json;\n\n// Check if the execution was successful\nconst success = result.success !== false && !result.error;\n\nreturn [{\n  json: {\n    job_id: job.id,\n    job_type: job.job_type,\n    client_id: job.client_id,\n    success: success,\n    result: result,\n    completed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "collect-result",
+      "name": "Collect Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-success",
+      "name": "Successful?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2700, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://api:8000/api/automation/jobs/{{ $json.job_id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"completed\",\n  \"completed_at\": \"{{ $json.completed_at }}\",\n  \"result\": {{ JSON.stringify($json.result) }}\n}"
+      },
+      "id": "mark-completed",
+      "name": "Mark Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2900, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://api:8000/api/automation/jobs/{{ $json.job_id }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"failed\",\n  \"completed_at\": \"{{ $json.completed_at }}\",\n  \"error_message\": \"{{ $json.result.error || 'Unknown error' }}\",\n  \"retry_count\": {{ ($('Select Next Job').item.json.retry_count || 0) + 1 }}\n}"
+      },
+      "id": "mark-failed",
+      "name": "Mark Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2900, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/api/intelligence/alerts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"severity\": \"error\",\n  \"category\": \"automation\",\n  \"title\": \"Job Failed: {{ $('Select Next Job').item.json.job_type }}\",\n  \"message\": \"Job {{ $json.job_id }} failed: {{ $json.result.error || 'Unknown error' }}\",\n  \"client_id\": \"{{ $json.client_id }}\",\n  \"metadata\": {\n    \"job_id\": \"{{ $json.job_id }}\",\n    \"job_type\": \"{{ $json.job_type }}\",\n    \"retry_count\": {{ ($('Select Next Job').item.json.retry_count || 0) + 1 }}\n  }\n}"
+      },
+      "id": "alert-failure",
+      "name": "Alert on Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [3100, 400]
+    },
+    {
+      "parameters": {},
+      "id": "end-no-job",
+      "name": "End (No Jobs)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {},
+      "id": "end",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3300, 300]
+    }
+  ],
+  "connections": {
+    "Every Minute": {
+      "main": [
+        [
+          { "node": "Get Queued Jobs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Queued Jobs": {
+      "main": [
+        [
+          { "node": "Select Next Job", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Select Next Job": {
+      "main": [
+        [
+          { "node": "Has Job?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Has Job?": {
+      "main": [
+        [
+          { "node": "Mark Job Running", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "End (No Jobs)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Mark Job Running": {
+      "main": [
+        [
+          { "node": "Menu Build?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Menu Build?": {
+      "main": [
+        [
+          { "node": "Execute Menu Build", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Health Check?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Execute Menu Build": {
+      "main": [
+        [
+          { "node": "Collect Result", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Health Check?": {
+      "main": [
+        [
+          { "node": "Execute Health Check", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Menu Sync?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Execute Health Check": {
+      "main": [
+        [
+          { "node": "Collect Result", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Menu Sync?": {
+      "main": [
+        [
+          { "node": "Execute Menu Sync", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Golden Copy?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Execute Menu Sync": {
+      "main": [
+        [
+          { "node": "Collect Result", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Golden Copy?": {
+      "main": [
+        [
+          { "node": "Execute Golden Copy", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Unknown Job Type", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Execute Golden Copy": {
+      "main": [
+        [
+          { "node": "Collect Result", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Unknown Job Type": {
+      "main": [
+        [
+          { "node": "Collect Result", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Collect Result": {
+      "main": [
+        [
+          { "node": "Successful?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Successful?": {
+      "main": [
+        [
+          { "node": "Mark Completed", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Mark Failed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Mark Completed": {
+      "main": [
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Mark Failed": {
+      "main": [
+        [
+          { "node": "Alert on Failure", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Alert on Failure": {
+      "main": [
+        [
+          { "node": "End", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "automation",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "name": "jobs",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

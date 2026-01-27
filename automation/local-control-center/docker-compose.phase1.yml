@@ -1,0 +1,391 @@
+# =============================================================================
+# PHASE 1: CORE INFRASTRUCTURE - "THE DIGITAL FLOOR"
+# =============================================================================
+# R&G Consulting Homelab - Lenovo m720q (SAGE-LENOVO)
+# Extends base docker-compose.yml with n8n, Browser-Service, Nginx
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.phase1.yml up -d
+#
+# Or use the combined version:
+#   docker compose -f docker-compose.phase1.yml up -d
+# =============================================================================
+
+services:
+  # ============================================================
+  # POSTGRESQL with pgvector - Intelligence Engine Database
+  # ============================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rg_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: rg_consulting
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ${SEAGATE_MOUNT:-S:}/rg_data/postgres:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rg_admin} -d rg_consulting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - rg-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # REDIS - Caching, Sessions, Pub/Sub
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: rg-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - ${SEAGATE_MOUNT:-S:}/rg_data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rg-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================
+  # MINIO - S3-Compatible Object Storage
+  # ============================================================
+  minio:
+    image: minio/minio:latest
+    container_name: rg-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rg_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme123}
+    volumes:
+      - ${SEAGATE_MOUNT:-S:}/rg_data/minio:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - rg-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================
+  # FASTAPI - Control Center API (existing)
+  # ============================================================
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: rg-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rg_admin}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/rg_consulting
+      REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-rg_admin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-changeme123}
+      MINIO_BUCKET: rg-files
+      CLIENT_FILES_PATH: /app/client_files
+      CLOUDFLARE_SYNC_ENABLED: ${CLOUDFLARE_SYNC_ENABLED:-false}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+    volumes:
+      - ${SEAGATE_MOUNT:-S:}/rg_data/clients:/app/client_files
+      - ${SEAGATE_MOUNT:-S:}/rg_data/sync:/app/sync_queue
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - rg-network
+
+  # ============================================================
+  # BACKUP SERVICE - Automated Daily Backups
+  # ============================================================
+  backup:
+    image: postgres:16-alpine
+    container_name: rg-backup
+    restart: unless-stopped
+    entrypoint: /bin/sh
+    command: >
+      -c "while true; do
+        echo 'Running backup at $$(date)';
+        PGPASSWORD=$${POSTGRES_PASSWORD} pg_dump -h postgres -U $${POSTGRES_USER} rg_consulting > /backups/rg_consulting_$$(date +%Y%m%d_%H%M%S).sql;
+        find /backups -name '*.sql' -mtime +7 -delete;
+        sleep 86400;
+      done"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rg_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - ${SEAGATE_MOUNT:-S:}/rg_data/backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rg-network
+
+  # ============================================================
+  # N8N - Workflow Orchestration ("Central Nervous System")
+  # ============================================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: rg-n8n
+    restart: always
+    environment:
+      # Authentication
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+
+      # Server Configuration
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+
+      # Timezone (critical for scheduling)
+      - GENERIC_TIMEZONE=America/New_York
+      - TZ=America/New_York
+
+      # Database (PostgreSQL for reliability)
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-rg_admin}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+
+      # Execution Settings
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+
+      # Encryption
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-}
+
+      # Browser Service Integration
+      - BROWSER_SERVICE_URL=http://browser-service:3000
+
+      # External Services (for credential nodes)
+      - N8N_METRICS=true
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # DATA_CONTEXT mount for file access
+      - ${DATA_CONTEXT_PATH:-C:/Users/evanr/Desktop/ANTIGRAVITY/DATA_CONTEXT}:/data/context:ro
+      # Google credentials for Gmail/Calendar integrations
+      - ${GOOGLE_CREDS_PATH:-D:/MILLSTONE_STAGING/google_creds}:/data/google_creds:ro
+      # Workflow backup/export directory
+      - ./n8n-workflows:/data/workflows
+    ports:
+      - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rg-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ============================================================
+  # BROWSER-SERVICE - Decoupled Headless Chrome (Playwright)
+  # ============================================================
+  browser-service:
+    build:
+      context: ./browser-service
+      dockerfile: Dockerfile
+    container_name: rg-browser-service
+    restart: unless-stopped
+    environment:
+      # Server settings
+      - PORT=3000
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=production
+
+      # Browser configuration
+      - BROWSER_HEADLESS=true
+      - BROWSER_TIMEOUT=60000
+      - MAX_CONCURRENT_SESSIONS=${MAX_BROWSER_SESSIONS:-3}
+
+      # Screenshot storage
+      - SCREENSHOTS_DIR=/data/screenshots
+
+      # Session persistence
+      - SESSIONS_DIR=/data/sessions
+
+      # Toast credentials (encrypted, decrypted at runtime)
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+
+      # API integration
+      - CLOUDFLARE_API_URL=https://ccrestaurantconsulting.com
+      - WORKER_API_KEY=${WORKER_API_KEY:-}
+
+    volumes:
+      # Persistent screenshot storage
+      - browser_screenshots:/data/screenshots
+      # Session state persistence
+      - browser_sessions:/data/sessions
+      # Shared with n8n for workflow access
+      - ${DATA_CONTEXT_PATH:-C:/Users/evanr/Desktop/ANTIGRAVITY/DATA_CONTEXT}:/data/context:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - rg-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+        reservations:
+          memory: 1G
+    # Security: Chrome sandbox requirements
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ============================================================
+  # NGINX - Reverse Proxy for Webhooks (HTTPS)
+  # ============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: rg-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+      - letsencrypt_data:/etc/letsencrypt:ro
+    depends_on:
+      - n8n
+      - browser-service
+      - api
+    networks:
+      - rg-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================
+  # CERTBOT - Let's Encrypt SSL Certificate Manager
+  # ============================================================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: rg-certbot
+    volumes:
+      - letsencrypt_data:/etc/letsencrypt
+      - ./nginx/html:/var/www/certbot:ro
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+    networks:
+      - rg-network
+
+# ============================================================
+# NETWORKS
+# ============================================================
+networks:
+  rg-network:
+    driver: bridge
+    name: rg-digital-floor
+
+# ============================================================
+# VOLUMES
+# ============================================================
+volumes:
+  n8n_data:
+    name: rg_n8n_data
+  browser_screenshots:
+    name: rg_browser_screenshots
+  browser_sessions:
+    name: rg_browser_sessions
+  letsencrypt_data:
+    name: rg_letsencrypt

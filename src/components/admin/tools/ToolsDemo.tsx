@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calculator, UtensilsCrossed, Building2, Briefcase, ExternalLink,
-  Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp
+  Settings, ToggleLeft, ToggleRight, Loader2, Layers, ChevronDown, ChevronUp,
+  ArrowLeft, Newspaper
 } from 'lucide-react';
 import ToastHubManager from '../toasthub/ToastHubManager';
 
@@ -36,7 +37,7 @@ interface ToolConfig {
   output: string;
   onOpen: () => void;
   settingsPath?: string;
-  hasFullSettings?: boolean; // If true, shows full management component in settings
+  hasFullSettings?: boolean;
   SettingsComponent?: React.ReactNode;
 }
 
@@ -59,6 +60,7 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
   const [loadingFlags, setLoadingFlags] = useState(true);
   const [togglingFlag, setTogglingFlag] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState<string | null>(null);
+  const [fullScreenTool, setFullScreenTool] = useState<string | null>(null);
 
   // Fetch feature flags on mount
   useEffect(() => {
@@ -109,34 +111,34 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
     {
       id: 'quote-builder',
       name: 'Quote Builder',
-      description: 'Generate Toast POS installation quotes with hardware selection, integrations, and support plans',
+      description: 'Interactive floor planning tool with real-time pricing and PDF quote generation',
       icon: <Calculator className="w-7 h-7 text-blue-400" />,
       iconBgColor: 'bg-blue-500/20',
       buttonColor: 'bg-blue-500',
       buttonHoverColor: 'hover:bg-blue-600',
-      featureFlagKey: 'quote_builder_enabled',
-      features: 'Hardware, Integrations, Travel',
-      output: 'PDF Quote, Email Summary',
+      featureFlagKey: 'quote_builder_enabled' as keyof FeatureFlags,
+      features: 'Floor Plan, Pricing, PDF Export',
+      output: 'Quote, Labor Estimate, Contact Form',
       onOpen: onOpenQuoteBuilder,
       settingsPath: '/admin/settings/quote-builder'
     },
     {
       id: 'menu-builder',
       name: 'Menu Builder',
-      description: 'AI-powered menu digitization with OCR processing and structured data export',
+      description: 'AI-powered menu digitization with OCR, categorization, and Toast formatting',
       icon: <UtensilsCrossed className="w-7 h-7 text-green-400" />,
       iconBgColor: 'bg-green-500/20',
       buttonColor: 'bg-green-500',
       buttonHoverColor: 'hover:bg-green-600',
-      featureFlagKey: 'menu_builder_enabled',
-      features: 'OCR, AI Parsing, Export',
-      output: 'JSON, CSV, Toast Import',
+      featureFlagKey: 'menu_builder_enabled' as keyof FeatureFlags,
+      features: 'OCR, AI Categorization, Toast Format',
+      output: 'Structured Menu Data, CSV Export',
       onOpen: onOpenMenuBuilder,
       settingsPath: '/admin/settings/menu-builder'
     },
     {
       id: 'toast-automate',
-      name: 'Toast Back-office Automate',
+      name: 'Toast Automate',
       description: 'Configure automation rules for reporting, inventory, menu sync, and more',
       icon: <Settings className="w-7 h-7 text-amber-400" />,
       iconBgColor: 'bg-amber-500/20',
@@ -152,13 +154,13 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
       id: 'toast-hub',
       name: 'Restaurant Wrap',
       description: 'Industry intelligence hub with curated content, expert insights, and GEO optimization',
-      icon: <Layers className="w-7 h-7 text-orange-400" />,
+      icon: <Newspaper className="w-7 h-7 text-orange-400" />,
       iconBgColor: 'bg-orange-500/20',
       buttonColor: 'bg-orange-500',
       buttonHoverColor: 'hover:bg-orange-600',
       featureFlagKey: 'toast_hub_enabled',
-      features: 'Multi-location, Analytics, Alerts',
-      output: 'Dashboard, Reports, KPIs',
+      features: 'Content Curation, GEO, Multi-Portal',
+      output: 'Articles, Insights, Authority',
       onOpen: onOpenToastHub,
       settingsPath: '/admin/settings/toast-hub',
       hasFullSettings: true,
@@ -258,18 +260,28 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
             <ExternalLink className="w-4 h-4" />
             Open Tool
           </button>
-          <button
-            onClick={() => setSettingsOpen(settingsOpen === tool.id ? null : tool.id)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Tool Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          {/* For tools with full settings (like Restaurant Wrap), show "Manage" button that opens full-screen */}
+          {tool.hasFullSettings ? (
+            <button
+              onClick={() => setFullScreenTool(tool.id)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+              Manage
+            </button>
+          ) : (
+            <button
+              onClick={() => setSettingsOpen(settingsOpen === tool.id ? null : tool.id)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            >
+              {settingsOpen === tool.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
         </div>
 
-        {/* Settings Panel (expandable) */}
-        {settingsOpen === tool.id && (
-          <div className="mt-4 pt-4 border-t border-gray-700">
+        {/* Settings Panel (for tools WITHOUT full settings) */}
+        {settingsOpen === tool.id && !tool.hasFullSettings && (
+          <div className="mt-4 border-t border-gray-700 pt-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
                 {tool.name} Settings
@@ -282,39 +294,65 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
               </button>
             </div>
 
-            {/* Full Settings Component (if available) */}
-            {tool.hasFullSettings && tool.SettingsComponent ? (
-              <div className="bg-gray-800/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
-                {tool.SettingsComponent}
+            {/* Basic Settings */}
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                <span className="text-gray-400">Demo Mode</span>
+                <span className="text-gray-300">Enabled</span>
               </div>
-            ) : (
-              /* Basic Settings */
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                  <span className="text-gray-400">Demo Mode</span>
-                  <span className="text-gray-300">Enabled</span>
-                </div>
-                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                  <span className="text-gray-400">API Integration</span>
-                  <span className="text-green-400">Connected</span>
-                </div>
-                <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
-                  <span className="text-gray-400">Last Updated</span>
-                  <span className="text-gray-300">--</span>
-                </div>
-                <a
-                  href={`/#${tool.settingsPath}`}
-                  className="block w-full text-center py-2 px-3 text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded transition-colors"
-                >
-                  Open Full Settings →
-                </a>
+              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                <span className="text-gray-400">API Integration</span>
+                <span className="text-green-400">Connected</span>
               </div>
-            )}
+              <div className="flex items-center justify-between py-2 px-3 bg-gray-800/30 rounded">
+                <span className="text-gray-400">Last Updated</span>
+                <span className="text-gray-300">--</span>
+              </div>
+              <a
+                href={`/#${tool.settingsPath}`}
+                className="block w-full text-center py-2 px-3 text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded transition-colors"
+              >
+                Open Full Settings →
+              </a>
+            </div>
           </div>
         )}
       </div>
     );
   };
+
+  // Full-screen view for Restaurant Wrap
+  if (fullScreenTool === 'toast-hub') {
+    const tool = tools.find(t => t.id === 'toast-hub');
+    return (
+      <div className="space-y-4">
+        {/* Header with back button */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setFullScreenTool(null)}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-zinc-300 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Tools
+          </button>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 ${tool?.iconBgColor} rounded-xl flex items-center justify-center`}>
+              {tool?.icon}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{tool?.name}</h2>
+              <p className="text-sm text-zinc-400">{tool?.description}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Full-width ToastHubManager */}
+        <div className="w-full">
+          <ToastHubManager />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
