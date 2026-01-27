@@ -227,7 +227,7 @@ export default function NotifyModal({
               type="text"
               value={subjectOverride}
               onChange={(e) => setSubjectOverride(e.target.value)}
-              placeholder={`New from Toast Hub: ${postTitle}`}
+              placeholder={`New from Restaurant Wrap: ${postTitle}`}
               className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>

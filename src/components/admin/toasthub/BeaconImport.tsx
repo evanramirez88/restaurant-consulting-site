@@ -154,7 +154,7 @@ export default function BeaconImport({ isOpen, onClose, onImport }: BeaconImport
               Import from Beacon
             </h3>
             <p className="text-sm text-gray-400 mt-0.5">
-              Select approved content to transform into Toast Hub articles
+              Select approved content to transform into Restaurant Wrap articles
             </p>
           </div>
           <button
@@ -346,7 +346,7 @@ export default function BeaconImport({ isOpen, onClose, onImport }: BeaconImport
                     ) : (
                       <Download className="w-5 h-5" />
                     )}
-                    {importing ? 'Importing...' : 'Import to Toast Hub'}
+                    {importing ? 'Importing...' : 'Import to Restaurant Wrap'}
                   </button>
                 </div>
               </>

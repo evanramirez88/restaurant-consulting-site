@@ -118,8 +118,8 @@ const FEATURE_FLAG_DESCRIPTIONS: Record<string, {
     prerequisites: ['Rep accounts created']
   },
   toast_hub_enabled: {
-    name: 'Toast Hub',
-    description: 'Content marketing and knowledge base platform',
+    name: 'Restaurant Wrap',
+    description: 'Industry intelligence hub with curated content and expert insights',
     prerequisites: ['At least 5 articles published']
   },
   maintenance_mode: {
@@ -860,7 +860,7 @@ const ConfigManager: React.FC = () => {
                 { key: 'menu_builder_coming_soon', label: 'Menu Builder', parentKey: 'menu_builder_enabled' },
                 { key: 'client_portal_coming_soon', label: 'Client Portal', parentKey: 'client_portal_enabled' },
                 { key: 'rep_portal_coming_soon', label: 'Rep Portal', parentKey: 'rep_portal_enabled' },
-                { key: 'toast_hub_coming_soon', label: 'Toast Hub', parentKey: 'toast_hub_enabled' }
+                { key: 'toast_hub_coming_soon', label: 'Restaurant Wrap', parentKey: 'toast_hub_enabled' }
               ].map(({ key, label, parentKey }) => {
                 const parentEnabled = featureFlags[parentKey as keyof FeatureFlags];
                 return (

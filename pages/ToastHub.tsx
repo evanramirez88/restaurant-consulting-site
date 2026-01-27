@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, Calendar, Eye, Star, ChevronRight, Search,
@@ -60,28 +60,6 @@ const categoryConfig: Record<string, { icon: React.ElementType; gradient: string
   operations: { icon: Shield, gradient: 'from-slate-500 to-zinc-600', label: 'Operations' },
 };
 
-// Animated counter hook
-const useAnimatedCounter = (target: number, duration: number = 2000) => {
-  const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  const animate = useCallback(() => {
-    if (hasAnimated) return;
-    setHasAnimated(true);
-
-    const startTime = Date.now();
-    const step = () => {
-      const progress = Math.min((Date.now() - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
-      setCount(Math.floor(target * eased));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [target, duration, hasAnimated]);
-
-  return { count, animate };
-};
-
 const ToastHub: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -99,12 +77,6 @@ const ToastHub: React.FC = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-
-  // Animated stats
-  const articlesCounter = useAnimatedCounter(posts.length || 50);
-  const viewsCounter = useAnimatedCounter(posts.reduce((acc, p) => acc + p.view_count, 0) || 12500);
-  const yearsCounter = useAnimatedCounter(10);
 
   useSEO({
     title: 'Restaurant Wrap | Industry Intelligence & Expert Insights | R&G Consulting',
@@ -118,25 +90,6 @@ const ToastHub: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Intersection observer for stats animation
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            articlesCounter.animate();
-            viewsCounter.animate();
-            yearsCounter.animate();
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    if (statsRef.current) observer.observe(statsRef.current);
-    return () => observer.disconnect();
-  }, [articlesCounter, viewsCounter, yearsCounter]);
 
   // Enhanced structured data for GEO
   useEffect(() => {
@@ -412,36 +365,6 @@ const ToastHub: React.FC = () => {
             Your definitive restaurant technology knowledge base. Expert operational intelligence,
             industry insights, and actionable guides curated by certified consultants.
           </p>
-
-          {/* Stats row */}
-          <div
-            ref={statsRef}
-            className="flex flex-wrap justify-center gap-8 md:gap-16 mb-12"
-            style={{
-              animation: 'fadeInUp 0.8s ease-out 0.4s forwards',
-              opacity: 0,
-              transform: 'translateY(20px)'
-            }}
-          >
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-white mb-1" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                {articlesCounter.count}+
-              </div>
-              <div className="text-zinc-500 text-sm uppercase tracking-wider">Articles</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-white mb-1" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                {viewsCounter.count.toLocaleString()}+
-              </div>
-              <div className="text-zinc-500 text-sm uppercase tracking-wider">Views</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-white mb-1" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                {yearsCounter.count}+
-              </div>
-              <div className="text-zinc-500 text-sm uppercase tracking-wider">Years Expertise</div>
-            </div>
-          </div>
 
           {/* Scroll indicator */}
           <div

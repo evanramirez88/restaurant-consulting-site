@@ -150,8 +150,8 @@ const ToolsDemo: React.FC<ToolsDemoProps> = ({
     },
     {
       id: 'toast-hub',
-      name: 'Toast Hub',
-      description: 'Centralized Toast management dashboard for multi-location oversight and analytics',
+      name: 'Restaurant Wrap',
+      description: 'Industry intelligence hub with curated content, expert insights, and GEO optimization',
       icon: <Layers className="w-7 h-7 text-orange-400" />,
       iconBgColor: 'bg-orange-500/20',
       buttonColor: 'bg-orange-500',

@@ -419,7 +419,7 @@ export default function CommandCenter() {
         </div>
       )}
 
-      {/* Toast Hub Updates */}
+      {/* Restaurant Wrap Updates */}
       {data.details.toastHubUpdates.length > 0 && (
         <div className="admin-card">
           <button
@@ -428,7 +428,7 @@ export default function CommandCenter() {
           >
             <div className="flex items-center gap-3">
               <Zap className="w-5 h-5 text-amber-400" />
-              <span className="font-semibold text-white">Toast Hub Updates</span>
+              <span className="font-semibold text-white">Restaurant Wrap Updates</span>
               <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-sm">
                 {data.details.toastHubUpdates.length}
               </span>
