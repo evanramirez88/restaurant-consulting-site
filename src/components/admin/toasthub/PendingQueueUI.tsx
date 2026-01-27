@@ -47,13 +47,22 @@ interface PendingQueueUIProps {
 const stripHtml = (html: string): string => {
   if (!html) return '';
   return html
-    // Decode common HTML entities
+    // Remove HTML comments (like Reddit's SC_OFF/SC_ON)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Remove script and style blocks entirely
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    // Decode numeric HTML entities
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)))
+    .replace(/&#x([a-fA-F0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    // Decode common named HTML entities
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&rsquo;/g, "'")
     .replace(/&lsquo;/g, "'")
     .replace(/&rdquo;/g, '"')
@@ -61,6 +70,14 @@ const stripHtml = (html: string): string => {
     .replace(/&mdash;/g, '—')
     .replace(/&ndash;/g, '–')
     .replace(/&hellip;/g, '...')
+    .replace(/&bull;/g, '•')
+    .replace(/&copy;/g, '©')
+    .replace(/&reg;/g, '®')
+    .replace(/&trade;/g, '™')
+    // Remove "submitted by /u/username" and Reddit link patterns
+    .replace(/submitted by\s*<a[^>]*>.*?<\/a>/gi, '')
+    .replace(/\[link\]/gi, '')
+    .replace(/\[comments\]/gi, '')
     // Remove all HTML tags
     .replace(/<[^>]*>/g, ' ')
     // Clean up whitespace
