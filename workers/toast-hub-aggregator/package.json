@@ -1,0 +1,17 @@
+{
+  "name": "toast-hub-aggregator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toast Hub content aggregation worker for R&G Consulting",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "CLOUDFLARE_ACCOUNT_ID=373a6cef1f9ccf5d26bfd9687a91c0a6 wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.28.0"
+  }
+}

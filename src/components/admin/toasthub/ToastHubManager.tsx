@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText, Plus, Search, Edit3, Trash2, Eye, Calendar,
   Tag, Loader2, RefreshCw, Star, ExternalLink, ToggleLeft, ToggleRight,
-  Globe, HelpCircle, BarChart3, Radio, ClipboardList
+  Globe, HelpCircle, BarChart3, Radio, ClipboardList, Inbox, Rss, Activity
 } from 'lucide-react';
 import ContentEditor from './ContentEditor';
 import FAQManager from './FAQManager';
 import ContentAnalytics from './ContentAnalytics';
 import BeaconImport from './BeaconImport';
 import TemplateSelector from './TemplateSelector';
+import PendingQueueUI from './PendingQueueUI';
+import SourcesManager from './SourcesManager';
+import AggregatorStatus from './AggregatorStatus';
 
 interface Post {
   id: string;
@@ -40,7 +43,7 @@ interface Category {
   is_active: boolean;
 }
 
-type ContentTab = 'articles' | 'faqs' | 'analytics';
+type ContentTab = 'articles' | 'faqs' | 'analytics' | 'curation' | 'sources' | 'aggregator';
 
 const ToastHubManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ContentTab>('articles');
@@ -233,10 +236,13 @@ const ToastHubManager: React.FC = () => {
     <div className="space-y-4">
       {/* Sub-Tab Navigation */}
       <div className="admin-card p-2">
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {[
+            { id: 'curation' as ContentTab, label: 'Curation Queue', icon: Inbox },
             { id: 'articles' as ContentTab, label: 'Articles', icon: FileText },
             { id: 'faqs' as ContentTab, label: 'FAQs', icon: HelpCircle },
+            { id: 'sources' as ContentTab, label: 'Sources', icon: Rss },
+            { id: 'aggregator' as ContentTab, label: 'Aggregator', icon: Activity },
             { id: 'analytics' as ContentTab, label: 'Analytics', icon: BarChart3 }
           ].map(tab => (
             <button
@@ -256,6 +262,9 @@ const ToastHubManager: React.FC = () => {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'curation' && <PendingQueueUI />}
+      {activeTab === 'sources' && <SourcesManager />}
+      {activeTab === 'aggregator' && <AggregatorStatus />}
       {activeTab === 'faqs' && <FAQManager />}
       {activeTab === 'analytics' && <ContentAnalytics />}
       {activeTab === 'articles' && (

@@ -1,0 +1,53 @@
+# Toast Hub Aggregator Worker - Content Aggregation & Curation Engine
+# This worker fetches content from RSS feeds, Reddit, and internal sources
+# Deployed separately from the main Pages project
+
+name = "toast-hub-aggregator"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Account configuration
+account_id = "373a6cef1f9ccf5d26bfd9687a91c0a6"
+
+# ============================================
+# CRON TRIGGERS (DISABLED - FREE TIER LIMIT)
+# Cloudflare free tier only allows 5 cron triggers
+# Use manual trigger via admin UI: /api/admin/toast-hub/aggregator
+# Or call worker endpoint: POST /run
+# ============================================
+# [triggers]
+# crons = ["0 */2 * * *"]
+
+# ============================================
+# D1 DATABASE BINDING
+# Same database as the main Pages project
+# ============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "rg-consulting-forms"
+database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
+
+# ============================================
+# KV NAMESPACE BINDING
+# For caching and deduplication
+# ============================================
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "57fda5bf0515423db01df17ed5b335e6"
+
+# ============================================
+# ENVIRONMENT VARIABLES
+# ============================================
+# Required secrets (set via `wrangler secret put`):
+#   REDDIT_CLIENT_ID     - Reddit API client ID (optional, uses RSS fallback)
+#   REDDIT_CLIENT_SECRET - Reddit API client secret (optional)
+#   OPENAI_API_KEY       - For AI scoring/summarization (optional)
+
+[vars]
+ENVIRONMENT = "production"
+# Max items per source per fetch cycle
+MAX_ITEMS_PER_SOURCE = "50"
+# Auto-disable source after consecutive failures
+MAX_CONSECUTIVE_FAILURES = "5"
+# Default fetch timeout in ms
+FETCH_TIMEOUT_MS = "10000"

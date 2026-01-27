@@ -31,26 +31,33 @@ restaurant-consulting-site/
 ├── pages/                    # Page components
 │   ├── portal/              # Client portal (9 pages)
 │   ├── rep/                 # Rep portal (6 pages)
-│   ├── QuoteBuilder.tsx     # Interactive quote builder (2,620 lines)
-│   └── MenuBuilder.tsx      # AI-powered menu migration (1,204 lines)
+│   ├── QuoteBuilder.tsx     # Interactive quote builder
+│   ├── MenuBuilder.tsx      # AI-powered menu migration
+│   ├── ToastHub.tsx         # Cinematic content hub
+│   └── ToastHubPost.tsx     # Article reading experience
 ├── src/
 │   └── components/
 │       └── admin/           # Admin dashboard components
+│           └── toasthub/    # Toast Hub management UI
 ├── functions/
-│   └── api/                 # Cloudflare Pages Functions (83 endpoints)
+│   └── api/                 # Cloudflare Pages Functions (90+ endpoints)
 │       ├── auth/            # Authentication
 │       ├── admin/           # Admin management
+│       │   └── toast-hub/   # Authority Engine admin API
+│       ├── toast-hub/       # Public Toast Hub API
 │       ├── portal/          # Client portal API
 │       ├── rep/             # Rep portal API
 │       ├── quote/           # Quote system
 │       ├── menu/            # Menu processing
-│       ├── billing/         # Square integration
+│       ├── stripe/          # Stripe billing
 │       └── webhooks/        # External webhooks
-├── migrations/              # D1 database migrations (12 files)
+├── workers/                 # Cloudflare Workers
+│   ├── email-dispatcher/    # Cron-based email dispatch
+│   └── toast-hub-aggregator/ # Content aggregation worker
+├── migrations/              # D1 database migrations (91 files)
 ├── hubspot-sequences/       # Email sequence templates
 ├── docs/                    # Technical documentation
-├── SYSTEM_AUDIT.md         # Current system status
-├── CONTINUITY_LEDGER.md    # Session activity log
+│   └── TOAST_HUB_AUTHORITY_ENGINE.md  # Authority Engine docs
 ├── CLOUDFLARE_STATUS.md    # Infrastructure status
 └── HUMAN_TASKS.md          # Human-required tasks
 ```
@@ -69,11 +76,21 @@ restaurant-consulting-site/
 - Rep Portal (commission tracking, referrals)
 - JWT authentication + magic links
 - Feature flags system
+- **Toast Hub Authority Engine** - Content aggregation & GEO optimization
+
+### Toast Hub Authority Engine (NEW 2026-01-26)
+- **Content Aggregation**: RSS feeds (NRN, MRM, RBO) + Reddit (r/ToastPOS)
+- **Two-Gate Curation**: pending → approved → visible workflow
+- **Visibility Toggles**: Public, Client Portal, Rep Portal
+- **GEO Optimization**: TL;DR blocks, Expert Commentary, schema.org markup
+- **Cinematic Frontend**: Parallax hero, animated stats, bento grid
+- **Worker**: toast-hub-aggregator (manual trigger, 120 items/run)
+- **Docs**: [docs/TOAST_HUB_AUTHORITY_ENGINE.md](docs/TOAST_HUB_AUTHORITY_ENGINE.md)
 
 ### Partially Implemented
 - Email Automation (backend 100%, admin UI 0%)
 - Toast Automation (framework built)
-- Billing/Invoicing (Square integration, incomplete)
+- Billing/Invoicing (Square + Stripe integration)
 
 ---
 

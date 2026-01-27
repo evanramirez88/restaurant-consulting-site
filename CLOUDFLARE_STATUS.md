@@ -1,7 +1,7 @@
 # Cloudflare Infrastructure Status
 
-**Last Updated:** 2026-01-15 18:30 EST
-**Session:** Stripe Billing Integration completed - all subscription products live
+**Last Updated:** 2026-01-26 22:00 EST
+**Session:** Toast Hub Authority Engine deployed - content aggregation system live
 
 ---
 
@@ -250,6 +250,53 @@
 | Create HubSpot sequences | HubSpot → Sequences | MEDIUM |
 | Configure Cal.com webhook | Cal.com → Webhooks | MEDIUM |
 | Test Stripe Checkout end-to-end | Live site | LOW |
+
+---
+
+## CLOUDFLARE WORKERS
+
+### Deployed Workers
+
+| Worker Name | URL | Purpose | Bindings |
+|-------------|-----|---------|----------|
+| **rg-email-dispatcher** | - | Cron-based email dispatch | DB, RATE_LIMIT_KV |
+| **toast-hub-aggregator** | https://toast-hub-aggregator.ramirezconsulting-rg.workers.dev | Content aggregation (RSS/Reddit) | DB, CACHE_KV |
+
+### toast-hub-aggregator (NEW 2026-01-26)
+
+| Setting | Value |
+|---------|-------|
+| Worker URL | https://toast-hub-aggregator.ramirezconsulting-rg.workers.dev |
+| Version ID | 16fb81f7-09b6-4f31-8196-fc64ab7359fd |
+| Cron Trigger | **DISABLED** (free tier limit - 5 max) |
+| Manual Trigger | POST /run or Admin UI → Toast Hub → Aggregator |
+
+#### Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /health | GET | Health check |
+| /status | GET | Aggregator stats and recent runs |
+| /run | POST | Manual aggregation trigger |
+
+#### Bindings
+| Binding | Variable | Resource |
+|---------|----------|----------|
+| D1 Database | DB | rg-consulting-forms |
+| KV Namespace | CACHE_KV | rg-consulting-sessions |
+
+#### Environment Variables
+| Variable | Value |
+|----------|-------|
+| ENVIRONMENT | production |
+| MAX_ITEMS_PER_SOURCE | 50 |
+| MAX_CONSECUTIVE_FAILURES | 5 |
+| FETCH_TIMEOUT_MS | 10000 |
+
+#### First Run Results (2026-01-26)
+- Sources Processed: 6 (RSS + Reddit feeds)
+- Items Fetched: 120
+- Items Imported: 120
+- Errors: 0
 
 ---
 
