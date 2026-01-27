@@ -43,11 +43,72 @@ interface PendingQueueUIProps {
   onEditImport?: (importItem: Import) => void;
 }
 
-// Simple markdown-to-HTML renderer
-const renderMarkdown = (text: string): string => {
-  if (!text) return '';
+// Strip HTML tags for plain text display
+const stripHtml = (html: string): string => {
+  if (!html) return '';
+  return html
+    // Decode common HTML entities
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&hellip;/g, '...')
+    // Remove all HTML tags
+    .replace(/<[^>]*>/g, ' ')
+    // Clean up whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
-  return text
+// Convert HTML content to styled HTML for display
+const renderHtmlContent = (html: string): string => {
+  if (!html) return '';
+
+  // Check if content is already HTML (has tags)
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(html);
+
+  if (hasHtmlTags) {
+    // It's HTML - style the existing tags
+    return html
+      // Style headings
+      .replace(/<h1([^>]*)>/gi, '<h1 class="text-2xl font-bold text-white mt-8 mb-4"$1>')
+      .replace(/<h2([^>]*)>/gi, '<h2 class="text-xl font-bold text-white mt-8 mb-4"$1>')
+      .replace(/<h3([^>]*)>/gi, '<h3 class="text-lg font-semibold text-white mt-6 mb-3"$1>')
+      .replace(/<h4([^>]*)>/gi, '<h4 class="text-base font-semibold text-white mt-4 mb-2"$1>')
+      // Style paragraphs
+      .replace(/<p([^>]*)>/gi, '<p class="text-zinc-300 mb-4 leading-relaxed"$1>')
+      // Style lists
+      .replace(/<ul([^>]*)>/gi, '<ul class="my-4 space-y-2 list-disc list-inside text-zinc-300"$1>')
+      .replace(/<ol([^>]*)>/gi, '<ol class="my-4 space-y-2 list-decimal list-inside text-zinc-300"$1>')
+      .replace(/<li([^>]*)>/gi, '<li class="text-zinc-300"$1>')
+      // Style links
+      .replace(/<a([^>]*)>/gi, '<a class="text-amber-400 hover:text-amber-300 underline"$1 target="_blank" rel="noopener">')
+      // Style blockquotes
+      .replace(/<blockquote([^>]*)>/gi, '<blockquote class="border-l-4 border-amber-500 pl-4 py-2 my-4 bg-zinc-800/50 rounded-r text-zinc-300 italic"$1>')
+      // Style code
+      .replace(/<code([^>]*)>/gi, '<code class="bg-zinc-800 text-amber-400 px-1.5 py-0.5 rounded text-sm font-mono"$1>')
+      .replace(/<pre([^>]*)>/gi, '<pre class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 my-4 overflow-x-auto"$1>')
+      // Style strong/em
+      .replace(/<strong([^>]*)>/gi, '<strong class="font-semibold text-white"$1>')
+      .replace(/<b([^>]*)>/gi, '<strong class="font-semibold text-white"$1>')
+      .replace(/<em([^>]*)>/gi, '<em class="text-zinc-300 italic"$1>')
+      .replace(/<i([^>]*)>/gi, '<em class="text-zinc-300 italic"$1>')
+      // Style images
+      .replace(/<img([^>]*)>/gi, '<img class="rounded-lg max-w-full h-auto my-4"$1>')
+      // Add line breaks
+      .replace(/<br\s*\/?>/gi, '<br class="my-2">');
+  }
+
+  // It's markdown or plain text - convert to HTML
+  return html
     // Headers
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold text-white mt-6 mb-3">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold text-white mt-8 mb-4">$1</h2>')
@@ -67,8 +128,13 @@ const renderMarkdown = (text: string): string => {
     .replace(/```([\s\S]*?)```/g, '<pre class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 my-4 overflow-x-auto"><code class="text-sm text-zinc-300 font-mono">$1</code></pre>')
     // Inline code
     .replace(/`([^`]+)`/g, '<code class="bg-zinc-800 text-amber-400 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>')
-    // Paragraphs (wrap remaining text)
-    .replace(/^(?!<[hblpcu])(.+)$/gm, '<p class="text-zinc-300 mb-4 leading-relaxed">$1</p>')
+    // Line breaks to paragraphs
+    .replace(/\n\n+/g, '</p><p class="text-zinc-300 mb-4 leading-relaxed">')
+    // Wrap in paragraph
+    .replace(/^(.+)$/gm, (match) => {
+      if (match.startsWith('<')) return match;
+      return `<p class="text-zinc-300 mb-4 leading-relaxed">${match}</p>`;
+    })
     // Clean up empty paragraphs
     .replace(/<p class="[^"]*"><\/p>/g, '')
     // Wrap lists
@@ -312,10 +378,10 @@ const PendingQueueUI: React.FC<PendingQueueUIProps> = ({ onEditImport }) => {
     }
   };
 
-  // Rendered markdown content for expanded view
+  // Rendered HTML/markdown content for expanded view
   const renderedContent = useMemo(() => {
     if (!expandedItem?.content_body) return '';
-    return renderMarkdown(expandedItem.content_body);
+    return renderHtmlContent(expandedItem.content_body);
   }, [expandedItem?.content_body]);
 
   return (
@@ -476,10 +542,11 @@ const PendingQueueUI: React.FC<PendingQueueUIProps> = ({ onEditImport }) => {
                     {item.title}
                   </h3>
 
-                  {/* Excerpt preview */}
-                  {item.excerpt && (
+                  {/* Excerpt preview - strip HTML for clean display */}
+                  {(item.excerpt || item.content_body) && (
                     <p className="text-sm text-zinc-400 line-clamp-3 mb-4">
-                      {item.excerpt}
+                      {stripHtml(item.excerpt || item.content_body || '').slice(0, 200)}
+                      {(item.excerpt || item.content_body || '').length > 200 ? '...' : ''}
                     </p>
                   )}
 
@@ -636,7 +703,7 @@ const PendingQueueUI: React.FC<PendingQueueUIProps> = ({ onEditImport }) => {
                       <span className="text-amber-400 font-semibold text-sm uppercase tracking-wider">Summary</span>
                     </div>
                     <p className="text-lg text-zinc-200 leading-relaxed">
-                      {expandedItem.excerpt}
+                      {stripHtml(expandedItem.excerpt)}
                     </p>
                   </div>
                 )}
