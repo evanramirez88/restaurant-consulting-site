@@ -329,7 +329,7 @@ export async function onRequestGet(context) {
             hot: laneBLeads?.hot || 0
           },
           services: [
-            'Toast Guardian Plans',
+            'Restaurant Guardian Plans',
             'Remote Menu Builds',
             'Consultations',
             'Toast Referrals'

@@ -925,7 +925,7 @@ Our clients tend to share characteristics:
 
 We work with everyone from single-unit independents to regional chains with 20+ locations.
 
-## The Toast Guardian Program
+## The Restaurant Guardian Program
 
 Our signature offering is Restaurant Guardian - monthly support plans that include:
 
@@ -934,7 +934,7 @@ Our signature offering is Restaurant Guardian - monthly support plans that inclu
 - **Priority support** - Same-day response, often same-hour
 - **Training resources** - Staff turnover? We help onboard new team members
 
-Plans start at $350/month. Most clients see ROI within weeks through improved efficiency and reduced errors.
+Plans start at $495/month. Most clients see ROI within weeks through improved efficiency and reduced errors.
 
 ## Based on Cape Cod, Serving Nationwide
 
