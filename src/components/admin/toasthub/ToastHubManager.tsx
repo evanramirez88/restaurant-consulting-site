@@ -75,7 +75,7 @@ const ToastHubManager: React.FC = () => {
       if (postsResult.success) setPosts(postsResult.data || []);
       if (categoriesResult.success) setCategories(categoriesResult.data || []);
     } catch (error) {
-      console.error('Failed to load Toast Hub data:', error);
+      console.error('Failed to load Restaurant Wrap data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -274,7 +274,7 @@ const ToastHubManager: React.FC = () => {
             <div>
               <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-amber-400" />
-                Toast Hub Content
+                Restaurant Wrap Content
               </h2>
               <p className="text-gray-400 text-sm mt-1">
                 {posts.length} posts, {posts.filter(p => p.status === 'published').length} published
@@ -286,7 +286,7 @@ const ToastHubManager: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-sm"
-                title="View public Toast Hub page"
+                title="View public Restaurant Wrap page"
               >
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">View Site</span>
@@ -451,7 +451,7 @@ const ToastHubManager: React.FC = () => {
               <p className="text-gray-400 text-sm mb-4">
                 {searchQuery || filterStatus !== 'all' || filterCategory !== 'all'
                   ? 'Try adjusting your filters'
-                  : 'Start creating content for Toast Hub'}
+                  : 'Start creating content for Restaurant Wrap'}
               </p>
               {!searchQuery && filterStatus === 'all' && filterCategory === 'all' && (
                 <button

@@ -79,9 +79,9 @@ const ToastHubPost: React.FC = () => {
   // Dynamic SEO
   useSEO({
     title: post?.meta_title || post?.title
-      ? `${post?.meta_title || post?.title} | Toast Hub | R&G Consulting`
-      : 'Toast Hub | R&G Consulting',
-    description: post?.meta_description || post?.excerpt || 'Expert Toast POS guides, tips, and resources from certified consultants.',
+      ? `${post?.meta_title || post?.title} | Restaurant Wrap | R&G Consulting`
+      : 'Restaurant Wrap | R&G Consulting',
+    description: post?.meta_description || post?.excerpt || 'Expert restaurant technology guides, tips, and resources from certified consultants.',
     canonical: `https://ccrestaurantconsulting.com/#/toast-hub/${slug}`,
   });
 
@@ -158,7 +158,7 @@ const ToastHubPost: React.FC = () => {
         {
           "@type": "ListItem",
           "position": 2,
-          "name": "Toast Hub",
+          "name": "Restaurant Wrap",
           "item": "https://ccrestaurantconsulting.com/#/toast-hub"
         },
         {
@@ -170,7 +170,7 @@ const ToastHubPost: React.FC = () => {
       ]
     };
 
-    document.querySelectorAll('script[data-schema="toast-hub-post"]').forEach(el => el.remove());
+    document.querySelectorAll('script[data-schema="restaurant-wrap-post"]').forEach(el => el.remove());
 
     const articleScript = document.createElement('script');
     articleScript.type = 'application/ld+json';
@@ -185,7 +185,7 @@ const ToastHubPost: React.FC = () => {
     document.head.appendChild(breadcrumbScript);
 
     return () => {
-      document.querySelectorAll('script[data-schema="toast-hub-post"]').forEach(el => el.remove());
+      document.querySelectorAll('script[data-schema="restaurant-wrap-post"]').forEach(el => el.remove());
     };
   }, [post, slug]);
 
@@ -411,7 +411,7 @@ const ToastHubPost: React.FC = () => {
           className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-400 font-medium transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Toast Hub
+          Back to Restaurant Wrap
         </Link>
       </div>
     );
@@ -442,7 +442,7 @@ const ToastHubPost: React.FC = () => {
           <nav className="flex items-center gap-2 text-sm text-zinc-500 mb-8">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <ChevronRight className="w-4 h-4" />
-            <Link to="/toast-hub" className="hover:text-white transition-colors">Toast Hub</Link>
+            <Link to="/toast-hub" className="hover:text-white transition-colors">Restaurant Wrap</Link>
             <ChevronRight className="w-4 h-4" />
             <span className="text-zinc-400 truncate max-w-[200px]">{post.title}</span>
           </nav>
@@ -582,7 +582,7 @@ const ToastHubPost: React.FC = () => {
               {/* CTA Card */}
               <div className="p-5 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl">
                 <h4 className="text-white font-semibold mb-2">Need Help?</h4>
-                <p className="text-zinc-400 text-sm mb-4">Get expert Toast POS guidance.</p>
+                <p className="text-zinc-400 text-sm mb-4">Get expert restaurant tech guidance.</p>
                 <Link
                   to="/schedule"
                   className="block w-full text-center px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium rounded-lg transition-all text-sm"
@@ -674,7 +674,7 @@ const ToastHubPost: React.FC = () => {
                 className="inline-flex items-center gap-2 text-zinc-400 hover:text-amber-500 font-medium transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Toast Hub
+                Back to Restaurant Wrap
               </Link>
             </div>
           </article>
@@ -685,11 +685,11 @@ const ToastHubPost: React.FC = () => {
       <section className="border-t border-zinc-800 bg-zinc-900/50 py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Ready to Optimize Your Toast POS?
+            Ready to Optimize Your Restaurant Technology?
           </h2>
           <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-6" />
           <p className="text-zinc-400 max-w-2xl mx-auto mb-10 text-lg">
-            From initial setup to ongoing support, our certified Toast consultants help your restaurant succeed with technology.
+            From initial setup to ongoing support, our certified consultants help your restaurant succeed with technology.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

@@ -107,8 +107,8 @@ const ToastHub: React.FC = () => {
   const yearsCounter = useAnimatedCounter(10);
 
   useSEO({
-    title: 'Toast Hub | The Authority Engine for Toast POS | R&G Consulting',
-    description: 'The definitive Toast POS knowledge base. Expert guides, operational intelligence, and industry insights curated by certified Toast consultants. Optimized for AI search.',
+    title: 'Restaurant Wrap | Industry Intelligence & Expert Insights | R&G Consulting',
+    description: 'Your definitive restaurant technology knowledge base. Expert guides, operational intelligence, and industry insights curated by certified consultants. Optimized for AI search.',
     canonical: 'https://ccrestaurantconsulting.com/#/toast-hub',
   });
 
@@ -143,8 +143,8 @@ const ToastHub: React.FC = () => {
     const blogSchema = {
       "@context": "https://schema.org",
       "@type": "Blog",
-      "name": "Toast Hub - The Authority Engine for Toast POS",
-      "description": "The definitive knowledge base for Toast POS systems. Expert guides, operational intelligence, and industry insights curated by certified Toast consultants.",
+      "name": "Restaurant Wrap - Industry Intelligence & Expert Insights",
+      "description": "The definitive knowledge base for restaurant technology. Expert guides, operational intelligence, and industry insights curated by certified consultants.",
       "url": "https://ccrestaurantconsulting.com/#/toast-hub",
       "publisher": {
         "@type": "Organization",
@@ -191,22 +191,22 @@ const ToastHub: React.FC = () => {
       }))
     };
 
-    document.querySelectorAll('script[data-schema="toast-hub"]').forEach(el => el.remove());
+    document.querySelectorAll('script[data-schema="restaurant-wrap"]').forEach(el => el.remove());
 
     const blogScript = document.createElement('script');
     blogScript.type = 'application/ld+json';
-    blogScript.setAttribute('data-schema', 'toast-hub');
+    blogScript.setAttribute('data-schema', 'restaurant-wrap');
     blogScript.textContent = JSON.stringify(blogSchema);
     document.head.appendChild(blogScript);
 
     const faqScript = document.createElement('script');
     faqScript.type = 'application/ld+json';
-    faqScript.setAttribute('data-schema', 'toast-hub');
+    faqScript.setAttribute('data-schema', 'restaurant-wrap');
     faqScript.textContent = JSON.stringify(faqSchema);
     document.head.appendChild(faqScript);
 
     return () => {
-      document.querySelectorAll('script[data-schema="toast-hub"]').forEach(el => el.remove());
+      document.querySelectorAll('script[data-schema="restaurant-wrap"]').forEach(el => el.remove());
     };
   }, [posts, faqs]);
 
@@ -245,7 +245,7 @@ const ToastHub: React.FC = () => {
         setFaqs(faqsResult.data || []);
       }
     } catch (error) {
-      console.error('Failed to load Toast Hub data:', error);
+      console.error('Failed to load Restaurant Wrap data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -289,7 +289,7 @@ const ToastHub: React.FC = () => {
         body: JSON.stringify({
           email: newsletterEmail,
           first_name: newsletterName || undefined,
-          source: 'toast_hub_authority_engine'
+          source: 'restaurant_wrap'
         })
       });
       const data = await res.json();
@@ -386,7 +386,7 @@ const ToastHub: React.FC = () => {
               transform: 'translateY(20px)'
             }}
           >
-            Toast<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500">Hub</span>
+            Restaurant<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500">Wrap</span>
           </h1>
 
           {/* Decorative line */}
@@ -409,7 +409,7 @@ const ToastHub: React.FC = () => {
               transform: 'translateY(20px)'
             }}
           >
-            The definitive knowledge base for Toast POS. Expert operational intelligence,
+            Your definitive restaurant technology knowledge base. Expert operational intelligence,
             industry insights, and actionable guides curated by certified consultants.
           </p>
 
@@ -722,50 +722,6 @@ const ToastHub: React.FC = () => {
           </>
         )}
 
-        {/* FAQ Section */}
-        {faqs.length > 0 && (
-          <section className="mt-24">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Frequently Asked Questions
-              </h2>
-              <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-4" />
-              <p className="text-zinc-400">Common questions about Toast POS answered by our experts</p>
-            </div>
-
-            <div className="max-w-3xl mx-auto space-y-3">
-              {faqs.map((faq, idx) => (
-                <div
-                  key={faq.id}
-                  className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50"
-                  style={{
-                    animation: 'fadeInUp 0.5s ease-out forwards',
-                    animationDelay: `${idx * 0.05}s`,
-                    opacity: 0
-                  }}
-                >
-                  <button
-                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                    className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 hover:bg-zinc-800/30 transition-colors"
-                  >
-                    <h3 className="text-lg font-medium text-white">{faq.question}</h3>
-                    <ChevronRight className={`w-5 h-5 text-zinc-500 transition-transform duration-300 flex-shrink-0 ${
-                      expandedFaq === faq.id ? 'rotate-90' : ''
-                    }`} />
-                  </button>
-                  <div className={`overflow-hidden transition-all duration-300 ${
-                    expandedFaq === faq.id ? 'max-h-96' : 'max-h-0'
-                  }`}>
-                    <div className="px-6 pb-5">
-                      <p className="text-zinc-400 leading-relaxed">{faq.answer}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Newsletter Section */}
         <section className="mt-24">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700">
@@ -781,10 +737,10 @@ const ToastHub: React.FC = () => {
                 </div>
 
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                  Weekly Toast Insights
+                  Weekly Industry Insights
                 </h2>
                 <p className="text-zinc-400 mb-8">
-                  Get curated intelligence, industry updates, and actionable tips delivered every Tuesday.
+                  Get curated restaurant tech intelligence, industry updates, and actionable tips delivered every Tuesday.
                 </p>
 
                 {newsletterStatus === 'success' ? (
@@ -850,11 +806,11 @@ const ToastHub: React.FC = () => {
 
             <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Need Expert Toast Guidance?
+                Need Expert Restaurant Tech Guidance?
               </h2>
               <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-6" />
               <p className="text-zinc-400 max-w-2xl mx-auto mb-10 text-lg">
-                From initial setup to ongoing optimization, our certified Toast consultants help your restaurant maximize technology investment.
+                From initial setup to ongoing optimization, our certified consultants help your restaurant maximize technology investment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -874,6 +830,50 @@ const ToastHub: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* FAQ Section - At Bottom */}
+        {faqs.length > 0 && (
+          <section className="mt-24">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                Frequently Asked Questions
+              </h2>
+              <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-4" />
+              <p className="text-zinc-400">Common restaurant technology questions answered by our experts</p>
+            </div>
+
+            <div className="max-w-3xl mx-auto space-y-3">
+              {faqs.map((faq, idx) => (
+                <div
+                  key={faq.id}
+                  className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50"
+                  style={{
+                    animation: 'fadeInUp 0.5s ease-out forwards',
+                    animationDelay: `${idx * 0.05}s`,
+                    opacity: 0
+                  }}
+                >
+                  <button
+                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 hover:bg-zinc-800/30 transition-colors"
+                  >
+                    <h3 className="text-lg font-medium text-white">{faq.question}</h3>
+                    <ChevronRight className={`w-5 h-5 text-zinc-500 transition-transform duration-300 flex-shrink-0 ${
+                      expandedFaq === faq.id ? 'rotate-90' : ''
+                    }`} />
+                  </button>
+                  <div className={`overflow-hidden transition-all duration-300 ${
+                    expandedFaq === faq.id ? 'max-h-96' : 'max-h-0'
+                  }`}>
+                    <div className="px-6 pb-5">
+                      <p className="text-zinc-400 leading-relaxed">{faq.answer}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* CSS Animations */}
