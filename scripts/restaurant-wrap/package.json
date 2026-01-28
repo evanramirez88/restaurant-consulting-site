@@ -1,0 +1,19 @@
+{
+  "name": "restaurant-wrap",
+  "version": "1.0.0",
+  "description": "Content aggregation and SEO pipeline for R&G Consulting",
+  "type": "module",
+  "scripts": {
+    "aggregate": "tsx restaurant-wrap-aggregator.ts",
+    "aggregate:reddit": "tsx restaurant-wrap-aggregator.ts --source=reddit",
+    "aggregate:rss": "tsx restaurant-wrap-aggregator.ts --source=rss",
+    "aggregate:dry": "tsx restaurant-wrap-aggregator.ts --dry-run",
+    "transform": "tsx content-to-seo.ts",
+    "pipeline": "tsx restaurant-wrap-aggregator.ts && tsx content-to-seo.ts",
+    "pipeline:dry": "tsx restaurant-wrap-aggregator.ts --dry-run && tsx content-to-seo.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

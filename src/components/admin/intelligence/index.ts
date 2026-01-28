@@ -11,3 +11,12 @@ export { default as IntelligenceDashboard } from './IntelligenceDashboard';
 export { default as FindingCard } from './FindingCard';
 export { default as SourceManager } from './SourceManager';
 export { default as IntelligenceFeed } from './IntelligenceFeed';
+
+// P-P-P (Problem-Pain-Priority) Prospect Research
+export {
+  IntelligenceResearcher,
+  ProspectCard,
+  PPPScoreForm,
+  ResearchNotes as PPPResearchNotes,
+  PriorityQueue,
+} from './ppp';

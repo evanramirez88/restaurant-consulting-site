@@ -1,0 +1,37 @@
+# Business Brief Enricher Worker
+# Recursive profile enrichment for restaurant leads
+
+name = "rg-business-brief-enricher"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Schedule: Run every 3 hours during business hours (EST)
+# 14:00, 17:00, 20:00, 23:00 UTC = 9AM, 12PM, 3PM, 6PM EST
+[triggers]
+crons = ["0 14,17,20,23 * * *"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "rg-consulting-forms"
+database_id = "eb39c9a2-24ed-426e-9260-a1fb55d899cb"
+
+# KV for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "57fda5bf0515423db01df17ed5b335e6"
+
+# Environment variables (set in Cloudflare dashboard or .dev.vars)
+# WORKER_API_KEY - Required for API authentication
+# BRAVE_API_KEY - Optional, for Brave Search (100 free/day)
+# GOOGLE_CUSTOM_SEARCH_KEY - Optional, for Google Custom Search (100 free/day)
+# GOOGLE_CUSTOM_SEARCH_CX - Optional, Custom Search Engine ID
+
+[vars]
+# These are non-secret defaults
+
+[env.production]
+# Production-specific settings
+
+[env.staging]
+# Staging-specific settings

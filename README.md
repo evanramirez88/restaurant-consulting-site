@@ -53,7 +53,10 @@ restaurant-consulting-site/
 │       └── webhooks/        # External webhooks
 ├── workers/                 # Cloudflare Workers
 │   ├── email-dispatcher/    # Cron-based email dispatch
-│   └── toast-hub-aggregator/ # Content aggregation worker
+│   ├── toast-hub-aggregator/ # Content aggregation worker
+│   └── business-brief-enricher/ # Recursive prospect enrichment
+├── scripts/
+│   └── restaurant-wrap/     # SEO content pipeline scripts
 ├── migrations/              # D1 database migrations (91 files)
 ├── hubspot-sequences/       # Email sequence templates
 ├── docs/                    # Technical documentation
@@ -78,7 +81,7 @@ restaurant-consulting-site/
 - Feature flags system
 - **Toast Hub Authority Engine** - Content aggregation & GEO optimization
 
-### Toast Hub Authority Engine (NEW 2026-01-26)
+### Toast Hub Authority Engine (2026-01-26)
 - **Content Aggregation**: RSS feeds (NRN, MRM, RBO) + Reddit (r/ToastPOS)
 - **Two-Gate Curation**: pending → approved → visible workflow
 - **Visibility Toggles**: Public, Client Portal, Rep Portal
@@ -86,6 +89,14 @@ restaurant-consulting-site/
 - **Cinematic Frontend**: Parallax hero, animated stats, bento grid
 - **Worker**: toast-hub-aggregator (manual trigger, 120 items/run)
 - **Docs**: [docs/TOAST_HUB_AUTHORITY_ENGINE.md](docs/TOAST_HUB_AUTHORITY_ENGINE.md)
+
+### Intelligence Researcher System (NEW 2026-01-28)
+- **P-P-P Framework**: Problem-Pain-Priority scoring for prospect qualification
+- **Schema Expansion**: 5 new tables (prospect_profiles, contact_profiles, enrichment_data, research_notes, profile_scores)
+- **Admin UI**: Full React interface with ProspectCard, PPPScoreForm, ResearchNotes, PriorityQueue
+- **Business Brief Enricher**: Recursive enrichment worker (75% completeness threshold, FREE data sources)
+- **Restaurant Wrap Pipeline**: SEO content aggregation from 12 sources → blog post briefs
+- **Docs**: [docs/0093_schema_expansion_summary.md](docs/0093_schema_expansion_summary.md)
 
 ### Partially Implemented
 - Email Automation (backend 100%, admin UI 0%)
@@ -152,12 +163,14 @@ Configure in Cloudflare Pages Dashboard → Settings → Environment Variables:
 
 ---
 
-## API Endpoints (83 total)
+## API Endpoints (90+ total)
 
 | Category | Count | Base Path |
 |----------|-------|-----------|
 | Authentication | 12 | `/api/auth/*`, `/api/client/auth/*`, `/api/rep/*/auth/*` |
 | Admin Management | 25 | `/api/admin/*` |
+| Admin Intelligence | 4 | `/api/admin/intelligence/ppp/*` |
+| Content Queue | 3 | `/api/content-queue/*` |
 | Portal API | 15 | `/api/portal/*` |
 | Quote System | 7 | `/api/quote/*` |
 | Menu Processing | 3 | `/api/menu/*` |
@@ -171,12 +184,14 @@ Configure in Cloudflare Pages Dashboard → Settings → Environment Variables:
 
 ## Database Schema
 
-40+ tables across these categories:
+50+ tables across these categories:
 - **Core:** clients, reps, restaurants, projects, tickets, quotes
 - **Portal:** portals, portal_sessions, message_threads, messages
 - **Automation:** automation_jobs, toast_credentials, toast_selectors
 - **Email:** email_sequences, sequence_steps, email_subscribers, email_logs (10 tables)
 - **Billing:** payment_logs, invoices, support_hour_logs
+- **Intelligence:** prospect_profiles, contact_profiles, enrichment_data, research_notes, profile_scores
+- **Content:** content_queue, restaurant_wrap_sources, restaurant_wrap_runs, content_keywords
 - **System:** audit_logs, feature_flags, api_configs, site_content
 
 ---

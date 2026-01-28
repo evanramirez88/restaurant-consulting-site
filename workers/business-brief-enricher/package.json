@@ -1,0 +1,25 @@
+{
+  "name": "rg-business-brief-enricher",
+  "version": "1.0.0",
+  "description": "Recursive business profile enrichment worker for restaurant leads",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "tail": "wrangler tail",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "enrichment",
+    "business-intelligence"
+  ],
+  "author": "R&G Consulting",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.24.0"
+  }
+}

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ResearchPanel from './ResearchPanel';
 import IntelligenceDashboard from './IntelligenceDashboard';
+import { IntelligenceResearcher } from './ppp';
 
 // Types
 interface IntelClient {
@@ -126,7 +127,7 @@ interface MarketStats {
   by_category: Record<string, number>;
 }
 
-type TabType = 'overview' | 'prospects' | 'research' | 'facts' | 'findings' | 'import';
+type TabType = 'overview' | 'prospects' | 'researcher' | 'research' | 'facts' | 'findings' | 'import';
 type ViewMode = 'table' | 'cards';
 
 // Cape Cod sub-regions as defined in demo prototype (NO BOSTON)
@@ -502,7 +503,8 @@ const ClientIntelligenceTab: React.FC = () => {
   const tabs: { id: TabType; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'prospects', label: 'Prospects', icon: <Users className="w-4 h-4" />, count: prospects.length },
-    { id: 'research', label: 'Research', icon: <Search className="w-4 h-4" /> },
+    { id: 'researcher', label: 'P-P-P Research', icon: <Target className="w-4 h-4" /> },
+    { id: 'research', label: 'Enrichment', icon: <Search className="w-4 h-4" /> },
     { id: 'facts', label: 'Review Queue', icon: <CheckCircle className="w-4 h-4" />, count: pendingFacts.length },
     { id: 'findings', label: 'Findings', icon: <Brain className="w-4 h-4" /> },
     { id: 'import', label: 'Import', icon: <Upload className="w-4 h-4" /> }
@@ -1042,6 +1044,9 @@ const ClientIntelligenceTab: React.FC = () => {
       )}
 
       {/* Research Tab */}
+      {/* P-P-P Researcher Tab */}
+      {activeTab === 'researcher' && <IntelligenceResearcher />}
+
       {activeTab === 'research' && <ResearchPanel />}
 
       {/* Facts Review Tab */}
