@@ -3,9 +3,10 @@ import {
   TrendingUp, Eye, MousePointer, CheckCircle, UserPlus, Calendar,
   Settings, ExternalLink, FileText, Shield, MapPin, Users, Building2, Briefcase,
   ChevronRight, Link2, MessageSquare, FolderOpen, Clock, AlertCircle, BarChart3, Activity,
-  Zap, Play, Pause, Loader2, Wifi, WifiOff, Globe, Home, RefreshCw, Ticket
+  Zap, Play, Pause, Loader2, Wifi, WifiOff, Globe, Home, RefreshCw, Ticket, Database, Brain
 } from 'lucide-react';
 import AvailabilityManager from './availability/AvailabilityManager';
+import dataContext, { DataContextStats } from '../../services/dataContext';
 
 interface AvailabilityData {
   status: 'available' | 'busy' | 'offline';
@@ -84,6 +85,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   const [showAvailabilityEditor, setShowAvailabilityEditor] = useState(false);
   const [dashboardStats, setDashboardStats] = useState<{ emailsSentToday: number; emailsThisWeek: number; newLeadsThisWeek: number } | null>(null);
   const [recentActivity, setRecentActivity] = useState<Array<{ id: string; type: string; title: string; detail: string; time: number }>>([]);
+  
+  // DATA_CONTEXT state
+  const [dataContextConnected, setDataContextConnected] = useState(false);
+  const [dataContextStats, setDataContextStats] = useState<DataContextStats | null>(null);
+  const [isLoadingDataContext, setIsLoadingDataContext] = useState(true);
 
   useEffect(() => {
     const loadPortals = async () => {
@@ -124,6 +130,31 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
     // Refresh status every 30 seconds
     const interval = setInterval(loadAutomationStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load DATA_CONTEXT status
+  useEffect(() => {
+    const loadDataContextStatus = async () => {
+      try {
+        const connected = await dataContext.checkConnection();
+        setDataContextConnected(connected);
+        
+        if (connected) {
+          const stats = await dataContext.getStats();
+          setDataContextStats(stats);
+        }
+      } catch (error) {
+        console.error('Failed to load DATA_CONTEXT status:', error);
+        setDataContextConnected(false);
+      } finally {
+        setIsLoadingDataContext(false);
+      }
+    };
+    loadDataContextStatus();
+
+    // Refresh every 60 seconds
+    const interval = setInterval(loadDataContextStatus, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -327,6 +358,37 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <span className="text-gray-400 text-sm">Email System</span>
               </div>
               <span className="text-green-400 text-sm font-medium">Active</span>
+            </div>
+            <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${dataContextConnected ? 'bg-purple-500' : 'bg-gray-500'}`} />
+                  <span className="text-gray-400 text-sm">DATA_CONTEXT</span>
+                </div>
+                {isLoadingDataContext ? (
+                  <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
+                ) : dataContextConnected ? (
+                  <span className="text-purple-400 text-sm font-medium">Connected</span>
+                ) : (
+                  <span className="text-gray-500 text-sm font-medium">Offline</span>
+                )}
+              </div>
+              {dataContextConnected && dataContextStats && (
+                <div className="mt-2 pt-2 border-t border-gray-700/50 grid grid-cols-3 gap-2 text-xs">
+                  <div className="text-center">
+                    <span className="text-purple-400 font-semibold">{dataContextStats.contacts}</span>
+                    <span className="text-gray-500 ml-1">contacts</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-purple-400 font-semibold">{dataContextStats.events}</span>
+                    <span className="text-gray-500 ml-1">events</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-purple-400 font-semibold">{dataContextStats.intelligence}</span>
+                    <span className="text-gray-500 ml-1">intel</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

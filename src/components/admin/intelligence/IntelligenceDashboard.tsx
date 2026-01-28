@@ -4,11 +4,13 @@ import {
   TrendingUp, AlertTriangle, Users, Globe, Zap, Star,
   Clock, CheckCircle, XCircle, Eye, ExternalLink,
   Loader2, ChevronDown, ChevronUp, Plus, ToggleLeft, ToggleRight,
-  Inbox, Archive, MapPin, Bell
+  Inbox, Archive, MapPin, Bell, Database
 } from 'lucide-react';
 import FindingCard from './FindingCard';
 import SourceManager from './SourceManager';
 import IntelligenceFeed from './IntelligenceFeed';
+import DataContextStatus from '../DataContextStatus';
+import dataContext, { IntelligenceItem as DataContextIntelligence } from '../../../services/dataContext';
 
 interface Finding {
   id: string;
@@ -61,6 +63,11 @@ const IntelligenceDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // DATA_CONTEXT integration
+  const [dataContextConnected, setDataContextConnected] = useState(false);
+  const [dataContextIntelligence, setDataContextIntelligence] = useState<DataContextIntelligence[]>([]);
+  const [dataContextLoading, setDataContextLoading] = useState(false);
+
   // Filters for findings
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -90,6 +97,23 @@ const IntelligenceDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load overview:', error);
+    }
+
+    // Load DATA_CONTEXT intelligence (separate try/catch for graceful fallback)
+    try {
+      setDataContextLoading(true);
+      const connected = await dataContext.checkConnection();
+      setDataContextConnected(connected);
+      
+      if (connected) {
+        const intelligence = await dataContext.getIntelligence(10);
+        setDataContextIntelligence(intelligence);
+      }
+    } catch (error) {
+      console.error('Failed to load DATA_CONTEXT intelligence:', error);
+      setDataContextConnected(false);
+    } finally {
+      setDataContextLoading(false);
     }
   }, []);
 
@@ -343,6 +367,79 @@ const IntelligenceDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* DATA_CONTEXT Intelligence */}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Database className="w-4 h-4 text-purple-400" />
+                DATA_CONTEXT Intelligence
+              </h3>
+              <DataContextStatus compact onStatusChange={setDataContextConnected} />
+            </div>
+            
+            {dataContextLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+              </div>
+            ) : !dataContextConnected ? (
+              <div className="text-center py-4 bg-gray-900/30 rounded-lg border border-gray-700/50">
+                <Database className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">DATA_CONTEXT offline</p>
+                <p className="text-gray-600 text-xs mt-1">Connect to central data lake for additional intelligence</p>
+              </div>
+            ) : dataContextIntelligence.length === 0 ? (
+              <div className="text-center py-4 bg-gray-900/30 rounded-lg border border-gray-700/50">
+                <Brain className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No intelligence items yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dataContextIntelligence.slice(0, 5).map(item => (
+                  <div key={item.id} className="p-3 bg-gray-900/50 rounded-lg border border-gray-700/50 hover:border-purple-500/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium truncate">{item.title}</p>
+                        {item.summary && (
+                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.summary}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`px-1.5 py-0.5 text-xs rounded ${
+                          item.sentiment === 'positive' ? 'bg-green-500/20 text-green-400' :
+                          item.sentiment === 'negative' ? 'bg-red-500/20 text-red-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {item.sentiment}
+                        </span>
+                        {item.url && (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-gray-400 hover:text-purple-400 transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                      <span>{item.source}</span>
+                      <span>•</span>
+                      <span>{item.item_type}</span>
+                      {item.timestamp && (
+                        <>
+                          <span>•</span>
+                          <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
