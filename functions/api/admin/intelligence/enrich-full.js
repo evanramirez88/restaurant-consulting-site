@@ -8,7 +8,7 @@
  * For heavy batch processing, use the dedicated worker.
  */
 
-import { verifyAuth, unauthorizedResponse } from '../_shared/auth.js';
+import { verifyAuth, unauthorizedResponse } from '../../_shared/auth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
