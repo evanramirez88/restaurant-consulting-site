@@ -1,7 +1,7 @@
 # Cloudflare Infrastructure Status
 
-**Last Updated:** 2026-01-26 22:00 EST
-**Session:** Toast Hub Authority Engine deployed - content aggregation system live
+**Last Updated:** 2026-01-29 13:11 EST
+**Session:** Email inbound worker verified live - AI classification for inbound emails
 
 ---
 
@@ -260,6 +260,7 @@
 | Worker Name | URL | Purpose | Bindings |
 |-------------|-----|---------|----------|
 | **rg-email-dispatcher** | - | Cron-based email dispatch | DB, RATE_LIMIT_KV |
+| **rg-email-inbound** | https://rg-email-inbound.ramirezconsulting-rg.workers.dev | Resend inbound webhook + AI classification | DB, KV, R2_BUCKET, AI |
 | **toast-hub-aggregator** | https://toast-hub-aggregator.ramirezconsulting-rg.workers.dev | Content aggregation (RSS/Reddit) | DB, CACHE_KV |
 
 ### toast-hub-aggregator (NEW 2026-01-26)
@@ -297,6 +298,48 @@
 - Items Fetched: 120
 - Items Imported: 120
 - Errors: 0
+
+### rg-email-inbound (2026-01-29)
+
+| Setting | Value |
+|---------|-------|
+| Worker URL | https://rg-email-inbound.ramirezconsulting-rg.workers.dev |
+| Status | **LIVE** ✅ |
+| Purpose | Resend inbound webhook processing with AI classification |
+
+#### Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /health | GET | Health check |
+| /inbound | POST | Resend webhook endpoint |
+| /stats | GET | Email statistics (API key required) |
+| /recent | GET | Recent inbound emails (API key required) |
+
+#### Bindings
+| Binding | Variable | Resource |
+|---------|----------|----------|
+| D1 Database | DB | rg-consulting-forms |
+| KV Namespace | KV | rg-consulting-sessions |
+| R2 Bucket | R2_BUCKET | ccrc-uploads |
+| Workers AI | AI | Cloudflare AI |
+
+#### Environment Variables
+| Variable | Value |
+|----------|-------|
+| ENVIRONMENT | production |
+| ALLOWED_TO_ADDRESSES | ramirezconsulting.rg@gmail.com, support@ccrestaurantconsulting.com, hello@ccrestaurantconsulting.com |
+
+#### Required Secrets (set via `wrangler secret put`)
+| Secret | Purpose |
+|--------|---------|
+| RESEND_INBOUND_WEBHOOK_SECRET | Webhook signature verification |
+| WORKER_API_KEY | Admin endpoint authentication |
+
+#### Features
+- **AI Classification**: Uses Cloudflare AI (LLaMA 3.1 8B) to classify emails into: positive_response, negative_response, unsubscribe, menu_attachment, general_inquiry, out_of_office, spam
+- **Attachment Handling**: Stores attachments in R2, detects menu files
+- **Lead Tracking**: Links inbound emails to existing subscribers and leads
+- **Automation**: Creates follow-up tasks for positive responses, handles unsubscribes automatically
 
 ---
 
